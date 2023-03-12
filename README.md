@@ -1,67 +1,49 @@
-# Electron Forge Template
+# API Viewer
 
-> **Note**
-> This template has several branches with different features
-> (see [Branches](./BRANCHES.md) for details).
+This application browses the APIs of the components in a solution, with the call stacks or dependencies.
 
-This is a boilerplate or template --
-i.e. it is placeholder sample source code, and development tooling --
-for an Electron application.
+## System design
 
-- [How you use it](#how-you-use-it)
-- [What's included](#whats-included)
-- [How it's implemented](#how-its-implemented)
-- [See also](#see-also)
+This is an Electron application.
 
-## How you use it
+It is based on the `sqlite` branch of https://github.com/cwellsx/electron_forge_template
+and includes the following components.
 
-To use this template to start your own application:
+### `src/renderer`
 
-- Read the "Hello world" source code in the `./src/` and `./src.dotnet/` folders
-- Replace that, by writing your own source code for these folders
-- Use the scripts, which are defined in `package.json` and described here:
+The renderer process implements the UI (using React and TypeScript).
 
-  > [How to use the command line interface (CLI) for Electron Forge](https://www.electronforge.io/cli)
+### `src.dotnet`
 
-- Edit the descriptive fields in `package.json` (i.e. including the
-  `name`,
-  `author`,
-  `license`,
-  and so on).
+The .NET process uses the Reflection API, to read the APIs (i.e. the interfaces and classes) and the API calls,
+from the system which you're browsing.
 
-- Add an icon as described here:
+### `better-sqlite3`
 
-  > [Creating and Setting App Icons](https://www.electronforge.io/guides/create-and-add-icons)
+The SQLite component is a cache of the API data which the .NET component reads.
+It also stores any user-configurable display options.
 
-## What's included
+### `Graphviz`
 
-This boilerplate supports:
+The Graphviz process creates image files of the selected APIs, to be displayed by the renderer.
 
-- Electron
-- Written using TypeScript, and using React in the renderer
-- IPC in both directions, between the main process and the renderer, implemented using a preload script
-- IPC to an external .NET process, to support additional APIs using .NET instead of only Node.js
-- SQLite integrated into the main Electron process
+### `src/main`
 
-The boilerplate includes "Hello world" source files to show how the IPC and React are implemented and used at run-time.
+The main process is the controller which implements the bridge between other components.
 
-The toolchain defined by Electron Forge supports:
+## User interface
 
-- Hot reloading or quick restart at development time
-- Packaging for deployment
+The user interface has three panes:
 
-It seems to be based on Webpack and the TypeScript compiler and not on Babel.
+- Left -- a list of the components in the solution being browsed
+- Centre -- the selected components and their APIs
+- Right -- details of the selected API
 
-## How it's implemented
+When you select a component in the left-hand pane then it's displayed in the centre with its immediate neighbours,
+i.e. with the components which it calls and the components which call it.
 
-[How this was implemented](./BOILERPLATE.md) describes how I created this template step-by-step.
+The components are displayed as a directed graph.
 
-## See also
+The graph can be panned and zoomed.
 
-For details see also the user guides for these components:
-
-- [Electron](https://www.electronjs.org/docs/latest/)
-- [Electron Forge](https://www.electronforge.io/)
-- [React](https://reactjs.org/docs/getting-started.html)
-- [Electron CGI](https://github.com/ruidfigueiredo/electron-cgi#readme)
-- [SQLite](https://github.com/WiseLibs/better-sqlite3/#documentation)
+The graph is clickable, which is implemented using Graphviz image maps.
