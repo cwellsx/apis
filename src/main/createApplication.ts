@@ -1,12 +1,13 @@
-import { app, BrowserWindow, ipcMain, IpcMainEvent, WebContents } from 'electron';
-import fs from 'fs';
-import path from 'path';
+import { app, dialog, BrowserWindow, ipcMain, IpcMainEvent, WebContents } from "electron";
+import fs from "fs";
+import path from "path";
 
-import { createDotNetApi, DotNetApi } from './createDotNetApi';
-import { createSqlDatabase, SqlApi } from './createSqlDatabase';
-import { log } from './log';
+import { readConfig, writeConfig } from "./configFile";
+import { createDotNetApi, DotNetApi } from "./createDotNetApi";
+import { createSqlDatabase, SqlApi } from "./createSqlDatabase";
+import { log } from "./log";
 
-import type { MainApi, RendererApi } from "../shared-types";
+import type { MainApi, RendererApi, Loaded } from "../shared-types";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
@@ -21,7 +22,7 @@ export function createApplication(webContents: WebContents): void {
     // says that, "it is not recommended to write large files here"
     const dir = app.getPath("userData");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    return path.join(dir, "pic.db");
+    return path.join(dir, "apis.db");
   };
   const sqlApi: SqlApi = createSqlDatabase(getDbName());
 
@@ -58,7 +59,34 @@ export function createApplication(webContents: WebContents): void {
 
   bindIpcMain();
 
-  function onRendererLoaded(): void {
+  async function onRendererLoaded(): Promise<void> {
+    log("readConfig");
+    const config = readConfig();
+    if (!config.path) {
+      const path = dialog.showOpenDialogSync({ properties: ["openDirectory"] });
+      if (!path) {
+        app.quit();
+        return;
+      }
+      config.path = path[0];
+      writeConfig(config);
+    }
+    if (!config.cachedWhen || Date.parse(config.cachedWhen) < Date.parse(await dotNetApi.getWhen(config.path))) {
+      const json = await dotNetApi.getJson(config.path);
+      const loaded: Loaded = JSON.parse(json);
+      config.cachedWhen = loaded.when;
+      // writeConfig(config);
+    }
+    // log("showConfig");
+    // rendererApi.showConfig(config);
+    // log("readConfigUI");
+    // const configUI = readConfigUI();
+    // log("showConfigUI");
+    // rendererApi.showConfigUI(configUI);
+    // showFiles(config);
+  }
+
+  function greetings(): void {
     log("getGreeting");
     dotNetApi.getGreeting("World").then((greeting: string) => {
       log(greeting);
@@ -68,5 +96,6 @@ export function createApplication(webContents: WebContents): void {
     });
   }
 
-  webContents.once("did-finish-load", onRendererLoaded);
+  webContents.once("did-finish-load", greetings);
+  webContents.addListener("did-finish-load", onRendererLoaded);
 }
