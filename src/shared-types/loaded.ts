@@ -1,8 +1,8 @@
-interface IStrings {
+export interface IStrings {
   [key: string]: string[];
 }
 
-interface ITypes {
+export interface ITypes {
   [key: string]: TypeInfo[];
 }
 
@@ -14,7 +14,6 @@ export type TypeInfo = {
 };
 
 export type Loaded = {
-  when: string;
   assemblies: IStrings;
   types: ITypes;
 };

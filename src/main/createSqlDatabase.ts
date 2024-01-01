@@ -1,44 +1,58 @@
-import sqlite from "better-sqlite3";
+import sqlite, { Database } from "better-sqlite3";
+import fs from "fs";
+import path from "path";
+
+import { SqlTable } from "./sqlTable";
 
 // https://github.com/electron-userland/electron-forge/issues/1224#issuecomment-606649565
 // https://www.npmjs.com/package/better-sqlite3
 // https://github.com/electron-userland/electron-forge/issues?q=is%3Aissue+is%3Aopen+sqlite
 // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/api.md
 
-export interface SqlApi {
-  selectNames(): string[];
+type Cat = {
+  name: string;
+  age: number;
+};
+
+export function createSqlDatabase(filename: string): Database {
+  // specify location of better_sqlite3.node -- https://github.com/electron/forge/issues/3052
+  const nativeBinding = path.join(process.cwd(), ".webpack\\main\\native_modules\\build\\Release\\better_sqlite3.node");
+  const options: sqlite.Options | undefined = fs.existsSync(nativeBinding)
+    ? {
+        nativeBinding,
+      }
+    : undefined;
+
+  const db = sqlite(filename, options);
+  db.pragma("locking_mode = EXCLUSIVE");
+  // https://github.com/WiseLibs/better-sqlite3/blob/HEAD/docs/performance.md
+  db.pragma("journal_mode = WAL");
+  return db;
 }
 
-export function createSqlDatabase(filename: string): SqlApi {
-  const db = sqlite(filename);
+export function selectCats(filename: string): string[] {
+  const db = createSqlDatabase(filename);
 
-  const tableName = "cats";
-  const createTable = db.prepare(`CREATE TABLE IF NOT EXISTS ${tableName} (name CHAR(20), age INT)`);
-  createTable.run();
+  const catTable = new SqlTable<Cat>(db, "cat", "name", false, { name: "name", age: 1 });
 
-  const insert = db.prepare(`INSERT INTO ${tableName} (name, age) VALUES (@name, @age)`);
-  const insertMany = db.transaction((cats) => {
-    for (const cat of cats) insert.run(cat);
-  });
-
-  const selectAllCats = db.prepare(`SELECT * FROM ${tableName}`);
-  let rows = selectAllCats.all();
+  let rows = catTable.selectAll();
 
   if (!rows.length) {
-    insertMany([
+    catTable.insertMany([
       { name: "Joey", age: 2 },
       { name: "Sally", age: 4 },
       { name: "Junior", age: 1 },
     ]);
-    rows = selectAllCats.all();
+    rows = catTable.selectAll();
   }
+
+  catTable.update({ name: "Junior", age: 2 });
 
   rows.forEach((row) => {
     console.log(row);
   });
 
-  const selectAllNames = db.prepare(`SELECT (name) FROM ${tableName}`);
-  return {
-    selectNames: () => selectAllNames.all().map((obj) => (obj as { name: string }).name),
-  };
+  const result = catTable.selectAll().map((cat) => `${cat.name} (${cat.age})`);
+  db.close();
+  return result;
 }

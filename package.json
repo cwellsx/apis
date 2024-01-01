@@ -1,8 +1,8 @@
 {
-  "name": "my-new-app",
-  "productName": "my-new-app",
+  "name": "@cwellsx/apis",
+  "productName": "@cwellsx/apis",
   "version": "1.0.0",
-  "description": "My Electron application description",
+  "description": "Browse .NET assemblies and APIs",
   "main": ".webpack/main",
   "scripts": {
     "start": "set DEBUG=electron-forge&& electron-forge start",
@@ -11,7 +11,11 @@
     "publish": "electron-forge publish",
     "lint": "eslint --ext .ts,.tsx ."
   },
-  "keywords": [],
+  "keywords": [
+    ".NET",
+    "API",
+    "Dependencies"
+  ],
   "author": {
     "name": "cwellsx",
     "email": "cwellsx@gmail.com"

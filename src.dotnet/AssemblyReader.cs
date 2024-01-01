@@ -18,12 +18,8 @@ namespace Core
     {
         public Dictionary<string, string[]> Assemblies { get; } = new Dictionary<string, string[]>();
         public Dictionary<string, TypeInfo> Types { get; } = new Dictionary<string, TypeInfo>();
-        public string When { get; init; }
-
-        internal AssemblyReader(string when)
-        {
-            When = when;
-        }
+    
+        internal AssemblyReader() { }
 
         internal void Add(Assembly assembly)
         {

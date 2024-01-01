@@ -21,8 +21,7 @@ namespace Core
                 throw new Exception("DotNet framework installation directory not found");
             }
             var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(GetAllFiles(dotNetInstallationDirectory)));
-            var when = GetDateModified(directory);
-            var assemblyReader = new AssemblyReader(when);
+            var assemblyReader = new AssemblyReader();
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
                 foreach (var path in GetFiles(directory))

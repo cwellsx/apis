@@ -4,7 +4,8 @@ import path from "path";
 
 import { readConfig, writeConfig } from "./configFile";
 import { createDotNetApi, DotNetApi } from "./createDotNetApi";
-import { createSqlDatabase, SqlApi } from "./createSqlDatabase";
+import { createSqlDatabase, selectCats } from "./createSqlDatabase";
+import { SqlTables, createSqlTables } from "./sqlTables";
 import { log } from "./log";
 
 import type { MainApi, RendererApi, Loaded } from "../shared-types";
@@ -17,14 +18,14 @@ export function createApplication(webContents: WebContents): void {
   const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
 
   // instantiate the SqlApi
-  const getDbName = (): string => {
+  const getDbName = (filename: string): string => {
     // beware https://www.electronjs.org/docs/latest/api/app#appgetpathname
     // says that, "it is not recommended to write large files here"
     const dir = app.getPath("userData");
     if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    return path.join(dir, "apis.db");
+    return path.join(dir, filename);
   };
-  const sqlApi: SqlApi = createSqlDatabase(getDbName());
+  const sqlTables: SqlTables = createSqlTables(getDbName("apis.db"));
 
   // implement RendererApi using webContents.send
   const rendererApi: RendererApi = {
@@ -71,12 +72,18 @@ export function createApplication(webContents: WebContents): void {
       config.path = path[0];
       writeConfig(config);
     }
-    if (!config.cachedWhen || Date.parse(config.cachedWhen) < Date.parse(await dotNetApi.getWhen(config.path))) {
+
+    // let loaded: Loaded;
+    const when = await dotNetApi.getWhen(config.path);
+    if (!config.cachedWhen || Date.parse(config.cachedWhen) < Date.parse(when)) {
       const json = await dotNetApi.getJson(config.path);
-      const loaded: Loaded = JSON.parse(json);
-      config.cachedWhen = loaded.when;
-      // writeConfig(config);
+      const loaded = JSON.parse(json);
+      sqlTables.save(loaded);
+      config.cachedWhen = when;
+      writeConfig(config);
     }
+    const loaded: Loaded = sqlTables.read();
+
     // log("showConfig");
     // rendererApi.showConfig(config);
     // log("readConfigUI");
@@ -90,7 +97,7 @@ export function createApplication(webContents: WebContents): void {
     log("getGreeting");
     dotNetApi.getGreeting("World").then((greeting: string) => {
       log(greeting);
-      const names = sqlApi.selectNames().join(", ");
+      const names = selectCats(getDbName("cats.db")).join(", ");
       log(names);
       rendererApi.setGreeting(`${greeting} from ${names}!`);
     });
