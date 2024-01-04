@@ -1,31 +1,25 @@
-import { app, dialog, BrowserWindow, ipcMain, IpcMainEvent, WebContents } from "electron";
-import fs from "fs";
-import path from "path";
+import { app, dialog, BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 
 import { readConfig, writeConfig } from "./configFile";
 import { createDotNetApi, DotNetApi } from "./createDotNetApi";
 import { createSqlDatabase, selectCats } from "./createSqlDatabase";
+import { getAppFilename } from "./getAppFilename";
 import { SqlTables, createSqlTables } from "./sqlTables";
 import { log } from "./log";
 
 import type { MainApi, RendererApi, Loaded } from "../shared-types";
+import { showAssemblies } from "./graphviz";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
 
-export function createApplication(webContents: WebContents): void {
+export function createApplication(mainWindow: BrowserWindow): void {
+  const webContents = mainWindow.webContents;
   // instantiate the DotNetApi
   const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
 
   // instantiate the SqlApi
-  const getDbName = (filename: string): string => {
-    // beware https://www.electronjs.org/docs/latest/api/app#appgetpathname
-    // says that, "it is not recommended to write large files here"
-    const dir = app.getPath("userData");
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-    return path.join(dir, filename);
-  };
-  const sqlTables: SqlTables = createSqlTables(getDbName("apis.db"));
+  const sqlTables: SqlTables = createSqlTables(getAppFilename("apis.db"));
 
   // implement RendererApi using webContents.send
   const rendererApi: RendererApi = {
@@ -83,7 +77,8 @@ export function createApplication(webContents: WebContents): void {
       writeConfig(config);
     }
     const loaded: Loaded = sqlTables.read();
-
+    mainWindow.setTitle(config.path);
+    showAssemblies(loaded.assemblies);
     // log("showConfig");
     // rendererApi.showConfig(config);
     // log("readConfigUI");
@@ -97,7 +92,7 @@ export function createApplication(webContents: WebContents): void {
     log("getGreeting");
     dotNetApi.getGreeting("World").then((greeting: string) => {
       log(greeting);
-      const names = selectCats(getDbName("cats.db")).join(", ");
+      const names = selectCats(getAppFilename("cats.db")).join(", ");
       log(names);
       rendererApi.setGreeting(`${greeting} from ${names}!`);
     });
