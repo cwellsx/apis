@@ -1,6 +1,6 @@
-import * as React from 'react';
-
-import { Dashboard } from './Dashboard';
+import * as React from "react";
+import { Dashboard } from "./Dashboard";
+import { Panes } from "./Panes";
 
 import type { BindIpc, MainApi, PreloadApis, RendererApi } from "../shared-types";
 
@@ -29,7 +29,7 @@ const App: React.FunctionComponent = () => {
 
   return (
     <React.StrictMode>
-      <Dashboard greeting={greeting} />
+      <Panes left={"pane 1"} center={<Dashboard greeting={greeting} />} right={"pane 3"} />
     </React.StrictMode>
   );
 };

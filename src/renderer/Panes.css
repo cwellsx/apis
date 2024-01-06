@@ -1,0 +1,10 @@
+.split-sash-content.split-sash-content-vscode {
+  background-color: rgb(200,200,200);
+  width: 2px;
+}
+.split-sash-content.split-sash-content-vscode.split-sash-content-active {
+  width: 100%;
+}
+.react-split__sash {
+  transition: background-color 0s;
+}
