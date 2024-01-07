@@ -1,5 +1,11 @@
 import React, { FC, useRef, useEffect } from "react";
 
+// this was originally copy-and-pasted from
+// https://github.com/yj-ang/react-image-mapper2/blob/master/src/components/ImageMapper.tsx
+// it's copy-and-pasted instead of using npm install for two reasons:
+// 1. https://github.com/yj-ang/react-image-mapper2/issues/4
+// 2. I may modify this because it doesn't support resizing after it's rendered
+
 type AreaMouseEvent = Event | React.MouseEvent<HTMLAreaElement, MouseEvent>;
 
 export type AreaEvent = {

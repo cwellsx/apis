@@ -1,0 +1,12 @@
+#graph > div {
+  max-width: 100%;
+  max-height:100%;
+}
+#graph > div > * {
+  max-width: 100%;
+  max-height:100%;
+  object-fit: contain;
+}
+#graph canvas {
+  border: 1px red;
+}

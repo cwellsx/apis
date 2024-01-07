@@ -1,3 +1,5 @@
+import { View } from "./view";
+
 /*
   The underlying APIs, which the application-specific classes wrap, are:
   - https://www.electronjs.org/docs/latest/api/ipc-main
@@ -15,6 +17,7 @@ export interface MainApi {
 // this Api is available to the main process and its functions are all void
 export interface RendererApi {
   setGreeting: (greeting: string) => void;
+  showView: (view: View) => void;
 }
 
 export type BindIpc = (rendererApi: RendererApi) => void;

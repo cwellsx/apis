@@ -42,7 +42,9 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
       sashRender={(_, active) => <SashContent active={active} type="vscode"></SashContent>}
     >
       <div style={{ ...layoutCSS }}>{left}</div>
-      <div style={{ ...layoutCSS }}>{center}</div>
+      <div id="graph" style={{ ...layoutCSS }}>
+        {center}
+      </div>
       <div style={{ ...layoutCSS }}>{right}</div>
     </SplitPane>
   );

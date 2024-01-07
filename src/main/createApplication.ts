@@ -6,14 +6,16 @@ import { createSqlDatabase, selectCats } from "./createSqlDatabase";
 import { getAppFilename } from "./getAppFilename";
 import { SqlTables, createSqlTables } from "./sqlTables";
 import { log } from "./log";
+import { registerFileProtocol } from "./convertPathToUrl";
 
-import type { MainApi, RendererApi, Loaded } from "../shared-types";
+import type { MainApi, RendererApi, Loaded, View } from "../shared-types";
 import { showAssemblies } from "./graphviz";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
 
 export function createApplication(mainWindow: BrowserWindow): void {
+  registerFileProtocol();
   const webContents = mainWindow.webContents;
   // instantiate the DotNetApi
   const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
@@ -25,6 +27,9 @@ export function createApplication(mainWindow: BrowserWindow): void {
   const rendererApi: RendererApi = {
     setGreeting(greeting: string): void {
       webContents.send("setGreeting", greeting);
+    },
+    showView(view: View): void {
+      webContents.send("showView", view);
     },
   };
 
@@ -78,7 +83,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
     }
     const loaded: Loaded = sqlTables.read();
     mainWindow.setTitle(config.path);
-    showAssemblies(loaded.assemblies);
+    const view = showAssemblies(loaded.assemblies);
+    rendererApi.showView(view);
     // log("showConfig");
     // rendererApi.showConfig(config);
     // log("readConfigUI");

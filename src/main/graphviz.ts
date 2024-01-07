@@ -1,14 +1,15 @@
-import type { Area, IStrings } from "../shared-types";
+import type { View, Node, IStrings } from "../shared-types";
 import { getAppFilename } from "./getAppFilename";
 import fs from "fs";
 import path from "path";
 import os from "os";
 import child_process from "child_process";
 import { readXml } from "./readXml";
+import { convertPathToUrl } from "./convertPathToUrl";
 
 const graphvizDir = `C:\\Users\\Christopher\\Source\\Repos\\graphviz-2.38\\release\\bin`;
 
-export function showAssemblies(assemblies: IStrings): Area[] {
+export function showAssemblies(assemblies: IStrings): View {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   Object.keys(assemblies).forEach((key) => lines.push(`  "${key}" [shape=folder, id="${key}", href=foo];`));
@@ -28,6 +29,14 @@ export function showAssemblies(assemblies: IStrings): Area[] {
   child_process.spawnSync(dotExe, args);
 
   const xml = fs.readFileSync(mapFilename, { encoding: "utf8" });
-  const areas = readXml(xml);
-  return areas;
+
+  return { imagePath: convertPathToUrl(pngFilename), areas: readXml(xml), nodes: toNodes(assemblies), now: Date.now() };
 }
+
+const toNodes = (assemblies: IStrings): Node[] => {
+  const result: Node[] = [];
+  for (const key in assemblies) {
+    result.push({ label: key });
+  }
+  return result;
+};
