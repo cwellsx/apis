@@ -1,7 +1,7 @@
 import { Database } from "better-sqlite3";
 
 import { Loaded, IStrings, ITypes } from "../shared-types";
-import { createSqlDatabase } from "./createSqlDatabase";
+import { createSqlDatabase } from "./sqlDatabase";
 import { log } from "./log";
 import { SqlTable } from "./sqlTable";
 

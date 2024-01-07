@@ -2,7 +2,6 @@ import { app, dialog, BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 
 import { readConfig, writeConfig } from "./configFile";
 import { createDotNetApi, DotNetApi } from "./createDotNetApi";
-import { createSqlDatabase, selectCats } from "./createSqlDatabase";
 import { getAppFilename } from "./getAppFilename";
 import { SqlTables, createSqlTables } from "./sqlTables";
 import { log } from "./log";
@@ -98,9 +97,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
     log("getGreeting");
     dotNetApi.getGreeting("World").then((greeting: string) => {
       log(greeting);
-      const names = selectCats(getAppFilename("cats.db")).join(", ");
-      log(names);
-      rendererApi.setGreeting(`${greeting} from ${names}!`);
+      rendererApi.setGreeting(`${greeting} from Chris!`);
     });
   }
 
