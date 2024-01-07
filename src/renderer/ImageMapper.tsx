@@ -6,7 +6,7 @@ import React, { FC, useRef, useEffect } from "react";
 // 1. https://github.com/yj-ang/react-image-mapper2/issues/4
 // 2. I may modify this because it doesn't support resizing after it's rendered
 
-type AreaMouseEvent = Event | React.MouseEvent<HTMLAreaElement, MouseEvent>;
+export type AreaMouseEvent = Event | React.MouseEvent<HTMLAreaElement, MouseEvent>;
 
 export type AreaEvent = {
   area: Area;
@@ -199,7 +199,6 @@ export const ImageMapper: FC<ImageMapperProps> = ({
   const scaleCoords = (coords: number[]) => {
     // calculate scale based on current 'width' and the original 'imgWidth'
     const scale = width && imgWidth && imgWidth > 0 ? width / imgWidth : 1;
-    console.log(`Scaling ${scale}`);
     return coords.map((coord) => coord * scale);
   };
 

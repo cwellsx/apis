@@ -1,7 +1,7 @@
 import * as React from "react";
-import { Dashboard } from "./Dashboard";
 import { Panes } from "./Panes";
 import { Graph } from "./Graph";
+import { Tree } from "./Tree";
 
 import type { BindIpc, MainApi, PreloadApis, RendererApi, View } from "../shared-types";
 
@@ -37,9 +37,9 @@ const App: React.FunctionComponent = () => {
   return (
     <React.StrictMode>
       <Panes
-        left={"pane 1"}
+        left={<Tree nodes={view.nodes} />}
         center={<Graph imagePath={view.imagePath} areas={view.areas} now={view.now} />}
-        right={<Dashboard greeting={greeting} />}
+        right={greeting}
       />
     </React.StrictMode>
   );
