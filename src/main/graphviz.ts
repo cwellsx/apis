@@ -36,7 +36,7 @@ export function showAssemblies(assemblies: IStrings): View {
 const toNodes = (assemblies: IStrings): Node[] => {
   const result: Node[] = [];
   for (const key in assemblies) {
-    result.push({ label: key });
+    result.push({ label: key, isShown: true });
   }
   return result;
 };

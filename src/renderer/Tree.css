@@ -1,0 +1,11 @@
+/* SVG element color defined using fill */
+.rct-checkbox > svg {
+  fill: #33c;
+}
+.rct-checkbox > svg, .rct-node-icon > svg {
+  width: 1em;
+  height: 1em;
+}
+li.rct-node {
+  white-space: nowrap;
+}

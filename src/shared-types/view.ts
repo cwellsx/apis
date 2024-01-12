@@ -8,6 +8,7 @@ export type Node = {
   label: string;
   id?: string;
   children?: Node[];
+  isShown: boolean;
 };
 
 export type View = {

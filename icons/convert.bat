@@ -1,0 +1,1 @@
+npx @svgr/cli --out-dir ../src/renderer/Icons --typescript --index-template index-template.js -- org
