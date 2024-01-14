@@ -6,6 +6,7 @@ import os from "os";
 import child_process from "child_process";
 import { readXml } from "./readXml";
 import { convertPathToUrl } from "./convertPathToUrl";
+import { readNodes } from "./readNodes";
 
 const graphvizDir = `C:\\Users\\Christopher\\Source\\Repos\\graphviz-2.38\\release\\bin`;
 
@@ -30,13 +31,10 @@ export function showAssemblies(assemblies: IStrings): View {
 
   const xml = fs.readFileSync(mapFilename, { encoding: "utf8" });
 
-  return { imagePath: convertPathToUrl(pngFilename), areas: readXml(xml), nodes: toNodes(assemblies), now: Date.now() };
+  return {
+    imagePath: convertPathToUrl(pngFilename),
+    areas: readXml(xml),
+    nodes: readNodes(assemblies),
+    now: Date.now(),
+  };
 }
-
-const toNodes = (assemblies: IStrings): Node[] => {
-  const result: Node[] = [];
-  for (const key in assemblies) {
-    result.push({ label: key, isShown: true });
-  }
-  return result;
-};

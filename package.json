@@ -1,6 +1,6 @@
 {
-  "name": "@cwellsx/apis",
-  "productName": "@cwellsx/apis",
+  "name": "apis",
+  "productName": "",
   "version": "1.0.0",
   "description": "Browse .NET assemblies and APIs",
   "main": ".webpack/main",

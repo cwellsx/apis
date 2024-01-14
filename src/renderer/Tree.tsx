@@ -29,6 +29,7 @@ const isShown = (nodes: MyNode[]): string[] => {
 
 // initialize using SVG icons
 // the ./icons folder at the root of this project shows how these SVG components were created
+// if we want default icons then we would need to include FontAwsome
 const icons: Icons = {
   check: <Icon.SvgCheckBox />,
   uncheck: <Icon.SvgCheckBoxOutlineBlank />,
@@ -44,13 +45,25 @@ const icons: Icons = {
 
 export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const [checked, setChecked] = React.useState(isShown(props.nodes));
+  const [expanded, setExpanded] = React.useState<string[]>([]);
 
   const nodes = props.nodes.map(convert);
 
   const onCheck = (value: string[]) => {
     setChecked(value);
   };
+  const onExpand = (value: string[]) => {
+    setExpanded(value);
+  };
 
-  // if we want default icons then we would need to include FontAwsome
-  return <CheckboxTree nodes={nodes} checked={checked} onCheck={onCheck} icons={icons} />;
+  return (
+    <CheckboxTree
+      nodes={nodes}
+      checked={checked}
+      expanded={expanded}
+      onCheck={onCheck}
+      onExpand={onExpand}
+      icons={icons}
+    />
+  );
 };
