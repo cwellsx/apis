@@ -6,7 +6,7 @@ export type Area = {
 
 export type Node = {
   label: string;
-  id?: string;
+  id?: string; // initialize this if the label isn't unique within the View, to identify the Node
   children?: Node[];
   isShown: boolean;
 };

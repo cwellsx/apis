@@ -64,6 +64,7 @@ export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
       onCheck={onCheck}
       onExpand={onExpand}
       icons={icons}
+      checkModel="all"
     />
   );
 };

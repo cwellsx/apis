@@ -6,6 +6,8 @@ function getColumnType(value: unknown): columnType {
   switch (typeof value) {
     case "string":
       return "TEXT";
+    case "boolean":
+      return "INT";
     case "number":
       return Number.isInteger(value) ? "INT" : "REAL";
     default:
@@ -57,7 +59,8 @@ export class SqlTable<T extends object> {
 
     const keys = Object.keys(t);
     const values = keys.map((key) => `@${key}`);
-    const insert = `INSERT INTO "${tableName}" (${quoteAndJoin(keys)}) VALUES (${values.join(", ")})`;
+    const insertParameters = `INTO "${tableName}" (${quoteAndJoin(keys)}) VALUES (${values.join(", ")})`;
+    const insert = `INSERT ${insertParameters}`;
     const insertStmt = db.prepare(insert);
 
     const index = keys.indexOf(primaryKey);
@@ -69,6 +72,10 @@ export class SqlTable<T extends object> {
     )}) WHERE "${primaryKey}" = @${primaryKey}`;
     const updateStmt = db.prepare(update);
 
+    const upsert = `INSERT OR REPLACE ${insertParameters}`;
+    const upsertStmt = db.prepare(upsert);
+
+    const selectStmt = db.prepare(`SELECT * FROM "${tableName}"`);
     const deleteAllStmt = db.prepare(`DELETE FROM "${tableName}"`);
 
     this.insert = db.transaction((t: T) => {
@@ -81,19 +88,23 @@ export class SqlTable<T extends object> {
       if (info.changes !== 1) throw new Error("insert failed");
       verbose(`updated row #${info.lastInsertRowid}`);
     });
+    this.upsert = db.transaction((t: T) => {
+      const info = upsertStmt.run(t);
+      if (info.changes !== 1) throw new Error("upsert failed");
+      verbose(`upserted row #${info.lastInsertRowid}`);
+    });
     this.insertMany = db.transaction((many: T[]) => {
       for (const t of many) insertStmt.run(t);
     });
+    this.selectAll = () => selectStmt.all() as T[];
     this.deleteAll = db.transaction(() => {
       deleteAllStmt.run();
     });
-
-    const selectStmt = db.prepare(`SELECT * FROM "${tableName}"`);
-    this.selectAll = () => selectStmt.all() as T[];
   }
 
   insert: (t: T) => void;
   update: (t: T) => void;
+  upsert: (t: T) => void;
   insertMany: (many: T[]) => void;
   selectAll: () => T[];
   deleteAll: () => void;

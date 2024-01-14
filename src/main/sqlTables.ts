@@ -15,9 +15,17 @@ type Type = {
   typeInfo: string;
 };
 
+export type ConfigKey = "path" | "cachedWhen";
+export type ConfigPair = {
+  name: ConfigKey;
+  value: string;
+};
+
 export class SqlTables {
   save: (loaded: Loaded) => void;
   read: () => Loaded;
+  getConfig: () => ConfigPair[];
+  setConfig: (config: ConfigPair) => void;
   done: () => void;
 
   constructor(db: Database) {
@@ -28,6 +36,10 @@ export class SqlTables {
     const typeTable = new SqlTable<Type>(db, "type", "name", () => false, {
       name: "foo",
       typeInfo: "bar",
+    });
+    const configTable = new SqlTable<ConfigPair>(db, "config", "name", () => false, {
+      name: "path",
+      value: "bar",
     });
 
     this.save = (loaded: Loaded) => {
@@ -46,6 +58,9 @@ export class SqlTables {
       typeTable.selectAll().forEach((type) => (types[type.name] = JSON.parse(type.typeInfo)));
       return { assemblies, types };
     };
+
+    this.getConfig = () => configTable.selectAll();
+    this.setConfig = (config: ConfigPair) => configTable.upsert(config);
 
     this.done = () => {
       const result = db.pragma("wal_checkpoint(TRUNCATE)");

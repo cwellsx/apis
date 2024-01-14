@@ -1,6 +1,6 @@
 import { app, dialog, BrowserWindow, ipcMain, IpcMainEvent } from "electron";
 
-import { readConfig, writeConfig } from "./configFile";
+import { Config } from "./config";
 import { createDotNetApi, DotNetApi } from "./createDotNetApi";
 import { getAppFilename } from "./getAppFilename";
 import { SqlTables, createSqlTables } from "./sqlTables";
@@ -21,6 +21,9 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   // instantiate the SqlApi
   const sqlTables: SqlTables = createSqlTables(getAppFilename("apis.db"));
+
+  // instantiate the Config
+  const config = new Config(sqlTables);
 
   // implement RendererApi using webContents.send
   const rendererApi: RendererApi = {
@@ -59,29 +62,27 @@ export function createApplication(mainWindow: BrowserWindow): void {
   bindIpcMain();
 
   async function onRendererLoaded(): Promise<void> {
-    log("readConfig");
-    const config = readConfig();
-    if (!config.path) {
-      const path = dialog.showOpenDialogSync({ properties: ["openDirectory"] });
-      if (!path) {
+    log("onRendererLoaded");
+    let path = config.path;
+    if (!path) {
+      const paths = dialog.showOpenDialogSync({ properties: ["openDirectory"] });
+      if (!paths) {
         app.quit();
         return;
       }
-      config.path = path[0];
-      writeConfig(config);
+      path = paths[0];
+      config.path = path;
     }
 
-    // let loaded: Loaded;
-    const when = await dotNetApi.getWhen(config.path);
+    const when = await dotNetApi.getWhen(path);
     if (!config.cachedWhen || Date.parse(config.cachedWhen) < Date.parse(when)) {
-      const json = await dotNetApi.getJson(config.path);
+      const json = await dotNetApi.getJson(path);
       const loaded = JSON.parse(json);
       sqlTables.save(loaded);
       config.cachedWhen = when;
-      writeConfig(config);
     }
     const loaded: Loaded = sqlTables.read();
-    mainWindow.setTitle(config.path);
+    mainWindow.setTitle(path);
     const view = showAssemblies(loaded.assemblies);
     rendererApi.showView(view);
     // log("showConfig");
