@@ -4,6 +4,7 @@ import { Loaded, IStrings, ITypes } from "../shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { log } from "./log";
 import { SqlTable } from "./sqlTable";
+import { ConfigKey } from "./configKey";
 
 type Assembly = {
   name: string;
@@ -15,7 +16,6 @@ type Type = {
   typeInfo: string;
 };
 
-export type ConfigKey = "path" | "cachedWhen";
 export type ConfigPair = {
   name: ConfigKey;
   value: string;

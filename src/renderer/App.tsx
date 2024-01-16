@@ -4,6 +4,7 @@ import { Graph } from "./Graph";
 import { Tree } from "./Tree";
 
 import type { BindIpc, MainApi, PreloadApis, RendererApi, View } from "../shared-types";
+import { log } from "./log";
 
 declare global {
   export interface Window {
@@ -28,16 +29,19 @@ const App: React.FunctionComponent = () => {
         mainApi.setTitle(greeting);
       },
       showView(view: View): void {
+        log("setView");
         setView(view);
       },
     };
     bindIpc(rendererApi);
   });
 
+  const setShown: (names: string[]) => void = (names) => mainApi.setShown(names);
+
   return (
     <React.StrictMode>
       <Panes
-        left={<Tree nodes={view.nodes} />}
+        left={<Tree nodes={view.nodes} setShown={setShown} />}
         center={<Graph imagePath={view.imagePath} areas={view.areas} now={view.now} />}
         right={greeting}
       />

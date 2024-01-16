@@ -9,6 +9,7 @@ import { registerFileProtocol } from "./convertPathToUrl";
 
 import type { MainApi, RendererApi, Loaded, View } from "../shared-types";
 import { showAssemblies } from "./graphviz";
+import { readNodes } from "./readNodes";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
@@ -47,11 +48,17 @@ export function createApplication(mainWindow: BrowserWindow): void {
       log("setTitle");
       this.window?.setTitle(title);
     }
+    setShown(names: string[]): void {
+      log("setShown");
+      config.setShown(names);
+      showView();
+    }
   }
 
   function bindIpcMain() {
     // bind ipcMain to the methods of MainApiImpl
     ipcMain.on("setTitle", (event, title) => getApi(event).setTitle(title));
+    ipcMain.on("setShown", (event, names) => getApi(event).setShown(names));
 
     function getApi(event: IpcMainEvent): MainApi {
       const window = BrowserWindow.fromWebContents(event.sender);
@@ -81,17 +88,15 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlTables.save(loaded);
       config.cachedWhen = when;
     }
-    const loaded: Loaded = sqlTables.read();
     mainWindow.setTitle(path);
-    const view = showAssemblies(loaded.assemblies);
+    showView();
+  }
+
+  function showView(): void {
+    const loaded: Loaded = sqlTables.read();
+    const image = showAssemblies(loaded.assemblies, config);
+    const view = { ...image, nodes: readNodes(loaded.assemblies, config), now: Date.now() };
     rendererApi.showView(view);
-    // log("showConfig");
-    // rendererApi.showConfig(config);
-    // log("readConfigUI");
-    // const configUI = readConfigUI();
-    // log("showConfigUI");
-    // rendererApi.showConfigUI(configUI);
-    // showFiles(config);
   }
 
   function greetings(): void {

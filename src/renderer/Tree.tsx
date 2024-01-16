@@ -2,28 +2,45 @@ import * as React from "react";
 import CheckboxTree, { Node, Icons } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
 import "./Tree.css";
-import type { Node as MyNode } from "../shared-types";
+import type { AnyNode, Nodes } from "../shared-types";
+import { isLeaf } from "../shared-types";
 import * as Icon from "./Icons";
+import { log } from "./log";
 
 type TreeProps = {
-  nodes: MyNode[];
+  nodes: Nodes;
+  setShown: (names: string[]) => void;
 };
 
-// convert from MyNode (defined in "../shared-types") to Node (defined in "react-checkbox-tree")
-const convert = (node: MyNode): Node => {
+// convert from AnyNode (defined in "../shared-types") to Node (defined in "react-checkbox-tree")
+const convert = (node: AnyNode): Node => {
   return {
     label: node.label,
-    value: node.id ?? node.label,
-    children: !node.children ? undefined : node.children.map(convert),
+    // a parent node may have the same label as its first child, so mangle the id of all parents
+    value: (isLeaf(node) ? "" : "!") + (node.id ?? node.label),
+    children: isLeaf(node) ? undefined : node.children.map(convert),
   };
 };
 
-const isShown = (nodes: MyNode[]): string[] => {
+const isShown = (nodes: Nodes): string[] => {
   const result: string[] = [];
   nodes.forEach((node) => {
-    if (node.isShown) result.push(node.id ?? node.label);
-    if (node.children) result.push(...isShown(node.children));
+    if (isLeaf(node)) {
+      if (node.isShown) result.push(node.id ?? node.label);
+    } else result.push(...isShown(node.children));
   });
+  return result;
+};
+
+const getChecked = (nodes: Nodes): string[] => {
+  const result = isShown(nodes);
+  log("getChecked", result);
+  return result;
+};
+
+const getNodes = (nodes: Nodes): Node[] => {
+  const result = nodes.map(convert);
+  log("getNodes", result);
   return result;
 };
 
@@ -44,13 +61,20 @@ const icons: Icons = {
 };
 
 export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
-  const [checked, setChecked] = React.useState(isShown(props.nodes));
+  const [checked, setChecked] = React.useState(getChecked(props.nodes));
+  const [nodes, setNodes] = React.useState(getNodes(props.nodes));
   const [expanded, setExpanded] = React.useState<string[]>([]);
 
-  const nodes = props.nodes.map(convert);
+  React.useEffect(() => {
+    log("useEffect");
+    setChecked(getChecked(props.nodes));
+    setNodes(getNodes(props.nodes));
+  }, [props.nodes]);
 
   const onCheck = (value: string[]) => {
-    setChecked(value);
+    log("onCheck", value);
+    //setChecked(value); // use this to edit the checked state locally
+    props.setShown(value); // use this to round-trip to get a new View
   };
   const onExpand = (value: string[]) => {
     setExpanded(value);
@@ -64,7 +88,6 @@ export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
       onCheck={onCheck}
       onExpand={onExpand}
       icons={icons}
-      checkModel="all"
     />
   );
 };
