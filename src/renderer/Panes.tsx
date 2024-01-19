@@ -9,12 +9,13 @@ type PanesProps = {
   left: React.ReactNode;
   center: React.ReactNode;
   right: React.ReactNode;
+  onWheel: (event: React.WheelEvent) => void;
 };
 
 export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) => {
   const [sizes, setSizes] = React.useState<(string | number)[]>(["15%", "70%", "15%"]);
 
-  const { left, center, right } = props;
+  const { left, center, right, onWheel } = props;
 
   const layoutCSS = {
     height: "100%",
@@ -42,7 +43,7 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
       sashRender={(_, active) => <SashContent active={active} type="vscode"></SashContent>}
     >
       <div style={{ ...layoutCSS }}>{left}</div>
-      <div id="graph" style={{ ...layoutCSS }}>
+      <div id="graph" style={{ ...layoutCSS }} onWheel={onWheel}>
         {center}
       </div>
       <div style={{ ...layoutCSS }}>{right}</div>

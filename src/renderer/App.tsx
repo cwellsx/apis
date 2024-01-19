@@ -5,6 +5,7 @@ import { Tree } from "./Tree";
 
 import type { BindIpc, MainApi, PreloadApis, RendererApi, View } from "../shared-types";
 import { log } from "./log";
+import { useZoomPercent } from "./useZoomPercent";
 
 declare global {
   export interface Window {
@@ -20,6 +21,7 @@ const defaultView: View = { imagePath: "", areas: [], nodes: [], now: 0 };
 const App: React.FunctionComponent = () => {
   const [greeting, setGreeting] = React.useState("Hello...");
   const [view, setView] = React.useState(defaultView);
+  const [zoomPercent, onWheel] = useZoomPercent();
 
   React.useEffect(() => {
     const rendererApi: RendererApi = {
@@ -42,8 +44,9 @@ const App: React.FunctionComponent = () => {
     <React.StrictMode>
       <Panes
         left={<Tree nodes={view.nodes} setShown={setShown} />}
-        center={<Graph imagePath={view.imagePath} areas={view.areas} now={view.now} />}
+        center={<Graph imagePath={view.imagePath} areas={view.areas} now={view.now} zoomPercent={zoomPercent} />}
         right={greeting}
+        onWheel={onWheel}
       />
     </React.StrictMode>
   );
