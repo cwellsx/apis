@@ -47,6 +47,6 @@ export const readNodes = (assemblies: IStrings, config: Config): Nodes => {
       }
     }
   }
-  logJson(result);
+  logJson("nodes", result);
   return result;
 };

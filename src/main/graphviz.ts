@@ -7,8 +7,17 @@ import child_process from "child_process";
 import { readXml } from "./readXml";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { Config } from "./config";
+import { showErrorBox } from "./log";
 
-const graphvizDir = `C:\\Users\\Christopher\\Source\\Repos\\graphviz-2.38\\release\\bin`;
+const findDotExe = (): string => {
+  const graphvizDirs = [`C:\\Program Files (x86)\\Graphviz\\bin`, `C:\\Program Files\\Graphviz\\bin`];
+  for (const graphvizDir of graphvizDirs) {
+    const dotExe = path.join(graphvizDir, "dot.exe");
+    if (fs.existsSync(dotExe)) return dotExe;
+  }
+  showErrorBox("dot.exe not found", "Install Graphviz before you can use this program");
+  throw Error("graphviz not found");
+};
 
 export function showAssemblies(assemblies: IStrings, config: Config): Image {
   const lines: string[] = [];
@@ -27,10 +36,11 @@ export function showAssemblies(assemblies: IStrings, config: Config): Image {
   const mapFilename = getAppFilename("assemblies.map");
   fs.writeFileSync(dotFilename, lines.join(os.EOL));
 
-  const dotExe = path.join(graphvizDir, "dot.exe");
-  const args = [dotFilename, "-Tpng", `-o${pngFilename}`, "-Tcmapx", `-o${mapFilename}`];
+  const dotExe = findDotExe();
+  const args = [dotFilename, "-Tpng", `-o${pngFilename}`, "-Tcmapx", `-o${mapFilename}`, `-Nfontname="Segoe UI"`];
 
-  child_process.spawnSync(dotExe, args);
+  const spawned = child_process.spawnSync(dotExe, args);
+  if (spawned.status !== 0) showErrorBox("dot.exe failed", "" + spawned.error);
 
   const xml = fs.readFileSync(mapFilename, { encoding: "utf8" });
 

@@ -1,3 +1,4 @@
+import { dialog } from "electron";
 import * as process from "process";
 
 export function log(message: string) {
@@ -7,6 +8,10 @@ export function log(message: string) {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function logJson(value: any) {
-  console.log(JSON.stringify(value));
+export function logJson(message: string, value?: any) {
+  console.log(!value ? `  ${message}` : `  ${message}: ${JSON.stringify(value)}`);
+}
+
+export function showErrorBox(title: string, content: string) {
+  dialog.showErrorBox(title, content);
 }
