@@ -1,12 +1,10 @@
-#graph > div {
-  max-width: 100%;
-  max-height:100%;
+#zoom {
+  bottom: 0;
+  right: 10px;
+  position: absolute;
+  z-index: 2;
 }
-#graph > div > * {
-  max-width: 100%;
-  max-height:100%;
-  object-fit: contain;
-}
-#graph canvas {
-  border: 1px red;
+
+#graph {
+  overflow: auto;
 }

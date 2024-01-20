@@ -21,7 +21,14 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
     height: "100%",
     display: "flex",
     alignItems: "center",
+  };
+
+  const centerCSS = {
     justifyContent: "center",
+  };
+
+  const leftCSS = {
+    justifyContent: "left",
   };
 
   // I like the "line" theme but it doesn't work in TypeScript
@@ -42,8 +49,8 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
       onChange={setSizes}
       sashRender={(_, active) => <SashContent active={active} type="vscode"></SashContent>}
     >
-      <div style={{ ...layoutCSS }}>{left}</div>
-      <div id="graph" style={{ ...layoutCSS }} onWheel={onWheel}>
+      <div style={{ ...layoutCSS, ...leftCSS }}>{left}</div>
+      <div id="graph" style={{ ...layoutCSS, ...centerCSS }} onWheel={onWheel}>
         {center}
       </div>
       <div style={{ ...layoutCSS }}>{right}</div>

@@ -1,11 +1,4 @@
-// this Graph.css doesn't work correctly
-// - the canvas is resized but not moved like the img is
-// - the coordinates in the map are not updated
-// fixing this will require changes inside the ImageMapper component
-// see also
-// - https://stackoverflow.com/questions/13321067/dynamically-resizing-image-maps-and-images
-// - https://stackoverflow.com/questions/3029422/how-to-auto-resize-an-image-while-maintaining-aspect-ratio
-// import "./Graph.css";
+import "./Graph.css";
 
 import * as React from "react";
 import type { Area as MyArea } from "../shared-types";
@@ -128,16 +121,19 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
   };
 
   return (
-    <ImageMapper
-      src={src}
-      map={map}
-      strokeColor="red"
-      lineWidth={1}
-      active={true}
-      onClick={onClick}
-      imgWidth={imgWidth}
-      width={width}
-      height={height}
-    />
+    <>
+      <ImageMapper
+        src={src}
+        map={map}
+        strokeColor="red"
+        lineWidth={1}
+        active={true}
+        onClick={onClick}
+        imgWidth={imgWidth}
+        width={width}
+        height={height}
+      />
+      <span id="zoom">{`${zoomPercent}%`}</span>
+    </>
   );
 };
