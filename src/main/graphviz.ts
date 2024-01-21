@@ -7,7 +7,7 @@ import child_process from "child_process";
 import { readXml } from "./readXml";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { Config } from "./config";
-import { showErrorBox } from "./log";
+import { showErrorBox } from "./showErrorBox";
 
 const findDotExe = (): string => {
   const graphvizDirs = [`C:\\Program Files (x86)\\Graphviz\\bin`, `C:\\Program Files\\Graphviz\\bin`];
