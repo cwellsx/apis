@@ -3,7 +3,6 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { MainApi, PreloadApis, RendererApi } from "../shared-types";
 
 const mainApiProxy: MainApi = {
-  setTitle: (title: string) => ipcRenderer.send("setTitle", title),
   setShown: (names: string[]) => ipcRenderer.send("setShown", names),
 };
 

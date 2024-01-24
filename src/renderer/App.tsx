@@ -19,7 +19,7 @@ export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 const defaultView: View = { imagePath: "", areas: [], nodes: [], now: 0 };
 
 const App: React.FunctionComponent = () => {
-  const [greeting, setGreeting] = React.useState("Hello...");
+  const [greeting, setGreeting] = React.useState<string | undefined>("Loading...");
   const [view, setView] = React.useState(defaultView);
   const [zoomPercent, onWheel] = useZoomPercent();
 
@@ -28,10 +28,10 @@ const App: React.FunctionComponent = () => {
       // tslint:disable-next-line:no-shadowed-variable
       setGreeting(greeting: string): void {
         setGreeting(greeting);
-        mainApi.setTitle(greeting);
       },
       showView(view: View): void {
         log("setView");
+        setGreeting(undefined);
         setView(view);
       },
     };
@@ -44,8 +44,14 @@ const App: React.FunctionComponent = () => {
     <React.StrictMode>
       <Panes
         left={<Tree nodes={view.nodes} setShown={setShown} />}
-        center={<Graph imagePath={view.imagePath} areas={view.areas} now={view.now} zoomPercent={zoomPercent} />}
-        right={greeting}
+        center={
+          greeting ? (
+            greeting
+          ) : (
+            <Graph imagePath={view.imagePath} areas={view.areas} now={view.now} zoomPercent={zoomPercent} />
+          )
+        }
+        // right={greeting} TODO later display something in the right pane sometimes
         onWheel={onWheel}
       />
     </React.StrictMode>

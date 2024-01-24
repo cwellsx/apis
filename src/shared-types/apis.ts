@@ -11,7 +11,6 @@ import { View } from "./view";
 
 // this Api is implemented in the preload script and available to the renderer
 export interface MainApi {
-  setTitle: (title: string) => void;
   setShown: (names: string[]) => void;
 }
 

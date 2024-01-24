@@ -4,7 +4,7 @@ import { Loaded, IStrings, ITypes } from "../shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { log } from "./log";
 import { SqlTable } from "./sqlTable";
-import { ConfigKey } from "./configKey";
+import { ConfigKey } from "./configTypes";
 
 type Assembly = {
   name: string;
@@ -21,12 +21,11 @@ export type ConfigPair = {
   value: string;
 };
 
-export class SqlTables {
+export class SqlLoaded {
   save: (loaded: Loaded) => void;
   read: () => Loaded;
-  getConfig: () => ConfigPair[];
-  setConfig: (config: ConfigPair) => void;
-  done: () => void;
+
+  close: () => void;
 
   constructor(db: Database) {
     const assemblyTable = new SqlTable<Assembly>(db, "assembly", "name", () => false, {
@@ -37,10 +36,11 @@ export class SqlTables {
       name: "foo",
       typeInfo: "bar",
     });
-    const configTable = new SqlTable<ConfigPair>(db, "config", "name", () => false, {
-      name: "path",
-      value: "bar",
-    });
+
+    const done = () => {
+      const result = db.pragma("wal_checkpoint(TRUNCATE)");
+      log(`wal_checkpoint: ${JSON.stringify(result)}`);
+    };
 
     this.save = (loaded: Loaded) => {
       assemblyTable.deleteAll();
@@ -48,7 +48,7 @@ export class SqlTables {
         assemblyTable.insert({ name: key, references: JSON.stringify(loaded.assemblies[key]) });
       typeTable.deleteAll();
       for (const key in loaded.types) typeTable.insert({ name: key, typeInfo: JSON.stringify(loaded.types[key]) });
-      this.done();
+      done();
     };
 
     this.read = () => {
@@ -59,16 +59,40 @@ export class SqlTables {
       return { assemblies, types };
     };
 
+    this.close = () => {
+      done();
+      db.close();
+    };
+  }
+}
+
+export class SqlConfig {
+  getConfig: () => ConfigPair[];
+  setConfig: (config: ConfigPair) => void;
+  done: () => void;
+
+  constructor(db: Database) {
+    const configTable = new SqlTable<ConfigPair>(db, "config", "name", () => false, {
+      name: "dataSource",
+      value: "bar",
+    });
+
     this.getConfig = () => configTable.selectAll();
     this.setConfig = (config: ConfigPair) => configTable.upsert(config);
 
     this.done = () => {
       const result = db.pragma("wal_checkpoint(TRUNCATE)");
       log(`wal_checkpoint: ${JSON.stringify(result)}`);
+      db.close();
     };
   }
 }
 
-export function createSqlTables(filename: string): SqlTables {
-  return new SqlTables(createSqlDatabase(filename));
+export function createSqlLoaded(filename: string): SqlLoaded {
+  log("createSqlLoaded");
+  return new SqlLoaded(createSqlDatabase(filename));
+}
+
+export function createSqlConfig(filename: string): SqlConfig {
+  return new SqlConfig(createSqlDatabase(filename));
 }

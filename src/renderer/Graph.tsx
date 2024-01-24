@@ -99,7 +99,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     else if (zoomPercent !== props.zoomPercent) dispatch({ type: "ZoomPercent", zoomPercent: props.zoomPercent });
   }, [props, src, zoomPercent]);
 
-  if (!src) return <>"Loading..."</>;
+  if (!src) return <>Loading...</>;
 
   // if we don't yet know the size of the image then display the naked image first
   if (!size) {

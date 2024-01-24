@@ -8,7 +8,7 @@ import SplitPane, { SashContent } from "split-pane-react";
 type PanesProps = {
   left: React.ReactNode;
   center: React.ReactNode;
-  right: React.ReactNode;
+  right?: React.ReactNode;
   onWheel: (event: React.WheelEvent) => void;
 };
 
@@ -42,6 +42,9 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
   //
   //     <div class="split-sash-content split-sash-content-active split-sash-content-vscode"></div>
 
+  // display right pane iff there's something to display
+  const rightDiv = right ? <div style={{ ...layoutCSS }}>{right}</div> : <></>;
+
   return (
     <SplitPane
       split="vertical"
@@ -53,7 +56,7 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
       <div id="graph" style={{ ...layoutCSS, ...centerCSS }} onWheel={onWheel}>
         {center}
       </div>
-      <div style={{ ...layoutCSS }}>{right}</div>
+      {rightDiv}
     </SplitPane>
   );
 };
