@@ -1,4 +1,4 @@
-import { Nodes } from "./grouped";
+import { Groups } from "./grouped";
 
 export type Area = {
   id: string;
@@ -12,6 +12,6 @@ export type Image = {
 };
 
 export type View = Image & {
-  nodes: Nodes;
+  nodes: Groups;
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
 };

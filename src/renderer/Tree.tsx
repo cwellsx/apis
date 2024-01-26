@@ -2,27 +2,27 @@ import * as React from "react";
 import CheckboxTree, { Node, Icons } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
 import "./Tree.css";
-import type { AnyNode, Nodes } from "../shared-types";
+import type { GroupNode, Groups } from "../shared-types";
 import { isLeaf } from "../shared-types";
 import * as Icon from "./Icons";
 import { log } from "./log";
 
 type TreeProps = {
-  nodes: Nodes;
+  nodes: Groups;
   setShown: (names: string[]) => void;
 };
 
-// convert from AnyNode (defined in "../shared-types") to Node (defined in "react-checkbox-tree")
-const convert = (node: AnyNode): Node => {
+// convert from GroupNode (defined in "../shared-types") to Node (defined in "react-checkbox-tree")
+const convert = (node: GroupNode): Node => {
   return {
     label: node.label,
     // a parent node may have the same label as its first child, so mangle the id of all parents
-    value: (isLeaf(node) ? "" : "!") + (node.id ?? node.label),
+    value: node.id,
     children: isLeaf(node) ? undefined : node.children.map(convert),
   };
 };
 
-const isShown = (nodes: Nodes): string[] => {
+const isShown = (nodes: Groups): string[] => {
   const result: string[] = [];
   nodes.forEach((node) => {
     if (isLeaf(node)) {
@@ -32,13 +32,13 @@ const isShown = (nodes: Nodes): string[] => {
   return result;
 };
 
-const getChecked = (nodes: Nodes): string[] => {
+const getChecked = (nodes: Groups): string[] => {
   const result = isShown(nodes);
   log("getChecked", result);
   return result;
 };
 
-const getNodes = (nodes: Nodes): Node[] => {
+const getNodes = (nodes: Groups): Node[] => {
   const result = nodes.map(convert);
   log("getNodes", result);
   return result;

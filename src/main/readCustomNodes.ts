@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Nodes } from "../shared-types";
+import type { Groups } from "../shared-types";
 import { randomUUID } from "crypto";
 import { logJson } from "./log";
 import { showErrorBox } from "./showErrorBox";
@@ -68,8 +68,8 @@ const assertElement = (element: any): void => {
   });
 };
 
-const readNodes = (customData: CustomNode[]): Nodes => {
-  const result: Nodes = [];
+const readNodes = (customData: CustomNode[]): Groups => {
+  const result: Groups = [];
   // get all the ids
   const ids = new Set<string>();
   customData.forEach((node) => {
@@ -85,7 +85,7 @@ const readNodes = (customData: CustomNode[]): Nodes => {
   return result;
 };
 
-export const readCustomNodes = (customData: any): Nodes => {
+export const readCustomNodes = (customData: any): Groups => {
   // assert we've been given an array of something
   if (!Array.isArray(customData)) {
     showErrorBox("Bad data", "Expected array of nodes");

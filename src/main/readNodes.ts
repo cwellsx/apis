@@ -1,9 +1,9 @@
-import type { Nodes, ParentNode, IAssemblies } from "../shared-types";
+import type { Groups, ParentNode, IAssemblies } from "../shared-types";
 import { isLeaf } from "../shared-types";
 import { Config } from "./config";
 import { logJson } from "./log";
 
-export const readNodes = (assemblies: IAssemblies, config: Config): Nodes => {
+export const readNodes = (assemblies: IAssemblies, config: Config): Groups => {
   // flatten and sort all names -- these names will become leaf nodes
   const names: string[] = [];
   for (const name in assemblies) {
@@ -20,7 +20,7 @@ export const readNodes = (assemblies: IAssemblies, config: Config): Nodes => {
     return true;
   };
 
-  const result: Nodes = [];
+  const result: Groups = [];
   for (const name of names.filter(once)) {
     let partial = "";
     let nodes = result;
@@ -29,10 +29,10 @@ export const readNodes = (assemblies: IAssemblies, config: Config): Nodes => {
       // increase the length of the partial name
       partial = !partial ? part : `${partial}.${part}`;
       // append the leaf if this is the leaf
-      if (partial === name) nodes.push({ label: name, isShown: config.isShown(name) });
+      if (partial === name) nodes.push({ label: name, id: name, isShown: config.isShown(name) });
       else {
         // find or create the parent -- if it already exists then it's the last node, because names are sorted
-        const newParent: ParentNode = { label: partial, children: [] };
+        const newParent: ParentNode = { label: partial, id: `!${name}`, children: [] };
         if (!nodes.length || nodes[nodes.length - 1].label !== partial) nodes.push(newParent);
         const found = nodes[nodes.length - 1];
         if (!isLeaf(found)) nodes = found.children;

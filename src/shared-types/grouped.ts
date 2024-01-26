@@ -4,7 +4,7 @@
 
 export type TextNode = {
   label: string;
-  id?: string; // initialize this if the label isn't unique within the View, to identify the Node
+  id: string; // unique within graph and/or within group tree
 };
 
 export type LeafNode = TextNode & {
@@ -12,13 +12,13 @@ export type LeafNode = TextNode & {
 };
 
 export type ParentNode = TextNode & {
-  children: Nodes;
+  children: Groups;
 };
 
-export type AnyNode = LeafNode | ParentNode;
+export type GroupNode = LeafNode | ParentNode;
 
-export type Nodes = AnyNode[];
+export type Groups = GroupNode[];
 
-export function isLeaf(node: AnyNode): node is LeafNode {
+export function isLeaf(node: GroupNode): node is LeafNode {
   return (node as LeafNode).isShown !== undefined;
 }
