@@ -89,6 +89,7 @@ export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
       onExpand={onExpand}
       icons={icons}
       showNodeIcon={false}
+      id="treeid"
     />
   );
 };

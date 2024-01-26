@@ -1,4 +1,4 @@
-import type { Image, IStrings } from "../shared-types";
+import type { Image, IAssemblies } from "../shared-types";
 import { getAppFilename } from "./getAppFilename";
 import fs from "fs";
 import path from "path";
@@ -19,7 +19,7 @@ const findDotExe = (): string => {
   throw Error("graphviz not found");
 };
 
-export function showAssemblies(assemblies: IStrings, config: Config): Image {
+export function showAssemblies(assemblies: IAssemblies, config: Config): Image {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   const filter = (key: string): boolean => config.isShown(key);

@@ -2,6 +2,7 @@
 import type { Nodes } from "../shared-types";
 import { randomUUID } from "crypto";
 import { logJson } from "./log";
+import { showErrorBox } from "./showErrorBox";
 
 type Scalar = "string" | "number" | "boolean";
 
@@ -67,13 +68,33 @@ const assertElement = (element: any): void => {
   });
 };
 
-export const readCustomNodes = (customData: any): Nodes | null => {
+const readNodes = (customData: CustomNode[]): Nodes => {
+  const result: Nodes = [];
+  // get all the ids
+  const ids = new Set<string>();
+  customData.forEach((node) => {
+    if (ids.has(node.id)) logJson("Node id is not unique");
+    else ids.add(node.id);
+  });
+  // assert the ids in the dependencies
+  customData.forEach((node) => {
+    node.dependencies.forEach((dependency) => {
+      if (!ids.has(dependency.id)) logJson("Dependency id is unknown");
+    });
+  });
+  return result;
+};
+
+export const readCustomNodes = (customData: any): Nodes => {
   // assert we've been given an array of something
-  if (!Array.isArray(customData)) return null;
+  if (!Array.isArray(customData)) {
+    showErrorBox("Bad data", "Expected array of nodes");
+    return [];
+  }
   const customArray: any[] = customData;
 
   // verify that array elements are the type expected by the schema (or mutate them if needed)
   customArray.forEach((element) => assertElement(element));
 
-  return null;
+  return readNodes(customData);
 };

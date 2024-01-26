@@ -1,4 +1,4 @@
-import { Nodes } from "./nodes";
+import { Nodes } from "./grouped";
 
 export type Area = {
   id: string;

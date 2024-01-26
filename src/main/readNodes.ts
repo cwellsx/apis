@@ -1,9 +1,9 @@
-import type { Nodes, ParentNode, IStrings } from "../shared-types";
+import type { Nodes, ParentNode, IAssemblies } from "../shared-types";
 import { isLeaf } from "../shared-types";
 import { Config } from "./config";
 import { logJson } from "./log";
 
-export const readNodes = (assemblies: IStrings, config: Config): Nodes => {
+export const readNodes = (assemblies: IAssemblies, config: Config): Nodes => {
   // flatten and sort all names -- these names will become leaf nodes
   const names: string[] = [];
   for (const name in assemblies) {

@@ -1,6 +1,6 @@
 import { Database } from "better-sqlite3";
 
-import { Loaded, IStrings, ITypes } from "../shared-types";
+import { Loaded, IAssemblies, ITypes } from "../shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { log } from "./log";
 import { SqlTable } from "./sqlTable";
@@ -52,7 +52,7 @@ export class SqlLoaded {
     };
 
     this.read = () => {
-      const assemblies: IStrings = {};
+      const assemblies: IAssemblies = {};
       const types: ITypes = {};
       assemblyTable.selectAll().forEach((assembly) => (assemblies[assembly.name] = JSON.parse(assembly.references)));
       typeTable.selectAll().forEach((type) => (types[type.name] = JSON.parse(type.typeInfo)));
