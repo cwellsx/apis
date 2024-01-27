@@ -1,11 +1,22 @@
 import { ElementCompact, xml2js } from "xml-js";
 import { Area } from "../shared-types";
 
-// this is implemented using the xml-js package instead of xml2json because
-// xml2json says that it "uses node-expat which will require extra steps if you want to get it installed on Windows"
+/*
+Input is a *.map file, created by Graphviz, which has a format like this:
 
-/* output from xml-js has a format like this:
+```xml
+<map id="SRC" name="SRC">
+<area shape="rect" id="ModelClipboard" href="foo" title="ModelClipboard" alt="" coords="154,293,315,341"/>
+<area shape="poly" id="ModelClipboard|System.Windows.Forms" href="foo" alt="" coords="231,342,224,375,218,374,226,341"/>
+</map>
+```
 
+This module is implemented using the xml-js package instead of xml2json because
+xml2json says that it "uses node-expat which will require extra steps if you want to get it installed on Windows"
+
+Output from xml-js has a format like this:
+
+```json
 {
   "map": {
     "_attributes": {
@@ -32,10 +43,11 @@ import { Area } from "../shared-types";
           "coords": "652,343,600,364,548,392,522,414,498,439,433,484,430,480,494,435,519,410,545,387,597,359,650,338"
         }
       },
+```
 
-    To run it from the command-line, add a line like the following to package.json and then `npm run xml`
+To run xml-js from the command-line, add a line like the following to package.json and then `npm run xml`
 
-        "xml": "xml-js C:\\Users\\Christopher\\AppData\\Roaming\\@cwellsx\\apis\\assemblies.xml --compact --spaces 2"
+    "xml": "xml-js C:\\Users\\Christopher\\AppData\\Roaming\\@cwellsx\\apis\\assemblies.xml --compact --spaces 2"
 
 */
 
@@ -47,7 +59,7 @@ type Attributes = {
   };
 };
 
-export function readXml(xml: string): Area[] {
+export function convertXmlMapToAreas(xml: string): Area[] {
   const root: ElementCompact = xml2js(xml, { compact: true });
   const areas: Attributes[] = root["map"]["area"];
   return areas.map((el) => {

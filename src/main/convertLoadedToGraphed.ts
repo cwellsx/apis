@@ -1,6 +1,6 @@
 import { Loaded, Graphed } from "../shared-types";
 
-export const graphLoaded = (loaded: Loaded): Graphed => {
+export const convertLoadedToGraphed = (loaded: Loaded): Graphed => {
   const result: Graphed = {
     nodes: [],
     edges: [],

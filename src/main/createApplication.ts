@@ -8,13 +8,13 @@ import { log } from "./log";
 import { registerFileProtocol } from "./convertPathToUrl";
 
 import type { MainApi, RendererApi, Loaded, View, Graphed } from "../shared-types";
-import { showGraphed } from "./graphviz";
-import { readNodes } from "./readNodes";
+import { convertGraphedToImage } from "./convertGraphedToImage";
+import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { DataSource } from "./configTypes";
 import { showErrorBox } from "./showErrorBox";
 import { createMenu } from "./menu";
 import { hash } from "./hash";
-import { graphLoaded } from "./graphLoaded";
+import { convertLoadedToGraphed } from "./convertLoadedToGraphed";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
@@ -99,9 +99,9 @@ export function createApplication(mainWindow: BrowserWindow): void {
     log("showView");
     if (!sqlLoaded) return;
     const loaded: Loaded = sqlLoaded.read();
-    const graphed: Graphed = graphLoaded(loaded);
-    const image = showGraphed(graphed, config);
-    const view = { ...image, nodes: readNodes(loaded.assemblies, config), now: Date.now() };
+    const graphed: Graphed = convertLoadedToGraphed(loaded);
+    const image = convertGraphedToImage(graphed, config);
+    const view = { ...image, nodes: convertLoadedToGroups(loaded, config), now: Date.now() };
     rendererApi.showView(view);
   }
 

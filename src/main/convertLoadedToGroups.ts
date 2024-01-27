@@ -1,9 +1,10 @@
-import type { Groups, ParentNode, IAssemblies, LeafNode } from "../shared-types";
+import type { Groups, ParentNode, Loaded, LeafNode } from "../shared-types";
 import { isLeaf } from "../shared-types";
 import { Config } from "./config";
 import { logJson } from "./log";
 
-export const readNodes = (assemblies: IAssemblies, config: Config): Groups => {
+export const convertLoadedToGroups = (loaded: Loaded, config: Config): Groups => {
+  const assemblies = loaded.assemblies;
   // flatten and sort all names -- these names will become leaf nodes
   const names: string[] = [];
   for (const name in assemblies) {

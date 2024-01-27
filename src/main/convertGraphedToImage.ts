@@ -4,10 +4,16 @@ import fs from "fs";
 import path from "path";
 import os from "os";
 import child_process from "child_process";
-import { readXml } from "./readXml";
+import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { Config } from "./config";
 import { showErrorBox } from "./showErrorBox";
+
+/*
+
+This is implemented using Graphviz; this is the only module which uses (and therefore encapsulates) Graphviz.
+
+*/
 
 const findDotExe = (): string => {
   const graphvizDirs = [`C:\\Program Files (x86)\\Graphviz\\bin`, `C:\\Program Files\\Graphviz\\bin`];
@@ -40,7 +46,7 @@ const getDotFormat = (graphed: Graphed, config: Config): string[] => {
   return lines;
 };
 
-export function showGraphed(graphed: Graphed, config: Config): Image {
+export function convertGraphedToImage(graphed: Graphed, config: Config): Image {
   const lines = getDotFormat(graphed, config);
 
   const dotFilename = getAppFilename("assemblies.dot");
@@ -56,5 +62,5 @@ export function showGraphed(graphed: Graphed, config: Config): Image {
 
   const xml = fs.readFileSync(mapFilename, { encoding: "utf8" });
 
-  return { imagePath: convertPathToUrl(pngFilename), areas: readXml(xml) };
+  return { imagePath: convertPathToUrl(pngFilename), areas: convertXmlMapToAreas(xml) };
 }
