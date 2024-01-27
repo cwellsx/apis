@@ -1,4 +1,4 @@
-import type { Image, IAssemblies } from "../shared-types";
+import type { Image, Graphed } from "../shared-types";
 import { getAppFilename } from "./getAppFilename";
 import fs from "fs";
 import path from "path";
@@ -19,18 +19,30 @@ const findDotExe = (): string => {
   throw Error("graphviz not found");
 };
 
-export function showAssemblies(assemblies: IAssemblies, config: Config): Image {
+const getDotFormat = (graphed: Graphed, config: Config): string[] => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
-  const filter = (key: string): boolean => config.isShown(key);
-  Object.keys(assemblies)
-    .filter(filter)
-    .forEach((key) => {
-      lines.push(`  "${key}" [shape=folder, id="${key}", href=foo];`);
-      const references = assemblies[key];
-      references.filter(filter).forEach((ref) => lines.push(`  "${key}" -> "${ref}" [id="${key}|${ref}", href=foo]`));
-    });
+  const isShown = (key: string): boolean => config.isShown(key);
+
+  lines.push(
+    ...graphed.nodes
+      .filter((node) => isShown(node.id))
+      .map((node) => `  "${node.id}" [shape=folder, id="${node.id}", label="${node.label}" href=foo];`)
+  );
+
+  lines.push(
+    ...graphed.edges
+      .filter((edge) => isShown(edge.clientId) && isShown(edge.serverId))
+      .map((edge) => `  "${edge.clientId}" -> "${edge.serverId}" [id="${edge.clientId}|${edge.serverId}", href=foo]`)
+  );
+
   lines.push("}");
+  return lines;
+};
+
+export function showGraphed(graphed: Graphed, config: Config): Image {
+  const lines = getDotFormat(graphed, config);
+
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");
   const mapFilename = getAppFilename("assemblies.map");

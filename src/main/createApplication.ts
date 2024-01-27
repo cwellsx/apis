@@ -1,4 +1,4 @@
-import { app, dialog, BrowserWindow, ipcMain } from "electron";
+import { dialog, BrowserWindow, ipcMain } from "electron";
 
 import { Config } from "./config";
 import { createDotNetApi, DotNetApi } from "./createDotNetApi";
@@ -7,13 +7,14 @@ import { SqlLoaded, createSqlLoaded, createSqlConfig } from "./sqlTables";
 import { log } from "./log";
 import { registerFileProtocol } from "./convertPathToUrl";
 
-import type { MainApi, RendererApi, Loaded, View } from "../shared-types";
-import { showAssemblies } from "./graphviz";
+import type { MainApi, RendererApi, Loaded, View, Graphed } from "../shared-types";
+import { showGraphed } from "./graphviz";
 import { readNodes } from "./readNodes";
 import { DataSource } from "./configTypes";
 import { showErrorBox } from "./showErrorBox";
 import { createMenu } from "./menu";
 import { hash } from "./hash";
+import { graphLoaded } from "./graphLoaded";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
@@ -92,35 +93,17 @@ export function createApplication(mainWindow: BrowserWindow): void {
       mainWindow.setTitle("No data");
       rendererApi.setGreeting("Use the File menu, to open a data source.");
     }
-
-    // if (!path) {
-    //   const paths = dialog.showOpenDialogSync({ properties: ["openDirectory"] });
-    //   if (!paths) {
-    //     app.quit();
-    //     return;
-    //   }
-    //   path = paths[0];
-    //   config.path = path;
-    // }
   }
 
   function showView(): void {
     log("showView");
     if (!sqlLoaded) return;
     const loaded: Loaded = sqlLoaded.read();
-    const image = showAssemblies(loaded.assemblies, config);
+    const graphed: Graphed = graphLoaded(loaded);
+    const image = showGraphed(graphed, config);
     const view = { ...image, nodes: readNodes(loaded.assemblies, config), now: Date.now() };
     rendererApi.showView(view);
   }
 
-  // function greetings(): void {
-  //   log("getGreeting");
-  //   dotNetApi.getGreeting("World").then((greeting: string) => {
-  //     log(greeting);
-  //     rendererApi.setGreeting(`${greeting} from Chris!`);
-  //   });
-  // }
-
-  // webContents.once("did-finish-load", greetings);
   webContents.once("did-finish-load", onRendererLoaded);
 }

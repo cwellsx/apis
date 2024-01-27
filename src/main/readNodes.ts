@@ -1,4 +1,4 @@
-import type { Groups, ParentNode, IAssemblies } from "../shared-types";
+import type { Groups, ParentNode, IAssemblies, LeafNode } from "../shared-types";
 import { isLeaf } from "../shared-types";
 import { Config } from "./config";
 import { logJson } from "./log";
@@ -29,8 +29,10 @@ export const readNodes = (assemblies: IAssemblies, config: Config): Groups => {
       // increase the length of the partial name
       partial = !partial ? part : `${partial}.${part}`;
       // append the leaf if this is the leaf
-      if (partial === name) nodes.push({ label: name, id: name, isShown: config.isShown(name) });
-      else {
+      if (partial === name) {
+        const newLeaf: LeafNode = { label: name, id: name, isShown: config.isShown(name) };
+        nodes.push(newLeaf);
+      } else {
         // find or create the parent -- if it already exists then it's the last node, because names are sorted
         const newParent: ParentNode = { label: partial, id: `!${name}`, children: [] };
         if (!nodes.length || nodes[nodes.length - 1].label !== partial) nodes.push(newParent);
