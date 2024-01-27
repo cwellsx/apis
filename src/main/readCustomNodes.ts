@@ -1,8 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import type { Groups } from "../shared-types";
 import { randomUUID } from "crypto";
+import type { Groups } from "../shared-types";
 import { logJson } from "./log";
 import { showErrorBox } from "./showErrorBox";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 type Scalar = "string" | "number" | "boolean";
 

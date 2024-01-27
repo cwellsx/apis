@@ -1,8 +1,7 @@
-import "./Graph.css";
-
 import * as React from "react";
 import type { Area as MyArea } from "../shared-types";
-import { ImageMapper, Area, Map, AreaMouseEvent } from "./ImageMapper"; // copied from "react-image-mapper2"
+import "./Graph.css";
+import { Area, AreaMouseEvent, ImageMapper, Map } from "./ImageMapper"; // copied from "react-image-mapper2"
 
 type GraphProps = {
   imagePath: string;

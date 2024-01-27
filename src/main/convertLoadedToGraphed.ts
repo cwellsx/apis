@@ -1,4 +1,4 @@
-import { Loaded, Graphed } from "../shared-types";
+import { Graphed, Loaded } from "../shared-types";
 
 export const convertLoadedToGraphed = (loaded: Loaded): Graphed => {
   const result: Graphed = {

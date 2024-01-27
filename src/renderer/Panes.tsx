@@ -1,7 +1,7 @@
-import "split-pane-react/esm/themes/default.css";
-import "./Panes.css";
 import * as React from "react";
 import SplitPane, { SashContent } from "split-pane-react";
+import "split-pane-react/esm/themes/default.css";
+import "./Panes.css";
 
 // this encapsulates and is implemented using split-pane-react
 

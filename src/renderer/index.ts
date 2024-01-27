@@ -1,8 +1,6 @@
-import './index.css';
-
-import { createRoot } from 'react-dom/client';
-
-import { createApp } from './App';
+import { createRoot } from "react-dom/client";
+import { createApp } from "./App";
+import "./index.css";
 
 const container = document.getElementById("renderer");
 

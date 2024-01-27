@@ -1,12 +1,12 @@
-import type { Image, Graphed } from "../shared-types";
-import { getAppFilename } from "./getAppFilename";
-import fs from "fs";
-import path from "path";
-import os from "os";
 import child_process from "child_process";
-import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
-import { convertPathToUrl } from "./convertPathToUrl";
+import fs from "fs";
+import os from "os";
+import path from "path";
+import type { Graphed, Image } from "../shared-types";
 import { Config } from "./config";
+import { convertPathToUrl } from "./convertPathToUrl";
+import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
+import { getAppFilename } from "./getAppFilename";
 import { showErrorBox } from "./showErrorBox";
 
 /*

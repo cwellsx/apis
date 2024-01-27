@@ -1,20 +1,18 @@
-import { dialog, BrowserWindow, ipcMain } from "electron";
-
+import { BrowserWindow, dialog, ipcMain } from "electron";
+import type { Graphed, Loaded, MainApi, RendererApi, View } from "../shared-types";
 import { Config } from "./config";
-import { createDotNetApi, DotNetApi } from "./createDotNetApi";
-import { getAppFilename } from "./getAppFilename";
-import { SqlLoaded, createSqlLoaded, createSqlConfig } from "./sqlTables";
-import { log } from "./log";
-import { registerFileProtocol } from "./convertPathToUrl";
-
-import type { MainApi, RendererApi, Loaded, View, Graphed } from "../shared-types";
-import { convertGraphedToImage } from "./convertGraphedToImage";
-import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { DataSource } from "./configTypes";
-import { showErrorBox } from "./showErrorBox";
-import { createMenu } from "./menu";
-import { hash } from "./hash";
+import { convertGraphedToImage } from "./convertGraphedToImage";
 import { convertLoadedToGraphed } from "./convertLoadedToGraphed";
+import { convertLoadedToGroups } from "./convertLoadedToGroups";
+import { registerFileProtocol } from "./convertPathToUrl";
+import { DotNetApi, createDotNetApi } from "./createDotNetApi";
+import { getAppFilename } from "./getAppFilename";
+import { hash } from "./hash";
+import { log } from "./log";
+import { createMenu } from "./menu";
+import { showErrorBox } from "./showErrorBox";
+import { SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);

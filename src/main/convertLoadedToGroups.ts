@@ -1,4 +1,4 @@
-import type { Groups, ParentNode, Loaded, LeafNode } from "../shared-types";
+import type { Groups, LeafNode, Loaded, ParentNode } from "../shared-types";
 import { isLeaf } from "../shared-types";
 import { Config } from "./config";
 import { logJson } from "./log";

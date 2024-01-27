@@ -1,10 +1,10 @@
 import * as React from "react";
-import CheckboxTree, { Node, Icons } from "react-checkbox-tree";
+import CheckboxTree, { Icons, Node } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
-import "./Tree.css";
 import type { GroupNode, Groups } from "../shared-types";
 import { isLeaf } from "../shared-types";
 import * as Icon from "./Icons";
+import "./Tree.css";
 import { log } from "./log";
 
 type TreeProps = {

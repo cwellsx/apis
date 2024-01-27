@@ -1,5 +1,4 @@
 import { contextBridge, ipcRenderer } from "electron";
-
 import type { MainApi, PreloadApis, RendererApi } from "../shared-types";
 
 const mainApiProxy: MainApi = {

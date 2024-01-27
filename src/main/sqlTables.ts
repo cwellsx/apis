@@ -1,10 +1,9 @@
 import { Database } from "better-sqlite3";
-
-import { Loaded, IAssemblies, ITypes } from "../shared-types";
-import { createSqlDatabase } from "./sqlDatabase";
-import { log } from "./log";
-import { SqlTable } from "./sqlTable";
+import { IAssemblies, ITypes, Loaded } from "../shared-types";
 import { ConfigKey } from "./configTypes";
+import { log } from "./log";
+import { createSqlDatabase } from "./sqlDatabase";
+import { SqlTable } from "./sqlTable";
 
 type Assembly = {
   name: string;
