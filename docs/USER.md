@@ -79,7 +79,7 @@ so this too persists to the next session, unless you delete the database.
 
 Here's an example of its showing a solution which contains 10 projects
 
-![Alt text](./Screenshot%202024-01-28%20093001.png)
+![Alt text](./screenshots.tiny/Screenshot%202024-01-28%20093001.png)
 
 Unlike this example, the solution which you want to browse might contain hundreds of nodes.
 

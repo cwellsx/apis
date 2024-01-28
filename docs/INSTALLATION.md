@@ -32,7 +32,7 @@ I fixed it as follows (but please tell if these instructions can be improved):
 
 - Use Chrome to export the certificate for GitHub's root authority:
 
-  ![Alt text](./Screenshot%202024-01-28%20072503.png)
+  ![Alt text](./screenshots.tiny/Screenshot%202024-01-28%20072503.png)
 
   - Navigate to the page using Chrome
   - Open Developer Tools
