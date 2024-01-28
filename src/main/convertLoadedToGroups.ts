@@ -3,6 +3,12 @@ import { isLeaf } from "../shared-types";
 import { Config } from "./config";
 import { logJson } from "./log";
 
+/*
+
+This is a depth-first implementation, could if needed change it to be breadth-first.
+
+*/
+
 export const convertLoadedToGroups = (loaded: Loaded, config: Config): Groups => {
   const assemblies = loaded.assemblies;
   // flatten and sort all names -- these names will become leaf nodes

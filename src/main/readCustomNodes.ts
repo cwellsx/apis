@@ -18,6 +18,8 @@ type CustomNode = IOtherFields & {
   dependencies: [{ id: string; label: string } & IOtherFields];
 };
 
+type CustomData = CustomNode[];
+
 const isString = (value: any): boolean => typeof value === "string";
 const isNumber = (value: any): boolean => typeof value === "number";
 const isBoolean = (value: any): boolean => typeof value === "boolean";
@@ -69,7 +71,7 @@ const assertElement = (element: any): void => {
   });
 };
 
-const readNodes = (customData: CustomNode[]): Groups => {
+const readNodes = (customData: CustomData): Groups => {
   const result: Groups = [];
   // get all the ids
   const ids = new Set<string>();
