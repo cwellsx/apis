@@ -16,7 +16,7 @@ namespace Core
                 throw new Exception($"Input directory not found: `{directory}`");
             }
             var dotNetInstallationDirectory = GetDotNetInstallationDirectory();
-            if (dotNetInstallationDirectory== null)
+            if (dotNetInstallationDirectory == null)
             {
                 throw new Exception("DotNet framework installation directory not found");
             }
@@ -26,8 +26,15 @@ namespace Core
             {
                 foreach (var path in GetFiles(directory))
                 {
-                    var assembly = metaDataLoadContext.LoadFromAssemblyPath(path);
-                    assemblyReader.Add(assembly);
+                    try
+                    {
+                        var assembly = metaDataLoadContext.LoadFromAssemblyPath(path);
+                        assemblyReader.Add(assembly);
+                    }
+                    catch (BadImageFormatException)
+                    {
+                        // the executable is not a .NET assembly
+                    }
                 }
             }
             return assemblyReader.ToJson();
@@ -46,7 +53,7 @@ namespace Core
             }
             if (maxDateTime == null)
             {
-                throw new Exception($"Input directory not found: `{directory}`");
+                throw new Exception($"Input directory contains no DLLs: `{directory}`");
             }
             return maxDateTime.Value.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'");
         }

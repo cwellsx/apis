@@ -18,7 +18,7 @@ namespace Core
     {
         public Dictionary<string, string[]> Assemblies { get; } = new Dictionary<string, string[]>();
         public Dictionary<string, TypeInfo> Types { get; } = new Dictionary<string, TypeInfo>();
-    
+
         internal AssemblyReader() { }
 
         internal void Add(Assembly assembly)
@@ -27,7 +27,7 @@ namespace Core
             Assemblies.Add(assemblyName, assembly.GetReferencedAssemblies().Select(GetName).ToArray());
             foreach (var type in assembly.GetTypes())
             {
-                if (type.Name == "<PrivateImplementationDetails>")
+                if (IsUnwanted(type))
                 {
                     continue;
                 }
@@ -53,6 +53,16 @@ namespace Core
                     interfaces
                     ));
             }
+        }
+
+        static bool IsUnwanted(Type type)
+        {
+            if (type.CustomAttributes.Any(customAttributeData => customAttributeData.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
+            {
+                // compiler creates types, with names like "<>f__AnonymousType0`2" and "<PrivateImplementationDetails>", so they're not unique
+                return true;
+            }
+            return false;
         }
 
         static T? Try<T>(Type type, Func<Type, T?> get)
@@ -90,7 +100,8 @@ namespace Core
 
         internal string ToJson()
         {
-            var json = JsonSerializer.Serialize(this, new JsonSerializerOptions {
+            var json = JsonSerializer.Serialize(this, new JsonSerializerOptions
+            {
                 DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase
             });
