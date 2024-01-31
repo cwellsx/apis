@@ -1,9 +1,9 @@
 import * as React from "react";
-import { Panes } from "./Panes";
-import { Graph } from "./Graph";
-import { Tree } from "./Tree";
-
 import type { BindIpc, MainApi, PreloadApis, RendererApi, View } from "../shared-types";
+import { Graph } from "./Graph";
+import { Message } from "./Message";
+import { Panes } from "./Panes";
+import { Tree } from "./Tree";
 import { log } from "./log";
 import { useZoomPercent } from "./useZoomPercent";
 
@@ -16,10 +16,10 @@ declare global {
 export const mainApi: MainApi = window.preloadApis.mainApi;
 export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 
-const defaultView: View = { imagePath: "", areas: [], nodes: [], now: 0 };
+const defaultView: View = { image: "", groups: [] };
 
 const App: React.FunctionComponent = () => {
-  const [greeting, setGreeting] = React.useState<string | undefined>("Loading...");
+  const [greeting, setGreeting] = React.useState<string | undefined>("No data");
   const [view, setView] = React.useState(defaultView);
   const [zoomPercent, onWheel] = useZoomPercent();
 
@@ -40,17 +40,20 @@ const App: React.FunctionComponent = () => {
 
   const setShown: (names: string[]) => void = (names) => mainApi.setShown(names);
 
+  // display a message, or an image if there is one
+  const center = greeting ? (
+    <Message message={greeting} />
+  ) : typeof view.image === "string" ? (
+    <Message message={view.image} />
+  ) : (
+    <Graph imagePath={view.image.imagePath} areas={view.image.areas} now={view.image.now} zoomPercent={zoomPercent} />
+  );
+
   return (
     <React.StrictMode>
       <Panes
-        left={<Tree nodes={view.nodes} setShown={setShown} />}
-        center={
-          greeting ? (
-            greeting
-          ) : (
-            <Graph imagePath={view.imagePath} areas={view.areas} now={view.now} zoomPercent={zoomPercent} />
-          )
-        }
+        left={<Tree nodes={view.groups} setShown={setShown} />}
+        center={center}
         // right={greeting} TODO later display something in the right pane sometimes
         onWheel={onWheel}
       />

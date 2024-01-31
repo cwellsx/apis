@@ -1,13 +1,13 @@
 import { Menu, MenuItemConstructorOptions } from "electron";
 
-export const createMenu = (openAssemblies: () => void, openCustomJson: () => void): void => {
+export const createMenu = (openAssemblies: () => Promise<void>, openCustomJson: () => void): void => {
   const menuTemplate: MenuItemConstructorOptions[] = [
     {
       label: "File",
       submenu: [
         {
           label: "Directory containing binary .NET assemblies",
-          click: openAssemblies,
+          click: async () => await openAssemblies(),
         },
         {
           label: "JSON file containing `id` and `dependencies`",
@@ -16,7 +16,7 @@ export const createMenu = (openAssemblies: () => void, openCustomJson: () => voi
       ],
     },
     {
-      label: "Developer tools",
+      label: "Inspect",
       role: "toggleDevTools",
     },
   ];

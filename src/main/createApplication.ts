@@ -7,6 +7,7 @@ import { convertLoadedToGraphed } from "./convertLoadedToGraphed";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
+import { getErrorString } from "./error";
 import { getAppFilename } from "./getAppFilename";
 import { hash } from "./hash";
 import { log } from "./log";
@@ -55,28 +56,44 @@ export function createApplication(mainWindow: BrowserWindow): void {
   // and bind ipcMain to these MainApi methods
   ipcMain.on("setShown", (event, names) => mainApi.setShown(names));
 
-  const openDataSource = async (dataSource: DataSource): Promise<void> => {
-    log("openDataSource");
-    sqlLoaded = changeSqlLoaded(dataSource);
-    const path = dataSource.path;
-    const when = await dotNetApi.getWhen(path);
-    if (!config.cachedWhen || Date.parse(config.cachedWhen) < Date.parse(when)) {
-      const json = await dotNetApi.getJson(path);
-      const loaded = JSON.parse(json);
-      sqlLoaded.save(loaded);
-      config.cachedWhen = when;
-    }
-    mainWindow.setTitle(path);
-    showView();
+  const showMessage = (title: string, message: string): void => {
+    mainWindow.setTitle(title);
+    rendererApi.setGreeting(message);
   };
 
-  const openAssemblies = (): void => {
+  const showException = (error: unknown): void => {
+    mainWindow.setTitle("Error");
+    const message = getErrorString(error);
+    rendererApi.setGreeting(message);
+  };
+
+  const openDataSource = async (dataSource: DataSource): Promise<void> => {
+    try {
+      log("openDataSource");
+      const path = dataSource.path;
+      showMessage(`Loading ${path}`, "Loading...");
+      sqlLoaded = changeSqlLoaded(dataSource);
+      const when = await dotNetApi.getWhen(path);
+      if (!config.cachedWhen || Date.parse(config.cachedWhen) < Date.parse(when)) {
+        const json = await dotNetApi.getJson(path);
+        const loaded = JSON.parse(json);
+        sqlLoaded.save(loaded);
+        config.cachedWhen = when;
+      }
+      mainWindow.setTitle(path);
+      showView();
+    } catch (error: unknown | Error) {
+      showException(error);
+    }
+  };
+
+  const openAssemblies = async (): Promise<void> => {
     const paths = dialog.showOpenDialogSync(mainWindow, { properties: ["openDirectory"] });
     if (!paths) return;
     const path = paths[0];
     const dataSource: DataSource = { path, type: "loadedAssemblies", hash: hash(path) };
     config.dataSource = dataSource;
-    /*await*/ openDataSource(config.dataSource);
+    await openDataSource(config.dataSource);
   };
   const openCustomJson = (): void => {
     showErrorBox("Not implemented", "This option isn't implemented yet");
@@ -86,10 +103,9 @@ export function createApplication(mainWindow: BrowserWindow): void {
   async function onRendererLoaded(): Promise<void> {
     log("onRendererLoaded");
     if (config.dataSource) {
-      /*await*/ openDataSource(config.dataSource);
+      await openDataSource(config.dataSource);
     } else {
-      mainWindow.setTitle("No data");
-      rendererApi.setGreeting("Use the File menu, to open a data source.");
+      showMessage("No data", "Use the File menu, to open a data source.");
     }
   }
 
@@ -98,8 +114,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
     if (!sqlLoaded) return;
     const loaded: Loaded = sqlLoaded.read();
     const graphed: Graphed = convertLoadedToGraphed(loaded);
-    const image = convertGraphedToImage(graphed, config);
-    const view = { ...image, nodes: convertLoadedToGroups(loaded, config), now: Date.now() };
+    const image = graphed.nodes.length ? convertGraphedToImage(graphed, config) : "Empty graph, no nodes to display";
+    const view: View = { image, groups: convertLoadedToGroups(loaded, config) };
     rendererApi.showView(view);
   }
 

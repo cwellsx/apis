@@ -93,5 +93,6 @@ export function createSqlLoaded(filename: string): SqlLoaded {
 }
 
 export function createSqlConfig(filename: string): SqlConfig {
+  log("createSqlConfig");
   return new SqlConfig(createSqlDatabase(filename));
 }

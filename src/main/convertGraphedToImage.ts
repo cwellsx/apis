@@ -62,5 +62,5 @@ export function convertGraphedToImage(graphed: Graphed, config: Config): Image {
 
   const xml = fs.readFileSync(mapFilename, { encoding: "utf8" });
 
-  return { imagePath: convertPathToUrl(pngFilename), areas: convertXmlMapToAreas(xml) };
+  return { imagePath: convertPathToUrl(pngFilename), areas: convertXmlMapToAreas(xml), now: Date.now() };
 }

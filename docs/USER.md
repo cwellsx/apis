@@ -26,6 +26,11 @@ Use this to select a directory, which contains .NET assemblies:
 
 In this case the tool will read these assemblies, using the .NET Reflection APIs.
 
+Note:
+
+- Loading may be slow, depending on how many assemblies and types are being loaded
+- A future version may implement a progress indicator and a Cancel button
+
 ### JSON file containing `id` and `dependencies`
 
 Use this to select a JSON file, which contains the data to display.
