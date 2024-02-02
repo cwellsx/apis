@@ -1,7 +1,5 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import type { Graphed, Loaded, MainApi, RendererApi, View } from "../shared-types";
-import { Config } from "./config";
-import { DataSource } from "./configTypes";
 import { convertGraphedToImage } from "./convertGraphedToImage";
 import { convertLoadedToGraphed } from "./convertLoadedToGraphed";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
@@ -13,7 +11,7 @@ import { hash } from "./hash";
 import { log } from "./log";
 import { createMenu } from "./menu";
 import { showErrorBox } from "./showErrorBox";
-import { SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
+import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
@@ -26,7 +24,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
 
   // instantiate the Config SQL
-  const config = new Config(createSqlConfig(getAppFilename("config.db")));
+  const sqlConfig = createSqlConfig(getAppFilename("config.db"));
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
   const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
@@ -49,8 +47,9 @@ export function createApplication(mainWindow: BrowserWindow): void {
   const mainApi: MainApi = {
     setShown: (names: string[]): void => {
       log("setShown");
-      config.setShown(names);
-      showView();
+      if (!sqlLoaded) return;
+      sqlLoaded.viewState.setShown(names);
+      showView(sqlLoaded);
     },
   };
   // and bind ipcMain to these MainApi methods
@@ -74,14 +73,14 @@ export function createApplication(mainWindow: BrowserWindow): void {
       showMessage(`Loading ${path}`, "Loading...");
       sqlLoaded = changeSqlLoaded(dataSource);
       const when = await dotNetApi.getWhen(path);
-      if (!config.cachedWhen || Date.parse(config.cachedWhen) < Date.parse(when)) {
+      if (!sqlLoaded.viewState.cachedWhen || Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)) {
         const json = await dotNetApi.getJson(path);
         const loaded = JSON.parse(json);
         sqlLoaded.save(loaded);
-        config.cachedWhen = when;
+        sqlLoaded.viewState.cachedWhen = when;
       }
       mainWindow.setTitle(path);
-      showView();
+      showView(sqlLoaded);
     } catch (error: unknown | Error) {
       showException(error);
     }
@@ -92,8 +91,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
     if (!paths) return;
     const path = paths[0];
     const dataSource: DataSource = { path, type: "loadedAssemblies", hash: hash(path) };
-    config.dataSource = dataSource;
-    await openDataSource(config.dataSource);
+    sqlConfig.dataSource = dataSource;
+    await openDataSource(sqlConfig.dataSource);
   };
   const openCustomJson = (): void => {
     showErrorBox("Not implemented", "This option isn't implemented yet");
@@ -102,20 +101,20 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   async function onRendererLoaded(): Promise<void> {
     log("onRendererLoaded");
-    if (config.dataSource) {
-      await openDataSource(config.dataSource);
+    if (sqlConfig.dataSource) {
+      await openDataSource(sqlConfig.dataSource);
     } else {
       showMessage("No data", "Use the File menu, to open a data source.");
     }
   }
 
-  function showView(): void {
+  function showView(sqlLoaded: SqlLoaded): void {
     log("showView");
-    if (!sqlLoaded) return;
     const loaded: Loaded = sqlLoaded.read();
     const graphed: Graphed = convertLoadedToGraphed(loaded);
-    const image = graphed.nodes.length ? convertGraphedToImage(graphed, config) : "Empty graph, no nodes to display";
-    const view: View = { image, groups: convertLoadedToGroups(loaded, config) };
+    const isShown = (name: string) => sqlLoaded.viewState.isShown(name);
+    const image = graphed.nodes.length ? convertGraphedToImage(graphed, isShown) : "Empty graph, no nodes to display";
+    const view: View = { image, groups: convertLoadedToGroups(loaded, isShown) };
     rendererApi.showView(view);
   }
 

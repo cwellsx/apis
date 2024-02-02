@@ -11,7 +11,7 @@ export interface ITypes {
 }
 
 export type TypeInfo = {
-  assembly: string;
+  assembly: string[]; // unusually, some types exist in several assemblies e.g. because they're injected by compiler
   attributes?: string[];
   baseType?: string;
   interfaces?: string[];

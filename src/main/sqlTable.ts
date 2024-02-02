@@ -1,5 +1,7 @@
 import { Database } from "better-sqlite3";
 
+// this is an application-independent wrapper which encapsulate the better-sqlite3 API
+
 type columnType = "TEXT" | "INT" | "REAL";
 
 function getColumnType(value: unknown): columnType {

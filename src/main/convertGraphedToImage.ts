@@ -3,7 +3,6 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import type { Graphed, Image } from "../shared-types";
-import { Config } from "./config";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { getAppFilename } from "./getAppFilename";
@@ -25,10 +24,9 @@ const findDotExe = (): string => {
   throw Error("graphviz not found");
 };
 
-const getDotFormat = (graphed: Graphed, config: Config): string[] => {
+const getDotFormat = (graphed: Graphed, isShown: (name: string) => boolean): string[] => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
-  const isShown = (key: string): boolean => config.isShown(key);
 
   lines.push(
     ...graphed.nodes
@@ -46,8 +44,8 @@ const getDotFormat = (graphed: Graphed, config: Config): string[] => {
   return lines;
 };
 
-export function convertGraphedToImage(graphed: Graphed, config: Config): Image {
-  const lines = getDotFormat(graphed, config);
+export function convertGraphedToImage(graphed: Graphed, isShown: (name: string) => boolean): Image {
+  const lines = getDotFormat(graphed, isShown);
 
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");
