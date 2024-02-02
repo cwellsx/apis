@@ -15,12 +15,8 @@ namespace Core
             {
                 throw new Exception($"Input directory not found: `{directory}`");
             }
-            var dotNetInstallationDirectory = GetDotNetInstallationDirectory();
-            if (dotNetInstallationDirectory == null)
-            {
-                throw new Exception("DotNet framework installation directory not found");
-            }
-            var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(GetAllFiles(dotNetInstallationDirectory)));
+            var dotNetPaths = DotNetPaths.FindPaths(directory);
+            var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(dotNetPaths));
             var assemblyReader = new AssemblyReader();
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
@@ -78,28 +74,6 @@ namespace Core
         {
             var filename = Path.GetFileName(path);
             return filename.StartsWith("System.") || filename.StartsWith("Microsoft.");
-        }
-
-        static string? GetDotNetInstallationDirectory()
-        {
-            var directories = Directory.GetDirectories(@"C:\Windows\Microsoft.NET\Framework"); // there's also a Framework64
-            Version? maxVersion = null;
-            string? found = null;
-            foreach (var directory in directories)
-            {
-                var filename = Path.GetFileName(directory);
-                if (filename[0] != 'v')
-                {
-                    continue;
-                }
-                var foundVersion = new Version(filename.Substring(1));
-                if (maxVersion == null || foundVersion > maxVersion)
-                {
-                    found = directory;
-                    maxVersion = foundVersion;
-                }
-            }
-            return found;
         }
     }
 }

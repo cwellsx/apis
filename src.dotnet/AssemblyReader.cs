@@ -8,7 +8,7 @@ using System.Text.Json.Serialization;
 namespace Core
 {
     public record TypeInfo(
-        string Assembly,
+        List<string> Assembly,
         string[]? Attributes,
         string? BaseType,
         string[]? Interfaces
@@ -46,12 +46,20 @@ namespace Core
                     var array = type.GetInterfaces();
                     return array.Length == 0 ? null : array.Select(GetName).ToArray();
                 });
-                Types.Add(GetName(type), new TypeInfo(
-                    assemblyName,
-                    attributes,
-                    baseType,
-                    interfaces
-                    ));
+                var typeName = GetName(type);
+                if (Types.TryGetValue(typeName, out var found))
+                {
+                    found.Assembly.Add(assemblyName);
+                }
+                else
+                {
+                    Types.Add(GetName(type), new TypeInfo(
+                        new List<string> { assemblyName },
+                        attributes,
+                        baseType,
+                        interfaces
+                        ));
+                }
             }
         }
 
