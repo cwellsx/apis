@@ -67,7 +67,7 @@ export function convertXmlMapToAreas(xml: string): Area[] {
     const coords = attr.coords.split(",").map((s) => parseInt(s));
     const area = { id: attr.id, shape: attr.shape, coords };
     if (!area.id || (area.shape != "poly" && area.shape != "rect") || coords.length == 0 || coords.length % 2 != 0)
-      throw Error("Missing Area property");
+      throw new Error("Missing Area property");
     return area;
   });
 }

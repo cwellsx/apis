@@ -13,7 +13,7 @@ function getColumnType(value: unknown): columnType {
     case "number":
       return Number.isInteger(value) ? "INT" : "REAL";
     default:
-      throw Error("Unsupported type");
+      throw new Error("Unsupported type");
   }
 }
 

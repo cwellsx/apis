@@ -3,8 +3,19 @@ import { Menu, MenuItemConstructorOptions } from "electron";
 export const createMenu = (
   openAssemblies: () => Promise<void>,
   openCustomJson: () => void,
-  openCoreJson: () => Promise<void>
+  openCoreJson: () => Promise<void>,
+  recent: string[],
+  openRecent: (path: string) => Promise<void>
 ): void => {
+  const recentItems: MenuItemConstructorOptions[] = [];
+  if (recent.length) {
+    recentItems.push({ type: "separator" });
+    recentItems.push(
+      ...recent.map((path) => {
+        return { label: path, click: async () => await openRecent(path) };
+      })
+    );
+  }
   const menuTemplate: MenuItemConstructorOptions[] = [
     {
       label: "File",
@@ -21,6 +32,7 @@ export const createMenu = (
           label: "Core.json file created by running Core.exe",
           click: async () => await openCoreJson(),
         },
+        ...recentItems,
       ],
     },
     {

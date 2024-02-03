@@ -21,7 +21,7 @@ const findDotExe = (): string => {
     if (fs.existsSync(dotExe)) return dotExe;
   }
   showErrorBox("dot.exe not found", "Install Graphviz before you can use this program");
-  throw Error("graphviz not found");
+  throw new Error("graphviz not found");
 };
 
 const getDotFormat = (graphed: Graphed, isShown: (name: string) => boolean): string[] => {

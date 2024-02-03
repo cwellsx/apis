@@ -95,13 +95,19 @@ export function createApplication(mainWindow: BrowserWindow): void {
       showMessage(`Loading ${path}`, "Loading...");
       switch (dataSource.type) {
         case "loadedAssemblies":
-          return reopenSqlLoaded(dataSource, await dotNetApi.getWhen(dataSource.path), readDotNetApi);
+          await reopenSqlLoaded(dataSource, await dotNetApi.getWhen(dataSource.path), readDotNetApi);
+          break;
         case "coreJson":
-          return reopenSqlLoaded(dataSource, await whenCoreJson(dataSource.path), readCoreJson);
+          await reopenSqlLoaded(dataSource, await whenCoreJson(dataSource.path), readCoreJson);
+          break;
         case "customJson":
           showErrorBox("Not implemented", "This option isn't implemented yet");
           return;
       }
+      // remember as most-recently-opened iff it opens successfully
+      sqlConfig.dataSource = dataSource;
+      // update the list of recently opened paths by recreating the menu
+      setApplicationMenu();
     } catch (error: unknown | Error) {
       showException(error);
     }
@@ -112,8 +118,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
     if (!paths) return;
     const path = paths[0];
     const dataSource: DataSource = { path, type: "loadedAssemblies", hash: hash(path) };
-    sqlConfig.dataSource = dataSource;
-    await reopenDataSource(sqlConfig.dataSource);
+    await reopenDataSource(dataSource);
   };
   const openCustomJson = (): void => {
     showErrorBox("Not implemented", "This option isn't implemented yet");
@@ -126,12 +131,28 @@ export function createApplication(mainWindow: BrowserWindow): void {
     });
     if (!paths) return;
     const path = paths[0];
-    //readCoreJson(path);
     const dataSource: DataSource = { path, type: "coreJson", hash: hash(path) };
-    sqlConfig.dataSource = dataSource;
-    await reopenDataSource(sqlConfig.dataSource);
+    await reopenDataSource(dataSource);
   };
-  createMenu(openAssemblies, openCustomJson, openCoreJson);
+  const openRecent = async (path: string): Promise<void> => {
+    const type = sqlConfig.recent().find((it) => it.path === path)?.type;
+    if (!type) throw new Error("Unknown recent path");
+    const dataSource: DataSource = { path, type, hash: hash(path) };
+    await reopenDataSource(dataSource);
+  };
+
+  const setApplicationMenu = (): void => {
+    const recent = sqlConfig.recent();
+    recent.sort((x, y) => -(x.when - y.when)); // reverse chronological
+    createMenu(
+      openAssemblies,
+      openCustomJson,
+      openCoreJson,
+      recent.map((it) => it.path),
+      openRecent
+    );
+  };
+  setApplicationMenu();
 
   async function onRendererLoaded(): Promise<void> {
     log("onRendererLoaded");

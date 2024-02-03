@@ -24,6 +24,12 @@ export type ConfigColumns = {
   value: string;
 };
 
+export type RecentColumns = {
+  path: string;
+  type: DataSourceType;
+  when: number;
+};
+
 export class SqlLoaded {
   save: (loaded: Loaded) => void;
   read: () => Loaded;
@@ -136,19 +142,32 @@ export class ViewState {
   }
 }
 
+type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";
+
 export type DataSource = {
   path: string;
-  type: "loadedAssemblies" | "customJson" | "coreJson";
+  type: DataSourceType;
   hash: string;
 };
 
 export class SqlConfig {
   private _cache: ConfigCache;
   private _db: Database;
+  recent: () => RecentColumns[];
+  private upsertRecent: (recentColumns: RecentColumns) => void;
 
   constructor(db: Database) {
     this._cache = new ConfigCache(db);
     this._db = db;
+
+    const recentTable = new SqlTable<RecentColumns>(db, "recent", "path", () => false, {
+      path: "foo",
+      type: "loadedAssemblies",
+      when: 0,
+    });
+
+    this.recent = () => recentTable.selectAll();
+    this.upsertRecent = (recentColumns: RecentColumns) => recentTable.upsert(recentColumns);
   }
 
   get dataSource(): DataSource | undefined {
@@ -158,6 +177,7 @@ export class SqlConfig {
 
   set dataSource(value: DataSource | undefined) {
     this._cache.setValue("dataSource", JSON.stringify(value));
+    if (value) this.upsertRecent({ path: value.path, type: value.type, when: Date.now() });
   }
 
   close() {
