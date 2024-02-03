@@ -23,7 +23,7 @@ There is no "Done" section in this document, instead see the history of updates/
   - Add FOREIGN KEY REFERENCES
   - Use SELECT LEFT JOIN
 - Store groups IDs in a table (but can recalculate the group memberships on-the-fly)
-- Make GroupState e.g. isExpanded and isSelected a table joined to the group key
+- Make GroupState e.g. groupExpanded and leafSelected a table joined to the group key
 - Create a table and database-type for the data injected via readCustomNodes
 
 Also read about document-oriented DBs.

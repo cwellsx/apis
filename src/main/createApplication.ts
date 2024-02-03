@@ -46,15 +46,22 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   // implement the MainApi
   const mainApi: MainApi = {
-    setShown: (names: string[]): void => {
-      log("setShown");
+    setLeafVisible: (names: string[]): void => {
+      log("setLeafVisible");
       if (!sqlLoaded) return;
-      sqlLoaded.viewState.setShown(names);
-      showSqlLoaded(sqlLoaded);
+      sqlLoaded.viewState.leafVisible = names;
+      showSqlLoaded(sqlLoaded, false);
+    },
+    setGroupExpanded: (names: string[]): void => {
+      log("setGroupExpanded");
+      if (!sqlLoaded) return;
+      sqlLoaded.viewState.groupExpanded = names;
+      showSqlLoaded(sqlLoaded, false);
     },
   };
   // and bind ipcMain to these MainApi methods
-  ipcMain.on("setShown", (event, names) => mainApi.setShown(names));
+  ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
+  ipcMain.on("setGroupExpanded", (event, names) => mainApi.setGroupExpanded(names));
 
   const showMessage = (title: string, message: string): void => {
     mainWindow.setTitle(title);
@@ -79,7 +86,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlLoaded.viewState.cachedWhen = when;
     }
     mainWindow.setTitle(dataSource.path);
-    showSqlLoaded(sqlLoaded);
+    showSqlLoaded(sqlLoaded, true);
   };
 
   const readDotNetApi = async (path: string): Promise<Loaded> => {
@@ -163,15 +170,29 @@ export function createApplication(mainWindow: BrowserWindow): void {
     }
   }
 
-  function showSqlLoaded(sqlLoaded: SqlLoaded): void {
+  const createLookup = (array: string[]): ((id: string) => boolean) => {
+    const temp = new Set(array);
+    return (id: string) => temp.has(id);
+  };
+
+  function showSqlLoaded(sqlLoaded: SqlLoaded, first: boolean): void {
     log("showSqlLoaded");
+    // maybe we needn't read Loaded and calculate Groups more than once, but for now we do it every time
     const loaded: Loaded = sqlLoaded.read();
+    // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
+    const groups = convertLoadedToGroups(loaded);
+
+    const leafVisible = sqlLoaded.viewState.leafVisible ?? Object.keys(loaded.assemblies);
+    const groupExpanded = sqlLoaded.viewState.groupExpanded ?? [];
+    const isLeafVisible = createLookup(leafVisible);
+    const isGroupExpanded = createLookup(groupExpanded);
     const graphed: Graphed = convertLoadedToGraphed(loaded);
-    const isShown = (name: string) => sqlLoaded.viewState.isShown(name);
     log("convertGraphedToImage");
-    const image = graphed.nodes.length ? convertGraphedToImage(graphed, isShown) : "Empty graph, no nodes to display";
+    const image = graphed.nodes.length
+      ? convertGraphedToImage(graphed, isLeafVisible)
+      : "Empty graph, no nodes to display";
     log("convertLoadedToGroups");
-    const view: View = { image, groups: convertLoadedToGroups(loaded, isShown) };
+    const view: View = { image, groups: first ? groups : null, leafVisible, groupExpanded };
     log("showView");
     rendererApi.showView(view);
   }

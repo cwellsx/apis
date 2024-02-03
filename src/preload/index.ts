@@ -2,7 +2,8 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { MainApi, PreloadApis, RendererApi } from "../shared-types";
 
 const mainApiProxy: MainApi = {
-  setShown: (names: string[]) => ipcRenderer.send("setShown", names),
+  setLeafVisible: (names: string[]) => ipcRenderer.send("setLeafVisible", names),
+  setGroupExpanded: (names: string[]) => ipcRenderer.send("setGroupExpanded", names),
 };
 
 const bindIpcRenderer = (rendererApi: RendererApi): void => {

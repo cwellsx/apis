@@ -1,6 +1,5 @@
 import { Database } from "better-sqlite3";
 import { IAssemblies, ITypes, Loaded } from "../shared-types";
-//import { ConfigKey } from "./configTypes";
 import { log } from "./log";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable } from "./sqlTable";
@@ -119,7 +118,6 @@ class ConfigCache {
 
 export class ViewState {
   private _cache: ConfigCache;
-  private _isShown: Set<string> | undefined; // if it's not in the database, or an empty string, then they're all shown
 
   constructor(db: Database) {
     this._cache = new ConfigCache(db);
@@ -132,13 +130,20 @@ export class ViewState {
     this._cache.setValue("cachedWhen", value);
   }
 
-  setShown(names: string[]): void {
-    const json = JSON.stringify(names);
-    this._cache.setValue("isShown", json);
-    this._isShown = new Set<string>(names);
+  set leafVisible(value: string[] | undefined) {
+    this._cache.setValue("leafVisible", JSON.stringify(value));
   }
-  isShown(name: string): boolean {
-    return !this._isShown ? true : this._isShown.has(name);
+  get leafVisible(): string[] | undefined {
+    const value = this._cache.getValue("leafVisible");
+    return value ? JSON.parse(value) : undefined;
+  }
+
+  set groupExpanded(names: string[] | undefined) {
+    this._cache.setValue("groupExpanded", JSON.stringify(names));
+  }
+  get groupExpanded(): string[] | undefined {
+    const value = this._cache.getValue("groupExpanded");
+    return value ? JSON.parse(value) : undefined;
   }
 }
 

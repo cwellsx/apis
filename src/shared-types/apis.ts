@@ -11,7 +11,8 @@ import { View } from "./view";
 
 // this Api is implemented in the preload script and available to the renderer
 export interface MainApi {
-  setShown: (names: string[]) => void;
+  setLeafVisible: (names: string[]) => void;
+  setGroupExpanded: (names: string[]) => void;
 }
 
 // this Api is available to the main process and its functions are all void

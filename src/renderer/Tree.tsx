@@ -2,14 +2,17 @@ import * as React from "react";
 import CheckboxTree, { Icons, Node } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
 import type { GroupNode, Groups } from "../shared-types";
-import { isLeaf } from "../shared-types";
+import { isParent } from "../shared-types";
 import * as Icon from "./Icons";
 import "./Tree.css";
 import { log } from "./log";
 
 type TreeProps = {
-  nodes: Groups;
-  setShown: (names: string[]) => void;
+  nodes: Groups | null;
+  leafVisible: string[];
+  groupExpanded: string[];
+  setLeafVisible: (names: string[]) => void;
+  setGroupExpanded: (names: string[]) => void;
 };
 
 // convert from GroupNode (defined in "../shared-types") to Node (defined in "react-checkbox-tree")
@@ -18,31 +21,11 @@ const convert = (node: GroupNode): Node => {
     label: node.label,
     // a parent node may have the same label as its first child, so mangle the id of all parents
     value: node.id,
-    children: isLeaf(node) ? undefined : node.children.map(convert),
+    children: isParent(node) ? node.children.map(convert) : undefined,
   };
 };
 
-const isShown = (nodes: Groups): string[] => {
-  const result: string[] = [];
-  nodes.forEach((node) => {
-    if (isLeaf(node)) {
-      if (node.isShown) result.push(node.id ?? node.label);
-    } else result.push(...isShown(node.children));
-  });
-  return result;
-};
-
-const getChecked = (nodes: Groups): string[] => {
-  const result = isShown(nodes);
-  log("getChecked", result);
-  return result;
-};
-
-const getNodes = (nodes: Groups): Node[] => {
-  const result = nodes.map(convert);
-  log("getNodes", result);
-  return result;
-};
+const getNodes = (nodes: Groups | null): Node[] => (nodes ? nodes.map(convert) : []);
 
 // initialize using SVG icons
 // the ./icons folder at the root of this project shows how these SVG components were created
@@ -61,23 +44,22 @@ const icons: Icons = {
 };
 
 export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
-  const [checked, setChecked] = React.useState(getChecked(props.nodes));
+  const [checked, setChecked] = React.useState(props.leafVisible);
   const [nodes, setNodes] = React.useState(getNodes(props.nodes));
-  const [expanded, setExpanded] = React.useState<string[]>([]);
+  const [expanded, setExpanded] = React.useState<string[]>(props.groupExpanded);
 
   React.useEffect(() => {
     log("useEffect");
-    setChecked(getChecked(props.nodes));
-    setNodes(getNodes(props.nodes));
-  }, [props.nodes]);
+    setChecked(props.leafVisible);
+    setExpanded(props.groupExpanded);
+    if (props.nodes) setNodes(getNodes(props.nodes));
+  }, [props.nodes, props.leafVisible, props.groupExpanded]);
 
   const onCheck = (value: string[]) => {
-    log("onCheck", value);
-    //setChecked(value); // use this to edit the checked state locally
-    props.setShown(value); // use this to round-trip to get a new View
+    props.setLeafVisible(value); // use this to round-trip to get a new View
   };
   const onExpand = (value: string[]) => {
-    setExpanded(value);
+    props.setGroupExpanded(value); // use this to round-trip to get a new View
   };
 
   return (

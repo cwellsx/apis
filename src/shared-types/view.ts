@@ -14,5 +14,7 @@ export type Image = {
 
 export type View = {
   image: Image | string; // string is a message if there isn't an Image
-  groups: Groups;
+  groups: Groups | null; // send null if previously-sent Groups has not changed
+  leafVisible: string[];
+  groupExpanded: string[];
 };

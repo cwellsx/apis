@@ -1,5 +1,5 @@
 import type { GroupNode, Groups, LeafNode, Loaded, ParentNode } from "../shared-types";
-import { isLeaf } from "../shared-types";
+import { isParent } from "../shared-types";
 
 /*
 
@@ -7,7 +7,7 @@ This is a depth-first implementation, could if needed change it to be breadth-fi
 
 */
 
-export const convertLoadedToGroups = (loaded: Loaded, isShown: (name: string) => boolean): Groups => {
+export const convertLoadedToGroups = (loaded: Loaded): Groups => {
   const assemblies = loaded.assemblies;
   // flatten and sort all names -- these names will become leaf nodes
   const names: string[] = [];
@@ -35,14 +35,14 @@ export const convertLoadedToGroups = (loaded: Loaded, isShown: (name: string) =>
       partial = !partial ? part : `${partial}.${part}`;
       // append the leaf if this is the leaf
       if (partial === name) {
-        const newLeaf: LeafNode = { label: name, id: name, isShown: isShown(name) };
+        const newLeaf: LeafNode = { label: name, id: name };
         nodes.push(newLeaf);
       } else {
         // find or create the parent -- if it already exists then it's the last node, because names are sorted
         const newParent: ParentNode = { label: partial, id: `!${partial}`, children: [] };
         if (!nodes.length || nodes[nodes.length - 1].label !== partial) nodes.push(newParent);
         const found = nodes[nodes.length - 1];
-        if (!isLeaf(found)) nodes = found.children;
+        if (isParent(found)) nodes = found.children;
         else {
           // replace the existing leaf node with a parent node e.g. when a leaf name like "A" is followed by "A.B"
           // so that we will then have a parent named "A", and two children, named "A" and "A.B"
@@ -63,7 +63,7 @@ export const convertLoadedToGroups = (loaded: Loaded, isShown: (name: string) =>
       throw new Error(`Duplicate node id: ${id}`);
     }
     unique.add(id);
-    if (!isLeaf(node)) node.children.forEach(assertUnique);
+    if (isParent(node)) node.children.forEach(assertUnique);
   };
 
   result.forEach(assertUnique);

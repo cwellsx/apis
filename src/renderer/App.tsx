@@ -16,7 +16,7 @@ declare global {
 export const mainApi: MainApi = window.preloadApis.mainApi;
 export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 
-const defaultView: View = { image: "", groups: [] };
+const defaultView: View = { image: "", groups: [], leafVisible: [], groupExpanded: [] };
 
 const App: React.FunctionComponent = () => {
   const [greeting, setGreeting] = React.useState<string | undefined>("No data");
@@ -38,7 +38,8 @@ const App: React.FunctionComponent = () => {
     bindIpc(rendererApi);
   });
 
-  const setShown: (names: string[]) => void = (names) => mainApi.setShown(names);
+  const setLeafVisible: (names: string[]) => void = (names) => mainApi.setLeafVisible(names);
+  const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
 
   // display a message, or an image if there is one
   const center = greeting ? (
@@ -52,7 +53,15 @@ const App: React.FunctionComponent = () => {
   return (
     <React.StrictMode>
       <Panes
-        left={<Tree nodes={view.groups} setShown={setShown} />}
+        left={
+          <Tree
+            nodes={view.groups}
+            leafVisible={view.leafVisible}
+            groupExpanded={view.groupExpanded}
+            setLeafVisible={setLeafVisible}
+            setGroupExpanded={setGroupExpanded}
+          />
+        }
         center={center}
         // right={greeting} TODO later display something in the right pane sometimes
         onWheel={onWheel}
