@@ -1,6 +1,6 @@
 import fs from "fs";
 import fsPromises from "fs/promises";
-import { Loaded } from "../shared-types";
+import { Loaded } from "./shared-types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 

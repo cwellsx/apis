@@ -2,11 +2,14 @@ import child_process from "child_process";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import type { Graphed, Image } from "../shared-types";
+import type { Groups, Image, LeafNode } from "../shared-types";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { getAppFilename } from "./getAppFilename";
+import { Edge } from "./shared-types";
 import { showErrorBox } from "./showErrorBox";
+
+type Nodes = Groups | LeafNode[];
 
 /*
 
@@ -24,18 +27,18 @@ const findDotExe = (): string => {
   throw new Error("graphviz not found");
 };
 
-const getDotFormat = (graphed: Graphed, isShown: (name: string) => boolean): string[] => {
+const getDotFormat = (nodes: Nodes, edges: Edge[], isShown: (name: string) => boolean): string[] => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
 
   lines.push(
-    ...graphed.nodes
+    ...nodes
       .filter((node) => isShown(node.id))
       .map((node) => `  "${node.id}" [shape=folder, id="${node.id}", label="${node.label}" href=foo];`)
   );
 
   lines.push(
-    ...graphed.edges
+    ...edges
       .filter((edge) => isShown(edge.clientId) && isShown(edge.serverId))
       .map((edge) => `  "${edge.clientId}" -> "${edge.serverId}" [id="${edge.clientId}|${edge.serverId}", href=foo]`)
   );
@@ -44,8 +47,8 @@ const getDotFormat = (graphed: Graphed, isShown: (name: string) => boolean): str
   return lines;
 };
 
-export function convertGraphedToImage(graphed: Graphed, isShown: (name: string) => boolean): Image {
-  const lines = getDotFormat(graphed, isShown);
+export function createImage(nodes: Nodes, edges: Edge[], isShown: (name: string) => boolean): Image {
+  const lines = getDotFormat(nodes, edges, isShown);
 
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");

@@ -1,5 +1,6 @@
-import type { GroupNode, Groups, LeafNode, Loaded, ParentNode } from "../shared-types";
+import type { GroupNode, Groups, LeafNode, ParentNode } from "../shared-types";
 import { isParent } from "../shared-types";
+import type { Loaded } from "./shared-types";
 
 /*
 

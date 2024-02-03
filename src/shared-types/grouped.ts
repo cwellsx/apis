@@ -1,8 +1,11 @@
-import { TextNode } from "./textNode";
-
 // these are nodes in the tree of checkboxes
 // they show how graph nodes are grouped and control which groups are expanded
 // they don't show edges and node properties and don't need more data than this
+
+export type TextNode = {
+  label: string;
+  id: string; // unique within graph and/or within group tree
+};
 
 export type LeafNode = TextNode;
 

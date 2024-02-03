@@ -1,6 +1,6 @@
 import { Database } from "better-sqlite3";
-import { IAssemblies, ITypes, Loaded } from "../shared-types";
 import { log } from "./log";
+import { IAssemblies, ITypes, Loaded } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable } from "./sqlTable";
 
@@ -116,7 +116,7 @@ class ConfigCache {
   }
 }
 
-export class ViewState {
+class ViewState {
   private _cache: ConfigCache;
 
   constructor(db: Database) {
