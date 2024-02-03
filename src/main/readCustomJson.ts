@@ -88,7 +88,7 @@ const readNodes = (customData: CustomData): Groups => {
   return result;
 };
 
-export const readCustomNodes = (customData: any): Groups => {
+export const readCustomJson = (customData: any): Groups => {
   // assert we've been given an array of something
   if (!Array.isArray(customData)) {
     showErrorBox("Bad data", "Expected array of nodes");

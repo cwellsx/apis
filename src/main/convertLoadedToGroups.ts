@@ -1,6 +1,5 @@
 import type { GroupNode, Groups, LeafNode, Loaded, ParentNode } from "../shared-types";
 import { isLeaf } from "../shared-types";
-import { logJson } from "./log";
 
 /*
 
@@ -69,6 +68,5 @@ export const convertLoadedToGroups = (loaded: Loaded, isShown: (name: string) =>
 
   result.forEach(assertUnique);
 
-  logJson("nodes", result);
   return result;
 };

@@ -2,6 +2,8 @@ import { app } from "electron";
 import fs from "fs";
 import path from "path";
 
+export const pathJoin = (directory: string, filename: string): string => path.join(directory, filename);
+
 export const getAppFilename = (filename: string): string => {
   // beware https://www.electronjs.org/docs/latest/api/app#appgetpathname
   // says that, "it is not recommended to write large files here"

@@ -6,10 +6,11 @@ import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { getErrorString } from "./error";
-import { getAppFilename } from "./getAppFilename";
+import { getAppFilename, pathJoin } from "./getAppFilename";
 import { hash } from "./hash";
 import { log } from "./log";
 import { createMenu } from "./menu";
+import { readCoreJson, whenCoreJson } from "./readCoreJson";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
@@ -49,7 +50,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
       log("setShown");
       if (!sqlLoaded) return;
       sqlLoaded.viewState.setShown(names);
-      showView(sqlLoaded);
+      showSqlLoaded(sqlLoaded);
     },
   };
   // and bind ipcMain to these MainApi methods
@@ -66,21 +67,41 @@ export function createApplication(mainWindow: BrowserWindow): void {
     rendererApi.setGreeting(message);
   };
 
-  const openDataSource = async (dataSource: DataSource): Promise<void> => {
+  const reopenSqlLoaded = async (
+    dataSource: DataSource,
+    when: string,
+    getLoaded: (path: string) => Promise<Loaded>
+  ): Promise<void> => {
+    sqlLoaded = changeSqlLoaded(dataSource);
+    if (!sqlLoaded.viewState.cachedWhen || Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)) {
+      const loaded = await getLoaded(dataSource.path);
+      sqlLoaded.save(loaded);
+      sqlLoaded.viewState.cachedWhen = when;
+    }
+    mainWindow.setTitle(dataSource.path);
+    showSqlLoaded(sqlLoaded);
+  };
+
+  const readDotNetApi = async (path: string): Promise<Loaded> => {
+    const json = await dotNetApi.getJson(path);
+    const loaded = JSON.parse(json);
+    return loaded;
+  };
+
+  const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
     try {
       log("openDataSource");
       const path = dataSource.path;
       showMessage(`Loading ${path}`, "Loading...");
-      sqlLoaded = changeSqlLoaded(dataSource);
-      const when = await dotNetApi.getWhen(path);
-      if (!sqlLoaded.viewState.cachedWhen || Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)) {
-        const json = await dotNetApi.getJson(path);
-        const loaded = JSON.parse(json);
-        sqlLoaded.save(loaded);
-        sqlLoaded.viewState.cachedWhen = when;
+      switch (dataSource.type) {
+        case "loadedAssemblies":
+          return reopenSqlLoaded(dataSource, await dotNetApi.getWhen(dataSource.path), readDotNetApi);
+        case "coreJson":
+          return reopenSqlLoaded(dataSource, await whenCoreJson(dataSource.path), readCoreJson);
+        case "customJson":
+          showErrorBox("Not implemented", "This option isn't implemented yet");
+          return;
       }
-      mainWindow.setTitle(path);
-      showView(sqlLoaded);
     } catch (error: unknown | Error) {
       showException(error);
     }
@@ -92,29 +113,45 @@ export function createApplication(mainWindow: BrowserWindow): void {
     const path = paths[0];
     const dataSource: DataSource = { path, type: "loadedAssemblies", hash: hash(path) };
     sqlConfig.dataSource = dataSource;
-    await openDataSource(sqlConfig.dataSource);
+    await reopenDataSource(sqlConfig.dataSource);
   };
   const openCustomJson = (): void => {
     showErrorBox("Not implemented", "This option isn't implemented yet");
   };
-  createMenu(openAssemblies, openCustomJson);
+  const openCoreJson = async (): Promise<void> => {
+    const paths = dialog.showOpenDialogSync(mainWindow, {
+      properties: ["openFile"],
+      filters: [{ name: "Core", extensions: ["json"] }],
+      defaultPath: pathJoin(CORE_EXE, "Core.json"),
+    });
+    if (!paths) return;
+    const path = paths[0];
+    //readCoreJson(path);
+    const dataSource: DataSource = { path, type: "coreJson", hash: hash(path) };
+    sqlConfig.dataSource = dataSource;
+    await reopenDataSource(sqlConfig.dataSource);
+  };
+  createMenu(openAssemblies, openCustomJson, openCoreJson);
 
   async function onRendererLoaded(): Promise<void> {
     log("onRendererLoaded");
     if (sqlConfig.dataSource) {
-      await openDataSource(sqlConfig.dataSource);
+      await reopenDataSource(sqlConfig.dataSource);
     } else {
       showMessage("No data", "Use the File menu, to open a data source.");
     }
   }
 
-  function showView(sqlLoaded: SqlLoaded): void {
-    log("showView");
+  function showSqlLoaded(sqlLoaded: SqlLoaded): void {
+    log("showSqlLoaded");
     const loaded: Loaded = sqlLoaded.read();
     const graphed: Graphed = convertLoadedToGraphed(loaded);
     const isShown = (name: string) => sqlLoaded.viewState.isShown(name);
+    log("convertGraphedToImage");
     const image = graphed.nodes.length ? convertGraphedToImage(graphed, isShown) : "Empty graph, no nodes to display";
+    log("convertLoadedToGroups");
     const view: View = { image, groups: convertLoadedToGroups(loaded, isShown) };
+    log("showView");
     rendererApi.showView(view);
   }
 

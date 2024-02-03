@@ -138,7 +138,7 @@ export class ViewState {
 
 export type DataSource = {
   path: string;
-  type: "loadedAssemblies" | "customJson";
+  type: "loadedAssemblies" | "customJson" | "coreJson";
   hash: string;
 };
 
