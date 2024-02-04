@@ -1,5 +1,4 @@
-import fs from "fs";
-import fsPromises from "fs/promises";
+import { existsSync, readFile, stat } from "./fs";
 import { Loaded } from "./shared-types";
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -19,14 +18,14 @@ const assertLoaded = (json: any): Loaded => {
 };
 
 export const whenCoreJson = async (path: string): Promise<string> => {
-  if (!fs.existsSync(path)) throw new Error(`File not found: ${path}`);
-  const stats = await fsPromises.stat(path);
+  if (!existsSync(path)) throw new Error(`File not found: ${path}`);
+  const stats = await stat(path);
   return stats.mtime.toISOString();
 };
 
 export const readCoreJson = async (path: string): Promise<Loaded> => {
-  if (!fs.existsSync(path)) throw new Error(`File not found: ${path}`);
-  const text = await fsPromises.readFile(path, "utf8");
+  if (!existsSync(path)) throw new Error(`File not found: ${path}`);
+  const text = await readFile(path);
   const json = JSON.parse(text);
   return assertLoaded(json);
 };

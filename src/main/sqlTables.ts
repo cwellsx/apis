@@ -30,7 +30,7 @@ export type RecentColumns = {
 };
 
 export class SqlLoaded {
-  save: (loaded: Loaded) => void;
+  save: (loaded: Loaded, when: string) => void;
   read: () => Loaded;
   viewState: ViewState;
 
@@ -51,12 +51,15 @@ export class SqlLoaded {
       log(`wal_checkpoint: ${JSON.stringify(result)}`);
     };
 
-    this.save = (loaded: Loaded) => {
+    this.save = (loaded: Loaded, when: string) => {
       assemblyTable.deleteAll();
       for (const key in loaded.assemblies)
         assemblyTable.insert({ name: key, references: JSON.stringify(loaded.assemblies[key]) });
       typeTable.deleteAll();
       for (const key in loaded.types) typeTable.insert({ name: key, typeInfo: JSON.stringify(loaded.types[key]) });
+      this.viewState.cachedWhen = when;
+      this.viewState.loadedVersion = loaded.version;
+      this.viewState.exes = loaded.exes;
       done();
     };
 
@@ -65,7 +68,7 @@ export class SqlLoaded {
       const types: ITypes = {};
       assemblyTable.selectAll().forEach((assembly) => (assemblies[assembly.name] = JSON.parse(assembly.references)));
       typeTable.selectAll().forEach((type) => (types[type.name] = JSON.parse(type.typeInfo)));
-      return { assemblies, types };
+      return { assemblies, types, version: this.viewState.loadedVersion, exes: this.viewState.exes };
     };
 
     this.close = () => {
@@ -144,6 +147,21 @@ class ViewState {
   get groupExpanded(): string[] | undefined {
     const value = this._cache.getValue("groupExpanded");
     return value ? JSON.parse(value) : undefined;
+  }
+
+  get loadedVersion(): string {
+    return this._cache.getValue("loadedVersion") ?? "";
+  }
+  set loadedVersion(value: string) {
+    this._cache.setValue("loadedVersion", value);
+  }
+
+  set exes(names: string[]) {
+    this._cache.setValue("exes", JSON.stringify(names));
+  }
+  get exes(): string[] {
+    const value = this._cache.getValue("exes");
+    return value ? JSON.parse(value) : [];
   }
 }
 

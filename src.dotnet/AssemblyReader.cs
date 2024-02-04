@@ -18,8 +18,13 @@ namespace Core
     {
         public Dictionary<string, string[]> Assemblies { get; } = new Dictionary<string, string[]>();
         public Dictionary<string, TypeInfo> Types { get; } = new Dictionary<string, TypeInfo>();
+        public string Version { get; } = "2024-02-04"; // see also src\main\shared-types\loaded.ts
+        public string[] Exes { get; }
 
-        internal AssemblyReader() { }
+        internal AssemblyReader(string[] exes)
+        {
+            Exes = exes;
+        }
 
         internal void Add(Assembly assembly)
         {

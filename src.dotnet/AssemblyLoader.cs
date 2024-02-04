@@ -15,9 +15,9 @@ namespace Core
             {
                 throw new Exception($"Input directory not found: `{directory}`");
             }
-            var dotNetPaths = DotNetPaths.FindPaths(directory);
+            var (dotNetPaths, exes) = DotNetPaths.FindPaths(directory);
             var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(dotNetPaths));
-            var assemblyReader = new AssemblyReader();
+            var assemblyReader = new AssemblyReader(exes);
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
                 foreach (var path in GetFiles(directory))

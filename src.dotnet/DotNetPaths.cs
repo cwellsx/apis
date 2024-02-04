@@ -8,37 +8,34 @@ namespace Core
 {
     internal static class DotNetPaths
     {
-        internal static string[] FindPaths(string directory)
+        internal static (string[], string[]) FindPaths(string directory)
         {
             var dotnetCoreFiles = _dotnetCoreFiles.Value;
             var dotnetFrameworkFiles = _dotnetFrameworkFiles.Value;
-            if (dotnetCoreFiles == null)
+
+            // guess which to use for this (maybe it doesn't matter and either would do
+            var assemblyPaths = dotnetCoreFiles ?? dotnetFrameworkFiles;
+            if (assemblyPaths == null)
             {
-                if (dotnetFrameworkFiles == null)
-                {
-                    throw new Exception("No version of dot net is intalled on this machine");
-                }
-                return dotnetFrameworkFiles;
-            }
-            else
-            {
-                if (dotnetFrameworkFiles == null)
-                {
-                    return dotnetCoreFiles;
-                }
+                throw new Exception("No version of dot net is intalled on this machine");
             }
 
-            // else they're both installed so guess which to use
-            using var context = new MetadataLoadContext(new PathAssemblyResolver(dotnetCoreFiles));
+            using var context = new MetadataLoadContext(new PathAssemblyResolver(assemblyPaths));
 
             bool isFramework = false;
             bool isCore = false;
+            var exes = new List<string>();
             foreach (var exe in GetExes(directory))
             {
                 var assembly = LoadAssembly(context, exe);
                 if (assembly == null)
                 {
                     continue;
+                }
+                var exeName = assembly.GetName().Name;
+                if (exeName != null)
+                {
+                    exes.Add(exeName);
                 }
                 var targetFramework = GetTargetFramework(assembly);
                 switch (targetFramework.Split(",")[0])
@@ -54,7 +51,8 @@ namespace Core
                 }
             }
 
-            return ((!isFramework && !isCore) || (isCore && isFramework) || isCore) ? dotnetCoreFiles : dotnetFrameworkFiles;
+            assemblyPaths = ((!isFramework && !isCore) || (isCore && isFramework) || isCore) ? dotnetCoreFiles ?? dotnetFrameworkFiles : dotnetFrameworkFiles ?? dotnetCoreFiles;
+            return (assemblyPaths!, exes.ToArray());
         }
 
         static string GetTargetFramework(Assembly assembly)

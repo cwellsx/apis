@@ -1,11 +1,11 @@
-import fs from "fs";
 import * as process from "process";
-import { getAppFilename } from "./getAppFilename";
+import { appendFileSync, getAppFilename } from "./fs";
+
 const logFilePath = getAppFilename("!all.log");
 
 const logMessage = (message: string): void => {
   console.log(message);
-  fs.appendFileSync(logFilePath, message + "\r\n");
+  appendFileSync(logFilePath, message + "\r\n");
 };
 
 export function log(message: string) {

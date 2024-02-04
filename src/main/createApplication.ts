@@ -6,12 +6,13 @@ import { convertToImage } from "./convertToImage";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { createImage } from "./createImage";
 import { getErrorString } from "./error";
-import { getAppFilename, pathJoin } from "./getAppFilename";
+import { getAppFilename, pathJoin, writeFileSync } from "./fs";
 import { hash } from "./hash";
 import { log } from "./log";
 import { createMenu } from "./menu";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
 import type { Edge, Loaded, StringPredicate } from "./shared-types";
+import { loadedVersion } from "./shared-types";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
@@ -81,11 +82,17 @@ export function createApplication(mainWindow: BrowserWindow): void {
     getLoaded: (path: string) => Promise<Loaded>
   ): Promise<void> => {
     sqlLoaded = changeSqlLoaded(dataSource);
-    if (!sqlLoaded.viewState.cachedWhen || Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)) {
+    if (
+      !sqlLoaded.viewState.cachedWhen ||
+      loadedVersion !== sqlLoaded.viewState.loadedVersion ||
+      Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)
+    ) {
+      log("getLoaded");
       const loaded = await getLoaded(dataSource.path);
-      sqlLoaded.save(loaded);
-      sqlLoaded.viewState.cachedWhen = when;
-    }
+      const jsonPath = getAppFilename(`Core.${dataSource.hash}.json`);
+      writeFileSync(jsonPath, JSON.stringify(loaded, null, " "));
+      sqlLoaded.save(loaded, when);
+    } else log("!getLoaded");
     mainWindow.setTitle(dataSource.path);
     showSqlLoaded(sqlLoaded, true);
   };
