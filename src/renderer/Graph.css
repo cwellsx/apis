@@ -4,7 +4,3 @@
   position: absolute;
   z-index: 2;
 }
-
-#graph {
-  overflow: auto;
-}

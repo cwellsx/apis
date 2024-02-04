@@ -1,8 +1,9 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
-import type { Groups, LeafNode, MainApi, RendererApi, View } from "../shared-types";
+import type { Groups, LeafNode, MainApi, RendererApi, Types, View } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { convertToImage } from "./convertToImage";
+import { convertToTypes } from "./convertToTypes";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { createImage } from "./createImage";
 import { getErrorString } from "./error";
@@ -44,6 +45,9 @@ export function createApplication(mainWindow: BrowserWindow): void {
     showView(view: View): void {
       webContents.send("showView", view);
     },
+    showTypes(types: Types): void {
+      webContents.send("showTypes", types);
+    },
   };
 
   // implement the MainApi
@@ -60,10 +64,19 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlLoaded.viewState.groupExpanded = names;
       showSqlLoaded(sqlLoaded, false);
     },
+    onClick: (id: string): void => {
+      log("onClick");
+      if (!sqlLoaded) return;
+      const loaded: Loaded = sqlLoaded.read();
+      const types = convertToTypes(loaded, id);
+      log("showTypes");
+      rendererApi.showTypes(types);
+    },
   };
   // and bind ipcMain to these MainApi methods
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
   ipcMain.on("setGroupExpanded", (event, names) => mainApi.setGroupExpanded(names));
+  ipcMain.on("onClick", (event, id) => mainApi.onClick(id));
 
   const showMessage = (title: string, message: string): void => {
     mainWindow.setTitle(title);

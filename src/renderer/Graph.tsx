@@ -8,6 +8,7 @@ type GraphProps = {
   areas: MyArea[];
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
+  onClick: (id: string) => void;
 };
 
 type State = {
@@ -51,7 +52,7 @@ const initialState = (props: GraphProps): State => {
       name: "foo",
       // convert from MyArea (defined in "../shared-types") to Area (defined in "./ImageMapper")
       areas: props.areas.map((area) => {
-        return { shape: area.shape, coords: area.coords, _id: area.id };
+        return { shape: area.shape, coords: area.coords, _id: area.id, strokeColor: getIdColor(area.id) };
       }),
     },
     // size undefined until ActionImageLoaded
@@ -88,6 +89,11 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
+const getIdColor = (id: string): "red" | "green" => (getIdType(id) === "leaf" ? "green" : "red");
+
+const getIdType = (id: string): "leaf" | "group" | "edge" =>
+  id[0] === "!" ? "group" : id.includes("|") ? "edge" : "leaf";
+
 export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState(props));
 
@@ -117,6 +123,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
 
   const onClick = (area: Area, index: number, event: AreaMouseEvent): void => {
     console.log(`Clicked area ${area._id}`);
+    if (area._id && getIdType(area._id) === "leaf") props.onClick(area._id);
   };
 
   return (

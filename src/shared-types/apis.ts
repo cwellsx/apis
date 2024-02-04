@@ -1,3 +1,4 @@
+import { Types } from "./types";
 import { View } from "./view";
 
 /*
@@ -13,12 +14,14 @@ import { View } from "./view";
 export interface MainApi {
   setLeafVisible: (names: string[]) => void;
   setGroupExpanded: (names: string[]) => void;
+  onClick: (id: string) => void;
 }
 
 // this Api is available to the main process and its functions are all void
 export interface RendererApi {
   setGreeting: (greeting: string) => void;
   showView: (view: View) => void;
+  showTypes: (types: Types) => void;
 }
 
 export type BindIpc = (rendererApi: RendererApi) => void;

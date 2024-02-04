@@ -10,7 +10,7 @@ export interface IAssemblies {
 
 // properties of each type
 export interface ITypes {
-  [key: string]: TypeInfo[];
+  [key: string]: TypeInfo;
 }
 
 export type TypeInfo = {

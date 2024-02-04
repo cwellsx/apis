@@ -1,5 +1,6 @@
 import * as React from "react";
-import type { BindIpc, MainApi, PreloadApis, RendererApi, View } from "../shared-types";
+import type { BindIpc, MainApi, PreloadApis, RendererApi, Types, View } from "../shared-types";
+import { Details } from "./Details";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
 import { Panes } from "./Panes";
@@ -17,10 +18,12 @@ export const mainApi: MainApi = window.preloadApis.mainApi;
 export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 
 const defaultView: View = { image: "", groups: [], leafVisible: [], groupExpanded: [] };
+const defaultTypes: Types = { namespaces: [] };
 
 const App: React.FunctionComponent = () => {
   const [greeting, setGreeting] = React.useState<string | undefined>("No data");
   const [view, setView] = React.useState(defaultView);
+  const [types, setTypes] = React.useState(defaultTypes);
   const [zoomPercent, onWheel] = useZoomPercent();
 
   React.useEffect(() => {
@@ -30,9 +33,14 @@ const App: React.FunctionComponent = () => {
         setGreeting(greeting);
       },
       showView(view: View): void {
-        log("setView");
+        log("showView");
         setGreeting(undefined);
         setView(view);
+      },
+      showTypes(types: Types): void {
+        log("showTypes");
+        setGreeting(undefined);
+        setTypes(types);
       },
     };
     bindIpc(rendererApi);
@@ -40,6 +48,7 @@ const App: React.FunctionComponent = () => {
 
   const setLeafVisible: (names: string[]) => void = (names) => mainApi.setLeafVisible(names);
   const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
+  const onClick: (id: string) => void = (id) => mainApi.onClick(id);
 
   // display a message, or an image if there is one
   const center = greeting ? (
@@ -47,8 +56,16 @@ const App: React.FunctionComponent = () => {
   ) : typeof view.image === "string" ? (
     <Message message={view.image} />
   ) : (
-    <Graph imagePath={view.image.imagePath} areas={view.image.areas} now={view.image.now} zoomPercent={zoomPercent} />
+    <Graph
+      imagePath={view.image.imagePath}
+      areas={view.image.areas}
+      now={view.image.now}
+      zoomPercent={zoomPercent}
+      onClick={onClick}
+    />
   );
+
+  const details = !types.namespaces.length ? undefined : <Details types={types} />;
 
   return (
     <React.StrictMode>
@@ -63,7 +80,7 @@ const App: React.FunctionComponent = () => {
           />
         }
         center={center}
-        // right={greeting} TODO later display something in the right pane sometimes
+        right={details}
         onWheel={onWheel}
       />
     </React.StrictMode>

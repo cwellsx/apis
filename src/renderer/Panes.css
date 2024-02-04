@@ -8,3 +8,7 @@
 .react-split__sash {
   transition: background-color 0s;
 }
+
+#graph, #group, #types {
+  overflow: auto;
+}

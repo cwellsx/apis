@@ -43,7 +43,13 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
   //     <div class="split-sash-content split-sash-content-active split-sash-content-vscode"></div>
 
   // display right pane iff there's something to display
-  const rightDiv = right ? <div style={{ ...layoutCSS }}>{right}</div> : <></>;
+  const rightDiv = right ? (
+    <div id="types" style={{ ...layoutCSS }}>
+      {right}
+    </div>
+  ) : (
+    <></>
+  );
 
   return (
     <SplitPane
@@ -52,7 +58,9 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
       onChange={setSizes}
       sashRender={(_, active) => <SashContent active={active} type="vscode"></SashContent>}
     >
-      <div style={{ ...layoutCSS, ...leftCSS }}>{left}</div>
+      <div id="group" style={{ ...layoutCSS, ...leftCSS }}>
+        {left}
+      </div>
       <div id="graph" style={{ ...layoutCSS, ...centerCSS }} onWheel={onWheel}>
         {center}
       </div>
