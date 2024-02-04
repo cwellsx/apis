@@ -1,8 +1,8 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
 import type { Groups, LeafNode, MainApi, RendererApi, View } from "../shared-types";
-import { isParent } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { registerFileProtocol } from "./convertPathToUrl";
+import { convertToImage } from "./convertToImage";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { createImage } from "./createImage";
 import { getErrorString } from "./error";
@@ -205,13 +205,13 @@ export function createApplication(mainWindow: BrowserWindow): void {
     const isLeafVisible = createLookup(leafVisible);
     const isGroupExpanded = createLookup(groupExpanded);
     const nodes = flatten ? leafs : groups;
-    log("convertGraphedToImage");
-    const image = nodes.some((node) => isParent(node) || isLeafVisible(node.id))
-      ? createImage(nodes, edges, isLeafVisible, isGroupExpanded)
-      : "Empty graph, no nodes to display";
-    log("convertLoadedToGroups");
-    const view: View = { image, groups: first ? groups : null, leafVisible, groupExpanded };
+    log("convertToImage");
+    const imageData = convertToImage(nodes, edges, isLeafVisible, isGroupExpanded);
+    log("createImage");
+    const image =
+      imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";
     log("showView");
+    const view: View = { image, groups: first ? groups : null, leafVisible, groupExpanded };
     rendererApi.showView(view);
   }
 
