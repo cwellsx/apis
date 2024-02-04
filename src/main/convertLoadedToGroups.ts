@@ -1,11 +1,9 @@
 import type { GroupNode, Groups, LeafNode, ParentNode } from "../shared-types";
 import { isParent } from "../shared-types";
 import type { Loaded, StringPredicate } from "./shared-types";
-
+import { options } from "./shared-types";
 /*
-
-This is a depth-first implementation, could if needed change it to be breadth-first.
-
+  This is a depth-first implementation, could if needed change it to be breadth-first.
 */
 
 export const convertLoadedToGroups = (loaded: Loaded): Groups => {
@@ -60,6 +58,25 @@ export const convertLoadedToGroups = (loaded: Loaded): Groups => {
       }
     }
   }
+
+  const regroup = (predicate: StringPredicate, label: string, id: string): void => {
+    const found = result.filter((node) => predicate(node.label));
+    const parent = { label, id, parent: null, children: found };
+    found.forEach((child) => {
+      child.parent = parent;
+      const index = result.indexOf(child);
+      result.splice(index, 1);
+    });
+    result.push(parent);
+  };
+
+  const dotNetAssemblies = ["Microsoft", "System", "mscorlib", "netstandard", "WindowsBase", "PresentationFramework"];
+  if (options.groupDotNet) regroup((label) => dotNetAssemblies.includes(label), ".NET", "!.NET");
+
+  const exeNamespaces = loaded.exes.map((name) => name.split(".")[0]);
+  const knownNamespaces = [...exeNamespaces, ...dotNetAssemblies, ".NET"];
+  if (options.group3rdParty && exeNamespaces.length)
+    regroup((label) => !knownNamespaces.includes(label), "3rd-party", "!3rd-party");
 
   // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
   // also assert that the parent fields are set correctly

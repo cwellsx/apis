@@ -12,7 +12,7 @@ import { log } from "./log";
 import { createMenu } from "./menu";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
 import type { Edge, Loaded, StringPredicate } from "./shared-types";
-import { loadedVersion } from "./shared-types";
+import { loadedVersion, options } from "./shared-types";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
@@ -197,7 +197,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
     const groups = convertLoadedToGroups(loaded);
     const leafVisible = sqlLoaded.viewState.leafVisible ?? Object.keys(loaded.assemblies);
     const groupExpanded = sqlLoaded.viewState.groupExpanded ?? [];
-    showGraphed(groups, leafs, edges, leafVisible, groupExpanded, first, false);
+    showGraphed(groups, leafs, edges, leafVisible, groupExpanded, first);
   }
 
   function showGraphed(
@@ -206,12 +206,11 @@ export function createApplication(mainWindow: BrowserWindow): void {
     edges: Edge[],
     leafVisible: string[],
     groupExpanded: string[],
-    first: boolean,
-    flatten: boolean
+    first: boolean
   ): void {
     const isLeafVisible = createLookup(leafVisible);
     const isGroupExpanded = createLookup(groupExpanded);
-    const nodes = flatten ? leafs : groups;
+    const nodes = options.flatten ? leafs : groups;
     log("convertToImage");
     const imageData = convertToImage(nodes, edges, isLeafVisible, isGroupExpanded);
     log("createImage");
