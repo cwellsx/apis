@@ -2,9 +2,10 @@
 // they show how graph nodes are grouped and control which groups are expanded
 // they don't show edges and node properties and don't need more data than this
 
-export type TextNode = {
+type TextNode = {
   label: string;
   id: string; // unique within graph and/or within group tree
+  parent: ParentNode | null;
 };
 
 export type LeafNode = TextNode;

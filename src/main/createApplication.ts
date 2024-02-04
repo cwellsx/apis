@@ -1,5 +1,6 @@
 import { BrowserWindow, dialog, ipcMain } from "electron";
-import { isParent, type Groups, type LeafNode, type MainApi, type RendererApi, type View } from "../shared-types";
+import type { Groups, LeafNode, MainApi, RendererApi, View } from "../shared-types";
+import { isParent } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
@@ -10,7 +11,7 @@ import { hash } from "./hash";
 import { log } from "./log";
 import { createMenu } from "./menu";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
-import type { Edge, Loaded } from "./shared-types";
+import type { Edge, Loaded, StringPredicate } from "./shared-types";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
@@ -170,7 +171,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
     }
   }
 
-  const createLookup = (array: string[]): ((id: string) => boolean) => {
+  const createLookup = (array: string[]): StringPredicate => {
     const temp = new Set(array);
     return (id: string) => temp.has(id);
   };
@@ -182,14 +183,14 @@ export function createApplication(mainWindow: BrowserWindow): void {
     const leafs: LeafNode[] = [];
     const edges: Edge[] = [];
     Object.entries(loaded.assemblies).forEach(([assembly, dependencies]) => {
-      leafs.push({ id: assembly, label: assembly });
+      leafs.push({ id: assembly, label: assembly, parent: null });
       dependencies.forEach((dependency) => edges.push({ clientId: assembly, serverId: dependency }));
     });
     // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
     const groups = convertLoadedToGroups(loaded);
     const leafVisible = sqlLoaded.viewState.leafVisible ?? Object.keys(loaded.assemblies);
     const groupExpanded = sqlLoaded.viewState.groupExpanded ?? [];
-    showGraphed(groups, leafs, edges, leafVisible, groupExpanded, first, true);
+    showGraphed(groups, leafs, edges, leafVisible, groupExpanded, first, false);
   }
 
   function showGraphed(
@@ -206,7 +207,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
     const nodes = flatten ? leafs : groups;
     log("convertGraphedToImage");
     const image = nodes.some((node) => isParent(node) || isLeafVisible(node.id))
-      ? createImage(nodes, edges, isLeafVisible)
+      ? createImage(nodes, edges, isLeafVisible, isGroupExpanded)
       : "Empty graph, no nodes to display";
     log("convertLoadedToGroups");
     const view: View = { image, groups: first ? groups : null, leafVisible, groupExpanded };
