@@ -4,4 +4,5 @@ export const options = {
   flatten: false,
   groupDotNet: true,
   group3rdParty: true,
+  ungroupSingle: true,
 };

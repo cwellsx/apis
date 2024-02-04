@@ -1,7 +1,7 @@
 import type { GroupNode, Groups, LeafNode, ParentNode } from "../shared-types";
 import { isParent } from "../shared-types";
 import type { Loaded, StringPredicate } from "./shared-types";
-import { options } from "./shared-types";
+import { options, remove, replace } from "./shared-types";
 /*
   This is a depth-first implementation, could if needed change it to be breadth-first.
 */
@@ -59,13 +59,30 @@ export const convertLoadedToGroups = (loaded: Loaded): Groups => {
     }
   }
 
+  if (options.ungroupSingle) {
+    const ungroupSingle = (nodes: Groups): void => {
+      nodes.slice().forEach((node) => {
+        if (isParent(node)) {
+          let children: Groups | undefined = node.children;
+          if (node.children.length == 1) {
+            const child = node.children[0];
+            child.parent = node.parent;
+            replace(nodes, node, child);
+            children = isParent(child) ? child.children : undefined;
+          }
+          if (children) ungroupSingle(children);
+        }
+      });
+    };
+    ungroupSingle(result);
+  }
+
   const regroup = (predicate: StringPredicate, label: string, id: string): void => {
     const found = result.filter((node) => predicate(node.label));
     const parent = { label, id, parent: null, children: found };
     found.forEach((child) => {
       child.parent = parent;
-      const index = result.indexOf(child);
-      result.splice(index, 1);
+      remove(result, child);
     });
     result.push(parent);
   };
