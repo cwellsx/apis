@@ -5,4 +5,5 @@ export const options = {
   groupDotNet: true,
   group3rdParty: true,
   ungroupSingle: true,
+  shortLeafNames: true,
 };

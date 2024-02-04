@@ -2,6 +2,7 @@ import type { GroupNode, Groups, LeafNode, ParentNode } from "../shared-types";
 import { isParent } from "../shared-types";
 import type { ImageData, Node as ImageNode } from "./createImage";
 import type { Edge, StringPredicate } from "./shared-types";
+import { options } from "./shared-types";
 
 type Nodes = Groups | LeafNode[];
 
@@ -46,8 +47,19 @@ export function convertToImage(
   const isGroupNodeVisible = (node: GroupNode): boolean =>
     isParent(node) ? node.children.some((child) => isGroupNodeVisible(child)) : isLeafVisible(node.id);
 
+  const metaGroupLabels = [".NET", "3rd-party"];
   const toImageNode = (node: GroupNode): ImageNode => {
     const textNode = { id: node.id, label: node.label };
+    // implement this option here to affect the label on the image but not in the ttree of groups
+    if (
+      options.shortLeafNames &&
+      node.parent &&
+      !metaGroupLabels.includes(node.parent.label) &&
+      (!isParent(node) || !isGroupExpanded(node.id))
+    ) {
+      if (!node.label.startsWith(node.parent.label)) throw new Error("Unexpected parent node name");
+      textNode.label = "*" + node.label.substring(node.parent.label.length);
+    }
     return !isParent(node)
       ? { type: "node", ...textNode }
       : !isGroupExpanded(node.id)

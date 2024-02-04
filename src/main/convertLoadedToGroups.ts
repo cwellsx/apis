@@ -88,12 +88,18 @@ export const convertLoadedToGroups = (loaded: Loaded): Groups => {
   };
 
   const dotNetAssemblies = ["Microsoft", "System", "mscorlib", "netstandard", "WindowsBase", "PresentationFramework"];
-  if (options.groupDotNet) regroup((label) => dotNetAssemblies.includes(label), ".NET", "!.NET");
+  const metaGroupLabels: string[] = [];
+  if (options.groupDotNet) {
+    regroup((label) => dotNetAssemblies.includes(label), ".NET", "!.NET");
+    metaGroupLabels.push(".NET");
+  }
 
   const exeNamespaces = loaded.exes.map((name) => name.split(".")[0]);
-  const knownNamespaces = [...exeNamespaces, ...dotNetAssemblies, ".NET"];
-  if (options.group3rdParty && exeNamespaces.length)
+  const knownNamespaces = [...exeNamespaces, ...dotNetAssemblies, ...metaGroupLabels];
+  if (options.group3rdParty && exeNamespaces.length) {
     regroup((label) => !knownNamespaces.includes(label), "3rd-party", "!3rd-party");
+    metaGroupLabels.push("3rd-party");
+  }
 
   // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
   // also assert that the parent fields are set correctly
