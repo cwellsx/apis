@@ -6,4 +6,5 @@ export const options = {
   group3rdParty: true,
   ungroupSingle: true,
   shortLeafNames: true,
+  noSelfEdges: true,
 };

@@ -35,6 +35,7 @@ export function convertToImage(
     .forEach((edge) => {
       const clientId = closed.get(edge.clientId) ?? edge.clientId;
       const serverId = closed.get(edge.serverId) ?? edge.serverId;
+      if (options.noSelfEdges && clientId == serverId) return;
       const edgeId = makeEdgeId(clientId, serverId);
       const found = edgeGroups.get(edgeId);
       if (found) found.push(edge);
@@ -50,7 +51,7 @@ export function convertToImage(
   const metaGroupLabels = [".NET", "3rd-party"];
   const toImageNode = (node: GroupNode): ImageNode => {
     const textNode = { id: node.id, label: node.label };
-    // implement this option here to affect the label on the image but not in the ttree of groups
+    // implement this option here to affect the label on the image but not in the tree of groups
     if (
       options.shortLeafNames &&
       node.parent &&
