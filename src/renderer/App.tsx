@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { BindIpc, MainApi, PreloadApis, RendererApi, Types, View } from "../shared-types";
+import type { BindIpc, MainApi, OnClick, PreloadApis, RendererApi, Types, View } from "../shared-types";
 import { Details } from "./Details";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
@@ -48,7 +48,7 @@ const App: React.FunctionComponent = () => {
 
   const setLeafVisible: (names: string[]) => void = (names) => mainApi.setLeafVisible(names);
   const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
-  const onClick: (id: string) => void = (id) => mainApi.onClick(id);
+  const onClick: OnClick = (id, event) => mainApi.onClick(id, event);
 
   // display a message, or an image if there is one
   const center = greeting ? (

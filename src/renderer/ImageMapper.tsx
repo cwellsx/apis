@@ -3,7 +3,7 @@ import React, { FC, useEffect, useRef } from "react";
 // this is copy-and-pasted from https://github.com/yj-ang/react-image-mapper2/blob/master/src/components/ImageMapper.tsx
 // because of https://github.com/yj-ang/react-image-mapper2/issues/4 but it's used as-is without modification
 
-export type AreaMouseEvent = Event | React.MouseEvent<HTMLAreaElement, MouseEvent>;
+export type AreaMouseEvent = /*Event |*/ React.MouseEvent<HTMLAreaElement, MouseEvent>;
 
 export type AreaEvent = {
   area: Area;
