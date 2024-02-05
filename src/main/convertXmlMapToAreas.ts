@@ -61,7 +61,8 @@ type Attributes = {
 
 export function convertXmlMapToAreas(xml: string): Area[] {
   const root: ElementCompact = xml2js(xml, { compact: true });
-  const areas: Attributes[] = root["map"]["area"];
+  const converted: Attributes[] | Attributes = root["map"]["area"];
+  const areas: Attributes[] = Array.isArray(converted) ? converted : [converted];
   return areas.map((el) => {
     const attr = el._attributes;
     const coords = attr.coords.split(",").map((s) => parseInt(s));
