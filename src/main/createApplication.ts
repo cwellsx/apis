@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
-import type { MainApi, MouseEvent } from "../shared-types";
+import type { MainApi, MouseEvent, ViewOptions } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { convertToTypes } from "./convertToTypes";
 import { viewSqlLoaded } from "./convertToView";
@@ -63,6 +63,13 @@ export function createApplication(mainWindow: BrowserWindow): void {
       const view = viewSqlLoaded(sqlLoaded, false);
       show.view(view);
     },
+    setViewOptions: (viewOptions: ViewOptions): void => {
+      log("setGroupExpanded");
+      if (!sqlLoaded) return;
+      sqlLoaded.viewState.viewOptions = viewOptions;
+      const view = viewSqlLoaded(sqlLoaded, false);
+      show.view(view);
+    },
     onClick: (id: string, event: MouseEvent): void => {
       log("onClick");
       if (!sqlLoaded) return;
@@ -74,6 +81,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   };
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
   ipcMain.on("setGroupExpanded", (event, names) => mainApi.setGroupExpanded(names));
+  ipcMain.on("setViewOptions", (event, viewOptions) => mainApi.setViewOptions(viewOptions));
   ipcMain.on("onClick", (event, id, mouseEvent) => mainApi.onClick(id, mouseEvent));
 
   // wrap use of the renderer API

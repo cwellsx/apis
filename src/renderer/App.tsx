@@ -1,5 +1,6 @@
 import * as React from "react";
-import type { BindIpc, MainApi, OnClick, PreloadApis, RendererApi, Types, View } from "../shared-types";
+import type { BindIpc, MainApi, OnClick, PreloadApis, RendererApi, Types, View, ViewOptions } from "../shared-types";
+import { defaultViewOptions } from "../shared-types";
 import { Details } from "./Details";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
@@ -17,7 +18,13 @@ declare global {
 export const mainApi: MainApi = window.preloadApis.mainApi;
 export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 
-const defaultView: View = { image: "", groups: [], leafVisible: [], groupExpanded: [] };
+const defaultView: View = {
+  image: "",
+  groups: [],
+  leafVisible: [],
+  groupExpanded: [],
+  viewOptions: defaultViewOptions,
+};
 const defaultTypes: Types = { namespaces: [] };
 
 const App: React.FunctionComponent = () => {
@@ -48,6 +55,7 @@ const App: React.FunctionComponent = () => {
 
   const setLeafVisible: (names: string[]) => void = (names) => mainApi.setLeafVisible(names);
   const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
+  const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.setViewOptions(viewOptions);
   const onClick: OnClick = (id, event) => mainApi.onClick(id, event);
 
   // display a message, or an image if there is one
@@ -77,6 +85,8 @@ const App: React.FunctionComponent = () => {
             groupExpanded={view.groupExpanded}
             setLeafVisible={setLeafVisible}
             setGroupExpanded={setGroupExpanded}
+            viewOptions={view.viewOptions}
+            setViewOptions={setViewOptions}
           />
         }
         center={center}

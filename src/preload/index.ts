@@ -1,9 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { MainApi, MouseEvent, PreloadApis, RendererApi } from "../shared-types";
+import type { MainApi, MouseEvent, PreloadApis, RendererApi, ViewOptions } from "../shared-types";
 
 const mainApiProxy: MainApi = {
   setLeafVisible: (names: string[]) => ipcRenderer.send("setLeafVisible", names),
   setGroupExpanded: (names: string[]) => ipcRenderer.send("setGroupExpanded", names),
+  setViewOptions: (viewOptions: ViewOptions) => ipcRenderer.send("setViewOptions", viewOptions),
   onClick: (id: string, event: MouseEvent) => ipcRenderer.send("onClick", id, event),
 };
 

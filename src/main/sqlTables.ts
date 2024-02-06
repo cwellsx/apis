@@ -1,4 +1,5 @@
 import { Database } from "better-sqlite3";
+import { ViewOptions } from "../shared-types";
 import { log } from "./log";
 import { IAssemblies, ITypes, Loaded } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
@@ -147,6 +148,15 @@ class ViewState {
   get groupExpanded(): string[] | undefined {
     const value = this._cache.getValue("groupExpanded");
     return value ? JSON.parse(value) : undefined;
+  }
+
+  set viewOptions(viewOptions: ViewOptions) {
+    this._cache.setValue("viewOptions", JSON.stringify(viewOptions));
+  }
+  get viewOptions(): ViewOptions {
+    const value = this._cache.getValue("viewOptions");
+    const defaultViewOptions: ViewOptions = { showGrouped: true };
+    return value ? { defaultViewOptions, ...JSON.parse(value) } : defaultViewOptions;
   }
 
   get loadedVersion(): string {

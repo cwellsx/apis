@@ -1,6 +1,6 @@
 import { OnClick } from "./mouseEvent";
 import { Types } from "./types";
-import { View } from "./view";
+import { View, ViewOptions } from "./view";
 
 /*
   The underlying APIs, which the application-specific classes wrap, are:
@@ -15,6 +15,7 @@ import { View } from "./view";
 export interface MainApi {
   setLeafVisible: (names: string[]) => void;
   setGroupExpanded: (names: string[]) => void;
+  setViewOptions: (viewOptions: ViewOptions) => void;
   onClick: OnClick;
 }
 
