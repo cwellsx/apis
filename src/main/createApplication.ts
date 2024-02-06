@@ -4,12 +4,14 @@ import { registerFileProtocol } from "./convertPathToUrl";
 import { convertToTypes } from "./convertToTypes";
 import { viewSqlLoaded } from "./convertToView";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
-import { getAppFilename } from "./fs";
+import { getAppFilename, writeFileSync } from "./fs";
 import { log } from "./log";
 import { open } from "./open";
-import type { Loaded } from "./shared-types";
+import { readCoreJson, whenCoreJson } from "./readCoreJson";
+import { loadedVersion, type Loaded } from "./shared-types";
 import { IShow, Show } from "./show";
-import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
+import { showErrorBox } from "./showErrorBox";
+import { DataSource, SqlLoaded, createSqlLoaded } from "./sqlTables";
 
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
@@ -37,15 +39,12 @@ export function createApplication(mainWindow: BrowserWindow): void {
   // instantiate the DotNetApi
   const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
 
-  // instantiate the Config SQL
-  const sqlConfig = createSqlConfig(getAppFilename("config.db"));
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
   const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
     log("changeSqlLoaded");
     if (sqlLoaded) sqlLoaded.close();
-    sqlLoaded = createSqlLoaded(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
-    return sqlLoaded;
+    return createSqlLoaded(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
   };
 
   // implement the MainApi and bind it to ipcMain
@@ -80,9 +79,55 @@ export function createApplication(mainWindow: BrowserWindow): void {
   // wrap use of the renderer API
   const show: IShow = new Show(mainWindow);
 
+  const openSqlLoaded = async (
+    dataSource: DataSource,
+    when: string,
+    getLoaded: (path: string) => Promise<Loaded>
+  ): Promise<void> => {
+    sqlLoaded = changeSqlLoaded(dataSource);
+    if (
+      !sqlLoaded.viewState.cachedWhen ||
+      loadedVersion !== sqlLoaded.viewState.loadedVersion ||
+      Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)
+    ) {
+      log("getLoaded");
+      const loaded = await getLoaded(dataSource.path);
+      const jsonPath = getAppFilename(`Core.${dataSource.hash}.json`);
+      writeFileSync(jsonPath, JSON.stringify(loaded, null, " "));
+      sqlLoaded.save(loaded, when);
+    } else log("!getLoaded");
+    mainWindow.setTitle(dataSource.path);
+    const view = viewSqlLoaded(sqlLoaded, true);
+    show.view(view);
+  };
+
+  const readDotNetApi = async (path: string): Promise<Loaded> => {
+    const json = await dotNetApi.getJson(path);
+    const loaded = JSON.parse(json);
+    return loaded;
+  };
+
+  // the caller wraps this with a try/catch handler
+  const onOpen = async (dataSource: DataSource): Promise<void> => {
+    log("openDataSource");
+    const path = dataSource.path;
+    show.message(`Loading ${path}`, "Loading...");
+    switch (dataSource.type) {
+      case "loadedAssemblies":
+        await openSqlLoaded(dataSource, await dotNetApi.getWhen(dataSource.path), readDotNetApi);
+        break;
+      case "coreJson":
+        await openSqlLoaded(dataSource, await whenCoreJson(dataSource.path), readCoreJson);
+        break;
+      case "customJson":
+        showErrorBox("Not implemented", "This option isn't implemented yet");
+        return;
+    }
+  };
+
   async function onRendererLoaded(): Promise<void> {
     log("onRendererLoaded");
-    await open(mainWindow, dotNetApi, changeSqlLoaded, sqlConfig, show);
+    await open(mainWindow, show, onOpen);
   }
 
   mainWindow.webContents.once("did-finish-load", onRendererLoaded);

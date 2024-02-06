@@ -63,15 +63,20 @@ export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   };
 
   return (
-    <CheckboxTree
-      nodes={nodes}
-      checked={checked}
-      expanded={expanded}
-      onCheck={onCheck}
-      onExpand={onExpand}
-      icons={icons}
-      showNodeIcon={false}
-      id="treeid"
-    />
+    <>
+      <div>Hello</div>
+
+      <CheckboxTree
+        nodes={nodes}
+        checked={checked}
+        expanded={expanded}
+        onCheck={onCheck}
+        onExpand={onExpand}
+        icons={icons}
+        showNodeIcon={false}
+        id="treeid"
+        showExpandAll={true}
+      />
+    </>
   );
 };

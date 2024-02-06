@@ -1,72 +1,23 @@
 import { dialog, type BrowserWindow } from "electron";
-import { viewSqlLoaded } from "./convertToView";
-import type { DotNetApi } from "./createDotNetApi";
-import { getAppFilename, pathJoin, writeFileSync } from "./fs";
+import { getAppFilename, pathJoin } from "./fs";
 import { hash } from "./hash";
-import { log } from "./log";
 import { createMenu } from "./menu";
-import { readCoreJson, whenCoreJson } from "./readCoreJson";
-import type { Loaded } from "./shared-types";
-import { loadedVersion } from "./shared-types";
 import { IShow } from "./show";
 import { showErrorBox } from "./showErrorBox";
-import type { DataSource, SqlConfig, SqlLoaded } from "./sqlTables";
+import { createSqlConfig, type DataSource } from "./sqlTables";
 
 declare const CORE_EXE: string;
 
-export const open = async (
-  mainWindow: BrowserWindow,
-  dotNetApi: DotNetApi,
-  changeSqlLoaded: (dataSource: DataSource) => SqlLoaded,
-  sqlConfig: SqlConfig,
-  show: IShow
-): Promise<void> => {
-  //
+type OnOpen = (dataSource: DataSource) => Promise<void>;
 
-  const openSqlLoaded = async (
-    dataSource: DataSource,
-    when: string,
-    getLoaded: (path: string) => Promise<Loaded>
-  ): Promise<void> => {
-    const sqlLoaded = changeSqlLoaded(dataSource);
-    if (
-      !sqlLoaded.viewState.cachedWhen ||
-      loadedVersion !== sqlLoaded.viewState.loadedVersion ||
-      Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)
-    ) {
-      log("getLoaded");
-      const loaded = await getLoaded(dataSource.path);
-      const jsonPath = getAppFilename(`Core.${dataSource.hash}.json`);
-      writeFileSync(jsonPath, JSON.stringify(loaded, null, " "));
-      sqlLoaded.save(loaded, when);
-    } else log("!getLoaded");
-    mainWindow.setTitle(dataSource.path);
-    const view = viewSqlLoaded(sqlLoaded, true);
-    show.view(view);
-  };
+export const open = async (mainWindow: BrowserWindow, show: IShow, onOpen: OnOpen): Promise<void> => {
+  // instantiate the Config SQL
+  const sqlConfig = createSqlConfig(getAppFilename("config.db"));
 
-  const readDotNetApi = async (path: string): Promise<Loaded> => {
-    const json = await dotNetApi.getJson(path);
-    const loaded = JSON.parse(json);
-    return loaded;
-  };
-
+  // wrap a try/catch handler around onOpenDataSource
   const openDataSource = async (dataSource: DataSource): Promise<void> => {
     try {
-      log("openDataSource");
-      const path = dataSource.path;
-      show.message(`Loading ${path}`, "Loading...");
-      switch (dataSource.type) {
-        case "loadedAssemblies":
-          await openSqlLoaded(dataSource, await dotNetApi.getWhen(dataSource.path), readDotNetApi);
-          break;
-        case "coreJson":
-          await openSqlLoaded(dataSource, await whenCoreJson(dataSource.path), readCoreJson);
-          break;
-        case "customJson":
-          showErrorBox("Not implemented", "This option isn't implemented yet");
-          return;
-      }
+      await onOpen(dataSource);
       // remember as most-recently-opened iff it opens successfully
       sqlConfig.dataSource = dataSource;
       // update the list of recently opened paths by recreating the menu

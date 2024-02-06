@@ -19,7 +19,6 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
 
   const layoutCSS = {
     height: "100%",
-    display: "flex",
     alignItems: "center",
   };
 
