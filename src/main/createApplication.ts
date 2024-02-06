@@ -6,6 +6,7 @@ import { viewSqlLoaded } from "./convertToView";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { getAppFilename, writeFileSync } from "./fs";
 import { log } from "./log";
+import { hide, showAdjacent } from "./onClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
 import { loadedVersion, type Loaded } from "./shared-types";
@@ -53,30 +54,34 @@ export function createApplication(mainWindow: BrowserWindow): void {
       log("setLeafVisible");
       if (!sqlLoaded) return;
       sqlLoaded.viewState.leafVisible = names;
-      const view = viewSqlLoaded(sqlLoaded, false);
-      show.view(view);
+      showSqlLoaded(sqlLoaded);
     },
     setGroupExpanded: (names: string[]): void => {
       log("setGroupExpanded");
       if (!sqlLoaded) return;
       sqlLoaded.viewState.groupExpanded = names;
-      const view = viewSqlLoaded(sqlLoaded, false);
-      show.view(view);
+      showSqlLoaded(sqlLoaded);
     },
     setViewOptions: (viewOptions: ViewOptions): void => {
       log("setGroupExpanded");
       if (!sqlLoaded) return;
       sqlLoaded.viewState.viewOptions = viewOptions;
-      const view = viewSqlLoaded(sqlLoaded, false);
-      show.view(view);
+      showSqlLoaded(sqlLoaded);
     },
     onClick: (id: string, event: MouseEvent): void => {
       log("onClick");
       if (!sqlLoaded) return;
-      const loaded: Loaded = sqlLoaded.read();
-      const types = convertToTypes(loaded, id);
-      log("showTypes");
-      show.types(types);
+      if (event.shiftKey) {
+        showAdjacent(sqlLoaded, id);
+        showSqlLoaded(sqlLoaded);
+      } else if (event.ctrlKey) {
+        hide(sqlLoaded, id);
+        showSqlLoaded(sqlLoaded);
+      } else {
+        const types = convertToTypes(sqlLoaded.read(), id);
+        log("show.types");
+        show.types(types);
+      }
     },
   };
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
@@ -86,6 +91,12 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   // wrap use of the renderer API
   const show: IShow = new Show(mainWindow);
+
+  const showSqlLoaded = (sqlLoaded: SqlLoaded, first = false): void => {
+    const view = viewSqlLoaded(sqlLoaded, first);
+    log("show.view");
+    show.view(view);
+  };
 
   const openSqlLoaded = async (
     dataSource: DataSource,
@@ -105,8 +116,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlLoaded.save(loaded, when);
     } else log("!getLoaded");
     mainWindow.setTitle(dataSource.path);
-    const view = viewSqlLoaded(sqlLoaded, true);
-    show.view(view);
+    showSqlLoaded(sqlLoaded, true);
   };
 
   const readDotNetApi = async (path: string): Promise<Loaded> => {

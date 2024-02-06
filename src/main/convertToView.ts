@@ -7,7 +7,7 @@ import { options, type Edge, type Loaded, type StringPredicate } from "./shared-
 import type { SqlLoaded } from "./sqlTables";
 
 export const viewSqlLoaded = (sqlLoaded: SqlLoaded, first: boolean): View => {
-  log("showSqlLoaded");
+  log("viewSqlLoaded");
   // maybe we needn't read Loaded and calculate Groups more than once, but for now we do it every time
   const loaded: Loaded = sqlLoaded.read();
   const leafs: LeafNode[] = [];
