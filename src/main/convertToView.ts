@@ -3,7 +3,7 @@ import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { convertToImage } from "./convertToImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
-import { options, type Edge, type Loaded, type StringPredicate } from "./shared-types";
+import { type Edge, type Loaded, type StringPredicate } from "./shared-types";
 import type { SqlLoaded } from "./sqlTables";
 
 export const viewSqlLoaded = (sqlLoaded: SqlLoaded, first: boolean): View => {
@@ -40,7 +40,7 @@ function showGraphed(
 ): View {
   const isLeafVisible = createLookup(leafVisible);
   const isGroupExpanded = createLookup(groupExpanded);
-  const nodes = options.flatten ? leafs : groups;
+  const nodes = viewOptions.showGrouped ? groups : leafs;
   log("convertToImage");
   const imageData = convertToImage(nodes, edges, isLeafVisible, isGroupExpanded, viewOptions.showGrouped);
   log("createImage");
