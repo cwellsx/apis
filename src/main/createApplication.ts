@@ -92,8 +92,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
   // wrap use of the renderer API
   const show: IShow = new Show(mainWindow);
 
-  const showSqlLoaded = (sqlLoaded: SqlLoaded, first = false): void => {
-    const view = viewSqlLoaded(sqlLoaded, first);
+  const showSqlLoaded = (sqlLoaded: SqlLoaded): void => {
+    const view = viewSqlLoaded(sqlLoaded);
     log("show.view");
     show.view(view);
   };
@@ -116,7 +116,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlLoaded.save(loaded, when);
     } else log("!getLoaded");
     mainWindow.setTitle(dataSource.path);
-    showSqlLoaded(sqlLoaded, true);
+    showSqlLoaded(sqlLoaded);
   };
 
   const readDotNetApi = async (path: string): Promise<Loaded> => {

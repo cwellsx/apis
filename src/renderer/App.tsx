@@ -4,6 +4,7 @@ import { defaultViewOptions } from "../shared-types";
 import { Details } from "./Details";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
+import { Options } from "./Options";
 import { Panes } from "./Panes";
 import { Tree } from "./Tree";
 import { log } from "./log";
@@ -27,6 +28,8 @@ const defaultView: View = {
 };
 const defaultTypes: Types = { namespaces: [] };
 
+let once = false;
+
 const App: React.FunctionComponent = () => {
   const [greeting, setGreeting] = React.useState<string | undefined>("No data");
   const [view, setView] = React.useState(defaultView);
@@ -34,6 +37,9 @@ const App: React.FunctionComponent = () => {
   const [zoomPercent, onWheel] = useZoomPercent();
 
   React.useEffect(() => {
+    if (once) return;
+    once = true;
+
     const rendererApi: RendererApi = {
       // tslint:disable-next-line:no-shadowed-variable
       setGreeting(greeting: string): void {
@@ -73,26 +79,24 @@ const App: React.FunctionComponent = () => {
     />
   );
 
+  const left = (
+    <div>
+      <Options viewOptions={view.viewOptions} setViewOptions={setViewOptions} />
+      <Tree
+        nodes={view.groups}
+        leafVisible={view.leafVisible}
+        groupExpanded={view.groupExpanded}
+        setLeafVisible={setLeafVisible}
+        setGroupExpanded={setGroupExpanded}
+      />
+    </div>
+  );
+
   const details = !types.namespaces.length ? undefined : <Details types={types} />;
 
   return (
     <React.StrictMode>
-      <Panes
-        left={
-          <Tree
-            nodes={view.groups}
-            leafVisible={view.leafVisible}
-            groupExpanded={view.groupExpanded}
-            setLeafVisible={setLeafVisible}
-            setGroupExpanded={setGroupExpanded}
-            viewOptions={view.viewOptions}
-            setViewOptions={setViewOptions}
-          />
-        }
-        center={center}
-        right={details}
-        onWheel={onWheel}
-      />
+      <Panes left={left} center={center} right={details} onWheel={onWheel} />
     </React.StrictMode>
   );
 };
