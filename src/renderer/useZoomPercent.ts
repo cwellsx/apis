@@ -1,6 +1,9 @@
 import * as React from "react";
 
-const zooms = [25, 33, 50, 67, 75, 80, 90, 100, 110, 125, 150, 175, 200, 250, 300, 400, 500];
+// divisor is set to halve after 6 clicks i.e. 1.122462
+const zooms = [
+  20, 22, 25, 28, 31, 35, 40, 45, 50, 56, 63, 75, 80, 90, 100, 110, 125, 140, 160, 180, 200, 225, 250, 280,
+];
 
 export function useZoomPercent(): [zoomPercent: number, onWheel: (event: React.WheelEvent) => void] {
   const [zoomPercent, setZoomPercent] = React.useState(100);

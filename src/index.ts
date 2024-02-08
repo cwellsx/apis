@@ -34,7 +34,7 @@ const createWindow = (): void => {
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools();
-
+  mainWindow.maximize();
   mainWindow.once("ready-to-show", () => mainWindow.show());
 };
 
