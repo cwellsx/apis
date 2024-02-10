@@ -1,6 +1,7 @@
 /*
   The 3 panes are id #group, #graph, and #types
   Their parents divs have class .react-split__pane
+  Don't apply styles e.g. padding to .react-split__pane
 */
 
 #group, #graph, #types {
@@ -20,6 +21,13 @@
 }
 
 .react-split__pane > * {
+  padding: 0.5rem;
   height: 100%;
   align-items: center;
+}
+
+.react-split {
+  /* without this, the 2px sash will overflow and cause a horizontal scrollbar when the right pane width is zero */
+  padding-right: 2px;
+  width: calc(100% - 2px);
 }

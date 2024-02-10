@@ -36,14 +36,15 @@ type DefaultSizes = DefaultSize[];
 type SetActualSizes = (newSizes: number[]) => void;
 
 const scrollbarWidth = getScrollbarWidth();
-const getWidth = (element: Element): number => {
+const getWidth = (element: Element, padding: number): number => {
   const clientWidth = element.clientWidth;
+  if (!clientWidth) return 0;
   const parentElement = element.parentElement;
   const hasScrollbar = parentElement && parentElement.scrollHeight > parentElement.clientHeight;
-  return clientWidth + (hasScrollbar ? scrollbarWidth : 0);
+  return clientWidth + (hasScrollbar ? scrollbarWidth : 0) + padding;
 };
 
-export const usePaneSizes = (inputs: Input[]): [DefaultSizes, SetActualSizes] => {
+export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, SetActualSizes] => {
   // extract and memoize the input
   const defaultSizes = React.useMemo(() => inputs.map((input) => (isPair(input) ? input[0] : input)), [inputs]);
   const refs = React.useMemo(() => inputs.map((input) => (isPair(input) ? input[1] : undefined)), [inputs]);
@@ -77,8 +78,6 @@ export const usePaneSizes = (inputs: Input[]): [DefaultSizes, SetActualSizes] =>
       mappedElements.set(element, index);
     });
 
-    const sizes = refSizes.current;
-
     const onResized = (entries: ResizeObserverEntry[]): void => {
       if (unmount) return;
 
@@ -87,14 +86,14 @@ export const usePaneSizes = (inputs: Input[]): [DefaultSizes, SetActualSizes] =>
         const element = entry.target;
         // ignore the new size reported in the entry,
         // instead calculate depending on whether there's a scrollbar
-        const newSize = getWidth(element);
+        const newSize = getWidth(element, padding);
         mappedSizes.set(element, newSize);
       }
 
       const newSizes = [...defaultSizes];
       mappedElements.forEach((index, element) => {
         let newSize: DefaultSize | undefined = mappedSizes.get(element);
-        if (newSize === undefined) newSize = sizes[index];
+        if (newSize === undefined) newSize = refSizes.current[index];
         newSizes[index] = newSize;
       });
 

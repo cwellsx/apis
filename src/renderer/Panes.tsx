@@ -20,7 +20,7 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
   const rightRef = React.useRef<HTMLDivElement>(null);
 
   const initialSize = React.useMemo<Input[]>(() => [[0, leftRef], "*", [0, rightRef]], []);
-  const [sizes, setSizes] = usePaneSizes(initialSize);
+  const [sizes, setSizes] = usePaneSizes(initialSize, 16);
 
   return (
     <SplitPane
