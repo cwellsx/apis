@@ -1,8 +1,8 @@
 import * as React from "react";
 import SplitPane, { SashContent } from "split-pane-react";
 import "split-pane-react/esm/themes/default.css";
+import "./3rd-party/SplitPane.css";
 import "./Panes.css";
-import "./SplitPane.css";
 import { Input, usePaneSizes } from "./usePaneSizes";
 
 // this encapsulates and is implemented using split-pane-react

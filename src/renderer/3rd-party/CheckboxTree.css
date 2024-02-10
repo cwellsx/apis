@@ -24,3 +24,7 @@
 .react-checkbox-tree {
   position: relative;
 }
+
+.rct-title {
+  padding-right: 0;
+}

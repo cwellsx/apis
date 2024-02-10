@@ -3,7 +3,7 @@ import CheckboxTree, { Icons, Node } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
 import type { GroupNode, Groups } from "../shared-types";
 import { isParent } from "../shared-types";
-import "./CheckboxTree.css";
+import "./3rd-party/CheckboxTree.css";
 import * as Icon from "./Icons";
 import "./Tree.css";
 
