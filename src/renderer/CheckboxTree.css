@@ -1,0 +1,26 @@
+/*
+  This styles elements in the 3rd-party CheckboxTree component
+*/
+
+.rct-option {
+  font-size: 12px !important;
+  display: inline-block;
+}
+
+.rct-option > svg {
+  font-size: 16px !important;
+  display: inline-block;
+  font-weight: normal;
+  width: 1em;
+  height: 1em;
+}
+
+.rct-options {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.react-checkbox-tree {
+  position: relative;
+}

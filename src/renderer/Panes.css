@@ -1,14 +1,25 @@
-.split-sash-content.split-sash-content-vscode {
-  background-color: rgb(200,200,200);
-  width: 2px;
-}
-.split-sash-content.split-sash-content-vscode.split-sash-content-active {
-  width: 100%;
-}
-.react-split__sash {
-  transition: background-color 0s;
+/*
+  The 3 panes are id #group, #graph, and #types
+  Their parents divs have class .react-split__pane
+*/
+
+#group, #graph, #types {
+  overflow: auto;
 }
 
-#graph, #group, #types {
-  overflow: auto;
+#graph {
+  justify-content: center
+}
+
+#group, #types {
+  justify-content: left
+}
+
+.pane-resizes {
+  width: max-content;
+}
+
+.react-split__pane > * {
+  height: 100%;
+  align-items: center;
 }

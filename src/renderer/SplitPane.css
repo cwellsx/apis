@@ -1,0 +1,15 @@
+/*
+  This styles elements in the 3rd-party SplitPane component and is a
+  work-around for https://github.com/yyllff/split-pane-react/issues/16
+*/
+
+.split-sash-content.split-sash-content-vscode {
+  background-color: rgb(200,200,200);
+  width: 2px;
+}
+.split-sash-content.split-sash-content-vscode.split-sash-content-active {
+  width: 100%;
+}
+.react-split__sash {
+  transition: background-color 0s;
+}

@@ -80,7 +80,7 @@ const App: React.FunctionComponent = () => {
   );
 
   const left = (
-    <div>
+    <>
       <Options viewOptions={view.viewOptions} setViewOptions={setViewOptions} />
       <Tree
         nodes={view.groups}
@@ -89,14 +89,14 @@ const App: React.FunctionComponent = () => {
         setLeafVisible={setLeafVisible}
         setGroupExpanded={setGroupExpanded}
       />
-    </div>
+    </>
   );
 
-  const details = !types.namespaces.length ? undefined : <Details types={types} />;
+  const right = !types.namespaces.length ? undefined : <Details types={types} />;
 
   return (
     <React.StrictMode>
-      <Panes left={left} center={center} right={details} onWheel={onWheel} />
+      <Panes left={left} center={center} right={right} onWheel={onWheel} />
     </React.StrictMode>
   );
 };

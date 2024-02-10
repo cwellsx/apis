@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { ViewOptions } from "../shared-types";
+import "./Options.css";
 
 type OptionsProps = {
   viewOptions: ViewOptions;
@@ -13,7 +14,7 @@ export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsPro
   const onShowGrouped = () => props.setViewOptions({ ...viewOptions, showGrouped: !showGrouped });
 
   return (
-    <fieldset>
+    <fieldset id="options">
       <legend>Options</legend>
       <label>
         <input type="checkbox" checked={showGrouped} onChange={onShowGrouped} />
