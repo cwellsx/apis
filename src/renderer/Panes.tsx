@@ -4,6 +4,7 @@ import "split-pane-react/esm/themes/default.css";
 import "./3rd-party/SplitPane.css";
 import "./Panes.css";
 import { Input, usePaneSizes } from "./usePaneSizes";
+import { OnWheel } from "./useZoomPercent";
 
 // this encapsulates and is implemented using split-pane-react
 
@@ -11,16 +12,22 @@ type PanesProps = {
   left: React.ReactNode;
   center: React.ReactNode;
   right?: React.ReactNode;
-  onWheel: (event: React.WheelEvent) => void;
+  fontSize: number;
+  onWheelZoomPercent: OnWheel;
+  onWheelFontSize: OnWheel;
 };
 
 export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) => {
-  const { left, center, right, onWheel } = props;
+  const { left, center, right, fontSize, onWheelZoomPercent, onWheelFontSize } = props;
   const leftRef = React.useRef<HTMLDivElement>(null);
   const rightRef = React.useRef<HTMLDivElement>(null);
 
+  // https://react.dev/reference/react/memo#troubleshooting says at the end,
+  // "To avoid this, simplify props or memoize props in the parent component."
   const initialSize = React.useMemo<Input[]>(() => [[0, leftRef], "*", [0, rightRef]], []);
   const [sizes, setSizes] = usePaneSizes(initialSize, 16);
+
+  const style = { fontSize: fontSize };
 
   return (
     <SplitPane
@@ -39,15 +46,16 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
       //     <div class="split-sash-content split-sash-content-active split-sash-content-vscode"></div>
       sashRender={(_, active) => <SashContent active={active} type="vscode"></SashContent>}
     >
-      <div id="group">
+      <div id="group" onWheel={onWheelFontSize} style={style}>
         <div ref={leftRef} className="pane-resizes">
           {left}
+          <span className="zoom">{`${fontSize}px`}</span>
         </div>
       </div>
-      <div id="graph" onWheel={onWheel}>
+      <div id="graph" onWheel={onWheelZoomPercent}>
         {center}
       </div>
-      <div id="types">
+      <div id="types" onWheel={onWheelFontSize} style={style}>
         <div ref={rightRef} className="pane-resizes">
           {right}
         </div>

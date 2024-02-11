@@ -19,8 +19,9 @@ export const defaultViewOptions: ViewOptions = { showGrouped: true };
 
 export type AppOptions = {
   zoomPercent: number;
+  fontSize: number;
 };
-export const defaultAppOptions: AppOptions = { zoomPercent: 100 };
+export const defaultAppOptions: AppOptions = { zoomPercent: 100, fontSize: 12 };
 
 export type View = {
   image: Image | string; // string is a message if there isn't an Image

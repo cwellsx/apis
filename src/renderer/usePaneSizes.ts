@@ -57,7 +57,6 @@ export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, S
 
   const wrapSetSize = (sizes: DefaultSizes, who: string): void => {
     // log whether setSize is called internally and/or from the onChange event of the SplitPane component
-    log(`wrapSetSize ${who} ${JSON.stringify(sizes)}`);
     setSizes(sizes);
     refSizes.current = sizes;
   };
@@ -109,7 +108,7 @@ export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, S
       elements.forEach((element) => resizeObserver.unobserve(element));
       resizeObserver.disconnect();
     };
-  }, [defaultSizes, refs]);
+  }, [defaultSizes, refs, padding]);
 
   const setNumericSizes: SetActualSizes = (newSizes: number[]) => wrapSetSize(newSizes, "setNumericSizes");
   return [sizes, setNumericSizes];

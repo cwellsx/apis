@@ -2,10 +2,34 @@
 .rct-checkbox > svg {
   fill: #33c;
 }
+
+.react-checkbox-tree svg,
 .rct-checkbox > svg, .rct-node-icon > svg {
   width: 1em;
   height: 1em;
 }
 li.rct-node {
   white-space: nowrap;
+}
+
+/* this overrides styles defined in react-checkbox-tree.css to make them adaptive to varying parent font size */
+.react-checkbox-tree {
+  font-size: inherit;
+ }
+
+.rct-collapse *,
+.rct-checkbox *,
+.rct-node-icon * {
+  width: 1em;
+}
+
+.rct-collapse,
+.rct-checkbox,
+.rct-node-icon,
+.rct-title {
+  padding: 0 0.25em;
+}
+
+.react-checkbox-tree ol ol {
+  padding-left: 1.5em;
 }

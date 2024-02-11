@@ -1,7 +1,6 @@
 import * as React from "react";
 import type { Area as MyArea, OnClick } from "../shared-types";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
-import "./Graph.css";
 
 type GraphProps = {
   imagePath: string;
@@ -147,7 +146,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
         width={width}
         height={height}
       />
-      <span id="zoom">{`${zoomPercent}%`}</span>
+      <span className="zoom">{`${zoomPercent}%`}</span>
     </>
   );
 };

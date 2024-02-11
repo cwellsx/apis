@@ -10,7 +10,7 @@ import type {
   View,
   ViewOptions,
 } from "../shared-types";
-import { defaultViewOptions } from "../shared-types";
+import { defaultAppOptions, defaultViewOptions } from "../shared-types";
 import { Details } from "./Details";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
@@ -18,7 +18,7 @@ import { Options } from "./Options";
 import { Panes } from "./Panes";
 import { Tree } from "./Tree";
 import { log } from "./log";
-import { useZoomPercent } from "./useZoomPercent";
+import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
 declare global {
   export interface Window {
@@ -45,12 +45,12 @@ const App: React.FunctionComponent = () => {
   const [view, setView] = React.useState(defaultView);
   const [types, setTypes] = React.useState(defaultTypes);
 
-  const [zoomPercent, setZoomPercent, onWheel] = useZoomPercent((zoomPercent: number) =>
-    setAppOptions({ ...getAppOptions(), zoomPercent })
-  );
-  const getAppOptions = (): AppOptions => {
-    return { zoomPercent };
-  };
+  const [appOptions, setAppOptions_] = React.useState(defaultAppOptions);
+  const sendAppOptions = (newOptions: Partial<AppOptions>): void => setAppOptions({ ...appOptions, ...newOptions });
+  const zoomPercent = appOptions.zoomPercent;
+  const fontSize = appOptions.fontSize;
+  const onWheelZoomPercent = useZoomPercent(zoomPercent, (zoomPercent: number) => sendAppOptions({ zoomPercent }));
+  const onWheelFontSize = useFontSize(fontSize, (fontSize: number) => sendAppOptions({ fontSize }));
 
   React.useEffect(() => {
     if (once) return;
@@ -73,7 +73,7 @@ const App: React.FunctionComponent = () => {
       },
       showAppOptions(appOptions: AppOptions): void {
         log("showAppOptions");
-        setZoomPercent(appOptions.zoomPercent);
+        setAppOptions_(appOptions);
       },
     };
     bindIpc(rendererApi);
@@ -117,7 +117,14 @@ const App: React.FunctionComponent = () => {
 
   return (
     <React.StrictMode>
-      <Panes left={left} center={center} right={right} onWheel={onWheel} />
+      <Panes
+        left={left}
+        center={center}
+        right={right}
+        fontSize={fontSize}
+        onWheelZoomPercent={onWheelZoomPercent}
+        onWheelFontSize={onWheelFontSize}
+      />
     </React.StrictMode>
   );
 };
