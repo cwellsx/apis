@@ -1,5 +1,5 @@
 import { BrowserWindow, ipcMain } from "electron";
-import type { MainApi, MouseEvent, ViewOptions } from "../shared-types";
+import type { AppOptions, MainApi, MouseEvent, ViewOptions } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { convertToTypes } from "./convertToTypes";
 import { viewSqlLoaded } from "./convertToView";
@@ -12,7 +12,7 @@ import { readCoreJson, whenCoreJson } from "./readCoreJson";
 import { loadedVersion, type Loaded } from "./shared-types";
 import { IShow, Show } from "./show";
 import { showErrorBox } from "./showErrorBox";
-import { DataSource, SqlLoaded, createSqlLoaded } from "./sqlTables";
+import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
@@ -40,6 +40,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
   // instantiate the DotNetApi
   const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
 
+  // instantiate the Config SQL
+  const sqlConfig = createSqlConfig(getAppFilename("config.db"));
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
   const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
@@ -68,6 +70,12 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlLoaded.viewState.viewOptions = viewOptions;
       showSqlLoaded(sqlLoaded);
     },
+    setAppOptions: (appOptions: AppOptions): void => {
+      log("setAppOptions");
+      if (!sqlLoaded) return;
+      sqlConfig.appOptions = appOptions;
+      show.appOptions(appOptions);
+    },
     onClick: (id: string, event: MouseEvent): void => {
       log("onClick");
       if (!sqlLoaded) return;
@@ -87,6 +95,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
   ipcMain.on("setGroupExpanded", (event, names) => mainApi.setGroupExpanded(names));
   ipcMain.on("setViewOptions", (event, viewOptions) => mainApi.setViewOptions(viewOptions));
+  ipcMain.on("setAppOptions", (event, appOptions) => mainApi.setAppOptions(appOptions));
   ipcMain.on("onClick", (event, id, mouseEvent) => mainApi.onClick(id, mouseEvent));
 
   // wrap use of the renderer API
@@ -145,7 +154,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   async function onRendererLoaded(): Promise<void> {
     log("onRendererLoaded");
-    await open(mainWindow, show, onOpen);
+    show.appOptions(sqlConfig.appOptions);
+    await open(mainWindow, show, onOpen, sqlConfig);
   }
 
   mainWindow.webContents.once("did-finish-load", onRendererLoaded);

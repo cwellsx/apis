@@ -1,5 +1,6 @@
 import { Database } from "better-sqlite3";
-import { ViewOptions } from "../shared-types";
+import type { AppOptions, ViewOptions } from "../shared-types";
+import { defaultAppOptions, defaultViewOptions } from "../shared-types";
 import { log } from "./log";
 import { IAssemblies, ITypes, Loaded } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
@@ -155,7 +156,6 @@ class ViewState {
   }
   get viewOptions(): ViewOptions {
     const value = this._cache.getValue("viewOptions");
-    const defaultViewOptions: ViewOptions = { showGrouped: true };
     return value ? { defaultViewOptions, ...JSON.parse(value) } : defaultViewOptions;
   }
 
@@ -211,6 +211,14 @@ export class SqlConfig {
   set dataSource(value: DataSource | undefined) {
     this._cache.setValue("dataSource", JSON.stringify(value));
     if (value) this.upsertRecent({ path: value.path, type: value.type, when: Date.now() });
+  }
+
+  set appOptions(appOptions: AppOptions) {
+    this._cache.setValue("appOptions", JSON.stringify(appOptions));
+  }
+  get appOptions(): AppOptions {
+    const value = this._cache.getValue("appOptions");
+    return value ? { defaultAppOptions, ...JSON.parse(value) } : defaultAppOptions;
   }
 
   close() {

@@ -1,5 +1,15 @@
 import * as React from "react";
-import type { BindIpc, MainApi, OnClick, PreloadApis, RendererApi, Types, View, ViewOptions } from "../shared-types";
+import type {
+  AppOptions,
+  BindIpc,
+  MainApi,
+  OnClick,
+  PreloadApis,
+  RendererApi,
+  Types,
+  View,
+  ViewOptions,
+} from "../shared-types";
 import { defaultViewOptions } from "../shared-types";
 import { Details } from "./Details";
 import { Graph } from "./Graph";
@@ -34,7 +44,13 @@ const App: React.FunctionComponent = () => {
   const [greeting, setGreeting] = React.useState<string | undefined>("No data");
   const [view, setView] = React.useState(defaultView);
   const [types, setTypes] = React.useState(defaultTypes);
-  const [zoomPercent, onWheel] = useZoomPercent();
+
+  const [zoomPercent, setZoomPercent, onWheel] = useZoomPercent((zoomPercent: number) =>
+    setAppOptions({ ...getAppOptions(), zoomPercent })
+  );
+  const getAppOptions = (): AppOptions => {
+    return { zoomPercent };
+  };
 
   React.useEffect(() => {
     if (once) return;
@@ -55,6 +71,10 @@ const App: React.FunctionComponent = () => {
         setGreeting(undefined);
         setTypes(types);
       },
+      showAppOptions(appOptions: AppOptions): void {
+        log("showAppOptions");
+        setZoomPercent(appOptions.zoomPercent);
+      },
     };
     bindIpc(rendererApi);
   });
@@ -62,6 +82,7 @@ const App: React.FunctionComponent = () => {
   const setLeafVisible: (names: string[]) => void = (names) => mainApi.setLeafVisible(names);
   const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
   const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.setViewOptions(viewOptions);
+  const setAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.setAppOptions(appOptions);
   const onClick: OnClick = (id, event) => mainApi.onClick(id, event);
 
   // display a message, or an image if there is one

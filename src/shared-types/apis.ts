@@ -1,6 +1,6 @@
-import { OnClick } from "./mouseEvent";
-import { Types } from "./types";
-import { View, ViewOptions } from "./view";
+import type { OnClick } from "./mouseEvent";
+import type { Types } from "./types";
+import type { AppOptions, View, ViewOptions } from "./view";
 
 /*
   The underlying APIs, which the application-specific classes wrap, are:
@@ -16,6 +16,7 @@ export interface MainApi {
   setLeafVisible: (names: string[]) => void;
   setGroupExpanded: (names: string[]) => void;
   setViewOptions: (viewOptions: ViewOptions) => void;
+  setAppOptions: (appOptions: AppOptions) => void;
   onClick: OnClick;
 }
 
@@ -24,6 +25,7 @@ export interface RendererApi {
   setGreeting: (greeting: string) => void;
   showView: (view: View) => void;
   showTypes: (types: Types) => void;
+  showAppOptions: (appOptions: AppOptions) => void;
 }
 
 export type BindIpc = (rendererApi: RendererApi) => void;

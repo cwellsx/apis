@@ -1,5 +1,5 @@
 import type { BrowserWindow } from "electron";
-import type { RendererApi, Types, View } from "../shared-types";
+import type { AppOptions, RendererApi, Types, View } from "../shared-types";
 import { getErrorString } from "./error";
 
 export interface IShow {
@@ -7,6 +7,7 @@ export interface IShow {
   message: (title: string, message: string) => void;
   view: (view: View) => void;
   types: (types: Types) => void;
+  appOptions: (appOptions: AppOptions) => void;
 }
 
 export class Show implements IShow {
@@ -14,6 +15,7 @@ export class Show implements IShow {
   message: (title: string, message: string) => void;
   view: (view: View) => void;
   types: (types: Types) => void;
+  appOptions: (appOptions: AppOptions) => void;
 
   constructor(mainWindow: BrowserWindow) {
     // implement RendererApi using webContents.send
@@ -27,6 +29,9 @@ export class Show implements IShow {
       },
       showTypes(types: Types): void {
         webContents.send("showTypes", types);
+      },
+      showAppOptions(appOptions: AppOptions): void {
+        webContents.send("showAppOptions", appOptions);
       },
     };
 
@@ -44,5 +49,7 @@ export class Show implements IShow {
     this.view = (view: View) => rendererApi.showView(view);
 
     this.types = (types: Types) => rendererApi.showTypes(types);
+
+    this.appOptions = (appOptions: AppOptions) => rendererApi.showAppOptions(appOptions);
   }
 }
