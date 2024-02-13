@@ -1,10 +1,10 @@
 import * as React from "react";
-import CheckboxTree, { Icons, Node } from "react-checkbox-tree";
+import CheckboxTree, { Node } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
 import type { GroupNode, Groups } from "../shared-types";
 import { isParent } from "../shared-types";
 import "./3rd-party/CheckboxTree.css";
-import * as Icon from "./Icons";
+import { icons } from "./3rd-party/checkboxTreeIcons";
 import "./Tree.css";
 
 type TreeProps = {
@@ -26,22 +26,6 @@ const convert = (node: GroupNode): Node => {
 };
 
 const getNodes = (nodes: Groups | null): Node[] => (nodes ? nodes.map(convert) : []);
-
-// initialize using SVG icons
-// the ./icons folder at the root of this project shows how these SVG components were created
-// if we want default icons then we would need to include FontAwsome
-const icons: Icons = {
-  check: <Icon.SvgCheckBox />,
-  uncheck: <Icon.SvgCheckBoxOutlineBlank />,
-  halfCheck: <Icon.SvgIndeterminateCheckBox />,
-  expandClose: <Icon.SvgChevronRight />,
-  expandOpen: <Icon.SvgExpandMore />,
-  expandAll: <Icon.SvgAddBox />,
-  collapseAll: <Icon.SvgRemove />,
-  parentClose: <Icon.SvgFolder />,
-  parentOpen: <Icon.SvgFolderOpen />,
-  leaf: <Icon.SvgNote />,
-};
 
 export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const { leafVisible, nodes, groupExpanded } = props;

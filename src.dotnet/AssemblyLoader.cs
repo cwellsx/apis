@@ -9,7 +9,7 @@ namespace Core
 {
     static class AssemblyLoader
     {
-        internal static string LoadAssemblies(string directory)
+        internal static string LoadAssemblies(string directory, bool prettyPrint)
         {
             if (!Directory.Exists(directory))
             {
@@ -25,7 +25,7 @@ namespace Core
                     try
                     {
                         var assembly = metaDataLoadContext.LoadFromAssemblyPath(path);
-                        assemblyReader.Add(assembly);
+                        assemblyReader.Add(assembly, path);
                     }
                     catch (BadImageFormatException)
                     {
@@ -33,7 +33,7 @@ namespace Core
                     }
                 }
             }
-            return assemblyReader.ToJson();
+            return assemblyReader.ToJson(prettyPrint);
         }
 
         internal static string GetDateModified(string directory)

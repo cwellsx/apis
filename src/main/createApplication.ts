@@ -9,7 +9,7 @@ import { log } from "./log";
 import { hide, showAdjacent } from "./onClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
-import { loadedVersion, type Loaded } from "./shared-types";
+import { IAssemblies, ITypes, Reflected, loadedVersion, type Loaded } from "./shared-types";
 import { IShow, Show } from "./show";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
@@ -110,7 +110,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   const openSqlLoaded = async (
     dataSource: DataSource,
     when: string,
-    getLoaded: (path: string) => Promise<Loaded>
+    getReflected: (path: string) => Promise<Reflected>
   ): Promise<void> => {
     sqlLoaded = changeSqlLoaded(dataSource);
     if (
@@ -119,7 +119,17 @@ export function createApplication(mainWindow: BrowserWindow): void {
       Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)
     ) {
       log("getLoaded");
-      const loaded = await getLoaded(dataSource.path);
+      const reflected = await getReflected(dataSource.path);
+      // convert Reflected to Loaded
+      const assemblies: IAssemblies = {};
+      const types: ITypes = {};
+      Object.entries(reflected.assemblies).forEach(([assemblyName, reflectedAssembly]) => {
+        assemblies[assemblyName] = reflectedAssembly.referencedAssemblies;
+        types[assemblyName] = reflectedAssembly.types;
+      });
+      const { version, exes } = reflected;
+      const loaded: Loaded = { version, exes, assemblies, types };
+      // save Loaded
       const jsonPath = getAppFilename(`Core.${dataSource.hash}.json`);
       writeFileSync(jsonPath, JSON.stringify(loaded, null, " "));
       sqlLoaded.save(loaded, when);
@@ -128,7 +138,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
     showSqlLoaded(sqlLoaded);
   };
 
-  const readDotNetApi = async (path: string): Promise<Loaded> => {
+  const readDotNetApi = async (path: string): Promise<Reflected> => {
     const json = await dotNetApi.getJson(path);
     const loaded = JSON.parse(json);
     return loaded;
