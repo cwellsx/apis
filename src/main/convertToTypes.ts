@@ -1,10 +1,10 @@
-import { Namespace, Type, Types } from "../shared-types";
+import { Flags, Namespace, Type, Types } from "../shared-types";
 import { Loaded, TypeId, TypeInfo } from "./shared-types";
 
-type KnownTypeInfo = TypeInfo & { typeId: TypeId };
+type KnownTypeInfo = TypeInfo & { typeId: TypeId; flags: Flags[] };
 
 function isKnownTypeInfo(typeInfo: TypeInfo): typeInfo is KnownTypeInfo {
-  return typeInfo.typeId !== undefined;
+  return typeInfo.typeId !== undefined && typeInfo.flags !== undefined;
 }
 
 export const convertToTypes = (loaded: Loaded, id: string): Types => {
@@ -34,7 +34,7 @@ export const convertToTypes = (loaded: Loaded, id: string): Types => {
   };
 
   const getType = (typeInfo: KnownTypeInfo): Type => {
-    return { name: getTypeName(typeInfo.typeId, typeInfo.genericTypeParameters) };
+    return { name: getTypeName(typeInfo.typeId, typeInfo.genericTypeParameters), flags: typeInfo.flags };
   };
 
   const namespaces: Namespace[] = [...grouped.entries()]

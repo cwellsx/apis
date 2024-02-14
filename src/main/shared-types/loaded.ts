@@ -1,3 +1,5 @@
+import { Flags } from "../../shared-types";
+
 // these are the data loaded from .Net assemblies
 
 // change this to refresh the cache, if the data returned from Core.exe changes
@@ -26,6 +28,7 @@ export type TypeInfo = {
   baseType?: TypeId;
   interfaces?: TypeId[];
   genericTypeParameters?: TypeId[];
+  flags?: Flags[];
 
   isUnwanted?: boolean;
   exceptions?: string[];

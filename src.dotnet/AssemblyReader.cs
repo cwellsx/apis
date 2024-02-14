@@ -28,6 +28,7 @@ namespace Core
                     ReferencedAssemblies: assembly.GetReferencedAssemblies().Select(GetAssemblyName).ToArray(),
                     Types: assembly.GetTypes().Select(TypeReader.GetTypeInfo).ToArray()
                     );
+                TypeReader.Verify(assemblyInfo.Types);
                 Assemblies.Add(assemblyName, assemblyInfo);
             }
             catch (Exception e)

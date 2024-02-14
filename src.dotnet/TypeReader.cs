@@ -13,6 +13,34 @@ namespace Core
             return self.ToTypeInfo();
         }
 
+        internal static void Verify(TypeInfo[] types)
+        {
+            var all = types.Where(type => type.TypeId != null).ToDictionary(type => type.TypeId!);
+            foreach (var (typeInfo, type) in all.Select(kvp => (kvp.Key, kvp.Value)))
+            {
+                Func<Flags, bool> isFlag = (flag) => type.HasFlag(flag);
+                Action<bool, string> assert = (b, message) =>
+                {
+                    if (!b) type.AddMessage(message);
+                };
+                var index = typeInfo.Name.IndexOf("`");
+                int? n = index == -1 ? null : int.Parse(typeInfo.Name.Substring(index + 1));
+                if (n.HasValue)
+                {
+                    assert(isFlag(Flags.Generic), "Generic name");
+                    var args = type.HasFlag(Flags.GenericDefinition) ? type.GenericTypeParameters : typeInfo.GenericTypeArguments;
+                    assert(n == (args?.Length) || (n.HasValue && args != null && n.Value <= args.Length), "Generic arguments");
+                }
+                else if (type.HasFlag(Flags.Generic))
+                {
+                    var args = type.HasFlag(Flags.GenericDefinition) ? type.GenericTypeParameters : typeInfo.GenericTypeArguments;
+                    assert(args != null, "Generic arguments");
+                }
+                assert(isFlag(Flags.Nested) == (typeInfo.DeclaringType != null), "Nested");
+                if (typeInfo.DeclaringType != null) assert(all.ContainsKey(typeInfo.DeclaringType), "Declaring type");
+            }
+        }
+
         Type _type;
         List<string> _exceptions = new List<string>();
 
@@ -29,8 +57,9 @@ namespace Core
                 BaseType: Try(() => GetBaseType()),
                 Interfaces: Try(() => GetInterfaces()),
                 GenericTypeParameters: Try(() => GetGenericTypeParameters()),
-                IsUnwanted: Try(() => GetIsUnwanted()),
+                Flags: Try(() => GetFlags()),
 
+                IsUnwanted: Try(() => GetIsUnwanted()),
                 Exceptions: _exceptions.Count == 0 ? null : _exceptions.ToArray()
                 );
         }
@@ -93,6 +122,18 @@ namespace Core
             var array = _type.GetInterfaces();
             return array.Length == 0 ? null : array.Select(GetTypeId).ToArray();
         }
+        Flags[] GetFlags()
+        {
+            var flags = new List<Flags>();
+            flags.Add((!_type.IsNested)
+                ? (_type.IsPublic ? Flags.Public : Flags.Internal)
+                : (_type.IsNestedPublic ? Flags.Public : _type.IsNestedPrivate ? Flags.Private : Flags.Internal));
+            if (_type.IsNested) flags.Add(Flags.Nested);
+            if (_type.IsGenericType) flags.Add(Flags.Generic);
+            if (_type.IsGenericTypeDefinition) flags.Add(Flags.GenericDefinition);
+            return flags.ToArray();
+        }
+
         bool? GetIsUnwanted()
         {
             if (_type.CustomAttributes.Any(customAttributeData => customAttributeData.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))

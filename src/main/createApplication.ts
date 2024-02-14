@@ -9,7 +9,7 @@ import { log } from "./log";
 import { hide, showAdjacent } from "./onClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
-import { IAssemblies, ITypes, Reflected, loadedVersion, type Loaded } from "./shared-types";
+import { IAssemblies, ITypes, Reflected, loadedVersion, options, type Loaded } from "./shared-types";
 import { IShow, Show } from "./show";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
@@ -114,6 +114,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   ): Promise<void> => {
     sqlLoaded = changeSqlLoaded(dataSource);
     if (
+      options.alwaysReload ||
       !sqlLoaded.viewState.cachedWhen ||
       loadedVersion !== sqlLoaded.viewState.loadedVersion ||
       Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)
