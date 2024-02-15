@@ -1,18 +1,13 @@
-export const enum Flags {
-  Public = 1,
-  Protected = 2,
-  Internal = 3,
-  Private = 4,
-
-  Nested = 5,
-
-  Generic = 6,
-  GenericDefinition = 7,
-}
+export type Access = "public" | "protected" | "internal" | "private";
 
 export type Type = {
   name: string;
-  flags: Flags[];
+  access: Access;
+};
+
+export type TypeException = {
+  name: string;
+  exceptions: string[];
 };
 
 export type Namespace = {
@@ -22,4 +17,5 @@ export type Namespace = {
 
 export type Types = {
   namespaces: Namespace[];
+  errors?: string[][];
 };

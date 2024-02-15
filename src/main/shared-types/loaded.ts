@@ -1,5 +1,3 @@
-import { Flags } from "../../shared-types";
-
 // these are the data loaded from .Net assemblies
 
 // change this to refresh the cache, if the data returned from Core.exe changes
@@ -13,6 +11,18 @@ export interface IAssemblies {
 // types of each assembly
 export interface ITypes {
   [key: string]: TypeInfo[];
+}
+
+export const enum Flags {
+  Public = 1,
+  Protected = 2,
+  Internal = 3,
+  Private = 4,
+
+  Nested = 5,
+
+  Generic = 6,
+  GenericDefinition = 7,
 }
 
 export type TypeId = {

@@ -1,20 +1,19 @@
 import * as React from "react";
 import CheckboxTree, { Node } from "react-checkbox-tree";
-import { Flags, Namespace, Type, Types } from "../shared-types";
+import { Namespace, Type, Types } from "../shared-types";
 import { icons } from "./3rd-party/checkboxTreeIcons";
 import * as Icon from "./Icons.Microsoft";
 
-const visibilityFlags: Flags[] = [Flags.Public, Flags.Protected, Flags.Internal, Flags.Private];
-const getVisible = (flags: Flags[]): Flags => flags.find((it) => visibilityFlags.includes(it)) ?? Flags.Private;
-
 const convertType = (type: Type): Node => {
   const getIcon = () => {
-    switch (getVisible(type.flags)) {
-      case Flags.Public:
+    switch (type.access) {
+      case "public":
         return <Icon.SvgClassPublic />;
-      case Flags.Internal:
+      case "protected":
+        return <Icon.SvgClassProtected />;
+      case "internal":
         return <Icon.SvgClassInternal />;
-      case Flags.Private:
+      case "private":
         return <Icon.SvgClassPrivate />;
       default:
         return <Icon.SvgExclamationPoint />;
