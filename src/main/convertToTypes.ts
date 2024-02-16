@@ -8,11 +8,14 @@ function isNamed(typeInfo: TypeInfo): typeInfo is NamedTypeInfo {
   return typeInfo.typeId !== undefined;
 }
 
+type IdKind = "!n!" | "!t!" | "!e!" | "!a!";
+const makeId = (kind: IdKind, ...ids: string[]): string => `${kind}${ids.join(".")}`;
+
 // use a closure to create an Exception instance with a unique id from a message string
 const pushException: (exceptions: Exceptions, message: string) => void = (function () {
   let index = 0;
   const result = (exceptions: Exceptions, message: string) => {
-    const exception = { label: message, id: `!e!${++index}` };
+    const exception = { label: message, id: makeId("!e!", (++index).toString()) };
     exceptions.push(exception);
   };
   return result;
@@ -30,22 +33,40 @@ const makeTypeName = (name: string, generic?: TypeId[]): string => {
   const index = name.indexOf("`");
   return (index === -1 ? name : name.substring(0, index)) + `<${generic.map((it) => it.name).join(",")}>`;
 };
+// id can constructed using TypeId only without typeInfo.genericTypeParameters
+const makeTypeId = (typeId: TypeId): string[] => {
+  const name = makeTypeName(typeId.name, typeId.genericTypeArguments);
+  const prefix = typeId.declaringType
+    ? makeTypeId(typeId.declaringType)
+    : typeId.namespace
+    ? [typeId.namespace]
+    : undefined;
+  return prefix ? [...prefix, name] : [name];
+};
 
 const getTypeName = (typeInfo: NamedTypeInfo): string =>
   makeTypeName(typeInfo.typeId.name, typeInfo.genericTypeParameters ?? typeInfo.typeId.genericTypeArguments);
 
 // id can constructed using TypeId only without typeInfo.genericTypeParameters
-const getTypeId = (typeId: TypeId): string => {
-  const name = makeTypeName(typeId.name, typeId.genericTypeArguments);
-  const prefix = typeId.declaringType ? getTypeId(typeId.declaringType) : typeId.namespace;
-  return prefix ? `!t!${prefix}.${name}` : `!t!${name}`;
-};
-
+const getTypeId = (typeId: TypeId): string => makeId("!t!", ...makeTypeId(typeId));
 const getTypeTextNode = (typeInfo: NamedTypeInfo): TextNode => {
   return {
     label: getTypeName(typeInfo),
     id: getTypeId(typeInfo.typeId),
   };
+};
+
+const getAttributes = (typeInfo: KnownTypeInfo): TextNode[] => {
+  if (!typeInfo.attributes) return [];
+  return typeInfo.attributes.map((attribute) => {
+    const index = attribute.indexOf(".");
+    if (index !== -1) attribute = "[" + attribute.substring(index + 1);
+    const label = attribute.startsWith("[ObsoleteAttribute") ? "[ObsoleteAttribute]" : attribute;
+    return {
+      label,
+      id: makeId("!a!", ...makeTypeId(typeInfo.typeId), attribute),
+    };
+  });
 };
 
 const getAccess = (flags: Flags[]): Access =>
@@ -58,7 +79,7 @@ const getAccess = (flags: Flags[]): Access =>
     : "private";
 
 const getType = (typeInfo: KnownTypeInfo): Type => {
-  return { ...getTypeTextNode(typeInfo), access: getAccess(typeInfo.flags) };
+  return { ...getTypeTextNode(typeInfo), access: getAccess(typeInfo.flags), attributes: getAttributes(typeInfo) };
 };
 
 export const convertToTypes = (loaded: Loaded, id: string): Types => {
@@ -101,7 +122,7 @@ export const convertToTypes = (loaded: Loaded, id: string): Types => {
     .map(([name, typeInfos]) => {
       return {
         label: name,
-        id: `!n!${name}`,
+        id: makeId("!n!", name),
         types: typeInfos.map(getType).sort((x, y) => x.label.localeCompare(y.label)),
       };
     })

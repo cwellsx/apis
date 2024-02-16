@@ -1,18 +1,25 @@
 import * as React from "react";
 import CheckboxTree, { Node } from "react-checkbox-tree";
-import type { Exception, Namespace, Type, TypeKnown, Types } from "../shared-types";
+import type { Exception, Namespace, TextNode, Type, TypeKnown, Types } from "../shared-types";
 import { isTypeException } from "../shared-types";
 import { icons } from "./3rd-party/checkboxTreeIcons";
 import * as Icon from "./Icons.Microsoft";
 
-const convertException = (exception: Exception): Node => {
+const makeNode = (textNode: TextNode, icon: JSX.Element, children?: Node[]): Node => {
+  if (children && children.length === 0) children = undefined;
   return {
-    label: exception.label,
-    value: exception.id,
+    label: textNode.label,
+    value: textNode.id,
+    showCheckbox: false,
+    icon: icon,
+    children,
   };
 };
 
-const getIcon = (type: TypeKnown) => {
+const convertException = (exception: Exception): Node => makeNode(exception, <Icon.SvgExclamationPoint />);
+const convertAttribute = (attribute: TextNode): Node => makeNode(attribute, <Icon.SvgAttribute />);
+
+const getTypeIcon = (type: TypeKnown) => {
   switch (type.access) {
     case "public":
       return <Icon.SvgClassPublic />;
@@ -27,25 +34,13 @@ const getIcon = (type: TypeKnown) => {
   }
 };
 
-const convertType = (type: Type): Node => {
-  return {
-    label: type.label,
-    value: type.id,
-    showCheckbox: false,
-    icon: isTypeException(type) ? <Icon.SvgExclamationPoint /> : getIcon(type),
-    //children: namespace.types.map(convertType)
-  };
-};
+const convertType = (type: Type): Node =>
+  isTypeException(type)
+    ? makeNode(type, <Icon.SvgExclamationPoint />)
+    : makeNode(type, getTypeIcon(type), [...type.attributes.map(convertAttribute)]);
 
-const convertNamespace = (namespace: Namespace): Node => {
-  return {
-    label: namespace.label,
-    value: namespace.id,
-    showCheckbox: false,
-    children: namespace.types.map(convertType),
-    icon: <Icon.SvgNamespace />,
-  };
-};
+const convertNamespace = (namespace: Namespace): Node =>
+  makeNode(namespace, <Icon.SvgNamespace />, namespace.types.map(convertType));
 
 const getNodes = (types: Types): Node[] => [
   ...types.exceptions.map(convertException),

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Core
 {
@@ -16,28 +17,29 @@ namespace Core
         internal static void Verify(TypeInfo[] types)
         {
             var all = types.Where(type => type.TypeId != null).ToDictionary(type => type.TypeId!);
-            foreach (var (typeInfo, type) in all.Select(kvp => (kvp.Key, kvp.Value)))
+            foreach (var (typeId, typeInfo) in all.Select(kvp => (kvp.Key, kvp.Value)))
             {
-                Func<Flags, bool> isFlag = (flag) => type.HasFlag(flag);
+                Func<Flags, bool> isFlag = (flag) => typeInfo.HasFlag(flag);
                 Action<bool, string> assert = (b, message) =>
                 {
-                    if (!b) type.AddMessage(message);
+                    if (!b) typeInfo.AddMessage(message);
                 };
-                var index = typeInfo.Name.IndexOf("`");
-                int? n = index == -1 ? null : int.Parse(typeInfo.Name.Substring(index + 1));
+                var index = typeId.Name.IndexOf("`");
+                int? n = index == -1 ? null : int.Parse(typeId.Name.Substring(index + 1));
                 if (n.HasValue)
                 {
                     assert(isFlag(Flags.Generic), "Generic name");
-                    var args = type.HasFlag(Flags.GenericDefinition) ? type.GenericTypeParameters : typeInfo.GenericTypeArguments;
+                    var args = typeInfo.HasFlag(Flags.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
                     assert(n == (args?.Length) || (n.HasValue && args != null && n.Value <= args.Length), "Generic arguments");
                 }
-                else if (type.HasFlag(Flags.Generic))
+                else if (typeInfo.HasFlag(Flags.Generic))
                 {
-                    var args = type.HasFlag(Flags.GenericDefinition) ? type.GenericTypeParameters : typeInfo.GenericTypeArguments;
+                    var args = typeInfo.HasFlag(Flags.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
                     assert(args != null, "Generic arguments");
                 }
-                assert(isFlag(Flags.Nested) == (typeInfo.DeclaringType != null), "Nested");
-                if (typeInfo.DeclaringType != null) assert(all.ContainsKey(typeInfo.DeclaringType), "Declaring type");
+                assert(isFlag(Flags.Nested) == (typeId.DeclaringType != null), "Nested");
+                if (typeId.DeclaringType != null) assert(all.ContainsKey(typeId.DeclaringType), "Declaring type");
+                if (typeInfo.Attributes != null) assert(typeInfo.Attributes.Distinct().Count() == typeInfo.Attributes.Length, "Unique attributes");
             }
         }
 
@@ -95,8 +97,20 @@ namespace Core
 
         string[]? GetAttributes()
         {
-            var list = _type.GetCustomAttributesData();
-            return list.Count == 0 ? null : list.Select(attribute => attribute.ToString()).ToArray();
+            var list = _type.GetCustomAttributesData().Where(attribute
+                => attribute.AttributeType.Namespace != "System.Runtime.CompilerServices"
+                && attribute.AttributeType.Name != "AttributeUsageAttribute"
+                && attribute.AttributeType.Name != "EmbeddedAttribute"
+                );
+            return !list.Any() ? null : list.Select(attribute =>
+           {
+                // ideally attribute.ToString() would give us this info but it doesn't
+                var name = attribute.AttributeType.FullName;
+               var constructorArguments = attribute.ConstructorArguments.Select(arg => arg.ToString());
+               var namedArguments = attribute.NamedArguments.Select(arg => arg.ToString());
+               var args = constructorArguments.Concat(namedArguments).ToArray();
+               return (args.Length != 0) ? $"[{name}({string.Join(", ", args)})]" : $"[{name}]";
+           }).ToArray();
         }
         TypeId? GetBaseType()
         {

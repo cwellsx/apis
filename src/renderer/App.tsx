@@ -36,7 +36,7 @@ const defaultView: View = {
   groupExpanded: [],
   viewOptions: defaultViewOptions,
 };
-const defaultTypes: Types = { namespaces: [] };
+const defaultTypes: Types = { namespaces: [], exceptions: [] };
 
 let once = false;
 
