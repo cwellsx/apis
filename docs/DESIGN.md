@@ -40,7 +40,7 @@ These declare and bind the APIs, between the render and main processes, via whic
 
 ### `better-sqlite3`
 
-The SQLite component is a cache of the API data which the .NET component reads.
+The SQLite component caches the API data which the .NET component reads.
 It also stores any user-configurable display options.
 
 ### Graphviz
@@ -49,19 +49,23 @@ The Graphviz process creates image files of the selected APIs, to be displayed b
 
 ### Electron
 
-This is a version of WebKit, where you write which runs:
+This is a version of WebKit, where you write code which runs:
 
-- In the browser window as usual e.g. using React
-- In another 'main' process, e.g. to access the local file system and the Node API
+- In the browser window as usual, e.g. using React
+- In another 'main' process, which can access the Node API and the local file system etc.
 
 ### Electron Forge
 
 This is scripts and config files to build and package an Electron application like this one.
 
-### React components
+### Npm components
 
 The renderer code uses these React components from npm:
 
 - `split-pane-react`
 - `react-image-mapper2`
 - `react-checkbox-tree`
+
+The backend code uses this:
+
+- `xml-js`

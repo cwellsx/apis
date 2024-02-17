@@ -59,9 +59,7 @@ export class SqlLoaded {
         assemblyTable.insert({ name: key, references: JSON.stringify(loaded.assemblies[key]) });
       typeTable.deleteAll();
       for (const key in loaded.types) typeTable.insert({ name: key, typeInfo: JSON.stringify(loaded.types[key]) });
-      this.viewState.cachedWhen = when;
-      this.viewState.loadedVersion = loaded.version;
-      this.viewState.exes = loaded.exes;
+      this.viewState.onSave(when, loaded.version, loaded.exes, Object.keys(loaded.assemblies));
       done();
     };
 
@@ -121,11 +119,18 @@ class ConfigCache {
   }
 }
 
-class ViewState {
+export class ViewState {
   private _cache: ConfigCache;
 
   constructor(db: Database) {
     this._cache = new ConfigCache(db);
+  }
+
+  onSave(when: string, version: string, exes: string[], leafVisible: string[]) {
+    this.cachedWhen = when;
+    this.loadedVersion = version;
+    this.exes = exes;
+    this.leafVisible = leafVisible;
   }
 
   get cachedWhen(): string | undefined {
@@ -135,20 +140,20 @@ class ViewState {
     this._cache.setValue("cachedWhen", value);
   }
 
-  set leafVisible(value: string[] | undefined) {
+  set leafVisible(value: string[]) {
     this._cache.setValue("leafVisible", JSON.stringify(value));
   }
-  get leafVisible(): string[] | undefined {
+  get leafVisible(): string[] {
     const value = this._cache.getValue("leafVisible");
-    return value ? JSON.parse(value) : undefined;
+    return value ? JSON.parse(value) : [];
   }
 
-  set groupExpanded(names: string[] | undefined) {
+  set groupExpanded(names: string[]) {
     this._cache.setValue("groupExpanded", JSON.stringify(names));
   }
-  get groupExpanded(): string[] | undefined {
+  get groupExpanded(): string[] {
     const value = this._cache.getValue("groupExpanded");
-    return value ? JSON.parse(value) : undefined;
+    return value ? JSON.parse(value) : [];
   }
 
   set viewOptions(viewOptions: ViewOptions) {

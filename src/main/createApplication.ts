@@ -1,8 +1,8 @@
 import { BrowserWindow, ipcMain } from "electron";
 import type { AppOptions, MainApi, MouseEvent, ViewOptions } from "../shared-types";
+import { convertLoadedToView } from "./convertLoadedToView";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { convertToTypes } from "./convertToTypes";
-import { viewSqlLoaded } from "./convertToView";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { getAppFilename, writeFileSync } from "./fs";
 import { log } from "./log";
@@ -102,7 +102,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   const show: IShow = new Show(mainWindow);
 
   const showSqlLoaded = (sqlLoaded: SqlLoaded): void => {
-    const view = viewSqlLoaded(sqlLoaded);
+    const view = convertLoadedToView(sqlLoaded);
     log("show.view");
     show.view(view);
   };
