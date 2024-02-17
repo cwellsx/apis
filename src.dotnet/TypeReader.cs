@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 
 namespace Core
 {
@@ -17,12 +16,22 @@ namespace Core
         internal static void Verify(TypeInfo[] types)
         {
             var all = types.Where(type => type.TypeId != null).ToDictionary(type => type.TypeId!);
+            foreach (var typeInfo in types)
+            {
+                if (typeInfo.TypeId == null && typeInfo.Exceptions == null)
+                {
+                    typeInfo.AddMessage("TypeInfo");
+                }
+            }
             foreach (var (typeId, typeInfo) in all.Select(kvp => (kvp.Key, kvp.Value)))
             {
                 Func<Flags, bool> isFlag = (flag) => typeInfo.HasFlag(flag);
                 Action<bool, string> assert = (b, message) =>
                 {
-                    if (!b) typeInfo.AddMessage(message);
+                    if (!b)
+                    {
+                        typeInfo.AddMessage(message);
+                    }
                 };
                 var index = typeId.Name.IndexOf("`");
                 int? n = index == -1 ? null : int.Parse(typeId.Name.Substring(index + 1));
@@ -38,8 +47,15 @@ namespace Core
                     assert(args != null, "Generic arguments");
                 }
                 assert(isFlag(Flags.Nested) == (typeId.DeclaringType != null), "Nested");
-                if (typeId.DeclaringType != null) assert(all.ContainsKey(typeId.DeclaringType), "Declaring type");
-                if (typeInfo.Attributes != null) assert(typeInfo.Attributes.Distinct().Count() == typeInfo.Attributes.Length, "Unique attributes");
+                if (typeId.DeclaringType != null)
+                {
+                    assert(all.ContainsKey(typeId.DeclaringType), "Declaring type");
+                }
+
+                if (typeInfo.Attributes != null)
+                {
+                    assert(typeInfo.Attributes.Distinct().Count() == typeInfo.Attributes.Length, "Unique attributes");
+                }
             }
         }
 
@@ -97,20 +113,16 @@ namespace Core
 
         string[]? GetAttributes()
         {
-            var list = _type.GetCustomAttributesData().Where(attribute
-                => attribute.AttributeType.Namespace != "System.Runtime.CompilerServices"
-                && attribute.AttributeType.Name != "AttributeUsageAttribute"
-                && attribute.AttributeType.Name != "EmbeddedAttribute"
-                );
+            var list = _type.GetCustomAttributesData();
             return !list.Any() ? null : list.Select(attribute =>
-           {
+            {
                 // ideally attribute.ToString() would give us this info but it doesn't
                 var name = attribute.AttributeType.FullName;
-               var constructorArguments = attribute.ConstructorArguments.Select(arg => arg.ToString());
-               var namedArguments = attribute.NamedArguments.Select(arg => arg.ToString());
-               var args = constructorArguments.Concat(namedArguments).ToArray();
-               return (args.Length != 0) ? $"[{name}({string.Join(", ", args)})]" : $"[{name}]";
-           }).ToArray();
+                var constructorArguments = attribute.ConstructorArguments.Select(arg => arg.ToString());
+                var namedArguments = attribute.NamedArguments.Select(arg => arg.ToString());
+                var args = constructorArguments.Concat(namedArguments).ToArray();
+                return (args.Length != 0) ? $"[{name}({string.Join(", ", args)})]" : $"[{name}]";
+            }).ToArray();
         }
         TypeId? GetBaseType()
         {
@@ -120,16 +132,18 @@ namespace Core
         TypeId[]? GetGenericTypeArguments()
         {
             var types = _type.GenericTypeArguments;
-            if (types.Length == 0) return null;
-            return types.Select(GetTypeId).ToArray();
+            return (types.Length == 0) ? null : types.Select(GetTypeId).ToArray();
         }
         TypeId[]? GetGenericTypeParameters()
         {
             var typeInfo = _type as System.Reflection.TypeInfo;
-            if (typeInfo == null) return null;
+            if (typeInfo == null)
+            {
+                return null;
+            }
+
             var types = typeInfo.GenericTypeParameters;
-            if (types.Length == 0) return null;
-            return types.Select(GetTypeId).ToArray();
+            return (types.Length == 0) ? null : types.Select(GetTypeId).ToArray();
         }
         TypeId[]? GetInterfaces()
         {
@@ -142,9 +156,21 @@ namespace Core
             flags.Add((!_type.IsNested)
                 ? (_type.IsPublic ? Flags.Public : Flags.Internal)
                 : (_type.IsNestedPublic ? Flags.Public : _type.IsNestedPrivate ? Flags.Private : Flags.Internal));
-            if (_type.IsNested) flags.Add(Flags.Nested);
-            if (_type.IsGenericType) flags.Add(Flags.Generic);
-            if (_type.IsGenericTypeDefinition) flags.Add(Flags.GenericDefinition);
+            if (_type.IsNested)
+            {
+                flags.Add(Flags.Nested);
+            }
+
+            if (_type.IsGenericType)
+            {
+                flags.Add(Flags.Generic);
+            }
+
+            if (_type.IsGenericTypeDefinition)
+            {
+                flags.Add(Flags.GenericDefinition);
+            }
+
             return flags.ToArray();
         }
 

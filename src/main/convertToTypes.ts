@@ -1,6 +1,6 @@
 import type { Access, Exceptions, Namespace, TextNode, Type, TypeException, Types } from "../shared-types";
 import type { Loaded, TypeId, TypeInfo } from "./shared-types";
-import { Flags } from "./shared-types";
+import { Flags, options } from "./shared-types";
 
 type NamedTypeInfo = TypeInfo & { typeId: TypeId };
 type KnownTypeInfo = TypeInfo & { typeId: TypeId; flags: Flags[] };
@@ -56,14 +56,44 @@ const getTypeTextNode = (typeInfo: NamedTypeInfo): TextNode => {
   };
 };
 
+const parseAttribute = (attribute: string): { namespace?: string; name: string; args?: string } => {
+  if (attribute[0] != "[" || attribute[attribute.length - 1] != "]")
+    throw new Error(`Unexpected attribute ${attribute}`);
+  attribute = attribute.substring(1, attribute.length - 1);
+  const paren = attribute.indexOf("(");
+  const [first, args] =
+    paren == -1
+      ? [attribute, undefined]
+      : [attribute.substring(0, paren), attribute.substring(paren + 1, attribute.length - 1)];
+  const dot = first.lastIndexOf(".");
+  const [namespace, name] = dot == -1 ? [undefined, attribute] : [first?.substring(0, dot), first.substring(dot + 1)];
+  return { namespace, name, args };
+};
+const filterAttributes = (attributes: string[]): string[] => {
+  const result: string[] = [];
+  for (const attribute of attributes) {
+    try {
+      const { namespace, name, args } = parseAttribute(attribute);
+      if (
+        !options.compilerAttributes &&
+        (namespace == "System.Runtime.CompilerServices" ||
+          name == "AttributeUsageAttribute" ||
+          name == "EmbeddedAttribute")
+      )
+        continue;
+      const text = name == "ObsoleteAttribute" || !args ? name : `${name}(${args})`;
+      result.push(`[${text}]`);
+    } catch {
+      continue;
+    }
+  }
+  return result;
+};
 const getAttributes = (typeInfo: KnownTypeInfo): TextNode[] => {
   if (!typeInfo.attributes) return [];
-  return typeInfo.attributes.map((attribute) => {
-    const index = attribute.indexOf(".");
-    if (index !== -1) attribute = "[" + attribute.substring(index + 1);
-    const label = attribute.startsWith("[ObsoleteAttribute") ? "[ObsoleteAttribute]" : attribute;
+  return filterAttributes(typeInfo.attributes).map((attribute) => {
     return {
-      label,
+      label: attribute,
       id: makeId("!a!", ...makeTypeId(typeInfo.typeId), attribute),
     };
   });

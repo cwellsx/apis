@@ -50,9 +50,13 @@ namespace Core
         internal void AddMessage(string message)
         {
             if (Exceptions == null)
+            {
                 Exceptions = new[] { message };
+            }
             else
+            {
                 Exceptions = Exceptions.Concat(new[] { message }).ToArray();
+            }
         }
         internal bool HasFlag(Flags flag) => Flags?.Contains(flag) ?? false;
     }
