@@ -40,7 +40,7 @@ namespace Core
         TypeId? BaseType,
         TypeId[]? Interfaces,
         TypeId[]? GenericTypeParameters, // this is a member of System.Reflection.TypeInfo rather than Type
-        bool? IsUnwanted,
+        //bool? IsUnwanted,
         Flags[]? Flags,
 
         string[]? Exceptions

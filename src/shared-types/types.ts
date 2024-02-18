@@ -8,6 +8,7 @@ export type Exceptions = Exception[];
 export type TypeKnown = TextNode & {
   access: Access;
   attributes: TextNode[];
+  subtypes?: Type[];
 };
 
 // if there was an exception when reading the type then only display the exception and not other data,

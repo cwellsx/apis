@@ -34,10 +34,11 @@ const getTypeIcon = (type: TypeKnown) => {
   }
 };
 
+const convertTypes = (types: Type[] | undefined): Node[] => (types ? types.map(convertType) : []);
 const convertType = (type: Type): Node =>
   isTypeException(type)
     ? makeNode(type, <Icon.SvgExclamationPoint />)
-    : makeNode(type, getTypeIcon(type), [...type.attributes.map(convertAttribute)]);
+    : makeNode(type, getTypeIcon(type), [...type.attributes.map(convertAttribute), ...convertTypes(type.subtypes)]);
 
 const convertNamespace = (namespace: Namespace): Node =>
   makeNode(namespace, <Icon.SvgNamespace />, namespace.types.map(convertType));

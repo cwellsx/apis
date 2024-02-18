@@ -77,7 +77,7 @@ namespace Core
                 GenericTypeParameters: Try(() => GetGenericTypeParameters()),
                 Flags: Try(() => GetFlags()),
 
-                IsUnwanted: Try(() => GetIsUnwanted()),
+                //IsUnwanted: Try(() => GetIsUnwanted()),
                 Exceptions: _exceptions.Count == 0 ? null : _exceptions.ToArray()
                 );
         }
@@ -174,14 +174,14 @@ namespace Core
             return flags.ToArray();
         }
 
-        bool? GetIsUnwanted()
-        {
-            if (_type.CustomAttributes.Any(customAttributeData => customAttributeData.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
-            {
-                // compiler creates types, with names like "<>f__AnonymousType0`2" and "<PrivateImplementationDetails>", so they're not unique
-                return true;
-            }
-            return null; // return null instead of false to avoid serializing `IsWanted: false` in the JSON
-        }
+        //bool? GetIsUnwanted()
+        //{
+        //    if (_type.CustomAttributes.Any(customAttributeData => customAttributeData.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
+        //    {
+        //        // compiler creates types, with names like "<>f__AnonymousType0`2" and "<PrivateImplementationDetails>", so they're not unique
+        //        return true;
+        //    }
+        //    return null; // return null instead of false to avoid serializing `IsWanted: false` in the JSON
+        //}
     }
 }

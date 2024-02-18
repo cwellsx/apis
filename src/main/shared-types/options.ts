@@ -8,4 +8,5 @@ export const options = {
   noSelfEdges: true,
   alwaysReload: true,
   compilerAttributes: true,
+  compilerGenerated: true,
 };

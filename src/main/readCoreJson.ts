@@ -1,5 +1,5 @@
 import { existsSync, readFile, stat } from "./fs";
-import { Reflected, ReflectedAssembly, TypeId, TypeInfo } from "./shared-types";
+import { Reflected, ReflectedAssembly, TypeId, TypeInfo, isBadTypeInfo, isNamedTypeInfo } from "./shared-types";
 
 const isObject = (x: object): boolean => typeof x === "object" && !Array.isArray(x) && x !== null;
 const isString = (x: string): boolean => typeof x === "string";
@@ -19,15 +19,16 @@ const isTypeId = (json: TypeId): boolean => {
 };
 
 const isTypeInfo = (json: TypeInfo): boolean => {
-  if (json.typeId && !isTypeId(json.typeId)) throw new Error("Expect `typeId` type is `TypeId`");
-  else if (!json.exceptions || !isStringArray(json.exceptions)) throw new Error("Expect `exceptions` if `!typeId`");
+  if (!isNamedTypeInfo(json) || isBadTypeInfo(json)) {
+    if (!isStringArray(json.exceptions)) throw new Error("Expect `exceptions` if `!typeId`");
+    return true;
+  }
+  if (!isTypeId(json.typeId)) throw new Error("Expect `typeId` type is `TypeId`");
   if (json.attributes && !isStringArray(json.attributes)) throw new Error("Expect `attributes` type is `string[]`");
   if (json.baseType && !isTypeId(json.baseType)) throw new Error("Expect `baseType` type is `TypeId`");
   if (json.interfaces && !isTypeIdArray(json.interfaces)) throw new Error("Expect `interfaces` type is `TypeId[]`");
   if (json.genericTypeParameters && !isTypeIdArray(json.genericTypeParameters))
     throw new Error("Expect `genericTypeParameters` type is `TypeId[]`");
-  if (json.isUnwanted && !isBoolean(json.isUnwanted)) throw new Error("Expect `isUnwanted` type is `boolean`");
-  if (json.exceptions && !isStringArray(json.exceptions)) throw new Error("Expect `exceptions` type is `string[]`");
   return true;
 };
 
