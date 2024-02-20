@@ -7,19 +7,22 @@ namespace Core
     // therefore Type properties must be extracted into plain-old-data classes like these, before then.
 
     // this enum is duplicated in the TypeScript, so edit it there too if you change it here
-    public enum Flags
+    public enum Access
     {
         Public = 1,
         Protected = 2,
         Internal = 3,
         Private = 4,
-
-        Nested = 5,
-
-        Generic = 6,
-        GenericDefinition = 7
     }
 
+    [Flags]
+    public enum Flag
+    {
+        None = 0,
+        Generic = 1,
+        GenericDefinition = 2,
+        Nested = 4
+    }
 
     public record AssemblyInfo(
         string[] ReferencedAssemblies,
@@ -40,8 +43,9 @@ namespace Core
         TypeId? BaseType,
         TypeId[]? Interfaces,
         TypeId[]? GenericTypeParameters, // this is a member of System.Reflection.TypeInfo rather than Type
-        //bool? IsUnwanted,
-        Flags[]? Flags,
+        Access? Access,
+        Flag? Flag,
+        Members? Members,
 
         string[]? Exceptions
         )
@@ -58,6 +62,60 @@ namespace Core
                 Exceptions = Exceptions.Concat(new[] { message }).ToArray();
             }
         }
-        internal bool HasFlag(Flags flag) => Flags?.Contains(flag) ?? false;
     }
+
+    public record FieldMember(
+        string Name,
+        string[]? Attributes,
+        Access Access,
+        TypeId FieldType,
+        bool? IsStatic
+        );
+
+    public record EventMember(
+        string Name,
+        string[]? Attributes,
+        Access? Access,
+        TypeId? EventHandlerType
+        );
+
+    public record PropertyMember(
+        string Name,
+        string[]? Attributes,
+        Access? SetAccess,
+        Access? GetAccess,
+        Parameter[]? Parameters,
+        TypeId PropertyType
+        );
+
+    public record Parameter(
+        string? Name,
+        TypeId Type
+        );
+
+    public record ConstructorMember(
+        string[]? Attributes,
+        Access Access,
+        Parameter[]? Parameters,
+        bool? IsStatic
+        );
+
+    public record MethodMember(
+        string Name,
+        string[]? Attributes,
+        Access Access,
+        Parameter[]? Parameters,
+        bool? IsStatic,
+        TypeId[]? GenericArguments,
+        TypeId ReturnType
+        );
+
+    public record Members(
+        FieldMember[]? FieldMembers,
+        EventMember[]? EventMembers,
+        PropertyMember[]? PropertyMembers,
+        TypeId[]? TypeMembers,
+        ConstructorMember[]? ConstructorMembers,
+        MethodMember[]? MethodMembers
+        );
 }

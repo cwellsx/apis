@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 
 namespace Core
 {
@@ -25,7 +26,7 @@ namespace Core
             }
             foreach (var (typeId, typeInfo) in all.Select(kvp => (kvp.Key, kvp.Value)))
             {
-                Func<Flags, bool> isFlag = (flag) => typeInfo.HasFlag(flag);
+                Func<Flag, bool> hasFlag = (flag) => typeInfo.Flag.HasValue && ((typeInfo.Flag.Value & flag) == flag);
                 Action<bool, string> assert = (b, message) =>
                 {
                     if (!b)
@@ -37,16 +38,16 @@ namespace Core
                 int? n = index == -1 ? null : int.Parse(typeId.Name.Substring(index + 1));
                 if (n.HasValue)
                 {
-                    assert(isFlag(Flags.Generic), "Generic name");
-                    var args = typeInfo.HasFlag(Flags.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
+                    assert(hasFlag(Flag.Generic), "Generic name");
+                    var args = hasFlag(Flag.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
                     assert(n == (args?.Length) || (n.HasValue && args != null && n.Value <= args.Length), "Generic arguments");
                 }
-                else if (typeInfo.HasFlag(Flags.Generic))
+                else if (hasFlag(Flag.Generic))
                 {
-                    var args = typeInfo.HasFlag(Flags.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
+                    var args = hasFlag(Flag.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
                     assert(args != null, "Generic arguments");
                 }
-                assert(isFlag(Flags.Nested) == (typeId.DeclaringType != null), "Nested");
+                assert(hasFlag(Flag.Nested) == (typeId.DeclaringType != null), "Nested");
                 if (typeId.DeclaringType != null)
                 {
                     assert(all.ContainsKey(typeId.DeclaringType), "Declaring type");
@@ -75,9 +76,10 @@ namespace Core
                 BaseType: Try(() => GetBaseType()),
                 Interfaces: Try(() => GetInterfaces()),
                 GenericTypeParameters: Try(() => GetGenericTypeParameters()),
-                Flags: Try(() => GetFlags()),
+                Access: Try(() => GetAccess()),
+                Flag: Try(() => GetFlag()),
+                Members: Try(() => GetMembers()),
 
-                //IsUnwanted: Try(() => GetIsUnwanted()),
                 Exceptions: _exceptions.Count == 0 ? null : _exceptions.ToArray()
                 );
         }
@@ -95,25 +97,28 @@ namespace Core
             }
         }
 
-        TypeId GetTypeId()
-        {
-            return new TypeId(
-                AssemblyName: _type.Assembly.GetName().Name,
-                Namespace: _type.Namespace,
-                Name: _type.Name,
-                GenericTypeArguments: GetGenericTypeArguments(),
-                DeclaringType: _type.DeclaringType != null ? GetTypeId(_type.DeclaringType) : null
-            );
-        }
+        TypeId GetTypeId() => GetTypeId(_type);
         static TypeId GetTypeId(Type type)
         {
-            var typeReader = new TypeReader(type);
-            return typeReader.GetTypeId();
+            TypeId[]? GetGenericTypeArguments()
+            {
+                var types = type.GenericTypeArguments;
+                return (types.Length == 0) ? null : types.Select(GetTypeId).ToArray();
+            }
+            return new TypeId(
+                AssemblyName: type.Assembly.GetName().Name,
+                Namespace: type.Namespace,
+                Name: type.Name,
+                GenericTypeArguments: GetGenericTypeArguments(),
+                DeclaringType: type.DeclaringType != null ? GetTypeId(type.DeclaringType) : null
+            );
         }
+        static TypeId? GetOptionalTypeId(Type? type) => type == null ? null : GetTypeId(type);
 
-        string[]? GetAttributes()
+        string[]? GetAttributes() => GetAttributes(_type);
+        static string[]? GetAttributes(MemberInfo memberInfo)
         {
-            var list = _type.GetCustomAttributesData();
+            var list = memberInfo.GetCustomAttributesData();
             return !list.Any() ? null : list.Select(attribute =>
             {
                 // ideally attribute.ToString() would give us this info but it doesn't
@@ -128,11 +133,6 @@ namespace Core
         {
             var baseType = _type.BaseType;
             return baseType == null ? null : GetTypeId(baseType);
-        }
-        TypeId[]? GetGenericTypeArguments()
-        {
-            var types = _type.GenericTypeArguments;
-            return (types.Length == 0) ? null : types.Select(GetTypeId).ToArray();
         }
         TypeId[]? GetGenericTypeParameters()
         {
@@ -150,38 +150,130 @@ namespace Core
             var array = _type.GetInterfaces();
             return array.Length == 0 ? null : array.Select(GetTypeId).ToArray();
         }
-        Flags[] GetFlags()
+        Access GetAccess()
         {
-            var flags = new List<Flags>();
-            flags.Add((!_type.IsNested)
-                ? (_type.IsPublic ? Flags.Public : Flags.Internal)
-                : (_type.IsNestedPublic ? Flags.Public : _type.IsNestedPrivate ? Flags.Private : Flags.Internal));
+            return (!_type.IsNested)
+                ? (_type.IsPublic ? Access.Public : Access.Internal)
+                : (_type.IsNestedPublic ? Access.Public : _type.IsNestedPrivate ? Access.Private : Access.Internal);
+        }
+        Flag? GetFlag()
+        {
+            Flag flag = Flag.None;
             if (_type.IsNested)
             {
-                flags.Add(Flags.Nested);
+                flag |= Flag.Nested;
             }
-
             if (_type.IsGenericType)
             {
-                flags.Add(Flags.Generic);
+                flag |= Flag.Generic;
             }
-
             if (_type.IsGenericTypeDefinition)
             {
-                flags.Add(Flags.GenericDefinition);
+                flag |= Flag.GenericDefinition;
             }
-
-            return flags.ToArray();
+            return flag == Flag.None ? null : flag;
         }
 
-        //bool? GetIsUnwanted()
-        //{
-        //    if (_type.CustomAttributes.Any(customAttributeData => customAttributeData.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute"))
-        //    {
-        //        // compiler creates types, with names like "<>f__AnonymousType0`2" and "<PrivateImplementationDetails>", so they're not unique
-        //        return true;
-        //    }
-        //    return null; // return null instead of false to avoid serializing `IsWanted: false` in the JSON
-        //}
+        Members GetMembers()
+        {
+            var fieldMembers = new List<FieldMember>();
+            var eventMembers = new List<EventMember>();
+            var propertyMembers = new List<PropertyMember>();
+            var typeMembers = new List<TypeId>();
+            var constructorMembers = new List<ConstructorMember>();
+            var methodMembers = new List<MethodMember>();
+
+            foreach (var memberInfo in _type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
+            {
+                if (memberInfo is FieldInfo)
+                {
+                    fieldMembers.Add(GetField((FieldInfo)memberInfo));
+                }
+                if (memberInfo is EventInfo)
+                {
+                    eventMembers.Add(GetEvent((EventInfo)memberInfo));
+                }
+                if (memberInfo is PropertyInfo)
+                {
+                    propertyMembers.Add(GetProperty((PropertyInfo)memberInfo));
+                }
+                if (memberInfo is System.Reflection.TypeInfo)
+                {
+                    typeMembers.Add(GetTypeId((System.Reflection.TypeInfo)memberInfo));
+                }
+                if (memberInfo is ConstructorInfo)
+                {
+                    constructorMembers.Add(GetConstructor((ConstructorInfo)memberInfo));
+                }
+                if (memberInfo is MethodInfo)
+                {
+                    methodMembers.Add(GetMethod((MethodInfo)memberInfo));
+                }
+            }
+            return new Members(
+                fieldMembers.Count != 0 ? fieldMembers.ToArray() : null,
+                eventMembers.Count != 0 ? eventMembers.ToArray() : null,
+                propertyMembers.Count != 0 ? propertyMembers.ToArray() : null,
+                typeMembers.Count != 0 ? typeMembers.ToArray() : null,
+                constructorMembers.Count != 0 ? constructorMembers.ToArray() : null,
+                methodMembers.Count != 0 ? methodMembers.ToArray() : null
+                );
+        }
+
+        FieldMember GetField(FieldInfo memberInfo)
+        {
+            var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
+            var fieldType = memberInfo.FieldType;
+            bool? isStatic = memberInfo.IsStatic ? true : null;
+            return new FieldMember(memberInfo.Name, GetAttributes(memberInfo), access, GetTypeId(fieldType), isStatic);
+        }
+        EventMember GetEvent(EventInfo memberInfo)
+        {
+            var eventHandlerType = memberInfo.EventHandlerType;
+            var addMethod = memberInfo.GetAddMethod();
+            return new EventMember(memberInfo.Name, GetAttributes(memberInfo), GetOptionalAccess(addMethod), GetOptionalTypeId(eventHandlerType));
+        }
+        PropertyMember GetProperty(PropertyInfo memberInfo)
+        {
+            var propertyType = memberInfo.PropertyType;
+            var getMethod = memberInfo.GetMethod;
+            var setMethod = memberInfo.SetMethod;
+            var parameters = GetParameters(memberInfo);
+            // TODO initialize isStatic
+            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), GetOptionalAccess(getMethod), GetOptionalAccess(setMethod), parameters, GetTypeId(propertyType));
+        }
+        ConstructorMember GetConstructor(ConstructorInfo memberInfo)
+        {
+            var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
+            var parameters = GetParameters(memberInfo);
+            bool? isStatic = memberInfo.IsStatic ? true : null;
+            return new ConstructorMember(GetAttributes(memberInfo), access, parameters, isStatic);
+        }
+        MethodMember GetMethod(MethodInfo memberInfo)
+        {
+            var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
+            var parameters = GetParameters(memberInfo);
+            bool? isStatic = memberInfo.IsStatic ? true : null;
+            var genericArguments = (memberInfo.IsGenericMethod || memberInfo.IsGenericMethodDefinition) ? memberInfo.GetGenericArguments().Select(GetTypeId).ToArray() : null;
+            return new MethodMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, isStatic, genericArguments, GetTypeId(memberInfo.ReturnType));
+        }
+        Parameter[]? GetParameters(PropertyInfo memberInfo) => GetParameters(memberInfo.GetIndexParameters());
+        Parameter[]? GetParameters(MethodBase memberInfo) => GetParameters(memberInfo.GetParameters());
+        Parameter[]? GetParameters(ParameterInfo[] parameterInfos)
+        {
+            var parameters = parameterInfos.Select(parameterInfo => new Parameter(parameterInfo.Name, GetTypeId(parameterInfo.ParameterType))).ToArray();
+            return parameters.Length == 0 ? null : parameters;
+        }
+
+        Access? GetOptionalAccess(MethodBase? methodBase) => methodBase == null ? null : GetAccess(methodBase);
+        Access GetAccess(MethodBase methodBase) => GetAccess(methodBase.IsPublic, methodBase.IsPrivate, methodBase.IsAssembly, methodBase.IsFamily, methodBase.IsFamilyAndAssembly, methodBase.IsFamilyOrAssembly);
+        Access GetAccess(bool isPublic, bool isPrivate, bool isAssembly, bool isFamily, bool isFamilyAndAssembly, bool isFamilyOrAssembly) =>
+            isPublic
+            ? Access.Public
+            : isPrivate
+            ? Access.Private
+            : isAssembly
+            ? Access.Internal
+            : Access.Protected;
     }
 }

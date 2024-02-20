@@ -13,17 +13,63 @@ export interface ITypes {
   [key: string]: TypeInfo[];
 }
 
-export const enum Flags {
+export const enum Access {
   Public = 1,
   Protected = 2,
   Internal = 3,
   Private = 4,
-
-  Nested = 5,
-
-  Generic = 6,
-  GenericDefinition = 7,
 }
+
+export const enum Flag {
+  Generic = 1,
+  GenericDefinition = 2,
+  Nested = 4,
+}
+
+export type Parameter = {
+  name?: string;
+  type: TypeId;
+};
+
+export type Members = {
+  fieldMembers?: {
+    name: string;
+    attributes?: string[];
+    access: Access;
+    fieldType: TypeId;
+    isStatic?: boolean;
+  }[];
+  eventMembers?: {
+    name: string;
+    attributes?: string[];
+    access?: Access;
+    eventHandlerType: TypeId;
+  }[];
+  propertyMembers?: {
+    name: string;
+    attributes?: string[];
+    getAccess?: Access;
+    setAccess?: Access;
+    parameters?: Parameter[];
+    propertyType: TypeId;
+    isStatic?: boolean;
+  }[];
+  constructorMembers?: {
+    attributes?: string[];
+    access: Access;
+    parameters?: Parameter[];
+    isStatic?: boolean;
+  }[];
+  methodMembers?: {
+    name: string;
+    attributes?: string[];
+    access: Access;
+    parameters?: Parameter[];
+    isStatic?: boolean;
+    genericArguments?: TypeId[];
+    returnType: TypeId;
+  }[];
+};
 
 // GoodTypeInfo with TypeId and without exceptions is the usual, happy path
 export type TypeId = {
@@ -39,7 +85,9 @@ export type GoodTypeInfo = {
   baseType?: TypeId;
   interfaces?: TypeId[];
   genericTypeParameters?: TypeId[];
-  flags: Flags[];
+  access: Access;
+  flag?: Flag;
+  members: Members;
 };
 
 // if an exception is thrown and caught, when reading the TypeInfo

@@ -1,12 +1,14 @@
 export type { Edge } from "./edge";
-export { Flags, isBadTypeInfo, isNamedTypeInfo, loadedVersion } from "./loaded";
+export { Access, isBadTypeInfo, isNamedTypeInfo, loadedVersion } from "./loaded";
 export type {
   BadTypeInfo,
   GoodTypeInfo,
   IAssemblies,
   ITypes,
   Loaded,
+  Members,
   NamedTypeInfo,
+  Parameter,
   Reflected,
   ReflectedAssembly,
   TypeId,

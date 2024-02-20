@@ -1,10 +1,18 @@
-import type { Access, Exceptions, Namespace, TextNode, Type, Types } from "../shared-types";
+import type { Access, Exceptions, Members, Namespace, TextNode, Type, Types } from "../shared-types";
 import { logError } from "./log";
-import type { GoodTypeInfo, Loaded, NamedTypeInfo, TypeId, TypeInfo } from "./shared-types";
-import { Flags, isBadTypeInfo, isNamedTypeInfo, options } from "./shared-types";
+import type { Loaded, NamedTypeInfo, TypeId, TypeInfo } from "./shared-types";
+import {
+  Access as LoadedAccess,
+  Members as LoadedMembers,
+  Parameter as LoadedParameter,
+  isBadTypeInfo,
+  isNamedTypeInfo,
+  options,
+} from "./shared-types";
 
-type IdKind = "!n!" | "!t!" | "!e!" | "!a!";
-const makeId = (kind: IdKind, ...ids: string[]): string => `${kind}${ids.join(".")}`;
+type IdKind = "!n!" | "!t!" | "!e!" | "!a!" | "!m!";
+type MemberIdKind = "!mM!" | "!mm!" | "!mF!" | "!mf!" | "!mP!" | "!mp!" | "!me!";
+const makeId = (kind: IdKind | MemberIdKind, ...ids: string[]): string => `${kind}${ids.join(".")}`;
 
 // use a closure to create an Exception instance with a unique id from a message string
 const pushException: (exceptions: Exceptions, message: string) => void = (function () {
@@ -26,13 +34,15 @@ const makeTypeName = (name: string, generic?: TypeId[]): string => {
   const index = name.indexOf("`");
   return (index === -1 ? name : name.substring(0, index)) + `<${generic.map((it) => it.name).join(",")}>`;
 };
+const makeTypeIdName = (typeId: TypeId): string => makeTypeName(typeId.name, typeId.genericTypeArguments);
 const makeTypeId = (typeId: TypeId): string[] => {
-  const name = makeTypeName(typeId.name, typeId.genericTypeArguments);
+  const name = makeTypeIdName(typeId);
   const prefix = typeId.declaringType
     ? makeTypeId(typeId.declaringType)
     : typeId.namespace
     ? [typeId.namespace]
     : undefined;
+  // with this implementation nested types are separated from their container by "." not "+" -- which could be ambiguous
   return prefix ? [...prefix, name] : [name];
 };
 
@@ -41,7 +51,7 @@ const getTypeName = (typeInfo: NamedTypeInfo): string =>
 
 // id can constructed using TypeId only without typeInfo.genericTypeParameters
 const getTypeId = (typeId: TypeId): string => makeId("!t!", ...makeTypeId(typeId));
-const getTypeTextNode = (typeInfo: NamedTypeInfo): TextNode => {
+const getTypeInfoTextNode = (typeInfo: NamedTypeInfo): TextNode => {
   return {
     label: getTypeName(typeInfo),
     id: getTypeId(typeInfo.typeId),
@@ -73,7 +83,13 @@ const filterAttributes = (attributes: string[]): string[] => {
           name == "EmbeddedAttribute")
       )
         continue;
-      const text = name == "ObsoleteAttribute" || !args ? name : `${name}(${args})`;
+
+      const text = !args
+        ? name
+        : // some attributes have long parameters which aren't interesting to display
+        name == "ObsoleteAttribute" || name == "DebuggerBrowsableAttribute"
+        ? `${name}(…)`
+        : `${name}(${args})`;
       result.push(`[${text}]`);
     } catch {
       continue;
@@ -81,24 +97,28 @@ const filterAttributes = (attributes: string[]): string[] => {
   }
   return result;
 };
-const getAttributes = (typeInfo: GoodTypeInfo): TextNode[] => {
-  if (!typeInfo.attributes) return [];
-  return filterAttributes(typeInfo.attributes).map((attribute) => {
+const getAttributes = (attributes: string[] | undefined, containerId: string[]): TextNode[] => {
+  if (!attributes) return [];
+  return filterAttributes(attributes).map((attribute) => {
     return {
       label: attribute,
-      id: makeId("!a!", ...makeTypeId(typeInfo.typeId), attribute),
+      id: makeId("!a!", ...containerId, attribute),
     };
   });
 };
 
-const getAccess = (flags: Flags[]): Access =>
-  flags.includes(Flags.Public)
-    ? "public"
-    : flags.includes(Flags.Protected)
-    ? "protected"
-    : flags.includes(Flags.Internal)
-    ? "internal"
-    : "private";
+const getAccess = (access: LoadedAccess): Access => {
+  switch (access) {
+    case LoadedAccess.Public:
+      return "public";
+    case LoadedAccess.Protected:
+      return "protected";
+    case LoadedAccess.Internal:
+      return "internal";
+    case LoadedAccess.Private:
+      return "private";
+  }
+};
 
 type GetNested = (typeId: TypeId) => NamedTypeInfo[] | undefined;
 
@@ -147,6 +167,96 @@ const unwantedTypes = (typeInfos: NamedTypeInfo[], getNested: GetNested): IsWant
   return isWanted;
 };
 
+const getMembers = (members: LoadedMembers, typeId: string[]): Members => {
+  //
+  const getGenericName = (name: string, genericArguments: TypeId[] | undefined): string =>
+    !genericArguments ? name : `${name}<${genericArguments.map(makeTypeIdName).join(", ")}>`;
+
+  const getMethodName = (name: string, parameters: LoadedParameter[] | undefined): string =>
+    !parameters ? name : `${name}(${parameters.map((parameter) => makeTypeIdName(parameter.type)).join(", ")})`;
+
+  const getPropertyName = (name: string, parameters: LoadedParameter[] | undefined): string =>
+    !parameters ? name : `${name}[${parameters.map((parameter) => makeTypeIdName(parameter.type)).join(", ")}]`;
+
+  const getFromName = (
+    memberIdKind: MemberIdKind,
+    name: string,
+    attributes: string[] | undefined,
+    memberTypeId: TypeId | undefined, // undefined iff it's a constructor
+    isConversionOperator?: boolean
+  ): TextNode & { attributes: TextNode[] } => {
+    const label = !memberTypeId ? name : `${name} : ${makeTypeIdName(memberTypeId)}`;
+    // if it's a conversion operator then we need to include the return type in the ID
+    const memberId = [...typeId, isConversionOperator ? label : name];
+    return {
+      label,
+      id: makeId(memberIdKind, ...memberId),
+      attributes: getAttributes(attributes, memberId),
+    };
+  };
+
+  return {
+    fieldMembers:
+      members.fieldMembers?.map((fieldMember) => {
+        return {
+          ...getFromName(
+            fieldMember.isStatic ? "!mF!" : "!mf!",
+            fieldMember.name,
+            fieldMember.attributes,
+            fieldMember.fieldType
+          ),
+          access: getAccess(fieldMember.access),
+        };
+      }) ?? [],
+    eventMembers:
+      members.eventMembers?.map((eventMember) => {
+        return {
+          ...getFromName("!me!", eventMember.name, eventMember.attributes, eventMember.eventHandlerType),
+          access: eventMember.access ? getAccess(eventMember.access) : undefined,
+        };
+      }) ?? [],
+    propertyMembers:
+      members.propertyMembers?.map((propertyMember) => {
+        return {
+          ...getFromName(
+            propertyMember.isStatic ? "!mP!" : "!mp!",
+            getPropertyName(propertyMember.name, propertyMember.parameters),
+            propertyMember.attributes,
+            propertyMember.propertyType
+          ),
+          getAccess: propertyMember.getAccess ? getAccess(propertyMember.getAccess) : undefined,
+          setAccess: propertyMember.setAccess ? getAccess(propertyMember.setAccess) : undefined,
+        };
+      }) ?? [],
+    constructorMembers:
+      members.constructorMembers?.map((constructorMember) => {
+        return {
+          // ctor name is the name of the type which is the last element in the typeId array
+          ...getFromName(
+            constructorMember.isStatic ? "!mM!" : "!mm!",
+            getMethodName(typeId[typeId.length - 1], constructorMember.parameters),
+            constructorMember.attributes,
+            undefined
+          ),
+          access: getAccess(constructorMember.access),
+        };
+      }) ?? [],
+    methodMembers:
+      members.methodMembers?.map((methodMember) => {
+        return {
+          ...getFromName(
+            methodMember.isStatic ? "!mM!" : "!mm!",
+            getMethodName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters),
+            methodMember.attributes,
+            methodMember.returnType,
+            methodMember.name === "op_Explicit" || methodMember.name === "op_Implicit"
+          ),
+          access: getAccess(methodMember.access),
+        };
+      }) ?? [],
+  };
+};
+
 export const convertToTypes = (loaded: Loaded, id: string): Types => {
   const typeInfos: TypeInfo[] = loaded.types[id];
   if (!typeInfos) return { namespaces: [], exceptions: [] }; // for an assembly whose types we haven't loaded
@@ -181,14 +291,16 @@ export const convertToTypes = (loaded: Loaded, id: string): Types => {
   const getType = (typeInfo: NamedTypeInfo): Type => {
     const nested = getNested(typeInfo.typeId);
     const subtypes = nested ? nested.filter(isWantedType).map(getType) : undefined;
-    const typeTextNode = getTypeTextNode(typeInfo);
+    const typeTextNode = getTypeInfoTextNode(typeInfo);
+    const typeId = makeTypeId(typeInfo.typeId);
     return isBadTypeInfo(typeInfo)
       ? { ...typeTextNode, exceptions: createExceptions(typeInfo.exceptions) }
       : {
           ...typeTextNode,
-          access: getAccess(typeInfo.flags),
-          attributes: getAttributes(typeInfo),
+          access: getAccess(typeInfo.access),
+          attributes: getAttributes(typeInfo.attributes, typeId),
           subtypes,
+          members: getMembers(typeInfo.members, typeId),
         };
   };
 
