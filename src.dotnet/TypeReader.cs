@@ -231,16 +231,27 @@ namespace Core
         {
             var eventHandlerType = memberInfo.EventHandlerType;
             var addMethod = memberInfo.GetAddMethod();
-            return new EventMember(memberInfo.Name, GetAttributes(memberInfo), GetOptionalAccess(addMethod), GetOptionalTypeId(eventHandlerType));
+            if (addMethod == null)
+            {
+                throw new ArgumentNullException();
+            }
+            return new EventMember(memberInfo.Name, GetAttributes(memberInfo), GetAccess(addMethod), GetOptionalTypeId(eventHandlerType));
         }
         PropertyMember GetProperty(PropertyInfo memberInfo)
         {
             var propertyType = memberInfo.PropertyType;
             var getMethod = memberInfo.GetMethod;
             var setMethod = memberInfo.SetMethod;
+            var getAccess = GetOptionalAccess(getMethod);
+            var setAccess = GetOptionalAccess(setMethod);
+            var access = getAccess == null ? setAccess : setAccess == null ? getAccess : (Access)Math.Min((int)getAccess.Value,(int)setAccess.Value);
+            if (access == null)
+            {
+                throw new ArgumentNullException();
+            }
             var parameters = GetParameters(memberInfo);
             // TODO initialize isStatic
-            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), GetOptionalAccess(getMethod), GetOptionalAccess(setMethod), parameters, GetTypeId(propertyType));
+            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), access.Value, parameters, GetTypeId(propertyType));
         }
         ConstructorMember GetConstructor(ConstructorInfo memberInfo)
         {

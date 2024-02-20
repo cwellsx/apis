@@ -7,12 +7,15 @@ namespace Core
     // therefore Type properties must be extracted into plain-old-data classes like these, before then.
 
     // this enum is duplicated in the TypeScript, so edit it there too if you change it here
+    // these are in sequence from least to most restrictive
     public enum Access
     {
         Public = 1,
-        Protected = 2,
-        Internal = 3,
-        Private = 4,
+        ProtectedInternal = 2, // protected or internal
+        Protected = 3,
+        Internal = 4,
+        PrivateProtected = 5, // protected and internal
+        Private = 6,
     }
 
     [Flags]
@@ -72,18 +75,20 @@ namespace Core
         bool? IsStatic
         );
 
+    // can't be static
+    // EventHandlerType is nullable but probably shouldn't be?
     public record EventMember(
         string Name,
         string[]? Attributes,
-        Access? Access,
+        Access Access,
         TypeId? EventHandlerType
         );
 
+    // two Access values but these can/should be combined
     public record PropertyMember(
         string Name,
         string[]? Attributes,
-        Access? SetAccess,
-        Access? GetAccess,
+        Access Access,
         Parameter[]? Parameters,
         TypeId PropertyType
         );
@@ -93,6 +98,7 @@ namespace Core
         TypeId Type
         );
 
+    // no name, no Type, additional parameters
     public record ConstructorMember(
         string[]? Attributes,
         Access Access,

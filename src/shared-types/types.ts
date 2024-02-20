@@ -5,28 +5,17 @@ export type Access = "public" | "protected" | "internal" | "private";
 export type Exception = TextNode;
 export type Exceptions = Exception[];
 
+export type MemberInfo = TextNode & {
+  attributes: TextNode[];
+  access: Access;
+};
+
 export type Members = {
-  fieldMembers: (TextNode & {
-    attributes: TextNode[];
-    access: Access;
-  })[];
-  eventMembers: (TextNode & {
-    attributes: TextNode[];
-    access: Access | undefined;
-  })[];
-  propertyMembers: (TextNode & {
-    attributes: TextNode[];
-    getAccess?: Access;
-    setAccess?: Access;
-  })[];
-  constructorMembers: (TextNode & {
-    attributes: TextNode[];
-    access: Access;
-  })[];
-  methodMembers: (TextNode & {
-    attributes: TextNode[];
-    access: Access;
-  })[];
+  fieldMembers: MemberInfo[];
+  eventMembers: MemberInfo[];
+  propertyMembers: MemberInfo[];
+  constructorMembers: MemberInfo[];
+  methodMembers: MemberInfo[];
 };
 
 export type TypeKnown = TextNode & {

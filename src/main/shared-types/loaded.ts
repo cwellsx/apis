@@ -15,9 +15,11 @@ export interface ITypes {
 
 export const enum Access {
   Public = 1,
-  Protected = 2,
-  Internal = 3,
-  Private = 4,
+  ProtectedInternal = 2,
+  Protected = 3,
+  Internal = 4,
+  PrivateProtected = 5,
+  Private = 6,
 }
 
 export const enum Flag {
@@ -42,14 +44,13 @@ export type Members = {
   eventMembers?: {
     name: string;
     attributes?: string[];
-    access?: Access;
+    access: Access;
     eventHandlerType: TypeId;
   }[];
   propertyMembers?: {
     name: string;
     attributes?: string[];
-    getAccess?: Access;
-    setAccess?: Access;
+    access: Access;
     parameters?: Parameter[];
     propertyType: TypeId;
     isStatic?: boolean;

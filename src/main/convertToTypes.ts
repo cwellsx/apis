@@ -111,10 +111,12 @@ const getAccess = (access: LoadedAccess): Access => {
   switch (access) {
     case LoadedAccess.Public:
       return "public";
+    case LoadedAccess.ProtectedInternal:
     case LoadedAccess.Protected:
       return "protected";
     case LoadedAccess.Internal:
       return "internal";
+    case LoadedAccess.PrivateProtected:
     case LoadedAccess.Private:
       return "private";
   }
@@ -183,8 +185,9 @@ const getMembers = (members: LoadedMembers, typeId: string[]): Members => {
     name: string,
     attributes: string[] | undefined,
     memberTypeId: TypeId | undefined, // undefined iff it's a constructor
+    access: LoadedAccess,
     isConversionOperator?: boolean
-  ): TextNode & { attributes: TextNode[] } => {
+  ): TextNode & { attributes: TextNode[]; access: Access } => {
     const label = !memberTypeId ? name : `${name} : ${makeTypeIdName(memberTypeId)}`;
     // if it's a conversion operator then we need to include the return type in the ID
     const memberId = [...typeId, isConversionOperator ? label : name];
@@ -192,67 +195,62 @@ const getMembers = (members: LoadedMembers, typeId: string[]): Members => {
       label,
       id: makeId(memberIdKind, ...memberId),
       attributes: getAttributes(attributes, memberId),
+      access: getAccess(access),
     };
   };
 
   return {
     fieldMembers:
       members.fieldMembers?.map((fieldMember) => {
-        return {
-          ...getFromName(
-            fieldMember.isStatic ? "!mF!" : "!mf!",
-            fieldMember.name,
-            fieldMember.attributes,
-            fieldMember.fieldType
-          ),
-          access: getAccess(fieldMember.access),
-        };
+        return getFromName(
+          fieldMember.isStatic ? "!mF!" : "!mf!",
+          fieldMember.name,
+          fieldMember.attributes,
+          fieldMember.fieldType,
+          fieldMember.access
+        );
       }) ?? [],
     eventMembers:
       members.eventMembers?.map((eventMember) => {
-        return {
-          ...getFromName("!me!", eventMember.name, eventMember.attributes, eventMember.eventHandlerType),
-          access: eventMember.access ? getAccess(eventMember.access) : undefined,
-        };
+        return getFromName(
+          "!me!",
+          eventMember.name,
+          eventMember.attributes,
+          eventMember.eventHandlerType,
+          eventMember.access
+        );
       }) ?? [],
     propertyMembers:
       members.propertyMembers?.map((propertyMember) => {
-        return {
-          ...getFromName(
-            propertyMember.isStatic ? "!mP!" : "!mp!",
-            getPropertyName(propertyMember.name, propertyMember.parameters),
-            propertyMember.attributes,
-            propertyMember.propertyType
-          ),
-          getAccess: propertyMember.getAccess ? getAccess(propertyMember.getAccess) : undefined,
-          setAccess: propertyMember.setAccess ? getAccess(propertyMember.setAccess) : undefined,
-        };
+        return getFromName(
+          propertyMember.isStatic ? "!mP!" : "!mp!",
+          getPropertyName(propertyMember.name, propertyMember.parameters),
+          propertyMember.attributes,
+          propertyMember.propertyType,
+          propertyMember.access
+        );
       }) ?? [],
     constructorMembers:
       members.constructorMembers?.map((constructorMember) => {
-        return {
+        return getFromName(
+          constructorMember.isStatic ? "!mM!" : "!mm!",
           // ctor name is the name of the type which is the last element in the typeId array
-          ...getFromName(
-            constructorMember.isStatic ? "!mM!" : "!mm!",
-            getMethodName(typeId[typeId.length - 1], constructorMember.parameters),
-            constructorMember.attributes,
-            undefined
-          ),
-          access: getAccess(constructorMember.access),
-        };
+          getMethodName(typeId[typeId.length - 1], constructorMember.parameters),
+          constructorMember.attributes,
+          undefined,
+          constructorMember.access
+        );
       }) ?? [],
     methodMembers:
       members.methodMembers?.map((methodMember) => {
-        return {
-          ...getFromName(
-            methodMember.isStatic ? "!mM!" : "!mm!",
-            getMethodName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters),
-            methodMember.attributes,
-            methodMember.returnType,
-            methodMember.name === "op_Explicit" || methodMember.name === "op_Implicit"
-          ),
-          access: getAccess(methodMember.access),
-        };
+        return getFromName(
+          methodMember.isStatic ? "!mM!" : "!mm!",
+          getMethodName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters),
+          methodMember.attributes,
+          methodMember.returnType,
+          methodMember.access,
+          methodMember.name === "op_Explicit" || methodMember.name === "op_Implicit"
+        );
       }) ?? [],
   };
 };

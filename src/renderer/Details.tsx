@@ -1,6 +1,6 @@
 import * as React from "react";
 import CheckboxTree, { Node } from "react-checkbox-tree";
-import type { Access, Exception, Members, Namespace, TextNode, Type, Types } from "../shared-types";
+import type { Access, Exception, MemberInfo, Members, Namespace, TextNode, Type, Types } from "../shared-types";
 import { isTypeException } from "../shared-types";
 import { icons } from "./3rd-party/checkboxTreeIcons";
 import * as Icon from "./Icons.Microsoft";
@@ -73,17 +73,7 @@ const getEventIcon = (access: Access | undefined) => {
   }
 };
 
-const accessPriority = new Map<Access, number>([
-  ["public", 4],
-  ["protected", 3],
-  ["internal", 2],
-  ["private", 1],
-]);
-
-const getPropertyIcon = (getAccess: Access | undefined, setAccess: Access | undefined) => {
-  const getPriority = (access: Access): number => accessPriority.get(access) ?? 0;
-  const greater = (x: Access, y: Access): Access => (getPriority(x) > getPriority(y) ? x : y);
-  const access = !getAccess ? setAccess : !setAccess ? getAccess : greater(getAccess, setAccess);
+const getPropertyIcon = (access: Access) => {
   switch (access) {
     case "public":
       return <Icon.SvgPropertyPublic />;
@@ -100,39 +90,13 @@ const getPropertyIcon = (getAccess: Access | undefined, setAccess: Access | unde
 
 const convertMembers = (members: Members): Node[] => {
   const result: Node[] = [];
-  result.push(
-    ...members.fieldMembers.map((fieldMember) =>
-      makeNode(fieldMember, getFieldIcon(fieldMember.access), fieldMember.attributes.map(convertAttribute))
-    )
-  );
-  result.push(
-    ...members.propertyMembers.map((propertyMember) =>
-      makeNode(
-        propertyMember,
-        getPropertyIcon(propertyMember.getAccess, propertyMember.setAccess),
-        propertyMember.attributes.map(convertAttribute)
-      )
-    )
-  );
-  result.push(
-    ...members.constructorMembers.map((constructorMember) =>
-      makeNode(
-        constructorMember,
-        getMethodIcon(constructorMember.access),
-        constructorMember.attributes.map(convertAttribute)
-      )
-    )
-  );
-  result.push(
-    ...members.methodMembers.map((methodMember) =>
-      makeNode(methodMember, getMethodIcon(methodMember.access), methodMember.attributes.map(convertAttribute))
-    )
-  );
-  result.push(
-    ...members.eventMembers.map((eventMember) =>
-      makeNode(eventMember, getEventIcon(eventMember.access), eventMember.attributes.map(convertAttribute))
-    )
-  );
+  const makeMemberNode = (memberInfo: MemberInfo, getIcon: (access: Access) => JSX.Element): Node =>
+    makeNode(memberInfo, getIcon(memberInfo.access), memberInfo.attributes.map(convertAttribute));
+  result.push(...members.fieldMembers.map((memberInfo) => makeMemberNode(memberInfo, getFieldIcon)));
+  result.push(...members.propertyMembers.map((memberInfo) => makeMemberNode(memberInfo, getPropertyIcon)));
+  result.push(...members.constructorMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon)));
+  result.push(...members.methodMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon)));
+  result.push(...members.eventMembers.map((memberInfo) => makeMemberNode(memberInfo, getEventIcon)));
   return result;
 };
 
