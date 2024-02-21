@@ -2,7 +2,7 @@
   "profiles": {
     "Core": {
       "commandName": "Project",
-      "commandLineArgs": "\"C:\\Users\\Christopher\\Source\\Repos\\apis\\src.dotnet\\bin\\Debug\\net5.0\""
+      "commandLineArgs": "C:\\Users\\Christopher\\Source\\Repos\\modeltext\\ModelTextHtml\\ModelEditControl\\bin\\Debug"
     }
   }
 }

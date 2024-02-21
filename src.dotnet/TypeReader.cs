@@ -235,23 +235,36 @@ namespace Core
             {
                 throw new ArgumentNullException();
             }
-            return new EventMember(memberInfo.Name, GetAttributes(memberInfo), GetAccess(addMethod), GetOptionalTypeId(eventHandlerType));
+            return new EventMember(memberInfo.Name, GetAttributes(memberInfo), GetAccess(addMethod), GetOptionalTypeId(eventHandlerType), addMethod.IsStatic);
         }
         PropertyMember GetProperty(PropertyInfo memberInfo)
         {
             var propertyType = memberInfo.PropertyType;
             var getMethod = memberInfo.GetMethod;
             var setMethod = memberInfo.SetMethod;
-            var getAccess = GetOptionalAccess(getMethod);
-            var setAccess = GetOptionalAccess(setMethod);
-            var access = getAccess == null ? setAccess : setAccess == null ? getAccess : (Access)Math.Min((int)getAccess.Value,(int)setAccess.Value);
-            if (access == null)
-            {
-                throw new ArgumentNullException();
+            (Access, bool) Get(){
+                if (getMethod == null)
+                {
+                    if (setMethod == null)
+                    {
+                        throw new ArgumentNullException();
+                    }
+                    return (GetAccess(setMethod), setMethod.IsStatic);
+                }
+                else
+                {
+                    if (setMethod == null)
+                    {
+                        return (GetAccess(getMethod), getMethod.IsStatic);
+                    }
+                }
+                var access = (Access)Math.Min((int)GetAccess(getMethod), (int)GetAccess(setMethod));
+                var isStatic = getMethod.IsStatic; // doesn't matter which method we use here
+                return (access, isStatic);
             }
+            var (access, isStatic) = Get();
             var parameters = GetParameters(memberInfo);
-            // TODO initialize isStatic
-            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), access.Value, parameters, GetTypeId(propertyType));
+            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, GetTypeId(propertyType), isStatic);
         }
         ConstructorMember GetConstructor(ConstructorInfo memberInfo)
         {

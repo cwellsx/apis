@@ -81,7 +81,8 @@ namespace Core
         string Name,
         string[]? Attributes,
         Access Access,
-        TypeId? EventHandlerType
+        TypeId? EventHandlerType,
+        bool? IsStatic
         );
 
     // two Access values but these can/should be combined
@@ -90,7 +91,8 @@ namespace Core
         string[]? Attributes,
         Access Access,
         Parameter[]? Parameters,
-        TypeId PropertyType
+        TypeId PropertyType,
+        bool? IsStatic
         );
 
     public record Parameter(

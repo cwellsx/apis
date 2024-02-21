@@ -33,43 +33,50 @@ export type Parameter = {
   type: TypeId;
 };
 
+export type FieldMember = {
+  name: string;
+  attributes?: string[];
+  access: Access;
+  fieldType: TypeId;
+  isStatic?: boolean;
+};
+export type EventMember = {
+  name: string;
+  attributes?: string[];
+  access: Access;
+  eventHandlerType: TypeId;
+  isStatic?: boolean;
+};
+export type PropertyMember = {
+  name: string;
+  attributes?: string[];
+  access: Access;
+  parameters?: Parameter[];
+  propertyType: TypeId;
+  isStatic?: boolean;
+};
+export type ConstructorMember = {
+  attributes?: string[];
+  access: Access;
+  parameters?: Parameter[];
+  isStatic?: boolean;
+};
+export type MethodMember = {
+  name: string;
+  attributes?: string[];
+  access: Access;
+  parameters?: Parameter[];
+  isStatic?: boolean;
+  genericArguments?: TypeId[];
+  returnType: TypeId;
+};
+
 export type Members = {
-  fieldMembers?: {
-    name: string;
-    attributes?: string[];
-    access: Access;
-    fieldType: TypeId;
-    isStatic?: boolean;
-  }[];
-  eventMembers?: {
-    name: string;
-    attributes?: string[];
-    access: Access;
-    eventHandlerType: TypeId;
-  }[];
-  propertyMembers?: {
-    name: string;
-    attributes?: string[];
-    access: Access;
-    parameters?: Parameter[];
-    propertyType: TypeId;
-    isStatic?: boolean;
-  }[];
-  constructorMembers?: {
-    attributes?: string[];
-    access: Access;
-    parameters?: Parameter[];
-    isStatic?: boolean;
-  }[];
-  methodMembers?: {
-    name: string;
-    attributes?: string[];
-    access: Access;
-    parameters?: Parameter[];
-    isStatic?: boolean;
-    genericArguments?: TypeId[];
-    returnType: TypeId;
-  }[];
+  fieldMembers?: FieldMember[];
+  eventMembers?: EventMember[];
+  propertyMembers?: PropertyMember[];
+  constructorMembers?: ConstructorMember[];
+  methodMembers?: MethodMember[];
 };
 
 // GoodTypeInfo with TypeId and without exceptions is the usual, happy path

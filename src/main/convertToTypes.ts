@@ -1,17 +1,22 @@
-import type { Access, Exceptions, Members, Namespace, TextNode, Type, Types } from "../shared-types";
+import type { Access, Exceptions, MemberInfo, Members, Namespace, TextNode, Type, Types } from "../shared-types";
 import { logError } from "./log";
 import type { Loaded, NamedTypeInfo, TypeId, TypeInfo } from "./shared-types";
 import {
   Access as LoadedAccess,
+  ConstructorMember as LoadedConstructorMember,
+  EventMember as LoadedEventMember,
+  FieldMember as LoadedFieldMember,
   Members as LoadedMembers,
+  MethodMember as LoadedMethodMember,
   Parameter as LoadedParameter,
+  PropertyMember as LoadedPropertyMember,
   isBadTypeInfo,
   isNamedTypeInfo,
   options,
 } from "./shared-types";
 
 type IdKind = "!n!" | "!t!" | "!e!" | "!a!" | "!m!";
-type MemberIdKind = "!mM!" | "!mm!" | "!mF!" | "!mf!" | "!mP!" | "!mp!" | "!me!";
+type MemberIdKind = "!mM!" | "!mm!" | "!mF!" | "!mf!" | "!mP!" | "!mp!" | "!mE!" | "!me!";
 const makeId = (kind: IdKind | MemberIdKind, ...ids: string[]): string => `${kind}${ids.join(".")}`;
 
 // use a closure to create an Exception instance with a unique id from a message string
@@ -169,16 +174,24 @@ const unwantedTypes = (typeInfos: NamedTypeInfo[], getNested: GetNested): IsWant
   return isWanted;
 };
 
-const getMembers = (members: LoadedMembers, typeId: string[]): Members => {
-  //
+const getMemberInfo = (
+  typeId: string[],
+  getTypeIdName: (type: TypeId) => string
+): {
+  getFieldMember: (fieldMember: LoadedFieldMember) => MemberInfo;
+  getEventMember: (eventMember: LoadedEventMember) => MemberInfo;
+  getPropertyMember: (propertyMember: LoadedPropertyMember) => MemberInfo;
+  getConstructorMember: (constructorMember: LoadedConstructorMember) => MemberInfo;
+  getMethodMember: (methodMember: LoadedMethodMember) => MemberInfo;
+} => {
   const getGenericName = (name: string, genericArguments: TypeId[] | undefined): string =>
-    !genericArguments ? name : `${name}<${genericArguments.map(makeTypeIdName).join(", ")}>`;
+    !genericArguments ? name : `${name}<${genericArguments.map(getTypeIdName).join(", ")}>`;
 
   const getMethodName = (name: string, parameters: LoadedParameter[] | undefined): string =>
-    !parameters ? name : `${name}(${parameters.map((parameter) => makeTypeIdName(parameter.type)).join(", ")})`;
+    !parameters ? name : `${name}(${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")})`;
 
   const getPropertyName = (name: string, parameters: LoadedParameter[] | undefined): string =>
-    !parameters ? name : `${name}[${parameters.map((parameter) => makeTypeIdName(parameter.type)).join(", ")}]`;
+    !parameters ? name : `${name}[${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")}]`;
 
   const getFromName = (
     memberIdKind: MemberIdKind,
@@ -187,8 +200,8 @@ const getMembers = (members: LoadedMembers, typeId: string[]): Members => {
     memberTypeId: TypeId | undefined, // undefined iff it's a constructor
     access: LoadedAccess,
     isConversionOperator?: boolean
-  ): TextNode & { attributes: TextNode[]; access: Access } => {
-    const label = !memberTypeId ? name : `${name} : ${makeTypeIdName(memberTypeId)}`;
+  ): MemberInfo => {
+    const label = !memberTypeId ? name : `${name} : ${getTypeIdName(memberTypeId)}`;
     // if it's a conversion operator then we need to include the return type in the ID
     const memberId = [...typeId, isConversionOperator ? label : name];
     return {
@@ -199,60 +212,102 @@ const getMembers = (members: LoadedMembers, typeId: string[]): Members => {
     };
   };
 
-  return {
-    fieldMembers:
-      members.fieldMembers?.map((fieldMember) => {
-        return getFromName(
-          fieldMember.isStatic ? "!mF!" : "!mf!",
-          fieldMember.name,
-          fieldMember.attributes,
-          fieldMember.fieldType,
-          fieldMember.access
-        );
-      }) ?? [],
-    eventMembers:
-      members.eventMembers?.map((eventMember) => {
-        return getFromName(
-          "!me!",
-          eventMember.name,
-          eventMember.attributes,
-          eventMember.eventHandlerType,
-          eventMember.access
-        );
-      }) ?? [],
-    propertyMembers:
-      members.propertyMembers?.map((propertyMember) => {
-        return getFromName(
-          propertyMember.isStatic ? "!mP!" : "!mp!",
-          getPropertyName(propertyMember.name, propertyMember.parameters),
-          propertyMember.attributes,
-          propertyMember.propertyType,
-          propertyMember.access
-        );
-      }) ?? [],
-    constructorMembers:
-      members.constructorMembers?.map((constructorMember) => {
-        return getFromName(
-          constructorMember.isStatic ? "!mM!" : "!mm!",
-          // ctor name is the name of the type which is the last element in the typeId array
-          getMethodName(typeId[typeId.length - 1], constructorMember.parameters),
-          constructorMember.attributes,
-          undefined,
-          constructorMember.access
-        );
-      }) ?? [],
-    methodMembers:
-      members.methodMembers?.map((methodMember) => {
-        return getFromName(
-          methodMember.isStatic ? "!mM!" : "!mm!",
-          getMethodName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters),
-          methodMember.attributes,
-          methodMember.returnType,
-          methodMember.access,
-          methodMember.name === "op_Explicit" || methodMember.name === "op_Implicit"
-        );
-      }) ?? [],
+  const getFieldMember = (fieldMember: LoadedFieldMember): MemberInfo =>
+    getFromName(
+      fieldMember.isStatic ? "!mF!" : "!mf!",
+      fieldMember.name,
+      fieldMember.attributes,
+      fieldMember.fieldType,
+      fieldMember.access
+    );
+  const getEventMember = (eventMember: LoadedEventMember): MemberInfo =>
+    getFromName(
+      eventMember.isStatic ? "!mE!" : "!me!",
+      eventMember.name,
+      eventMember.attributes,
+      eventMember.eventHandlerType,
+      eventMember.access
+    );
+  const getPropertyMember = (propertyMember: LoadedPropertyMember): MemberInfo =>
+    getFromName(
+      propertyMember.isStatic ? "!mP!" : "!mp!",
+      getPropertyName(propertyMember.name, propertyMember.parameters),
+      propertyMember.attributes,
+      propertyMember.propertyType,
+      propertyMember.access
+    );
+  const getConstructorMember = (constructorMember: LoadedConstructorMember): MemberInfo =>
+    getFromName(
+      constructorMember.isStatic ? "!mM!" : "!mm!",
+      // ctor name is the name of the type which is the last element in the typeId array
+      getMethodName(typeId[typeId.length - 1], constructorMember.parameters),
+      constructorMember.attributes,
+      undefined,
+      constructorMember.access
+    );
+  const getMethodMember = (methodMember: LoadedMethodMember): MemberInfo =>
+    getFromName(
+      methodMember.isStatic ? "!mM!" : "!mm!",
+      getMethodName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters),
+      methodMember.attributes,
+      methodMember.returnType,
+      methodMember.access,
+      methodMember.name === "op_Explicit" || methodMember.name === "op_Implicit"
+    );
+
+  return { getFieldMember, getEventMember, getPropertyMember, getConstructorMember, getMethodMember };
+};
+
+const getMembers = (members: LoadedMembers, typeId: string[]): Members => {
+  //
+  const { getFieldMember, getEventMember, getPropertyMember, getConstructorMember, getMethodMember } = getMemberInfo(
+    typeId,
+    makeTypeIdName
+  );
+
+  const result: Members = {
+    fieldMembers: members.fieldMembers?.map(getFieldMember) ?? [],
+    eventMembers: members.eventMembers?.map(getEventMember) ?? [],
+    propertyMembers: members.propertyMembers?.map(getPropertyMember) ?? [],
+    constructorMembers: members.constructorMembers?.map(getConstructorMember) ?? [],
+    methodMembers: members.methodMembers?.map(getMethodMember) ?? [],
   };
+
+  // using makeTypeIdName i.e. short type names makes the labels readable
+  // but could lead to duplicate id values if e.g. a method is overloaded on two types with the same short name
+
+  const getDuplicateIds = (members: TextNode[]): Set<string> | null => {
+    const found = new Set<string>();
+    const duplicate = new Set<string>();
+    members.forEach((member) => {
+      const id = member.id;
+      if (found.has(id)) duplicate.add(id);
+      else found.add(id);
+    });
+    return duplicate.size != 0 ? duplicate : null;
+  };
+
+  const duplicateConstructors = getDuplicateIds(result.constructorMembers);
+  const duplicateMethods = getDuplicateIds(result.methodMembers);
+  if (duplicateConstructors || duplicateMethods) {
+    // try again using fully-qualified type names
+    const getTypeIdName = (typeId: TypeId): string => makeTypeId(typeId).join(".");
+    const { getConstructorMember, getMethodMember } = getMemberInfo(typeId, getTypeIdName);
+
+    result.constructorMembers.forEach((member, index) => {
+      if (duplicateConstructors?.has(member.id))
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        result.constructorMembers[index] = getConstructorMember(members.constructorMembers![index]);
+    });
+
+    result.methodMembers.forEach((member, index) => {
+      if (duplicateMethods?.has(member.id))
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        result.methodMembers[index] = getMethodMember(members.methodMembers![index]);
+    });
+  }
+
+  return result;
 };
 
 export const convertToTypes = (loaded: Loaded, id: string): Types => {

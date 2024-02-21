@@ -2,13 +2,18 @@ export type { Edge } from "./edge";
 export { Access, isBadTypeInfo, isNamedTypeInfo, loadedVersion } from "./loaded";
 export type {
   BadTypeInfo,
+  ConstructorMember,
+  EventMember,
+  FieldMember,
   GoodTypeInfo,
   IAssemblies,
   ITypes,
   Loaded,
   Members,
+  MethodMember,
   NamedTypeInfo,
   Parameter,
+  PropertyMember,
   Reflected,
   ReflectedAssembly,
   TypeId,
