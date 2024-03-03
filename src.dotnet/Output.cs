@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Core
@@ -10,6 +11,7 @@ namespace Core
     // these are in sequence from least to most restrictive
     public enum Access
     {
+        None,
         Public = 1,
         ProtectedInternal = 2, // protected or internal
         Protected = 3,
@@ -36,7 +38,7 @@ namespace Core
         string? AssemblyName,
         string? Namespace,
         string Name,
-        TypeId[]? GenericTypeArguments,
+        Values<TypeId>? GenericTypeArguments,
         TypeId? DeclaringType
         );
 
@@ -110,11 +112,12 @@ namespace Core
 
     public record MethodMember(
         string Name,
-        string[]? Attributes,
+        Values<string>? Attributes,
         Access Access,
-        Parameter[]? Parameters,
+        Values<Parameter>? Parameters,
         bool? IsStatic,
-        TypeId[]? GenericArguments,
+        bool? IsConstructor,
+        Values<TypeId>? GenericArguments,
         TypeId ReturnType
         );
 
@@ -126,4 +129,35 @@ namespace Core
         ConstructorMember[]? ConstructorMembers,
         MethodMember[]? MethodMembers
         );
+
+    public record MethodId(
+        MethodMember methodMember,
+        TypeId declaringType
+        );
+
+    public class MethodDetails
+    {
+        public string AsText { get; }
+        public MethodId[] Calls { get; }
+        public List<MethodId> CalledBy { get; } = new List<MethodId>();
+
+        internal MethodDetails(string asText, MethodId[] calls)
+        {
+            AsText = asText;
+            Calls = calls;
+        }
+    }
+
+    public class Error
+    {
+        public string Message { get; }
+        public object Object { get; }
+
+        internal Error(string message, object @object)
+        {
+            Message = message;
+            Object = @object;
+        }
+    }
+
 }

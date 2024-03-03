@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Core
 {
@@ -13,10 +11,13 @@ namespace Core
         public List<string> Exceptions { get; } = new List<string>();
         public string Version { get; } = "2024-02-12"; // see also src\main\shared-types\loaded.ts
         public string[] Exes { get; }
+        // this is a field not a property, so it isn't serialized in ToJson
+        private MethodReader _methodReader;
 
-        internal AssemblyReader(string[] exes)
+        internal AssemblyReader(string[] exes, MethodReader methodReader)
         {
             Exes = exes;
+            _methodReader = methodReader;
         }
 
         internal void Add(Assembly assembly, string path)
@@ -24,10 +25,12 @@ namespace Core
             try
             {
                 var assemblyName = NotNull(GetAssemblyName(assembly));
+                _methodReader.NewAssembly(assemblyName, path);
                 var assemblyInfo = new AssemblyInfo(
                     ReferencedAssemblies: assembly.GetReferencedAssemblies().Select(GetAssemblyName).ToArray(),
-                    Types: assembly.GetTypes().Select(TypeReader.GetTypeInfo).ToArray()
+                    Types: assembly.GetTypes().Select(type => TypeReader.GetTypeInfo(type, _methodReader)).ToArray()
                     );
+                //var decompiled = assembly.GetTypes().Select(type => decompiler[type].Result).ToList();
                 TypeReader.Verify(assemblyInfo.Types);
                 Assemblies.Add(assemblyName, assemblyInfo);
             }
@@ -49,15 +52,6 @@ namespace Core
             return name;
         }
 
-        internal string ToJson(bool prettyPrint)
-        {
-            var json = JsonSerializer.Serialize(this, new JsonSerializerOptions
-            {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = prettyPrint
-            });
-            return json;
-        }
+        internal string ToJson(bool prettyPrint) => Serializer.ToJson(this, prettyPrint);
     }
 }

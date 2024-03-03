@@ -8,7 +8,7 @@ namespace Core
 {
     static class AssemblyLoader
     {
-        internal static string LoadAssemblies(string directory, bool prettyPrint)
+        internal static (AssemblyReader, MethodReader) LoadAssemblies(string directory, bool prettyPrint)
         {
             if (!Directory.Exists(directory))
             {
@@ -16,7 +16,13 @@ namespace Core
             }
             var (dotNetPaths, exes) = DotNetPaths.FindPaths(directory);
             var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(dotNetPaths));
-            var assemblyReader = new AssemblyReader(exes);
+
+            Func<string?, bool> isDotNetAssemblyName = (string? name) => name != null &&
+                (IsMicrosoftAssembly(name) || dotNetPaths.Any(path => Path.GetFileNameWithoutExtension(path) == name));
+
+            var methodReader = new MethodReader(isDotNetAssemblyName);
+
+            var assemblyReader = new AssemblyReader(exes, methodReader);
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
                 foreach (var path in GetFiles(directory))
@@ -32,7 +38,7 @@ namespace Core
                     }
                 }
             }
-            return assemblyReader.ToJson(prettyPrint);
+            return (assemblyReader, methodReader);
         }
 
         internal static string GetDateModified(string directory)
@@ -53,7 +59,7 @@ namespace Core
             return maxDateTime.Value.ToUniversalTime().ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss'.'fff'Z'");
         }
 
-        static IEnumerable<string> GetFiles(string directory) => GetAllFiles(directory).Where(path => !IsMicrosoft(path));
+        static IEnumerable<string> GetFiles(string directory) => GetAllFiles(directory).Where(path => !IsMicrosoftPath(path));
 
         static IEnumerable<string> GetAllFiles(string directory) => Directory.GetFiles(directory).Where(IsExecutable);
 
@@ -69,10 +75,12 @@ namespace Core
             }
         }
 
-        static bool IsMicrosoft(string path)
-        {
-            var filename = Path.GetFileName(path);
-            return filename.StartsWith("System.") || filename.StartsWith("Microsoft.");
-        }
+        static bool IsMicrosoftPath(string path) => IsMicrosoftAssembly(Path.GetFileNameWithoutExtension(path));
+        static bool IsMicrosoftAssembly(string assemblyName) =>
+            assemblyName.StartsWith("System.") ||
+            assemblyName.StartsWith("Microsoft.") ||
+            // also don't try to reflect ICSharpCode.Decompiler
+            // bcause it throws an "assembly already loaded" on System.Reflection.Metadata
+            assemblyName == "ICSharpCode.Decompiler";
     }
 }

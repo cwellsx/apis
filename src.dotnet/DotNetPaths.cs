@@ -51,6 +51,32 @@ namespace Core
                 }
             }
 
+            if (exes.Count == 0)
+            {
+                foreach (var dll in GetDlls(directory))
+                {
+                    var assembly = LoadAssembly(context, dll);
+                    if (assembly == null)
+                    {
+                        continue;
+                    }
+                    var targetFramework = GetTargetFramework(assembly);
+                    switch (targetFramework.Split(",")[0])
+                    {
+                        case ".NETFramework":
+                            isFramework = true;
+                            break;
+                        case ".NETCoreApp":
+                            isCore = true;
+                            break;
+                        default:
+                            throw new ArgumentException($"Unexpected TargetFramework {targetFramework}");
+                    }
+                }
+            }
+
+            Console.WriteLine($"Found {exes.Count} *exe, isCore:{isCore}, isFramework:{isFramework}");
+
             assemblyPaths = ((!isFramework && !isCore) || (isCore && isFramework) || isCore) ? dotnetCoreFiles ?? dotnetFrameworkFiles : dotnetFrameworkFiles ?? dotnetCoreFiles;
             return (assemblyPaths!, exes.ToArray());
         }

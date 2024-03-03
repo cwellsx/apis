@@ -8,9 +8,9 @@ namespace Core
     // this class has the methods to construct TypeInfo
     class TypeReader
     {
-        internal static TypeInfo GetTypeInfo(Type type)
+        internal static TypeInfo GetTypeInfo(Type type, MethodReader methodReader)
         {
-            var self = new TypeReader(type);
+            var self = new TypeReader(type, methodReader);
             return self.ToTypeInfo();
         }
 
@@ -61,17 +61,21 @@ namespace Core
         }
 
         Type _type;
+        MethodReader _methodReader;
         List<string> _exceptions = new List<string>();
 
-        TypeReader(Type type)
+        TypeReader(Type type, MethodReader methodReader)
         {
             _type = type;
+            _methodReader = methodReader;
         }
 
         TypeInfo ToTypeInfo()
         {
+            var typeId = Try(() => GetTypeId());
+            _methodReader.NewType(typeId);
             return new TypeInfo(
-                TypeId: Try(() => GetTypeId()),
+                TypeId: typeId,
                 Attributes: Try(() => GetAttributes()),
                 BaseType: Try(() => GetBaseType()),
                 Interfaces: Try(() => GetInterfaces()),
@@ -207,7 +211,9 @@ namespace Core
                 }
                 if (memberInfo is MethodInfo)
                 {
-                    methodMembers.Add(GetMethod((MethodInfo)memberInfo));
+                    var methodMember = GetMethod((MethodInfo)memberInfo);
+                    _methodReader.Add(methodMember, (MethodInfo)memberInfo);
+                    methodMembers.Add(methodMember);
                 }
             }
             return new Members(
@@ -230,7 +236,7 @@ namespace Core
         EventMember GetEvent(EventInfo memberInfo)
         {
             var eventHandlerType = memberInfo.EventHandlerType;
-            var addMethod = memberInfo.GetAddMethod();
+            var addMethod = memberInfo.GetAddMethod(true);
             if (addMethod == null)
             {
                 throw new ArgumentNullException();
@@ -242,7 +248,8 @@ namespace Core
             var propertyType = memberInfo.PropertyType;
             var getMethod = memberInfo.GetMethod;
             var setMethod = memberInfo.SetMethod;
-            (Access, bool) Get(){
+            (Access, bool) Get()
+            {
                 if (getMethod == null)
                 {
                     if (setMethod == null)
@@ -278,26 +285,46 @@ namespace Core
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var parameters = GetParameters(memberInfo);
             bool? isStatic = memberInfo.IsStatic ? true : null;
+            bool? isConstructor = memberInfo.IsConstructor ? true : null;
             var genericArguments = (memberInfo.IsGenericMethod || memberInfo.IsGenericMethodDefinition) ? memberInfo.GetGenericArguments().Select(GetTypeId).ToArray() : null;
-            return new MethodMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, isStatic, genericArguments, GetTypeId(memberInfo.ReturnType));
+            return new MethodMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, isStatic, isConstructor, genericArguments, GetTypeId(memberInfo.ReturnType));
         }
         Parameter[]? GetParameters(PropertyInfo memberInfo) => GetParameters(memberInfo.GetIndexParameters());
-        Parameter[]? GetParameters(MethodBase memberInfo) => GetParameters(memberInfo.GetParameters());
+        //Parameter[]? GetParameters(MethodBase memberInfo) => GetParameters(memberInfo.GetParameters());
+        Parameter[]? GetParameters(MethodBase memberInfo)
+        {
+            try
+            {
+                var parameterInfos = memberInfo.GetParameters();
+                return GetParameters(parameterInfos);
+
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return null;
+            }
+        }
         Parameter[]? GetParameters(ParameterInfo[] parameterInfos)
         {
             var parameters = parameterInfos.Select(parameterInfo => new Parameter(parameterInfo.Name, GetTypeId(parameterInfo.ParameterType))).ToArray();
             return parameters.Length == 0 ? null : parameters;
         }
 
-        Access? GetOptionalAccess(MethodBase? methodBase) => methodBase == null ? null : GetAccess(methodBase);
         Access GetAccess(MethodBase methodBase) => GetAccess(methodBase.IsPublic, methodBase.IsPrivate, methodBase.IsAssembly, methodBase.IsFamily, methodBase.IsFamilyAndAssembly, methodBase.IsFamilyOrAssembly);
-        Access GetAccess(bool isPublic, bool isPrivate, bool isAssembly, bool isFamily, bool isFamilyAndAssembly, bool isFamilyOrAssembly) =>
+        static Access GetAccess(bool isPublic, bool isPrivate, bool isAssembly, bool isFamily, bool isFamilyAndAssembly, bool isFamilyOrAssembly) =>
             isPublic
             ? Access.Public
             : isPrivate
             ? Access.Private
             : isAssembly
             ? Access.Internal
-            : Access.Protected;
+            : isFamily
+            ? Access.Protected
+            : isFamilyOrAssembly
+            ? Access.ProtectedInternal
+            : isFamilyAndAssembly
+            ? Access.PrivateProtected
+            : Access.None;
     }
 }

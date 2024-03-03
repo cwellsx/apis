@@ -2,6 +2,11 @@
 using System.Collections;
 using System.Collections.Generic;
 
+/*
+ * This isn't called at run-time.
+ * It's an example so that if we use this Core.exe to load its own binaries then the output includes a generic class.
+ */
+
 namespace Core
 {
     abstract class Generic<T> : IEnumerable<T>

@@ -14,8 +14,11 @@ namespace Core
                 {
                     throw new Exception("Expect no arguments in production or one argument for debugging as a standalone program");
                 }
-                var result = AssemblyLoader.LoadAssemblies(args[0], prettyPrint: true);
-                File.WriteAllText("Core.json", result);
+                var (assemblyReader, methodReader) = AssemblyLoader.LoadAssemblies(args[0], prettyPrint: true);
+                File.WriteAllText("Core.json", assemblyReader.ToJson(true));
+                File.WriteAllText("Methods.json", methodReader.ToJson(true));
+                methodReader.Verify(assemblyReader.Assemblies);
+                methodReader.InterConnect();
                 return;
             }
 
@@ -34,9 +37,9 @@ namespace Core
 
             connection.On<string, string>("json", directory =>
             {
-                var response = AssemblyLoader.LoadAssemblies(directory, false);
+                var (assemblyReader, methodReader) = AssemblyLoader.LoadAssemblies(directory, false);
                 Console.Error.WriteLine("returning json");
-                return response;
+                return assemblyReader.ToJson(false);
             });
 
             connection.Listen();
