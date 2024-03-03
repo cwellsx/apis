@@ -154,7 +154,7 @@ namespace Core
             methodDetails = null;
             MethodsDictionary? methodsDictionary = null;
             // relaxed method search if it's a generic type or a generic method
-            bool isGeneric = false; 
+            bool isGeneric = false;
 
             if (call.declaringType.GenericTypeArguments == null)
             {

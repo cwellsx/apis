@@ -75,7 +75,7 @@ namespace Core
                 }
             }
 
-            Console.WriteLine($"Found {exes.Count} *exe, isCore:{isCore}, isFramework:{isFramework}");
+            Logger.Log($"Found {exes.Count} *exe, isCore:{isCore}, isFramework:{isFramework}");
 
             assemblyPaths = ((!isFramework && !isCore) || (isCore && isFramework) || isCore) ? dotnetCoreFiles ?? dotnetFrameworkFiles : dotnetFrameworkFiles ?? dotnetCoreFiles;
             return (assemblyPaths!, exes.ToArray());

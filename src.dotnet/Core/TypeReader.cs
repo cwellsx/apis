@@ -301,7 +301,7 @@ namespace Core
             }
             catch (Exception ex)
             {
-                Console.WriteLine(ex.ToString());
+                Logger.Log(ex);
                 return null;
             }
         }

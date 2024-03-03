@@ -1,10 +1,10 @@
-import type { ForgeConfig } from "@electron-forge/shared-types";
-import { MakerSquirrel } from "@electron-forge/maker-squirrel";
-import { MakerZIP } from "@electron-forge/maker-zip";
 import { MakerDeb } from "@electron-forge/maker-deb";
 import { MakerRpm } from "@electron-forge/maker-rpm";
+import { MakerSquirrel } from "@electron-forge/maker-squirrel";
+import { MakerZIP } from "@electron-forge/maker-zip";
 import { AutoUnpackNativesPlugin } from "@electron-forge/plugin-auto-unpack-natives";
 import { WebpackPlugin } from "@electron-forge/plugin-webpack";
+import type { ForgeConfig } from "@electron-forge/shared-types";
 import { ResourcePlugin } from "electron-forge-resource-plugin";
 
 import { mainConfig } from "./webpack.main.config";
@@ -38,10 +38,10 @@ const config: ForgeConfig = {
     }),
     new ResourcePlugin({
       env: "CORE_EXE",
-      path: "./src.dotnet/bin/Release/net5.0/Core.exe",
+      path: "./src.dotnet/Core/bin/Release/net5.0/Core.exe",
       build: {
-        command: "dotnet.exe build ./src.dotnet/Core.csproj --verbosity normal --configuration Release",
-        sources: "./src.dotnet/",
+        command: "dotnet.exe build ./src.dotnet/Core.sln --verbosity normal --configuration Release",
+        sources: ["./src.dotnet/", "./src.dotnet/Core"],
       },
       package: {
         dirname: "core",

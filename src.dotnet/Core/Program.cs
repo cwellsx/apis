@@ -22,7 +22,7 @@ namespace Core
                 return;
             }
 
-            Console.Error.WriteLine("Core starting");
+            Logger.Log("Core starting");
 
             var connection = new ConnectionBuilder()
                 .WithLogging()
@@ -31,14 +31,14 @@ namespace Core
             connection.On<string, string>("when", directory =>
             {
                 var response = AssemblyLoader.GetDateModified(directory);
-                Console.Error.WriteLine(response);
+                Logger.Log(response);
                 return response;
             });
 
             connection.On<string, string>("json", directory =>
             {
                 var (assemblyReader, methodReader) = AssemblyLoader.LoadAssemblies(directory, false);
-                Console.Error.WriteLine("returning json");
+                Logger.Log("returning json");
                 return assemblyReader.ToJson(false);
             });
 
