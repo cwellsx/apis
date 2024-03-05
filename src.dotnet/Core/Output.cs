@@ -151,12 +151,12 @@ namespace Core
     public class Error
     {
         public string Message { get; }
-        public object Object { get; }
+        public object[] Objects { get; }
 
-        internal Error(string message, object @object)
+        internal Error(string message, object[] objects)
         {
             Message = message;
-            Object = @object;
+            Objects = objects;
         }
     }
 

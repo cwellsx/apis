@@ -3,11 +3,11 @@ using System.Linq;
 
 namespace Core
 {
-    // these methods transform the ILCore.Output types to the Core types in Output.cs
+    // these methods transform the Core.IL.Output types to the Core types in Output.cs
     // the transformations are mostly one-to-one i.e. different record types with the same property names
     static class MethodReaderExtensions
     {
-        internal static MethodId Transform(ILCore.Output.Method method) => new MethodId(
+        internal static MethodId Transform(Core.IL.Output.Method method) => new MethodId(
             new MethodMember(
                 method.Name,
                 method.Attributes,
@@ -21,13 +21,13 @@ namespace Core
             method.DeclaringType.Transform()
             );
 
-        static Parameter Transform(this (string, ILCore.Output.TypeId) parameter)
+        static Parameter Transform(this (string, Core.IL.Output.TypeId) parameter)
         {
             var (name, type) = parameter;
             return new Parameter(name, type.Transform());
         }
 
-        static TypeId Transform(this ILCore.Output.TypeId typeId) => new TypeId(
+        static TypeId Transform(this Core.IL.Output.TypeId typeId) => new TypeId(
             typeId.AssemblyName,
             typeId.Namespace,
             typeId.Name,
@@ -35,7 +35,7 @@ namespace Core
             typeId.DeclaringType.TransformNullable()
             );
 
-        static TypeId? TransformNullable(this ILCore.Output.TypeId? typeId) =>
+        static TypeId? TransformNullable(this Core.IL.Output.TypeId? typeId) =>
             typeId == null ? null : typeId.Transform();
 
         private static U[]? ToArrayOrNull<T, U>(this T[]? array, Func<T, U> transform) =>
@@ -43,17 +43,17 @@ namespace Core
 
         private static bool? ToBoolOrNull(this bool b) => b ? b : null;
 
-        static Access GetAccess(ILCore.Output.Accessibility accessibility)
+        static Access GetAccess(Core.IL.Output.Accessibility accessibility)
         {
             switch (accessibility)
             {
-                case ILCore.Output.Accessibility.None: return Access.None;
-                case ILCore.Output.Accessibility.Private: return Access.Private;
-                case ILCore.Output.Accessibility.ProtectedAndInternal: return Access.PrivateProtected;
-                case ILCore.Output.Accessibility.Protected: return Access.Protected;
-                case ILCore.Output.Accessibility.Internal: return Access.Internal;
-                case ILCore.Output.Accessibility.ProtectedOrInternal: return Access.ProtectedInternal;
-                case ILCore.Output.Accessibility.Public: return Access.Public;
+                case Core.IL.Output.Accessibility.None: return Access.None;
+                case Core.IL.Output.Accessibility.Private: return Access.Private;
+                case Core.IL.Output.Accessibility.ProtectedAndInternal: return Access.PrivateProtected;
+                case Core.IL.Output.Accessibility.Protected: return Access.Protected;
+                case Core.IL.Output.Accessibility.Internal: return Access.Internal;
+                case Core.IL.Output.Accessibility.ProtectedOrInternal: return Access.ProtectedInternal;
+                case Core.IL.Output.Accessibility.Public: return Access.Public;
                 default: throw new ArgumentOutOfRangeException();
             }
         }

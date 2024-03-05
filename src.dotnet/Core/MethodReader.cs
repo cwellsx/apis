@@ -21,7 +21,7 @@ namespace Core
     public class MethodReader
     {
         readonly Func<string?, bool> _isDotNetAssemblyName;
-        (string assemblyName, ILCore.Decompiler decompiler, TypesDictionary typesDictionary)? _assembly;
+        (string assemblyName, Core.IL.Decompiler decompiler, TypesDictionary typesDictionary)? _assembly;
         MethodsDictionary? _methodsDictionary;
 
         public Dictionary<string, TypesDictionary> Dictionary { get; } = new Dictionary<string, TypesDictionary>();
@@ -38,7 +38,7 @@ namespace Core
             {
                 _assembly = null;
                 _methodsDictionary = null;
-                var decompiler = new ILCore.Decompiler(path);
+                var decompiler = new Core.IL.Decompiler(path);
                 var typesDictionary = new TypesDictionary();
                 Dictionary.Add(assemblyName, typesDictionary);
                 _assembly = (assemblyName, decompiler, typesDictionary);
@@ -126,11 +126,12 @@ namespace Core
 
         private void OnException(Exception e, object @object) => Assert(false, e.Message, @object);
 
-        private bool Assert(bool b, string message, object @object)
+        private bool Assert(bool b, string message, params object[] objects)
         {
             if (!b)
             {
-                Errors.Add(new Error(message, @object));
+                // to debug this error, visually compare Core.json with Methods.json 
+                Errors.Add(new Error(message, objects));
             }
             return b;
         }
@@ -185,9 +186,27 @@ namespace Core
 
             if (!isGeneric)
             {
-                return (
-                    Assert(methodsDictionary!.TryGetValue(call.methodMember, out methodDetails), "Call unknown MethodMember", call)
-                    );
+                if (methodsDictionary!.TryGetValue(call.methodMember, out methodDetails))
+                {
+                    return true;
+                }
+
+                var found = methodsDictionary!.Keys.Where(key => (
+                    key.Name == call.methodMember.Name &&
+                    key.Access == call.methodMember.Access &&
+                    key.Parameters?.Length == call.methodMember.Parameters?.Length
+                )).ToArray();
+                switch (found.Length)
+                {
+                    case 0:
+                        return Assert(false, "Call unknown MethodMember", call);
+                    case 1:
+                        //Assert(false, "Call slightly mismatched MethodMember", found[0], call);
+                        methodDetails = methodsDictionary[found[0]];
+                        return true;
+                    default:
+                        return Assert(false, "Call overloaded MethodMember", call);
+                }
             }
             else
             {

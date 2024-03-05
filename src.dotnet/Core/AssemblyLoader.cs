@@ -81,6 +81,8 @@ namespace Core
             assemblyName.StartsWith("Microsoft.") ||
             // also don't try to reflect ICSharpCode.Decompiler
             // bcause it throws an "assembly already loaded" on System.Reflection.Metadata
-            assemblyName == "ICSharpCode.Decompiler";
+            assemblyName == "ICSharpCode.Decompiler" ||
+            // ditto Core.IL which uses (and encapsulates) ICSharpCode.Decompiler types
+            assemblyName == "Core.IL";
     }
 }

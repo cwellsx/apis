@@ -5,7 +5,7 @@ using ICSharpCode.Decompiler.IL;
 using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler.TypeSystem;
 using ICSharpCode.Decompiler.TypeSystem.Implementation;
-using ILCore.Output;
+using Core.IL.Output;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -22,12 +22,12 @@ using System.Reflection.PortableExecutable;
  * It may throw exceptions.
  */
 
-namespace ILCore
+namespace Core.IL
 {
     // This defines the output/return types, to insulate the caller from ICSharpCode types such as IType and IMethod
     namespace Output
     {
-        internal record Method(
+        public record Method(
             string Name,
             (string, TypeId)[]? Parameters,
             TypeId[]? GenericArguments,
@@ -39,7 +39,7 @@ namespace ILCore
             Accessibility Accessibility
             );
 
-        internal record TypeId(
+        public record TypeId(
             string? AssemblyName,
             string? Namespace,
             string Name,
@@ -67,6 +67,10 @@ namespace ILCore
 
             static Method Transform(IMethod method)
             {
+                if (method.Name == "FindPaths")
+                {
+                    Console.WriteLine("found");
+                }
                 return new Method(
                     method.Name,
                     method.Parameters.Select(parameter => (parameter.Name, parameter.Type.Transform())).ToArrayOrNull(),
@@ -86,6 +90,7 @@ namespace ILCore
                 //{
                 //    Console.WriteLine("found");
                 //}
+                type = (type as TupleType)?.UnderlyingType ?? type;
                 var elementType = (type as TypeWithElementType)?.ElementType ?? type;
                 var nameSuffix = (type as TypeWithElementType)?.NameSuffix ?? string.Empty;
                 var assemblyName = elementType.GetDefinition()?.ParentModule?.AssemblyName;
@@ -123,7 +128,7 @@ namespace ILCore
         }
     }
 
-    class Decompiler
+    public class Decompiler
     {
         // names of these fields match the names of members of the CSharpDecompiler class
         DecompilerSettings settings;
@@ -134,7 +139,7 @@ namespace ILCore
         MetadataReader metadata => module.PEFile.Metadata;
         IDebugInfoProvider? DebugInfoProvider => null;
 
-        internal Decompiler(string fileName)
+        public Decompiler(string fileName)
         {
             // This constructs a CSharpDecompiler.
             // Instead of using the simplest overload of the CSharpDecompiler constructor,
@@ -159,7 +164,7 @@ namespace ILCore
             cSharpDecompiler = new CSharpDecompiler(typeSystem, settings);
         }
 
-        internal string DecompileTypeAsString(Type type)
+        public string DecompileTypeAsString(Type type)
         {
             var reflectionName = type.FullName;
             if (reflectionName == null)
@@ -170,7 +175,7 @@ namespace ILCore
             return cSharpDecompiler.DecompileTypeAsString(fullTypeName);
         }
 
-        internal (string, Output.Method[]) Decompile(MethodBase methodBase)
+        public (string, Output.Method[]) Decompile(MethodBase methodBase)
         {
             var metadataToken = methodBase.MetadataToken;
             EntityHandle entityHandle = MetadataTokens.EntityHandle(metadataToken);
