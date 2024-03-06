@@ -1,6 +1,7 @@
 import type { GroupNode, Groups, LeafNode, ParentNode } from "../shared-types";
 import { isParent } from "../shared-types";
-import type { Loaded, StringPredicate } from "./shared-types";
+import type { Loaded } from "./loaded";
+import type { StringPredicate } from "./shared-types";
 import { options, remove, replace } from "./shared-types";
 /*
   This is a depth-first implementation, could if needed change it to be breadth-first.

@@ -1,5 +1,5 @@
 import { existsSync, readFile, stat } from "./fs";
-import { Reflected, ReflectedAssembly, TypeId, TypeInfo, isBadTypeInfo, isNamedTypeInfo } from "./shared-types";
+import { Reflected, ReflectedAssembly, TypeId, TypeInfo, isBadTypeInfo, isNamedTypeInfo } from "./loaded";
 
 const isObject = (x: object): boolean => typeof x === "object" && !Array.isArray(x) && x !== null;
 const isString = (x: string): boolean => typeof x === "string";

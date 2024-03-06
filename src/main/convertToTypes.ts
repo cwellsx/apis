@@ -1,6 +1,5 @@
 import type { Access, Exceptions, MemberInfo, Members, Namespace, TextNode, Type, Types } from "../shared-types";
-import { logError } from "./log";
-import type { Loaded, NamedTypeInfo, TypeId, TypeInfo } from "./shared-types";
+import type { Loaded, NamedTypeInfo, TypeId, TypeInfo } from "./loaded";
 import {
   Access as LoadedAccess,
   ConstructorMember as LoadedConstructorMember,
@@ -12,8 +11,9 @@ import {
   PropertyMember as LoadedPropertyMember,
   isBadTypeInfo,
   isNamedTypeInfo,
-  options,
-} from "./shared-types";
+} from "./loaded";
+import { logError } from "./log";
+import { options } from "./shared-types";
 
 type IdKind = "!n!" | "!t!" | "!e!" | "!a!" | "!m!";
 type MemberIdKind = "!mM!" | "!mm!" | "!mF!" | "!mf!" | "!mP!" | "!mp!" | "!mE!" | "!me!";

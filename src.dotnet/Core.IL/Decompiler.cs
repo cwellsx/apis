@@ -67,10 +67,10 @@ namespace Core.IL
 
             static Method Transform(IMethod method)
             {
-                if (method.Name == "FindPaths")
-                {
-                    Console.WriteLine("found");
-                }
+                //if (method.Name == "FindPaths")
+                //{
+                //    Console.WriteLine("found");
+                //}
                 return new Method(
                     method.Name,
                     method.Parameters.Select(parameter => (parameter.Name, parameter.Type.Transform())).ToArrayOrNull(),

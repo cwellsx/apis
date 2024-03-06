@@ -1,8 +1,8 @@
 import { Database } from "better-sqlite3";
 import type { AppOptions, ViewOptions } from "../shared-types";
 import { defaultAppOptions, defaultViewOptions } from "../shared-types";
+import { IAssemblies, ITypes, Loaded } from "./loaded";
 import { log } from "./log";
-import { IAssemblies, ITypes, Loaded } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable } from "./sqlTable";
 

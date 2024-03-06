@@ -1,8 +1,9 @@
 import type { LeafNode, View } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { convertToView } from "./convertToView";
+import { type Loaded } from "./loaded";
 import { log } from "./log";
-import { type Edge, type Loaded } from "./shared-types";
+import { type Edge } from "./shared-types";
 import type { SqlLoaded } from "./sqlTables";
 
 export const convertLoadedToView = (sqlLoaded: SqlLoaded): View => {

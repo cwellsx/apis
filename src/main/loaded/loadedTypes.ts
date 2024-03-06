@@ -1,7 +1,6 @@
-// these are the data loaded from .Net assemblies
-
-// change this to refresh the cache, if the data returned from Core.exe changes
-export const loadedVersion = "2024-02-12"; // see also src.dotnet\AssemblyReader.cs
+import { Access } from "./loadedAccess";
+import { Members } from "./loadedMembers";
+import { TypeId } from "./loadedTypeId";
 
 // dependencies/references of each assembly
 export interface IAssemblies {
@@ -13,80 +12,13 @@ export interface ITypes {
   [key: string]: TypeInfo[];
 }
 
-export const enum Access {
-  Public = 1,
-  ProtectedInternal = 2,
-  Protected = 3,
-  Internal = 4,
-  PrivateProtected = 5,
-  Private = 6,
-}
-
 export const enum Flag {
   Generic = 1,
   GenericDefinition = 2,
   Nested = 4,
 }
 
-export type Parameter = {
-  name?: string;
-  type: TypeId;
-};
-
-export type FieldMember = {
-  name: string;
-  attributes?: string[];
-  access: Access;
-  fieldType: TypeId;
-  isStatic?: boolean;
-};
-export type EventMember = {
-  name: string;
-  attributes?: string[];
-  access: Access;
-  eventHandlerType: TypeId;
-  isStatic?: boolean;
-};
-export type PropertyMember = {
-  name: string;
-  attributes?: string[];
-  access: Access;
-  parameters?: Parameter[];
-  propertyType: TypeId;
-  isStatic?: boolean;
-};
-export type ConstructorMember = {
-  attributes?: string[];
-  access: Access;
-  parameters?: Parameter[];
-  isStatic?: boolean;
-};
-export type MethodMember = {
-  name: string;
-  attributes?: string[];
-  access: Access;
-  parameters?: Parameter[];
-  isStatic?: boolean;
-  genericArguments?: TypeId[];
-  returnType: TypeId;
-};
-
-export type Members = {
-  fieldMembers?: FieldMember[];
-  eventMembers?: EventMember[];
-  propertyMembers?: PropertyMember[];
-  constructorMembers?: ConstructorMember[];
-  methodMembers?: MethodMember[];
-};
-
 // GoodTypeInfo with TypeId and without exceptions is the usual, happy path
-export type TypeId = {
-  assemblyName?: string;
-  namespace?: string;
-  name: string;
-  genericTypeArguments?: TypeId[];
-  declaringType?: TypeId;
-};
 export type GoodTypeInfo = {
   typeId: TypeId;
   attributes?: string[];
