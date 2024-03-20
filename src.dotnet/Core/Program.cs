@@ -19,6 +19,7 @@ namespace Core
                 File.WriteAllText("Methods.json", methodReader.ToJson(true));
                 methodReader.Verify(assemblyReader.Assemblies);
                 methodReader.InterConnect();
+                File.WriteAllText("Errors.json", methodReader.Errors.ToJson(true));
                 return;
             }
 

@@ -73,13 +73,14 @@ namespace Core
         TypeInfo ToTypeInfo()
         {
             var typeId = Try(() => GetTypeId());
-            _methodReader.NewType(typeId);
+            var genericTypeParameters = Try(() => GetGenericTypeParameters());
+            _methodReader.NewType(typeId, genericTypeParameters);
             return new TypeInfo(
                 TypeId: typeId,
                 Attributes: Try(() => GetAttributes()),
                 BaseType: Try(() => GetBaseType()),
                 Interfaces: Try(() => GetInterfaces()),
-                GenericTypeParameters: Try(() => GetGenericTypeParameters()),
+                GenericTypeParameters: genericTypeParameters,
                 Access: Try(() => GetAccess()),
                 Flag: Try(() => GetFlag()),
                 Members: Try(() => GetMembers()),
@@ -114,10 +115,38 @@ namespace Core
                 Namespace: type.Namespace,
                 Name: type.Name,
                 GenericTypeArguments: GetGenericTypeArguments(),
-                DeclaringType: type.DeclaringType != null ? GetTypeId(type.DeclaringType) : null
+                DeclaringType: GetOptionalTypeId(type.DeclaringType),
+                Kind: GetTypeKind(type),
+                ElementType: type.HasElementType ? GetOptionalTypeId(type.GetElementType()) : null
             );
         }
         static TypeId? GetOptionalTypeId(Type? type) => type == null ? null : GetTypeId(type);
+
+        static TypeKind? GetTypeKind(Type type)
+        {
+            switch (CountFlags(
+                type.IsGenericParameter,
+                type.IsArray,
+                type.IsPointer,
+                type.IsByRef
+                ))
+            {
+                case 0:
+                    return null;
+                case 1:
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("Expect at most one flag");
+            }
+            return (type.IsGenericParameter)
+                ? TypeKind.GenericParameter
+                : type.IsArray
+                ? TypeKind.Array
+                : type.IsPointer
+                ? TypeKind.Pointer
+                : TypeKind.ByReference;
+        }
+        private static int CountFlags(params bool[] flags) => flags.Count(b => b);
 
         string[]? GetAttributes() => GetAttributes(_type);
         static string[]? GetAttributes(MemberInfo memberInfo)
@@ -212,6 +241,10 @@ namespace Core
                 if (memberInfo is MethodInfo)
                 {
                     var methodMember = GetMethod((MethodInfo)memberInfo);
+                    //if (methodMember.Name == "GenericMethod")
+                    //{
+                    //    Console.WriteLine("found");
+                    //}
                     _methodReader.Add(methodMember, (MethodInfo)memberInfo);
                     methodMembers.Add(methodMember);
                 }
@@ -282,6 +315,10 @@ namespace Core
         }
         MethodMember GetMethod(MethodInfo memberInfo)
         {
+            if (memberInfo.Name == "TryParseExpression")
+            {
+                Console.WriteLine("found");
+            }
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var parameters = GetParameters(memberInfo);
             bool? isStatic = memberInfo.IsStatic ? true : null;
@@ -307,7 +344,7 @@ namespace Core
         }
         Parameter[]? GetParameters(ParameterInfo[] parameterInfos)
         {
-            var parameters = parameterInfos.Select(parameterInfo => new Parameter(parameterInfo.Name, GetTypeId(parameterInfo.ParameterType))).ToArray();
+            var parameters = parameterInfos.Select(parameterInfo => new Parameter(parameterInfo.Name.ToStringOrNull(), GetTypeId(parameterInfo.ParameterType))).ToArray();
             return parameters.Length == 0 ? null : parameters;
         }
 

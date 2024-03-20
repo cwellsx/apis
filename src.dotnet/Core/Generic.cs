@@ -26,4 +26,12 @@ namespace Core
             throw new NotImplementedException();
         }
     }
+
+    class HasGenericMethod
+    {
+        public void GenericMethod<T>(T t)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }

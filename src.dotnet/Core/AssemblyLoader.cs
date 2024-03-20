@@ -17,10 +17,10 @@ namespace Core
             var (dotNetPaths, exes) = DotNetPaths.FindPaths(directory);
             var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(dotNetPaths));
 
-            Func<string?, bool> isDotNetAssemblyName = (string? name) => name != null &&
+            Func<string?, bool> isMicrosoftAssemblyName = (string? name) => name != null &&
                 (IsMicrosoftAssembly(name) || dotNetPaths.Any(path => Path.GetFileNameWithoutExtension(path) == name));
 
-            var methodReader = new MethodReader(isDotNetAssemblyName);
+            var methodReader = new MethodReader(isMicrosoftAssemblyName);
 
             var assemblyReader = new AssemblyReader(exes, methodReader);
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
@@ -77,6 +77,7 @@ namespace Core
 
         static bool IsMicrosoftPath(string path) => IsMicrosoftAssembly(Path.GetFileNameWithoutExtension(path));
         static bool IsMicrosoftAssembly(string assemblyName) =>
+            assemblyName == "mscorlib" ||
             assemblyName.StartsWith("System.") ||
             assemblyName.StartsWith("Microsoft.") ||
             // also don't try to reflect ICSharpCode.Decompiler

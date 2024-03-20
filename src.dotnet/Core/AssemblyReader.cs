@@ -30,7 +30,6 @@ namespace Core
                     ReferencedAssemblies: assembly.GetReferencedAssemblies().Select(GetAssemblyName).ToArray(),
                     Types: assembly.GetTypes().Select(type => TypeReader.GetTypeInfo(type, _methodReader)).ToArray()
                     );
-                //var decompiled = assembly.GetTypes().Select(type => decompiler[type].Result).ToList();
                 TypeReader.Verify(assemblyInfo.Types);
                 Assemblies.Add(assemblyName, assemblyInfo);
             }
@@ -51,7 +50,5 @@ namespace Core
             }
             return name;
         }
-
-        internal string ToJson(bool prettyPrint) => Serializer.ToJson(this, prettyPrint);
     }
 }

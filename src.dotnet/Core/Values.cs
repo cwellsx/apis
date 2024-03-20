@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -7,7 +9,7 @@ using System.Text.Json.Serialization;
 namespace Core
 {
     // this JSON serializes like an array but implements value-equality semantics
-    public class Values<T> where T : notnull
+    public class Values<T> : IEnumerable<T> where T : notnull
     {
         internal T[] Array { get; }
 
@@ -19,6 +21,7 @@ namespace Core
         }
 
         internal int Length => Array.Length;
+        internal T this[int i] => Array[i];
 
         public override bool Equals(object? obj)
         {
@@ -40,6 +43,11 @@ namespace Core
             }
             return hash;
         }
+
+        public override string ToString() => $"[{string.Join(", ", Array)}]";
+
+        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)Array).GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator() => Array.GetEnumerator();
     }
 
     // implementation of this class is copied from

@@ -16,20 +16,22 @@ using System.Reflection;
 namespace Core
 {
     using MethodsDictionary = Dictionary<MethodMember, MethodDetails>;
-    using TypesDictionary = Dictionary<TypeId, Dictionary<MethodMember, MethodDetails>>;
+    using TypesDictionary = Dictionary<TypeId, TypeMethods>;
+
+    record TypeMethods(TypeId[]? GenericTypeParameters, MethodsDictionary MethodsDictionary);
 
     public class MethodReader
     {
-        readonly Func<string?, bool> _isDotNetAssemblyName;
+        readonly Func<string?, bool> _isMicrosoftAssemblyName;
         (string assemblyName, Core.IL.Decompiler decompiler, TypesDictionary typesDictionary)? _assembly;
         MethodsDictionary? _methodsDictionary;
 
-        public Dictionary<string, TypesDictionary> Dictionary { get; } = new Dictionary<string, TypesDictionary>();
+        private Dictionary<string, TypesDictionary> Dictionary { get; } = new Dictionary<string, TypesDictionary>();
         public List<Error> Errors { get; } = new List<Error>();
 
-        internal MethodReader(Func<string?, bool> isDotNetAssemblyName)
+        internal MethodReader(Func<string?, bool> isMicrosoftAssemblyName)
         {
-            _isDotNetAssemblyName = isDotNetAssemblyName;
+            _isMicrosoftAssemblyName = isMicrosoftAssemblyName;
         }
 
         internal void NewAssembly(string assemblyName, string path)
@@ -49,7 +51,7 @@ namespace Core
             }
         }
 
-        internal void NewType(TypeId? typeId)
+        internal void NewType(TypeId? typeId, TypeId[]? genericTypeParamaters)
         {
             _methodsDictionary = null;
             if (_assembly == null || typeId == null)
@@ -57,7 +59,7 @@ namespace Core
                 return;
             }
             _methodsDictionary = new MethodsDictionary();
-            _assembly.Value.typesDictionary.Add(typeId, _methodsDictionary);
+            _assembly.Value.typesDictionary.Add(typeId, new TypeMethods(genericTypeParamaters, _methodsDictionary));
         }
 
         internal void Add(MethodMember methodMember, MethodInfo methodInfo)
@@ -70,9 +72,10 @@ namespace Core
             var (asText, results) = decompiler.Decompile(methodInfo);
             var methodDetails = new MethodDetails(
                 asText,
-                results.Select(MethodReaderExtensions.Transform).ToArray()
+                results.Select(method => method.Transform(_isMicrosoftAssemblyName)).ToArray()
                 );
-            _methodsDictionary.Add(methodMember, methodDetails);
+            // the compiler adds attributes to method definitions which may not be present on method references
+            _methodsDictionary.Add(methodMember.Simplify(_isMicrosoftAssemblyName), methodDetails);
         }
 
         internal string ToJson(bool prettyPrint) => Serializer.ToJson(this, prettyPrint);
@@ -85,13 +88,14 @@ namespace Core
             // verify that every decompiled subroutine call is to a known type and method
             foreach (var (assemblyName, typesDictionary) in Dictionary)
             {
-                foreach (var (typeId, methodsDictionary) in typesDictionary)
+                foreach (var (typeId, typeMethods) in typesDictionary)
                 {
+                    var methodsDictionary = typeMethods.MethodsDictionary;
                     Assert(typeId.AssemblyName == assemblyName, "TypeId AssemblyName", typeId);
                     foreach (var (methodMember, methodDetails) in methodsDictionary)
                     {
                         foreach (var call in methodDetails.Calls
-                            .Where(call => !_isDotNetAssemblyName(call.declaringType.AssemblyName))
+                            .Where(call => !_isMicrosoftAssemblyName(call.declaringType.AssemblyName))
                             .Where(call => call.methodMember.IsConstructor != true) // TODO delete this
                             )
                         {
@@ -110,8 +114,18 @@ namespace Core
             {
                 foreach (var typeInfo in assemblyInfo.Types)
                 {
-                    Assert(typeInfo.TypeId?.GenericTypeArguments == null, "Generic Arguments", typeInfo);
-                    Assert(typeInfo.TypeId?.AssemblyName != null, "Type assembly name", typeInfo);
+                    var typeId = typeInfo.TypeId;
+                    if (typeId == null)
+                    {
+                        continue;
+                    }
+                    Assert(typeId.GenericTypeArguments == null, "Generic arguments", typeInfo);
+                    Assert(typeId.AssemblyName != null, "Type assembly name", typeInfo);
+                    Assert((typeId.ElementType != null) == (typeId.Kind.NameSuffix() != null), "Type element type", typeInfo);
+                    if (typeId.ElementType != null)
+                    {
+                        Assert((typeId.Name == typeId.ElementType.Name + typeId.Kind.NameSuffix()), "Type element type", typeInfo);
+                    }
                     var methodMembers = typeInfo.Members?.MethodMembers;
                     if (methodMembers != null)
                     {
@@ -126,12 +140,12 @@ namespace Core
 
         private void OnException(Exception e, object @object) => Assert(false, e.Message, @object);
 
-        private bool Assert(bool b, string message, params object[] objects)
+        private bool Assert(bool b, string message, object extra, params object[] more)
         {
             if (!b)
             {
                 // to debug this error, visually compare Core.json with Methods.json 
-                Errors.Add(new Error(message, objects));
+                Errors.Add(new Error(message, extra, more));
             }
             return b;
         }
@@ -153,31 +167,19 @@ namespace Core
         private bool Find(TypesDictionary typesDictionary, MethodId call, out MethodDetails? methodDetails)
         {
             methodDetails = null;
-            MethodsDictionary? methodsDictionary = null;
-            // relaxed method search if it's a generic type or a generic method
-            bool isGeneric = false;
 
-            if (call.declaringType.GenericTypeArguments == null)
+            if (!Assert(typesDictionary!.TryGetValue(call.declaringType.WithoutArguments(), out var typeMethods), "Call unknown TypeId", call))
             {
-                // not looking for method in a generic type so it should be easy to find
-                if (
-                    !Assert(typesDictionary!.TryGetValue(Strip(call.declaringType), out methodsDictionary), "Call unknown TypeId", call)
-                    )
-                {
-                    return false;
-                }
+                return false;
             }
-            else
+            var methodsDictionary = typeMethods!.MethodsDictionary;
+            var genericTypeParameters = typeMethods.GenericTypeParameters;
+            if (!Assert(genericTypeParameters?.Length == call.declaringType.GenericTypeArguments?.Length, "Mismatched genericTypeParameters", call.declaringType))
             {
-                // else the call is to the specialization of a generic type but the specialization doesn't exist as a type
-                if (
-                   !Assert(typesDictionary!.TryGetValue(Strip(call.declaringType), out methodsDictionary), "Call unknown TypeId", call)
-                   )
-                {
-                    return false;
-                }
-                isGeneric = true;
+                return false;
             }
+            // more-complicated method search if it's a generic type or a generic method
+            bool isGeneric = (call.declaringType.GenericTypeArguments != null);
 
             if (call.methodMember.GenericArguments != null)
             {
@@ -201,46 +203,45 @@ namespace Core
                     case 0:
                         return Assert(false, "Call unknown MethodMember", call);
                     case 1:
-                        //Assert(false, "Call slightly mismatched MethodMember", found[0], call);
+                        Assert(false, "Call approximate MethodMember", call, found);
                         methodDetails = methodsDictionary[found[0]];
                         return true;
                     default:
-                        return Assert(false, "Call overloaded MethodMember", call);
+                        return Assert(false, "Call overloaded MethodMember", call, found);
                 }
             }
             else
             {
                 // can't find by key because actual (specialized) paramaters don't match generic parameters
-                // could try to swap parameter types but instead look for any method with the right name and right number of parameters
-                // i.e. ignore the parameter types and return type and hope that the generic method isn't overloaded
-                var found = methodsDictionary!.Keys.Where(key => (
-                    key.Name == call.methodMember.Name &&
-                    key.Access == call.methodMember.Access &&
-                    key.Parameters?.Length == call.methodMember.Parameters?.Length
-                )).ToArray();
+                var found = methodsDictionary!.Keys
+                    .Where(key => key.GenericArguments?.Length == call.methodMember.GenericArguments?.Length
+                    && key.Name == call.methodMember.Name
+                    )
+                    .ToArray();
+                Func<MethodMember, MethodMember> withArguments = (methodMember) => methodMember.WithArguments(
+                    call.methodMember.GenericArguments,
+                    genericTypeParameters,
+                    call.declaringType.GenericTypeArguments,
+                    _isMicrosoftAssemblyName
+                    );
+                var single = found.SingleOrDefault(key => call.methodMember == withArguments(key));
+                if (single != null)
+                {
+                    methodDetails = methodsDictionary[single];
+                    return true;
+                }
                 switch (found.Length)
                 {
                     case 0:
                         return Assert(false, "Call unknown generic member", call);
                     case 1:
+                        Assert(false, "Call approximate generic member", call, found[0], withArguments(found[0]));
                         methodDetails = methodsDictionary[found[0]];
                         return true;
                     default:
-                        return Assert(false, "Call overloaded generic member", call);
+                        return Assert(false, "Call overloaded generic member", call, found);
                 }
             }
         }
-
-        private static TypeId Strip(TypeId declaringType)
-        {
-            return declaringType.GenericTypeArguments == null ? declaringType : new TypeId(
-                declaringType.AssemblyName,
-                declaringType.Namespace,
-                declaringType.Name,
-                null, // GenericTypeArguments
-                StripNullable(declaringType.DeclaringType)
-                );
-        }
-        private static TypeId? StripNullable(TypeId? declaringType) => declaringType == null ? null : Strip(declaringType);
     }
 }

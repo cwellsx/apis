@@ -29,6 +29,15 @@ namespace Core
         Nested = 4
     }
 
+    public enum TypeKind
+    {
+        None,
+        GenericParameter,
+        Array,
+        Pointer,
+        ByReference
+    }
+
     public record AssemblyInfo(
         string[] ReferencedAssemblies,
         TypeInfo[] Types
@@ -39,8 +48,13 @@ namespace Core
         string? Namespace,
         string Name,
         Values<TypeId>? GenericTypeArguments,
-        TypeId? DeclaringType
-        );
+        TypeId? DeclaringType,
+        TypeKind? Kind,
+        TypeId? ElementType
+        )
+    {
+        public override string ToString() => this.AsString();
+    }
 
     public record TypeInfo(
         TypeId? TypeId, // not null unless there's an exception
@@ -119,7 +133,10 @@ namespace Core
         bool? IsConstructor,
         Values<TypeId>? GenericArguments,
         TypeId ReturnType
-        );
+        )
+    {
+        public override string ToString() => this.AsString();
+    }
 
     public record Members(
         FieldMember[]? FieldMembers,
@@ -152,12 +169,15 @@ namespace Core
     {
         public string Message { get; }
         public object[] Objects { get; }
+        public string[] Strings { get; }
 
-        internal Error(string message, object[] objects)
+        internal Error(string message, object extra, object[] more)
         {
-            Message = message;
-            Objects = objects;
+            var objects = new List<object>() { extra };
+            objects.AddRange(more);
+            Message = $"{message}: {extra}";
+            Objects = objects.ToArray();
+            Strings = objects.Select(o => o.ToString()).ToArray()!;
         }
     }
-
 }

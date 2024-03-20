@@ -57,7 +57,7 @@ namespace Core
 
     static class Serializer
     {
-        internal static string ToJson<T>(T value, bool prettyPrint)
+        internal static string ToJson<T>(this T value, bool prettyPrint)
         {
             var json = JsonSerializer.Serialize(value, new JsonSerializerOptions
             {
@@ -77,6 +77,4 @@ namespace Core
             return json;
         }
     }
-
-
 }
