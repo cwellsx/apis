@@ -8,9 +8,9 @@ namespace Core
     // this class has the methods to construct TypeInfo
     class TypeReader
     {
-        internal static TypeInfo GetTypeInfo(Type type, MethodReader methodReader)
+        internal static TypeInfo GetTypeInfo(Type type)
         {
-            var self = new TypeReader(type, methodReader);
+            var self = new TypeReader(type);
             return self.ToTypeInfo();
         }
 
@@ -61,26 +61,22 @@ namespace Core
         }
 
         Type _type;
-        MethodReader _methodReader;
         List<string> _exceptions = new List<string>();
 
-        TypeReader(Type type, MethodReader methodReader)
+        TypeReader(Type type)
         {
             _type = type;
-            _methodReader = methodReader;
         }
 
         TypeInfo ToTypeInfo()
         {
             var typeId = Try(() => GetTypeId());
-            var genericTypeParameters = Try(() => GetGenericTypeParameters());
-            _methodReader.NewType(typeId, genericTypeParameters);
             return new TypeInfo(
                 TypeId: typeId,
                 Attributes: Try(() => GetAttributes()),
                 BaseType: Try(() => GetBaseType()),
                 Interfaces: Try(() => GetInterfaces()),
-                GenericTypeParameters: genericTypeParameters,
+                GenericTypeParameters: Try(() => GetGenericTypeParameters()),
                 Access: Try(() => GetAccess()),
                 Flag: Try(() => GetFlag()),
                 Members: Try(() => GetMembers()),
@@ -214,7 +210,7 @@ namespace Core
             var propertyMembers = new List<PropertyMember>();
             var typeMembers = new List<TypeId>();
             var constructorMembers = new List<ConstructorMember>();
-            var methodMembers = new List<MethodMember>();
+            var methodMembers = new List<MethodMemberEx>();
 
             foreach (var memberInfo in _type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
@@ -240,13 +236,7 @@ namespace Core
                 }
                 if (memberInfo is MethodInfo)
                 {
-                    var methodMember = GetMethod((MethodInfo)memberInfo);
-                    //if (methodMember.Name == "GenericMethod")
-                    //{
-                    //    Console.WriteLine("found");
-                    //}
-                    _methodReader.Add(methodMember, (MethodInfo)memberInfo);
-                    methodMembers.Add(methodMember);
+                    methodMembers.Add(GetMethod((MethodInfo)memberInfo));
                 }
             }
             return new Members(
@@ -313,7 +303,7 @@ namespace Core
             bool? isStatic = memberInfo.IsStatic ? true : null;
             return new ConstructorMember(GetAttributes(memberInfo), access, parameters, isStatic);
         }
-        MethodMember GetMethod(MethodInfo memberInfo)
+        MethodMemberEx GetMethod(MethodInfo memberInfo)
         {
             if (memberInfo.Name == "TryParseExpression")
             {
@@ -324,10 +314,9 @@ namespace Core
             bool? isStatic = memberInfo.IsStatic ? true : null;
             bool? isConstructor = memberInfo.IsConstructor ? true : null;
             var genericArguments = (memberInfo.IsGenericMethod || memberInfo.IsGenericMethodDefinition) ? memberInfo.GetGenericArguments().Select(GetTypeId).ToArray() : null;
-            return new MethodMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, isStatic, isConstructor, genericArguments, GetTypeId(memberInfo.ReturnType));
+            return new MethodMemberEx(memberInfo.Name, access, parameters, isStatic, isConstructor, genericArguments, GetTypeId(memberInfo.ReturnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
         }
         Parameter[]? GetParameters(PropertyInfo memberInfo) => GetParameters(memberInfo.GetIndexParameters());
-        //Parameter[]? GetParameters(MethodBase memberInfo) => GetParameters(memberInfo.GetParameters());
         Parameter[]? GetParameters(MethodBase memberInfo)
         {
             try

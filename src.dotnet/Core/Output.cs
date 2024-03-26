@@ -126,7 +126,6 @@ namespace Core
 
     public record MethodMember(
         string Name,
-        Values<string>? Attributes,
         Access Access,
         Values<Parameter>? Parameters,
         bool? IsStatic,
@@ -138,13 +137,35 @@ namespace Core
         public override string ToString() => this.AsString();
     }
 
+    public record MethodMemberEx(
+        string Name,
+        Access Access,
+        Values<Parameter>? Parameters,
+        bool? IsStatic,
+        bool? IsConstructor,
+        Values<TypeId>? GenericArguments,
+        TypeId ReturnType,
+        Values<string>? Attributes,
+        int MetadataToken
+        ) : MethodMember(
+            Name,
+            Access,
+            Parameters,
+            IsStatic,
+            IsConstructor,
+            GenericArguments,
+            ReturnType
+            )
+    {
+    }
+
     public record Members(
         FieldMember[]? FieldMembers,
         EventMember[]? EventMembers,
         PropertyMember[]? PropertyMembers,
         TypeId[]? TypeMembers,
         ConstructorMember[]? ConstructorMembers,
-        MethodMember[]? MethodMembers
+        MethodMemberEx[]? MethodMembers
         );
 
     public record MethodId(
@@ -152,18 +173,11 @@ namespace Core
         TypeId declaringType
         );
 
-    public class MethodDetails
-    {
-        public string AsText { get; }
-        public MethodId[] Calls { get; }
-        public List<MethodId> CalledBy { get; } = new List<MethodId>();
-
-        internal MethodDetails(string asText, MethodId[] calls)
-        {
-            AsText = asText;
-            Calls = calls;
-        }
-    }
+    public record Method(
+        string MethodMember,
+        string DeclaringType,
+        string AssemblyName
+        );
 
     public class Error
     {
@@ -179,5 +193,17 @@ namespace Core
             Objects = objects.ToArray();
             Strings = objects.Select(o => o.ToString()).ToArray()!;
         }
+    }
+
+    public record CallDetails(Method Called, Error? Error, bool? IsWarning, Method? Generic)
+    {
+        public Error? Error { get; set; } = Error;
+        public bool? IsWarning { get; set; } = IsWarning;
+        public Method? Generic { get; set; } = Generic;
+    }
+
+    public record MethodDetails(string AsText, List<CallDetails> Calls, List<Method> CalledBy)
+    {
+        internal MethodDetails(string asText) : this(asText, new List<CallDetails>(), new List<Method>()) { }
     }
 }

@@ -8,7 +8,7 @@ namespace Core
 {
     static class AssemblyLoader
     {
-        internal static (AssemblyReader, MethodReader) LoadAssemblies(string directory, bool prettyPrint)
+        internal static AssemblyReader LoadAssemblies(string directory)
         {
             if (!Directory.Exists(directory))
             {
@@ -20,9 +20,7 @@ namespace Core
             Func<string?, bool> isMicrosoftAssemblyName = (string? name) => name != null &&
                 (IsMicrosoftAssembly(name) || dotNetPaths.Any(path => Path.GetFileNameWithoutExtension(path) == name));
 
-            var methodReader = new MethodReader(isMicrosoftAssemblyName);
-
-            var assemblyReader = new AssemblyReader(exes, methodReader);
+            var assemblyReader = new AssemblyReader(exes, isMicrosoftAssemblyName);
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
                 foreach (var path in GetFiles(directory))
@@ -38,7 +36,8 @@ namespace Core
                     }
                 }
             }
-            return (assemblyReader, methodReader);
+            assemblyReader.Finish();
+            return assemblyReader;
         }
 
         internal static string GetDateModified(string directory)

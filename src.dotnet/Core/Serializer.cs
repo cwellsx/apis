@@ -6,8 +6,9 @@ using System.Text.Json.Serialization;
 namespace Core
 {
     // copied from 
-    using MethodsDictionary = Dictionary<MethodMember, MethodDetails>;
-    using TypesDictionary = Dictionary<TypeId, Dictionary<MethodMember, MethodDetails>>;
+    using MethodsDictionary = Dictionary<MethodMember, MethodReader.Decompiled>;
+    // copied from MethodReader
+    using TypesDictionary = Dictionary<TypeId, TypeMethods>;
 
     public class JsonConverterForTypesDictionary : JsonConverter<TypesDictionary>
     {

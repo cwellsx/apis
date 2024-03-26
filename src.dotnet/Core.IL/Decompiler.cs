@@ -1,15 +1,12 @@
-﻿using Core.IL.Output;
-using ICSharpCode.Decompiler;
+﻿using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using ICSharpCode.Decompiler.DebugInfo;
 using ICSharpCode.Decompiler.IL;
 using ICSharpCode.Decompiler.Metadata;
 using ICSharpCode.Decompiler.TypeSystem;
-using ICSharpCode.Decompiler.TypeSystem.Implementation;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
@@ -24,136 +21,6 @@ using System.Reflection.PortableExecutable;
 
 namespace Core.IL
 {
-    // This defines the output/return types, to insulate the caller from ICSharpCode types such as IType and IMethod
-    namespace Output
-    {
-        public record Method(
-            string Name,
-            (string, TypeId)[]? Parameters,
-            TypeId[]? GenericArguments,
-            TypeId ReturnType,
-            bool IsStatic,
-            bool IsConstructor,
-            TypeId DeclaringType,
-            string[]? Attributes,
-            Accessibility Accessibility
-            );
-
-        public enum Kind
-        {
-            None,
-            GenericParameter,
-            Array,
-            Pointer,
-            ByReference
-        }
-
-        public record TypeId(
-            string? AssemblyName,
-            string? Namespace,
-            string Name,
-            TypeId[]? GenericTypeArguments,
-            TypeId? DeclaringType,
-            Kind? Kind,
-            TypeId? ElementType
-        );
-
-        public enum Accessibility
-        {
-            None = ICSharpCode.Decompiler.TypeSystem.Accessibility.None,
-            Private = ICSharpCode.Decompiler.TypeSystem.Accessibility.Private,
-            ProtectedAndInternal = ICSharpCode.Decompiler.TypeSystem.Accessibility.ProtectedAndInternal,
-            Protected = ICSharpCode.Decompiler.TypeSystem.Accessibility.Protected,
-            Internal = ICSharpCode.Decompiler.TypeSystem.Accessibility.Internal,
-            ProtectedOrInternal = ICSharpCode.Decompiler.TypeSystem.Accessibility.ProtectedOrInternal,
-            Public = ICSharpCode.Decompiler.TypeSystem.Accessibility.Public,
-        }
-
-        internal static class Extensions
-        {
-            internal static Method[] Transform(this IEnumerable<IMethod> methods)
-            {
-                return methods.Select(Transform).ToArray();
-            }
-
-            static Method Transform(IMethod method)
-            {
-                //if (method.Name == "<GetProperty>g__Get|23_0" && method.DeclaringType.Name == "TypeReader")
-                //{
-                //    Console.WriteLine("found");
-                //    var foo = method.ReturnType.Transform();
-                //}
-                return new Method(
-                    method.Name,
-                    method.Parameters.Select(parameter => (parameter.Name, parameter.Type.Transform())).ToArrayOrNull(),
-                    method.TypeArguments.Select(Transform).ToArrayOrNull(),
-                    method.ReturnType.Transform(),
-                    method.IsStatic,
-                    method.IsConstructor,
-                    method.DeclaringType.Transform(),
-                    GetAttributes(method.GetAttributes()),
-                    (Accessibility)method.Accessibility
-                   );
-            }
-
-            static TypeId Transform(this IType type)
-            {
-                bool isElementType = (type as TypeWithElementType)?.ElementType != null;
-                var elementType = (type as TypeWithElementType)?.ElementType ?? type;
-                bool isTupleType = (elementType as TupleType)?.UnderlyingType != null;
-                elementType = (elementType as TupleType)?.UnderlyingType ?? elementType;
-                var nameSuffix = (type as TypeWithElementType)?.NameSuffix ?? string.Empty;
-                var assemblyName = elementType.GetDefinition()?.ParentModule?.AssemblyName;
-                // want a name like "KeyValuePair`2[]" (i.e. with generic arity appended) and not just "KeyValuePair[]"
-                var name = elementType.GetDefinition()?.MetadataName ?? elementType.Name;
-                // we have the name of the element not the type, so add the suffix
-                name += nameSuffix;
-                // get the type arguments from UnderlyingType but not from ElementType
-                var typeArguments = (isTupleType && !isElementType) ? elementType.TypeArguments : type.TypeArguments;
-
-                return new TypeId(
-                    assemblyName,
-                    elementType.Namespace == string.Empty ? null : type.Namespace,
-                    name,
-                    typeArguments.Select(Transform).ToArrayOrNull(),
-                    type.DeclaringType?.Transform(),
-                    Kind: ((type as AbstractType)?.Kind).Transform(),
-                    ElementType: (type as TypeWithElementType)?.ElementType?.Transform()
-                   );
-            }
-
-            static Kind? Transform(this TypeKind? typeKind)
-            {
-                switch (typeKind)
-                {
-                    default:
-                    case null: return null;
-                    case TypeKind.Array: return Kind.Array;
-                    case TypeKind.Pointer: return Kind.Pointer;
-                    case TypeKind.ByReference: return Kind.ByReference;
-                }
-            }
-
-            static T[]? ToArrayOrNull<T>(this IEnumerable<T> enumerable)
-            {
-                var array = enumerable.ToArray();
-                return array.Length > 0 ? array : null;
-            }
-
-            static string[]? GetAttributes(IEnumerable<IAttribute> attributes)
-            {
-                return (!attributes.Any()) ? null : attributes.Select(attribute =>
-                {
-                    var name = attribute.AttributeType.FullName;
-                    var constructorArguments = attribute.FixedArguments.Select(arg => arg.ToString());
-                    var namedArguments = attribute.NamedArguments.Select(arg => arg.ToString());
-                    var args = constructorArguments.Concat(namedArguments).ToArray();
-                    return (args.Length != 0) ? $"[{name}({string.Join(", ", args)})]" : $"[{name}]";
-                }).ToArray();
-            }
-        }
-    }
-
     public class Decompiler
     {
         // names of these fields match the names of members of the CSharpDecompiler class
@@ -201,9 +68,10 @@ namespace Core.IL
             return cSharpDecompiler.DecompileTypeAsString(fullTypeName);
         }
 
-        public (string, Output.Method[]) Decompile(MethodBase methodBase)
+        public (string, Output.Method[]) Decompile(MethodBase methodBase) => Decompile(methodBase.MetadataToken);
+
+        public (string, Output.Method[]) Decompile(int metadataToken)
         {
-            var metadataToken = methodBase.MetadataToken;
             EntityHandle entityHandle = MetadataTokens.EntityHandle(metadataToken);
             var asString = cSharpDecompiler.DecompileAsString(entityHandle);
             // the SyntaxTree discards important information i.e. the Fullname of invoked methods

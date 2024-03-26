@@ -1,6 +1,5 @@
 ﻿using ElectronCgi.DotNet;
 using System;
-using System.IO;
 
 namespace Core
 {
@@ -14,12 +13,8 @@ namespace Core
                 {
                     throw new Exception("Expect no arguments in production or one argument for debugging as a standalone program");
                 }
-                var (assemblyReader, methodReader) = AssemblyLoader.LoadAssemblies(args[0], prettyPrint: true);
-                File.WriteAllText("Core.json", assemblyReader.ToJson(true));
-                File.WriteAllText("Methods.json", methodReader.ToJson(true));
-                methodReader.Verify(assemblyReader.Assemblies);
-                methodReader.InterConnect();
-                File.WriteAllText("Errors.json", methodReader.Errors.ToJson(true));
+                var assemblyReader = AssemblyLoader.LoadAssemblies(args[0]);
+                assemblyReader.WriteJsonToFiles();
                 return;
             }
 
@@ -38,7 +33,7 @@ namespace Core
 
             connection.On<string, string>("json", directory =>
             {
-                var (assemblyReader, methodReader) = AssemblyLoader.LoadAssemblies(directory, false);
+                var assemblyReader = AssemblyLoader.LoadAssemblies(directory);
                 Logger.Log("returning json");
                 return assemblyReader.ToJson(false);
             });

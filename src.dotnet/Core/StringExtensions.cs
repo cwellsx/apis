@@ -1,9 +1,16 @@
 ﻿using System.Linq;
+using System.Collections.Generic;
 
 namespace Core
 {
     static class StringExtensions
     {
+        internal static Method AsString(this MethodId methodId) => new Method(
+            methodId.methodMember.AsString(false),
+            methodId.declaringType.AsString(false),
+            methodId.declaringType.AssemblyName!
+            );
+
         internal static string AsString(this MethodMember method, bool isShort = true)
         {
             var access = method.Access.AsString() + " ";
@@ -50,7 +57,7 @@ namespace Core
             return prefix + name;
         }
 
-        internal static string AsString(this Values<TypeId> genericTypeArguments, bool isShort) =>
+        internal static string AsString(this IEnumerable<TypeId> genericTypeArguments, bool isShort) =>
             $"<{string.Join(", ", genericTypeArguments.Select(t => t.AsString(isShort)))}>";
 
         internal static string AsString(this Values<Parameter> parameters, bool isShort) =>
