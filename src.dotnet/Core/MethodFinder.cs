@@ -4,28 +4,25 @@ using System.Linq;
 
 namespace Core
 {
-    using MethodDictionary = Dictionary<string, MethodDetails>;
-    using TypeDictionary = Dictionary<string, Dictionary<string, MethodDetails>>;
-    using AssemblyDictionary = Dictionary<string, Dictionary<string, Dictionary<string, MethodDetails>>>;
+    using MethodDictionary = Dictionary<int, MethodDetails>;
+    using AssemblyMethods = Dictionary<string, Dictionary<int, MethodDetails>>;
 
     class MethodFinder
     {
-        public AssemblyDictionary Dictionary = new AssemblyDictionary();
+        public AssemblyMethods Dictionary = new AssemblyMethods();
 
         internal void Finish(MethodReader methodReader)
         {
             // create the targets first
             foreach (var (assembly, types) in methodReader.Dictionary)
             {
-                var typeDictionary = new TypeDictionary();
-                Dictionary.Add(assembly, typeDictionary);
+                var methodDictionary = new MethodDictionary();
+                Dictionary.Add(assembly, methodDictionary);
                 foreach (var (typeId, typeMethods) in types)
                 {
-                    var methodDictionary = new MethodDictionary();
-                    typeDictionary.Add(typeId.AsString(false), methodDictionary);
                     foreach (var (methodMember, decompiled) in typeMethods.MethodsDictionary)
                     {
-                        methodDictionary.Add(methodMember.AsString(false), new MethodDetails(decompiled.AsText));
+                        methodDictionary.Add(decompiled.MetadataToken, new MethodDetails(decompiled.AsText));
                     }
                 }
             }
@@ -33,24 +30,20 @@ namespace Core
             // iterate again to resolve the method calls
             foreach (var (assembly, types) in methodReader.Dictionary)
             {
-                var typeDictionary = Dictionary[assembly];
+                var methodDictionary = Dictionary[assembly];
                 foreach (var (typeId, typeMethods) in types)
                 {
-                    var methodDictionary = typeDictionary[typeId.AsString(false)];
                     foreach (var (methodMember, decompiled) in typeMethods.MethodsDictionary)
                     {
-                        var methodDetails = methodDictionary[methodMember.AsString(false)];
-                        var caller = new MethodId(methodMember, typeId).AsString();
+                        var methodDetails = methodDictionary[decompiled.MetadataToken];
+                        var caller = new Method(typeId, methodMember, decompiled.MetadataToken);
                         foreach (var call in decompiled.Calls)
                         {
                             var callDetails = Find(call, methodReader);
                             if (callDetails.Error == null || callDetails.IsWarning == true)
                             {
-                                var called = callDetails.Generic ?? callDetails.Called;
-                                var found = Dictionary
-                                    [called.AssemblyName]
-                                    [called.DeclaringType]
-                                    [called.MethodMember];
+                                var called = callDetails.Called;
+                                var found = Dictionary[called.AssemblyName][called.MetadataToken];
                                 found.CalledBy.Add(caller);
                                 methodDetails.Calls.Add(callDetails);
                             }
@@ -60,48 +53,42 @@ namespace Core
             }
         }
 
-        private static CallDetails Find(MethodId call, MethodReader methodReader)
+        private static CallDetails Find(MethodReader.MethodId call, MethodReader methodReader)
         {
             var assemblyDictionary = methodReader.Dictionary;
-            var result = new CallDetails(call.AsString(), null, null, null);
 
-            void Error(string message, params object[] more)
+            CallDetails Error(string message, params object[] more)
             {
-                result.Error = new Error(message, call, more);
+                var error = new Error(message, call, more);
+                return new CallDetails(call, error);
             }
 
-            void Warning(string message, params object[] more)
+            CallDetails Warning(int metadataToken, string message, params object[] more)
             {
-                Error(message,  more);
-                result.IsWarning = true;
+                var error = new Error(message, call, more);
+                return new CallDetails(call, error);
             }
 
-            bool Assert(bool b, string message, params object[] more)
+            if (call.declaringType.AssemblyName == null)
             {
-                if (!b)
-                {
-                    // to debug this error, visually compare Core.json with Methods.json 
-                    Error(message, more);
-                }
-                return b;
+                return Error("Missing AssemblyName");
             }
-
-            TypeId declaringType;
-
-            if (
-                !Assert(call.declaringType.AssemblyName != null, "Missing AssemblyName") ||
-                !Assert(assemblyDictionary.TryGetValue(call.declaringType.AssemblyName!, out var typesDictionary), "Unknown AssemblyName") ||
-                !Assert(typesDictionary!.TryGetValue(declaringType = call.declaringType.WithoutArguments(), out var typeMethods), "Call unknown TypeId")
-                )
+            if (!assemblyDictionary.TryGetValue(call.declaringType.AssemblyName!, out var typesDictionary))
             {
-                return result;
+                return Error("Unknown AssemblyName");
+            }
+            TypeId declaringType = call.declaringType.WithoutArguments();
+            if (!typesDictionary!.TryGetValue(declaringType, out var typeMethods))
+            {
+                return Error("Call unknown TypeId");
             }
 
             var methodsDictionary = typeMethods!.MethodsDictionary;
             var genericTypeParameters = typeMethods.GenericTypeParameters;
-            if (!Assert(genericTypeParameters?.Length == call.declaringType.GenericTypeArguments?.Length, "Mismatched genericTypeParameters"))
+
+            if (genericTypeParameters?.Length != call.declaringType.GenericTypeArguments?.Length)
             {
-                return result;
+                return Error("Mismatched genericTypeParameters");
             }
 
             // more-complicated method search if it's a generic type or a generic method
@@ -109,12 +96,12 @@ namespace Core
 
             if (!isGeneric)
             {
-                if (methodsDictionary!.ContainsKey(call.methodMember))
+                if (methodsDictionary.TryGetValue(call.methodMember, out var decompiled))
                 {
-                    return result;
+                    return new CallDetails(call, decompiled.MetadataToken);
                 }
 
-                var found = methodsDictionary!.Keys.Where(key => (
+                var found = methodsDictionary.Keys.Where(key => (
                     key.Name == call.methodMember.Name &&
                     key.Access == call.methodMember.Access &&
                     key.Parameters?.Length == call.methodMember.Parameters?.Length
@@ -122,16 +109,13 @@ namespace Core
                 switch (found.Length)
                 {
                     case 0:
-                        Error("Unknown MethodMember");
-                        break;
+                        return Error("Unknown MethodMember");
                     case 1:
-                        Warning("Approximate MethodMember", found);
-                        break;
+                        var key = found[0];
+                        return Warning(methodsDictionary[key].MetadataToken, "Approximate MethodMember", key);
                     default:
-                        Error("Call overloaded MethodMember", found);
-                        break;
+                        return Error("Call overloaded MethodMember", found);
                 }
-                return result;
             }
             else
             {
@@ -150,24 +134,19 @@ namespace Core
                 var single = found.SingleOrDefault(key => call.methodMember == withArguments(key));
                 if (single != null)
                 {
-                    result.Generic = new MethodId(single, declaringType).AsString();
-                    return result;
+                    return new CallDetails(call, methodsDictionary[single].MetadataToken);
                 }
                 switch (found.Length)
                 {
                     case 0:
-                        Error("Unknown generic member");
-                        break;
+                        return Error("Unknown generic member");
                     case 1:
-                        Warning("Approximate generic member", found[0], withArguments(found[0]));
-                        result.Generic = new MethodId(found[0], declaringType).AsString();
-                        break;
+                        var key = found[0];
+                        return Warning(methodsDictionary[key].MetadataToken, "Approximate generic member", key, withArguments(found[0]));
                     default:
-                        Error("Overloaded generic member", found);
-                        break;
-   }
+                        return Error("Overloaded generic member", found);
+                 }
             }
-            return result;
         }
     }
 }

@@ -5,12 +5,6 @@ namespace Core
 {
     static class StringExtensions
     {
-        internal static Method AsString(this MethodId methodId) => new Method(
-            methodId.methodMember.AsString(false),
-            methodId.declaringType.AsString(false),
-            methodId.declaringType.AssemblyName!
-            );
-
         internal static string AsString(this MethodMember method, bool isShort = true)
         {
             var access = method.Access.AsString() + " ";

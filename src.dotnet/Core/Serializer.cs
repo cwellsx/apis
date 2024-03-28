@@ -6,18 +6,18 @@ using System.Text.Json.Serialization;
 namespace Core
 {
     // copied from 
-    using MethodsDictionary = Dictionary<MethodMember, MethodReader.Decompiled>;
+    using MethodDictionary = Dictionary<MethodMember, MethodReader.Decompiled>;
     // copied from MethodReader
-    using TypesDictionary = Dictionary<TypeId, TypeMethods>;
+    using TypeDictionary = Dictionary<TypeId, TypeMethods>;
 
-    public class JsonConverterForTypesDictionary : JsonConverter<TypesDictionary>
+    public class JsonConverterForTypesDictionary : JsonConverter<TypeDictionary>
     {
-        public override TypesDictionary? Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options)
+        public override TypeDictionary? Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options)
         {
             throw new System.NotImplementedException();
         }
 
-        public override void Write(Utf8JsonWriter writer, TypesDictionary value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, TypeDictionary value, JsonSerializerOptions options)
         {
             writer.WriteStartArray();
             foreach (var kvp in value)
@@ -33,14 +33,14 @@ namespace Core
         }
     }
 
-    public class JsonConverterForMethodsDictionary : JsonConverter<MethodsDictionary>
+    public class JsonConverterForMethodsDictionary : JsonConverter<MethodDictionary>
     {
-        public override MethodsDictionary? Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options)
+        public override MethodDictionary? Read(ref Utf8JsonReader reader, System.Type typeToConvert, JsonSerializerOptions options)
         {
             throw new System.NotImplementedException();
         }
 
-        public override void Write(Utf8JsonWriter writer, MethodsDictionary value, JsonSerializerOptions options)
+        public override void Write(Utf8JsonWriter writer, MethodDictionary value, JsonSerializerOptions options)
         {
             writer.WriteStartArray();
             foreach (var kvp in value)
@@ -67,7 +67,7 @@ namespace Core
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = prettyPrint,
                 // "unsafe relaxed" means not OK for HTML but OK for a UTF-8 reader
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                Encoder = prettyPrint ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
                 Converters =
                 {
                     new JsonConverterFactoryForValuesOfT(),

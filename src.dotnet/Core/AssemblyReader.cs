@@ -6,15 +6,15 @@ using System.IO;
 
 namespace Core
 {
-    using AssemblyDictionary = Dictionary<string, Dictionary<string, Dictionary<string, MethodDetails>>>;
+    using AssemblyMethods = Dictionary<string, Dictionary<int, MethodDetails>>;
 
     public class AssemblyReader
     {
         public Dictionary<string, AssemblyInfo> Assemblies { get; } = new Dictionary<string, AssemblyInfo>();
         public List<string> Exceptions { get; } = new List<string>();
-        public string Version { get; } = "2024-02-12"; // see also src\main\shared-types\loaded.ts
+        public string Version { get; } = "2024-03-27"; // see also src\main\shared-types\loaded.ts
         public string[] Exes { get; }
-        public AssemblyDictionary AssemblyMethods => _methodFinder.Dictionary;
+        public AssemblyMethods AssemblyMethods => _methodFinder.Dictionary;
         // this is a field not a property, so it isn't serialized in ToJson
         private MethodReader _methodReader;
         private MethodFinder _methodFinder;
@@ -57,6 +57,7 @@ namespace Core
             File.WriteAllText("Methods.json", _methodReader.ToJson(true));
             File.WriteAllText("Found.json", _methodFinder.ToJson(true));
             File.WriteAllText("All.json", this.ToJson(true));
+            File.WriteAllText("All2.json", this.ToJson(false));
         }
 
         static string GetAssemblyName(AssemblyName assemblyName) => NotNull(assemblyName.Name);

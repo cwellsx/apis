@@ -21,17 +21,9 @@ namespace Core
 
     public class MethodReader
     {
-        public class Decompiled
-        {
-            public string AsText { get; }
-            public MethodId[] Calls { get; }
+        public record MethodId(MethodMember methodMember, TypeId declaringType);
 
-            internal Decompiled(string asText, MethodId[] calls)
-            {
-                AsText = asText;
-                Calls = calls;
-            }
-        }
+        public record Decompiled(string AsText, MethodId[] Calls, int MetadataToken);
 
         internal Func<string?, bool> IsMicrosoftAssemblyName { get; }
 
@@ -71,7 +63,8 @@ namespace Core
                         ).Simplify(IsMicrosoftAssemblyName);
                     var value = new Decompiled(
                         asText,
-                        calls.Select(call => call.Transform(IsMicrosoftAssemblyName)).ToArray()
+                        calls.Select(call => call.Transform(IsMicrosoftAssemblyName)).ToArray(),
+                        methodMember.MetadataToken
                         );
                     methodsDictionary.Add(key, value);
                 }

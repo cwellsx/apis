@@ -168,16 +168,28 @@ namespace Core
         MethodMemberEx[]? MethodMembers
         );
 
-    public record MethodId(
-        MethodMember methodMember,
-        TypeId declaringType
-        );
-
     public record Method(
         string MethodMember,
         string DeclaringType,
-        string AssemblyName
-        );
+        string AssemblyName,
+        int MetadataToken
+        )
+    {
+        internal Method(MethodReader.MethodId methodId, int metadataToken)
+            : this(methodId.declaringType, methodId.methodMember, metadataToken)
+        { }
+        internal Method(TypeId declaringType, MethodMemberEx methodMember)
+            : this(declaringType, methodMember, methodMember.MetadataToken)
+        { }
+        internal Method(TypeId declaringType, MethodMember methodMember, int metadataToken)
+            : this(
+                  methodMember.AsString(false),
+                  declaringType.AsString(false),
+                  declaringType.AssemblyName!,
+                  metadataToken
+                  )
+        { }
+    }
 
     public class Error
     {
@@ -195,11 +207,21 @@ namespace Core
         }
     }
 
-    public record CallDetails(Method Called, Error? Error, bool? IsWarning, Method? Generic)
+    public record CallDetails(Method Called, Error? Error, bool? IsWarning)
     {
-        public Error? Error { get; set; } = Error;
-        public bool? IsWarning { get; set; } = IsWarning;
-        public Method? Generic { get; set; } = Generic;
+        private const int IgnoredMetadataToken = 0;
+
+        internal CallDetails(MethodReader.MethodId called, Error error)
+            : this(new Method(called, IgnoredMetadataToken), error, null)
+        { }
+
+        internal CallDetails(MethodReader.MethodId called, int metadataToken)
+            : this(new Method(called, metadataToken), null, null)
+        { }
+
+        internal CallDetails(MethodReader.MethodId called, int metadataToken, Error error)
+            : this(new Method(called, metadataToken), error, true)
+        { }
     }
 
     public record MethodDetails(string AsText, List<CallDetails> Calls, List<Method> CalledBy)
