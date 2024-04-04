@@ -65,7 +65,7 @@ namespace Core
         {
             switch (access)
             {
-                case Access.None: return "";
+                case Access.None: return string.Empty;
                 case Access.Public: return "public";
                 case Access.ProtectedInternal: return "protected internal";
                 case Access.Protected: return "protected";
@@ -74,6 +74,15 @@ namespace Core
                 case Access.Private: return "private";
                 default: return "access";
             }
+        }
+
+        internal static string NotNull(this string? name)
+        {
+            if (name == null)
+            {
+                throw new System.ArgumentNullException("Unexpected null Name");
+            }
+            return name;
         }
     }
 }

@@ -39,14 +39,18 @@ namespace Core
                         var caller = new Method(typeId, methodMember, decompiled.MetadataToken);
                         foreach (var call in decompiled.Calls)
                         {
+                            if (call.methodMember.IsConstructor == true)
+                            {
+                                continue;
+                            }
                             var callDetails = Find(call, methodReader);
                             if (callDetails.Error == null || callDetails.IsWarning == true)
                             {
                                 var called = callDetails.Called;
                                 var found = Dictionary[called.AssemblyName][called.MetadataToken];
                                 found.CalledBy.Add(caller);
-                                methodDetails.Calls.Add(callDetails);
                             }
+                            methodDetails.Calls.Add(callDetails);
                         }
                     }
                 }
@@ -73,17 +77,17 @@ namespace Core
             {
                 return Error("Missing AssemblyName");
             }
-            if (!assemblyDictionary.TryGetValue(call.declaringType.AssemblyName!, out var typesDictionary))
+            if (!assemblyDictionary.TryGetValue(call.declaringType.AssemblyName, out var typesDictionary))
             {
                 return Error("Unknown AssemblyName");
             }
             TypeId declaringType = call.declaringType.WithoutArguments();
-            if (!typesDictionary!.TryGetValue(declaringType, out var typeMethods))
+            if (!typesDictionary.TryGetValue(declaringType, out var typeMethods))
             {
                 return Error("Call unknown TypeId");
             }
 
-            var methodsDictionary = typeMethods!.MethodsDictionary;
+            var methodsDictionary = typeMethods.MethodsDictionary;
             var genericTypeParameters = typeMethods.GenericTypeParameters;
 
             if (genericTypeParameters?.Length != call.declaringType.GenericTypeArguments?.Length)
@@ -120,7 +124,7 @@ namespace Core
             else
             {
                 // can't find by key because actual (specialized) paramaters don't match generic parameters
-                var found = methodsDictionary!.Keys
+                var found = methodsDictionary.Keys
                     .Where(key => key.GenericArguments?.Length == call.methodMember.GenericArguments?.Length
                     && key.Name == call.methodMember.Name
                     )

@@ -44,7 +44,7 @@ namespace Core
         );
 
     public record TypeId(
-        string? AssemblyName,
+        string AssemblyName,
         string? Namespace,
         string Name,
         Values<TypeId>? GenericTypeArguments,
@@ -54,6 +54,8 @@ namespace Core
         )
     {
         public override string ToString() => this.AsString();
+
+        public const string MicrosoftAssemblyName = "<.net>";
     }
 
     public record TypeInfo(
@@ -185,7 +187,7 @@ namespace Core
             : this(
                   methodMember.AsString(false),
                   declaringType.AsString(false),
-                  declaringType.AssemblyName!,
+                  declaringType.AssemblyName,
                   metadataToken
                   )
         { }

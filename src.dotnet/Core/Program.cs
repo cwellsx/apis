@@ -13,8 +13,15 @@ namespace Core
                 {
                     throw new Exception("Expect no arguments in production or one argument for debugging as a standalone program");
                 }
-                var assemblyReader = AssemblyLoader.LoadAssemblies(args[0]);
-                assemblyReader.WriteJsonToFiles();
+                try
+                {
+                    var assemblyReader = AssemblyLoader.LoadAssemblies(args[0]);
+                    assemblyReader.WriteJsonToFiles();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e.ToString());
+                }
                 return;
             }
 

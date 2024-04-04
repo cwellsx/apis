@@ -107,7 +107,7 @@ namespace Core
                 return (types.Length == 0) ? null : types.Select(GetTypeId).ToArray();
             }
             return new TypeId(
-                AssemblyName: type.Assembly.GetName().Name,
+                AssemblyName: type.Assembly.GetName().Name.NotNull(),
                 Namespace: type.Namespace,
                 Name: type.Name,
                 GenericTypeArguments: GetGenericTypeArguments(),

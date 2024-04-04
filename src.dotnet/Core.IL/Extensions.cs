@@ -49,15 +49,38 @@ namespace Core.IL
             // get the type arguments from UnderlyingType but not from ElementType
             var typeArguments = (isTupleType && !isElementType) ? elementType.TypeArguments : type.TypeArguments;
 
+            // type parameter may not define assembly name
+            var typeParameter = elementType as AbstractTypeParameter;
+            if (assemblyName == null && typeParameter != null)
+            {
+                assemblyName = typeParameter.Compilation.MainModule.AssemblyName;
+            }
+
+            var elementTypeTransformed = (type as TypeWithElementType)?.ElementType?.Transform();
+            // this recursion is needed e.g. when type a reference to an array of elements i.e. a doubly-nested element
+            if (assemblyName == null && elementTypeTransformed != null)
+            {
+                assemblyName = elementTypeTransformed.AssemblyName;
+            }
+
             return new TypeId(
-                assemblyName,
+                assemblyName.NotNull(),
                 elementType.Namespace == string.Empty ? null : type.Namespace,
                 name,
                 typeArguments.Select(Transform).ToArrayOrNull(),
                 type.DeclaringType?.Transform(),
                 Kind: ((type as AbstractType)?.Kind).Transform(),
-                ElementType: (type as TypeWithElementType)?.ElementType?.Transform()
+                ElementType: elementTypeTransformed
                );
+        }
+
+        internal static string NotNull(this string? name)
+        {
+            if (name == null)
+            {
+                throw new System.ArgumentNullException("Unexpected null Name");
+            }
+            return name;
         }
 
         static Kind? Transform(this TypeKind? typeKind)

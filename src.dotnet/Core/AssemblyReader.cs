@@ -19,7 +19,7 @@ namespace Core
         private MethodReader _methodReader;
         private MethodFinder _methodFinder;
 
-        internal AssemblyReader(string[] exes, Func<string?, bool> isMicrosoftAssemblyName)
+        internal AssemblyReader(string[] exes, Func<string, bool> isMicrosoftAssemblyName)
         {
             Exes = exes;
             _methodReader = new MethodReader(isMicrosoftAssemblyName);
@@ -30,7 +30,7 @@ namespace Core
         {
             try
             {
-                var assemblyName = NotNull(GetAssemblyName(assembly));
+                var assemblyName = GetAssemblyName(assembly).NotNull();
                 var assemblyInfo = new AssemblyInfo(
                     ReferencedAssemblies: assembly.GetReferencedAssemblies().Select(GetAssemblyName).ToArray(),
                     Types: assembly.GetTypes().Select(type => TypeReader.GetTypeInfo(type)).ToArray()
@@ -60,16 +60,7 @@ namespace Core
             File.WriteAllText("All2.json", this.ToJson(false));
         }
 
-        static string GetAssemblyName(AssemblyName assemblyName) => NotNull(assemblyName.Name);
+        static string GetAssemblyName(AssemblyName assemblyName) => assemblyName.Name.NotNull();
         static string GetAssemblyName(Assembly assembly) => GetAssemblyName(assembly.GetName());
-
-        static string NotNull(string? name)
-        {
-            if (name == null)
-            {
-                throw new Exception("Unexpected null Name");
-            }
-            return name;
-        }
     }
 }

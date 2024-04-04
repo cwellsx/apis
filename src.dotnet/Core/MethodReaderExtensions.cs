@@ -6,7 +6,7 @@ namespace Core
 {
     static class MethodReaderExtensions
     {
-        internal static MethodMember Simplify(this MethodMember method, Func<string?, bool> isMicrosoftAssemblyName)
+        internal static MethodMember Simplify(this MethodMember method, Func<string, bool> isMicrosoftAssemblyName)
         {
             Func<TypeId, TypeId> newTypeId = WithoutAssemblyName(isMicrosoftAssemblyName);
             // the compiler adds attributes to method definitions which may not be present on method references
@@ -17,15 +17,15 @@ namespace Core
         // because of "reference assemblies" the caller might disagree about which assembly defines a type
         // e.g. StringWriter might appear to be in "System.Private.CoreLib" or in "System.Runtime.Extensions"
         // so remove the assemblyName iff it's a microsoft assembly
-        private static Func<TypeId, TypeId> WithoutAssemblyName(Func<string?, bool> isMicrosoftAssemblyName) =>
-            (typeId) => typeId with { AssemblyName = isMicrosoftAssemblyName(typeId.AssemblyName) ? null : typeId.AssemblyName };
+        private static Func<TypeId, TypeId> WithoutAssemblyName(Func<string, bool> isMicrosoftAssemblyName) =>
+            (typeId) => typeId with { AssemblyName = isMicrosoftAssemblyName(typeId.AssemblyName) ? TypeId.MicrosoftAssemblyName : typeId.AssemblyName };
 
         internal static MethodMember WithArguments(
             this MethodMember genericMethodMember,
             Values<TypeId>? genericArguments,
             TypeId[]? genericTypeParameters,
             Values<TypeId>? genericTypeArguments,
-            Func<string?, bool> isMicrosoftAssemblyName
+            Func<string, bool> isMicrosoftAssemblyName
             )
         {
             Func<TypeId, TypeId> withoutAssemblyName = WithoutAssemblyName(isMicrosoftAssemblyName);
@@ -49,7 +49,7 @@ namespace Core
             return genericMethodMember.WithTypes(newTypeId, isMicrosoftAssemblyName);
         }
 
-        private static TypeId WithTypes(this TypeId typeId, Func<TypeId, TypeId> newTypeId, Func<string?, bool> isMicrosoftAssemblyName)
+        private static TypeId WithTypes(this TypeId typeId, Func<TypeId, TypeId> newTypeId, Func<string, bool> isMicrosoftAssemblyName)
         {
             typeId = newTypeId(typeId);
             var elementType = typeId.ElementType?.WithTypes(newTypeId, isMicrosoftAssemblyName);
@@ -63,12 +63,12 @@ namespace Core
                 Name = elementType == null ? typeId.Name : elementType.Name + typeId.Kind.NameSuffix(),
                 Namespace = isElementTypeChanged ? elementType!.Namespace : typeId.Namespace,
                 AssemblyName = isElementTypeChanged
-                ? (isMicrosoftAssemblyName(elementType!.AssemblyName) ? null : elementType!.AssemblyName)
+                ? (isMicrosoftAssemblyName(elementType!.AssemblyName) ? TypeId.MicrosoftAssemblyName : elementType!.AssemblyName)
                 : typeId.AssemblyName
             };
         }
 
-        private static MethodMember WithTypes(this MethodMember methodMember, Func<TypeId, TypeId> newTypeId, Func<string?, bool> isMicrosoftAssemblyName)
+        private static MethodMember WithTypes(this MethodMember methodMember, Func<TypeId, TypeId> newTypeId, Func<string, bool> isMicrosoftAssemblyName)
         {
             return methodMember with
             {

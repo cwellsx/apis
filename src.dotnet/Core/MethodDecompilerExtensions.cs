@@ -7,7 +7,7 @@ namespace Core
     // the transformations are mostly one-to-one i.e. different record types with the same property names
     static class MethodDecompilerExtensions
     {
-        internal static MethodReader.MethodId Transform(this Core.IL.Output.Method method, Func<string?, bool> isMicrosoftAssemblyName) => new MethodReader.MethodId(
+        internal static MethodReader.MethodId Transform(this Core.IL.Output.Method method, Func<string, bool> isMicrosoftAssemblyName) => new MethodReader.MethodId(
             new MethodMember(
                 method.Name,
                 //method.Attributes,

@@ -25,12 +25,12 @@ namespace Core
 
         public record Decompiled(string AsText, MethodId[] Calls, int MetadataToken);
 
-        internal Func<string?, bool> IsMicrosoftAssemblyName { get; }
+        internal Func<string, bool> IsMicrosoftAssemblyName { get; }
 
         public Dictionary<string, TypesDictionary> Dictionary { get; } = new Dictionary<string, TypesDictionary>();
         public List<Error> Errors { get; } = new List<Error>();
 
-        internal MethodReader(Func<string?, bool> isMicrosoftAssemblyName)
+        internal MethodReader(Func<string, bool> isMicrosoftAssemblyName)
         {
             IsMicrosoftAssemblyName = isMicrosoftAssemblyName;
         }

@@ -24,7 +24,7 @@ namespace Core.IL.Output
     }
 
     public record TypeId(
-        string? AssemblyName,
+        string AssemblyName,
         string? Namespace,
         string Name,
         TypeId[]? GenericTypeArguments,
