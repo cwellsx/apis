@@ -225,7 +225,7 @@ namespace Core
             var eventMembers = new List<EventMember>();
             var propertyMembers = new List<PropertyMember>();
             var typeMembers = new List<TypeId>();
-            var constructorMembers = new List<ConstructorMember>();
+            //var constructorMembers = new List<ConstructorMember>();
             var methodMembers = new List<MethodMember>();
 
             foreach (var memberInfo in _type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
@@ -248,7 +248,7 @@ namespace Core
                 }
                 if (memberInfo is ConstructorInfo)
                 {
-                    constructorMembers.Add(GetConstructor((ConstructorInfo)memberInfo));
+                    methodMembers.Add(GetConstructor((ConstructorInfo)memberInfo));
                 }
                 if (memberInfo is MethodInfo)
                 {
@@ -260,7 +260,7 @@ namespace Core
                 eventMembers.Count != 0 ? eventMembers.ToArray() : null,
                 propertyMembers.Count != 0 ? propertyMembers.ToArray() : null,
                 typeMembers.Count != 0 ? typeMembers.ToArray() : null,
-                constructorMembers.Count != 0 ? constructorMembers.ToArray() : null,
+                //constructorMembers.Count != 0 ? constructorMembers.ToArray() : null,
                 methodMembers.Count != 0 ? methodMembers.ToArray() : null
                 );
         }
@@ -312,19 +312,17 @@ namespace Core
             var parameters = GetParameters(memberInfo);
             return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, GetTypeId(propertyType), isStatic);
         }
-        ConstructorMember GetConstructor(ConstructorInfo memberInfo)
+        MethodMember GetConstructor(ConstructorInfo memberInfo)
         {
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var parameters = GetParameters(memberInfo);
             bool? isStatic = memberInfo.IsStatic ? true : null;
-            return new ConstructorMember(GetAttributes(memberInfo), access, parameters, isStatic);
+            bool? isConstructor = memberInfo.IsConstructor ? true : null;
+            var returnType = typeof(void);
+            return new MethodMember(MethodMember.CtorName, access,  parameters, isStatic, isConstructor, null, GetTypeId(returnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
         }
         MethodMember GetMethod(MethodInfo memberInfo)
         {
-            if (memberInfo.Name == "TryParseExpression")
-            {
-                Console.WriteLine("found");
-            }
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var parameters = GetParameters(memberInfo);
             bool? isStatic = memberInfo.IsStatic ? true : null;

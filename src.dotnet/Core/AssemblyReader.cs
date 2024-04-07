@@ -12,7 +12,7 @@ namespace Core
     {
         public Dictionary<string, AssemblyInfo> Assemblies { get; } = new Dictionary<string, AssemblyInfo>();
         public List<string> Exceptions { get; } = new List<string>();
-        public string Version { get; } = "2024-03-27"; // see also src\main\shared-types\loaded.ts
+        public string Version { get; } = "2024-04-07"; // see also src\main\shared-types\loaded.ts
         public string[] Exes { get; }
         public AssemblyMethods AssemblyMethods => _methodFinder.Dictionary;
         // this is a field not a property, so it isn't serialized in ToJson

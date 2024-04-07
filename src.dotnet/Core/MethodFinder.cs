@@ -39,10 +39,6 @@ namespace Core
                         var caller = new Method(typeId, decompiled.MethodMember, decompiled.GenericArguments, decompiled.MetadataToken);
                         foreach (var call in decompiled.Calls)
                         {
-                            if (call.MethodMember.IsConstructor == true)
-                            {
-                                continue;
-                            }
                             if (call.declaringType.AssemblyName == null)
                             {
                                 continue;

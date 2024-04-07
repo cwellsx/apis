@@ -15,12 +15,6 @@ namespace Core.IL
 
         static Method Transform(IMethod method)
         {
-            //if (method.Name == "<GetProperty>g__Get|23_0" && method.DeclaringType.Name == "TypeReader")
-            //{
-            //    Console.WriteLine("found");
-            //    var foo = method.ReturnType.Transform();
-            //}
-            //method.MetadataToken;
             return new Method(
                 method.Name,
                 method.Parameters.Select(parameter => (parameter.Name, parameter.Type.Transform())).ToArrayOrNull(),

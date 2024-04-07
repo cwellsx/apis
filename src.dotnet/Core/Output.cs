@@ -113,13 +113,13 @@ namespace Core
         TypeId Type
         );
 
-    // no name, no Type, additional parameters
-    public record ConstructorMember(
-        string[]? Attributes,
-        Access Access,
-        Parameter[]? Parameters,
-        bool? IsStatic
-        );
+    //// no name, no Type, additional parameters
+    //public record ConstructorMember(
+    //    string[]? Attributes,
+    //    Access Access,
+    //    Parameter[]? Parameters,
+    //    bool? IsStatic
+    //    );
 
     public record MethodMember(
         string Name,
@@ -131,17 +131,17 @@ namespace Core
         TypeId ReturnType,
         Values<string>? Attributes,
         int MetadataToken
-        );
-    //{
-    //    public override string ToString() => this.AsString();
-    //}
+        )
+    {
+        public const string CtorName = ".ctor"; // matches the name returned from Core.IL
+    }
 
     public record Members(
         FieldMember[]? FieldMembers,
         EventMember[]? EventMembers,
         PropertyMember[]? PropertyMembers,
         TypeId[]? TypeMembers,
-        ConstructorMember[]? ConstructorMembers,
+        //ConstructorMember[]? ConstructorMembers,
         MethodMember[]? MethodMembers
         );
 

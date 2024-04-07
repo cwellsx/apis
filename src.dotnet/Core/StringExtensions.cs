@@ -26,12 +26,15 @@ namespace Core
 
         internal static string AsString(this TypeIdEx typeId, bool isShort = true)
         {
-            if (isShort && (typeId.Namespace == "System"))
+            if (typeId.Namespace == "System")
             {
                 switch (typeId.Name)
                 {
                     case "Void": return "void";
                     case "String": return "string";
+                    case "Int32": return "int";
+                    case "Object": return "object";
+                    // there are more of these, e.g. long and char etc., see https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/builtin-types/built-in-types
                 }
             }
             var prefix =
