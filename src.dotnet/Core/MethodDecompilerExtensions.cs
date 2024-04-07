@@ -7,7 +7,7 @@ namespace Core
     // the transformations are mostly one-to-one i.e. different record types with the same property names
     static class MethodDecompilerExtensions
     {
-        internal static MethodReader.MethodId Transform(this Core.IL.Output.Method method, Func<string, bool> isMicrosoftAssemblyName) => new MethodReader.MethodId(
+        internal static MethodId Transform(this Core.IL.Output.Method method, Func<string, bool> isMicrosoftAssemblyName) => new MethodId(
             new MethodMember(
                 method.Name,
                 //method.Attributes,
@@ -16,9 +16,12 @@ namespace Core
                 method.IsStatic.ToBoolOrNull(),
                 method.IsConstructor.ToBoolOrNull(),
                 method.GenericArguments.ToArrayOrNull(Transform),
-                method.ReturnType.Transform()
-                ).Simplify(isMicrosoftAssemblyName),
-            method.DeclaringType.Transform()
+                method.ReturnType.Transform(),
+                // MetadataToken and Attributes will be discarded when this is converted to MethodIdEx
+                null, 0
+                ),
+            method.DeclaringType.Transform(),
+            isMicrosoftAssemblyName
             );
 
         static Parameter Transform(this (string, Core.IL.Output.TypeId) parameter)
@@ -64,11 +67,9 @@ namespace Core
             }
         }
 
-        private static U[]? ToArrayOrNull<T, U>(this T[]? array, Func<T, U> transform) =>
+        static U[]? ToArrayOrNull<T, U>(this T[]? array, Func<T, U> transform) =>
             (array == null) ? null : array.Select(transform).ToArray();
 
-        internal static bool? ToBoolOrNull(this bool b) => b ? b : null;
-
-        internal static string? ToStringOrNull(this string? s) => !string.IsNullOrEmpty(s) ? s : null;
+        static bool? ToBoolOrNull(this bool b) => b ? b : null;
     }
 }

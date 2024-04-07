@@ -20,7 +20,7 @@ namespace Core
                 Dictionary.Add(assembly, methodDictionary);
                 foreach (var (typeId, typeMethods) in types)
                 {
-                    foreach (var (methodMember, decompiled) in typeMethods.MethodsDictionary)
+                    foreach (var decompiled in typeMethods.ListDecompiled)
                     {
                         methodDictionary.Add(decompiled.MetadataToken, new MethodDetails(decompiled.AsText));
                     }
@@ -33,13 +33,17 @@ namespace Core
                 var methodDictionary = Dictionary[assembly];
                 foreach (var (typeId, typeMethods) in types)
                 {
-                    foreach (var (methodMember, decompiled) in typeMethods.MethodsDictionary)
+                    foreach (var decompiled in typeMethods.ListDecompiled)
                     {
                         var methodDetails = methodDictionary[decompiled.MetadataToken];
-                        var caller = new Method(typeId, methodMember, decompiled.MetadataToken);
+                        var caller = new Method(typeId, decompiled.MethodMember, decompiled.GenericArguments, decompiled.MetadataToken);
                         foreach (var call in decompiled.Calls)
                         {
-                            if (call.methodMember.IsConstructor == true)
+                            if (call.MethodMember.IsConstructor == true)
+                            {
+                                continue;
+                            }
+                            if (call.declaringType.AssemblyName == null)
                             {
                                 continue;
                             }
@@ -57,7 +61,7 @@ namespace Core
             }
         }
 
-        private static CallDetails Find(MethodReader.MethodId call, MethodReader methodReader)
+        private static CallDetails Find(MethodId call, MethodReader methodReader)
         {
             var assemblyDictionary = methodReader.Dictionary;
 
@@ -81,76 +85,110 @@ namespace Core
             {
                 return Error("Unknown AssemblyName");
             }
-            TypeId declaringType = call.declaringType.WithoutArguments();
-            if (!typesDictionary.TryGetValue(declaringType, out var typeMethods))
+            if (!typesDictionary.TryGetValue(call.declaringType.WithoutArguments(), out var typeMethods))
             {
                 return Error("Call unknown TypeId");
             }
 
-            var methodsDictionary = typeMethods.MethodsDictionary;
+            var listDecompiled = typeMethods.ListDecompiled;
             var genericTypeParameters = typeMethods.GenericTypeParameters;
 
-            if (genericTypeParameters?.Length != call.declaringType.GenericTypeArguments?.Length)
+            if (genericTypeParameters?.Length != call.GenericTypeArguments?.Length)
             {
                 return Error("Mismatched genericTypeParameters");
             }
 
             // more-complicated method search if it's a generic type or a generic method
-            bool isGeneric = (call.declaringType.GenericTypeArguments != null) || (call.methodMember.GenericArguments != null);
+            bool isGeneric = (call.GenericTypeArguments != null) || (call.GenericMethodArguments != null);
 
             if (!isGeneric)
             {
-                if (methodsDictionary.TryGetValue(call.methodMember, out var decompiled))
+                var decompiled = listDecompiled.SingleOrDefault(d => d.MethodMember == call.MethodMember);
+                if (decompiled != null)
                 {
                     return new CallDetails(call, decompiled.MetadataToken);
                 }
 
-                var found = methodsDictionary.Keys.Where(key => (
-                    key.Name == call.methodMember.Name &&
-                    key.Access == call.methodMember.Access &&
-                    key.Parameters?.Length == call.methodMember.Parameters?.Length
+                var found = listDecompiled.Where(d => (
+                    d.MethodMember.Name == call.MethodMember.Name &&
+                    d.MethodMember.Access == call.MethodMember.Access &&
+                    d.MethodMember.Parameters?.Length == call.MethodMember.Parameters?.Length
                 )).ToArray();
                 switch (found.Length)
                 {
                     case 0:
                         return Error("Unknown MethodMember");
                     case 1:
-                        var key = found[0];
-                        return Warning(methodsDictionary[key].MetadataToken, "Approximate MethodMember", key);
+                        decompiled = found[0];
+                        return Warning(decompiled.MetadataToken, "Approximate MethodMember", decompiled);
                     default:
                         return Error("Call overloaded MethodMember", found);
                 }
             }
             else
             {
-                // can't find by key because actual (specialized) paramaters don't match generic parameters
-                var found = methodsDictionary.Keys
-                    .Where(key => key.GenericArguments?.Length == call.methodMember.GenericArguments?.Length
-                    && key.Name == call.methodMember.Name
-                    )
+                // can't find by key yet because actual (specialized) parameters don't match generic parameters
+
+                // get candidates
+                var candidates = listDecompiled
+                    .Where(d => d.MethodMember.Name == call.MethodMember.Name &&
+                    d.GenericArguments?.Length == call.GenericMethodArguments?.Length)
                     .ToArray();
-                Func<MethodMember, MethodMember> withArguments = (methodMember) => methodMember.WithArguments(
-                    call.methodMember.GenericArguments,
-                    genericTypeParameters,
-                    call.declaringType.GenericTypeArguments,
-                    methodReader.IsMicrosoftAssemblyName
-                    );
-                var single = found.SingleOrDefault(key => call.methodMember == withArguments(key));
-                if (single != null)
+
+                // define how to transform
+                Func <Decompiled, MethodMemberEx> transform = (decompiled) =>
                 {
-                    return new CallDetails(call, methodsDictionary[single].MetadataToken);
+                    var transformation = GetTransformation(
+                        decompiled.GenericArguments,
+                        call.GenericMethodArguments,
+                        genericTypeParameters,
+                        call.GenericTypeArguments
+                        );
+                    return decompiled.MethodMember.Transform(transformation);
+                };
+
+                // find one single whose transformation is an exact match
+                var decompiled = candidates.SingleOrDefault(decompiled => transform(decompiled) == call.MethodMember);
+                if (decompiled != null)
+                {
+                    return new CallDetails(call, decompiled.MetadataToken);
                 }
-                switch (found.Length)
+
+                switch (candidates.Length)
                 {
                     case 0:
                         return Error("Unknown generic member");
                     case 1:
-                        var key = found[0];
-                        return Warning(methodsDictionary[key].MetadataToken, "Approximate generic member", key, withArguments(found[0]));
+                        decompiled = candidates[0];
+                        return Warning(decompiled.MetadataToken, "Approximate generic member", decompiled, transform(decompiled));
                     default:
-                        return Error("Overloaded generic member", found);
+                        return Error("Overloaded generic member", candidates);
                  }
             }
+        }
+
+        static Dictionary<string, TypeIdEx> GetTransformation(
+            Values<TypeId>? genericMethodParameters,
+            Values<TypeIdEx>? genericMethodArguments,
+            Values<TypeId>? genericTypeParameters,
+            Values<TypeIdEx>? genericTypeArguments
+            )
+        {
+            // use just the Name as the key of the dictionary
+            // the Name is a string like "T"
+            // because the full TypeId of the argument also hhas a non-null DeclaringType
+            // except not when the argument is a type like "T[]"
+            IEnumerable<KeyValuePair<string, TypeIdEx>> GetKvps(Values<TypeId>? parameters, Values<TypeIdEx>? arguments) =>
+                Enumerable.Range(0, arguments?.Length ?? 0)
+                .Select(i => new KeyValuePair<string, TypeIdEx>(
+                    parameters![i].Name,
+                    arguments![i]
+                    ));
+
+            var kvps = GetKvps(genericMethodParameters, genericMethodArguments)
+                .Concat(GetKvps(genericTypeParameters, genericTypeArguments?.Array));
+
+            return new Dictionary<string, TypeIdEx>(kvps);
         }
     }
 }

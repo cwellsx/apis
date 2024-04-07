@@ -16,7 +16,6 @@ namespace Core
 
         internal static void Verify(TypeInfo[] types)
         {
-            var all = types.Where(type => type.TypeId != null).ToDictionary(type => type.TypeId!);
             foreach (var typeInfo in types)
             {
                 if (typeInfo.TypeId == null && typeInfo.Exceptions == null)
@@ -24,6 +23,7 @@ namespace Core
                     typeInfo.AddMessage("TypeInfo");
                 }
             }
+            var all = types.Where(type => type.TypeId != null).ToDictionary(type => type.TypeId!);
             foreach (var (typeId, typeInfo) in all.Select(kvp => (kvp.Key, kvp.Value)))
             {
                 Func<Flag, bool> hasFlag = (flag) => typeInfo.Flag.HasValue && ((typeInfo.Flag.Value & flag) == flag);
@@ -56,6 +56,22 @@ namespace Core
                 if (typeInfo.Attributes != null)
                 {
                     assert(typeInfo.Attributes.Distinct().Count() == typeInfo.Attributes.Length, "Unique attributes");
+                }
+
+                assert(typeId.GenericTypeArguments == null, "Generic arguments");
+                assert(typeId.AssemblyName != null, "Type assembly name");
+                assert((typeId.ElementType != null) == (typeId.Kind.NameSuffix() != null), "Type element type");
+                if (typeId.ElementType != null)
+                {
+                    assert((typeId.Name == typeId.ElementType.Name + typeId.Kind.NameSuffix()), "Type element type");
+                }
+                var methodMembers = typeInfo.Members?.MethodMembers;
+                if (methodMembers != null)
+                {
+                    foreach (var methodMember in methodMembers)
+                    {
+                        assert(methodMember.ReturnType.AssemblyName != null, "ReturnType assembly name");
+                    }
                 }
             }
         }
@@ -210,7 +226,7 @@ namespace Core
             var propertyMembers = new List<PropertyMember>();
             var typeMembers = new List<TypeId>();
             var constructorMembers = new List<ConstructorMember>();
-            var methodMembers = new List<MethodMemberEx>();
+            var methodMembers = new List<MethodMember>();
 
             foreach (var memberInfo in _type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
@@ -303,7 +319,7 @@ namespace Core
             bool? isStatic = memberInfo.IsStatic ? true : null;
             return new ConstructorMember(GetAttributes(memberInfo), access, parameters, isStatic);
         }
-        MethodMemberEx GetMethod(MethodInfo memberInfo)
+        MethodMember GetMethod(MethodInfo memberInfo)
         {
             if (memberInfo.Name == "TryParseExpression")
             {
@@ -314,7 +330,7 @@ namespace Core
             bool? isStatic = memberInfo.IsStatic ? true : null;
             bool? isConstructor = memberInfo.IsConstructor ? true : null;
             var genericArguments = (memberInfo.IsGenericMethod || memberInfo.IsGenericMethodDefinition) ? memberInfo.GetGenericArguments().Select(GetTypeId).ToArray() : null;
-            return new MethodMemberEx(memberInfo.Name, access, parameters, isStatic, isConstructor, genericArguments, GetTypeId(memberInfo.ReturnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
+            return new MethodMember(memberInfo.Name, access, parameters, isStatic, isConstructor, genericArguments, GetTypeId(memberInfo.ReturnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
         }
         Parameter[]? GetParameters(PropertyInfo memberInfo) => GetParameters(memberInfo.GetIndexParameters());
         Parameter[]? GetParameters(MethodBase memberInfo)

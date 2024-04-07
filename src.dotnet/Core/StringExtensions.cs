@@ -5,7 +5,13 @@ namespace Core
 {
     static class StringExtensions
     {
-        internal static string AsString(this MethodMember method, bool isShort = true)
+        internal static string AsString(this MethodMemberEx method, Values<TypeIdEx>? genericMethodArguments, bool isShort = true)
+            => AsString(method, genericMethodArguments?.AsString(isShort), isShort);
+
+        internal static string AsString(this MethodMemberEx method, Values<TypeId>? genericMethodParameters, bool isShort = true)
+            => AsString(method, genericMethodParameters?.AsString(), isShort);
+
+        static string AsString(MethodMemberEx method, string? generic, bool isShort)
         {
             var access = method.Access.AsString() + " ";
             var returnType = method.IsConstructor == true
@@ -14,11 +20,11 @@ namespace Core
             return access
                 + returnType
                 + method.Name
-                + (method.GenericArguments == null ? string.Empty : method.GenericArguments.AsString(isShort))
+                + generic
                 + (method.Parameters == null ? "()" : method.Parameters.AsString(isShort));
         }
 
-        internal static string AsString(this TypeId typeId, bool isShort = true)
+        internal static string AsString(this TypeIdEx typeId, bool isShort = true)
         {
             if (isShort && (typeId.Namespace == "System"))
             {
@@ -38,6 +44,7 @@ namespace Core
                 : string.Empty;
 
             var name = typeId.Name;
+
             if (typeId.GenericTypeArguments != null)
             {
                 var index = typeId.Name.LastIndexOf("`");
@@ -51,17 +58,20 @@ namespace Core
             return prefix + name;
         }
 
-        internal static string AsString(this IEnumerable<TypeId> genericTypeArguments, bool isShort) =>
-            $"<{string.Join(", ", genericTypeArguments.Select(t => t.AsString(isShort)))}>";
+        static string AsString(this IEnumerable<TypeIdEx> genericArguments, bool isShort) =>
+            $"<{string.Join(", ", genericArguments.Select(t => t.AsString(isShort)))}>";
 
-        internal static string AsString(this Values<Parameter> parameters, bool isShort) =>
+        static string AsString(this IEnumerable<TypeId> genericParameters) =>
+            $"<{string.Join(", ", genericParameters.Select(t => t.Name))}>";
+
+        static string AsString(this Values<ParameterEx> parameters, bool isShort) =>
             $"({string.Join(", ", parameters.Select(p => p.AsString(isShort)))})";
 
-        internal static string AsString(this Parameter parameter, bool isShort) =>
+        static string AsString(this ParameterEx parameter, bool isShort) =>
             parameter.Type.AsString(isShort) +
             (string.IsNullOrEmpty(parameter.Name) ? string.Empty : " " + parameter.Name);
 
-        internal static string AsString(this Access access)
+        static string AsString(this Access access)
         {
             switch (access)
             {
@@ -83,6 +93,21 @@ namespace Core
                 throw new System.ArgumentNullException("Unexpected null Name");
             }
             return name;
+        }
+
+        internal static string? ToStringOrNull(this string? s) => !string.IsNullOrEmpty(s) ? s : null;
+
+        internal static string? NameSuffix(this TypeKind? kind)
+        {
+            switch (kind)
+            {
+                default:
+                case null:
+                case TypeKind.GenericParameter: return null;
+                case TypeKind.Array: return "[]";
+                case TypeKind.Pointer: return "*";
+                case TypeKind.ByReference: return "&";
+            }
         }
     }
 }

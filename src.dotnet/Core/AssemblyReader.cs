@@ -47,14 +47,12 @@ namespace Core
 
         internal void Finish()
         {
-            _methodReader.Verify(Assemblies);
             _methodFinder.Finish(_methodReader);
         }
 
         internal void WriteJsonToFiles()
         {
             File.WriteAllText("Core.json", Assemblies.ToJson(true));
-            File.WriteAllText("Methods.json", _methodReader.ToJson(true));
             File.WriteAllText("Found.json", _methodFinder.ToJson(true));
             File.WriteAllText("All.json", this.ToJson(true));
             File.WriteAllText("All2.json", this.ToJson(false));

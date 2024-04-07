@@ -51,12 +51,7 @@ namespace Core
         TypeId? DeclaringType,
         TypeKind? Kind,
         TypeId? ElementType
-        )
-    {
-        public override string ToString() => this.AsString();
-
-        public const string MicrosoftAssemblyName = "<.net>";
-    }
+        );
 
     public record TypeInfo(
         TypeId? TypeId, // not null unless there's an exception
@@ -133,33 +128,13 @@ namespace Core
         bool? IsStatic,
         bool? IsConstructor,
         Values<TypeId>? GenericArguments,
-        TypeId ReturnType
-        )
-    {
-        public override string ToString() => this.AsString();
-    }
-
-    public record MethodMemberEx(
-        string Name,
-        Access Access,
-        Values<Parameter>? Parameters,
-        bool? IsStatic,
-        bool? IsConstructor,
-        Values<TypeId>? GenericArguments,
         TypeId ReturnType,
         Values<string>? Attributes,
         int MetadataToken
-        ) : MethodMember(
-            Name,
-            Access,
-            Parameters,
-            IsStatic,
-            IsConstructor,
-            GenericArguments,
-            ReturnType
-            )
-    {
-    }
+        );
+    //{
+    //    public override string ToString() => this.AsString();
+    //}
 
     public record Members(
         FieldMember[]? FieldMembers,
@@ -167,7 +142,7 @@ namespace Core
         PropertyMember[]? PropertyMembers,
         TypeId[]? TypeMembers,
         ConstructorMember[]? ConstructorMembers,
-        MethodMemberEx[]? MethodMembers
+        MethodMember[]? MethodMembers
         );
 
     public record Method(
@@ -177,17 +152,20 @@ namespace Core
         int MetadataToken
         )
     {
-        internal Method(MethodReader.MethodId methodId, int metadataToken)
-            : this(methodId.declaringType, methodId.methodMember, metadataToken)
-        { }
-        internal Method(TypeId declaringType, MethodMemberEx methodMember)
-            : this(declaringType, methodMember, methodMember.MetadataToken)
-        { }
-        internal Method(TypeId declaringType, MethodMember methodMember, int metadataToken)
+        internal Method(MethodId methodId, int metadataToken)
             : this(
-                  methodMember.AsString(false),
+                  methodId.MethodMember.AsString(methodId.GenericMethodArguments, false),
+                  methodId.declaringType.AsString(false),
+                  methodId.declaringType.AssemblyName.NotNull(),
+                  metadataToken
+                  )
+        { }
+
+        internal Method(TypeIdEx declaringType, MethodMemberEx methodMember, Values<TypeId>? genericParameters, int metadataToken)
+            : this(
+                  methodMember.AsString(genericParameters, false),
                   declaringType.AsString(false),
-                  declaringType.AssemblyName,
+                  declaringType.AssemblyName.NotNull(),
                   metadataToken
                   )
         { }
@@ -213,15 +191,15 @@ namespace Core
     {
         private const int IgnoredMetadataToken = 0;
 
-        internal CallDetails(MethodReader.MethodId called, Error error)
+        internal CallDetails(MethodId called, Error error)
             : this(new Method(called, IgnoredMetadataToken), error, null)
         { }
 
-        internal CallDetails(MethodReader.MethodId called, int metadataToken)
+        internal CallDetails(MethodId called, int metadataToken)
             : this(new Method(called, metadataToken), null, null)
         { }
 
-        internal CallDetails(MethodReader.MethodId called, int metadataToken, Error error)
+        internal CallDetails(MethodId called, int metadataToken, Error error)
             : this(new Method(called, metadataToken), error, true)
         { }
     }
