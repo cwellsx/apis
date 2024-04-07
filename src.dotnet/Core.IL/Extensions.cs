@@ -1,8 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Core.IL.Output;
+﻿using Core.IL.Output;
 using ICSharpCode.Decompiler.TypeSystem;
 using ICSharpCode.Decompiler.TypeSystem.Implementation;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Core.IL
 {
@@ -69,7 +69,7 @@ namespace Core.IL
                 name,
                 typeArguments.Select(Transform).ToArrayOrNull(),
                 type.DeclaringType?.Transform(),
-                Kind: ((type as AbstractType)?.Kind).Transform(),
+                Kind: type.Kind.Transform(),
                 ElementType: elementTypeTransformed
                );
         }
@@ -83,12 +83,12 @@ namespace Core.IL
             return name;
         }
 
-        static Kind? Transform(this TypeKind? typeKind)
+        static Kind? Transform(this TypeKind typeKind)
         {
             switch (typeKind)
             {
-                default:
-                case null: return null;
+                default: return null;
+                case TypeKind.TypeParameter: return Kind.GenericParameter;
                 case TypeKind.Array: return Kind.Array;
                 case TypeKind.Pointer: return Kind.Pointer;
                 case TypeKind.ByReference: return Kind.ByReference;

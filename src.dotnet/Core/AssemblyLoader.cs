@@ -17,7 +17,7 @@ namespace Core
             var (dotNetPaths, exes) = DotNetPaths.FindPaths(directory);
             var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(dotNetPaths));
 
-            Func<string, bool> isMicrosoftAssemblyName = (string name) => 
+            Func<string, bool> isMicrosoftAssemblyName = (string name) =>
                 IsMicrosoftAssembly(name) || dotNetPaths.Any(path => Path.GetFileNameWithoutExtension(path) == name);
 
             var assemblyReader = new AssemblyReader(exes, isMicrosoftAssemblyName);

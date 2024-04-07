@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Core
 {
@@ -59,6 +57,17 @@ namespace Core
             Kind = Kind == TypeKind.GenericParameter ? null : Kind,
             DeclaringType = DeclaringType?.WithoutArguments()
         };
+
+        internal TypeIdEx WithoutGenericParameters(bool isDeclaringType = false)
+        {
+            bool isGenericParameters = GenericTypeArguments?.All(typeId => typeId.Kind == TypeKind.GenericParameter) ?? false;
+            return this with
+            {
+                DeclaringType = DeclaringType?.WithoutGenericParameters(true),
+                ElementType = ElementType?.WithoutGenericParameters(),
+                GenericTypeArguments = isDeclaringType && isGenericParameters ? null : GenericTypeArguments
+            };
+        }
     }
 
     /// <summary>
@@ -79,7 +88,15 @@ namespace Core
         {
             return this with
             {
-                Type = Type.Transform(transformation),
+                Type = Type.Transform(transformation)
+            };
+        }
+
+        internal ParameterEx WithoutGenericParameters()
+        {
+            return this with
+            {
+                Type = Type.WithoutGenericParameters()
             };
         }
     }
@@ -97,7 +114,6 @@ namespace Core
         TypeIdEx ReturnType
         )
     {
-        //public override string ToString() => this.AsString();
         internal MethodMemberEx(MethodMember methodMember, Func<string, bool> isMicrosoftAssemblyName) : this(
             methodMember.Name,
             methodMember.Access,
@@ -116,6 +132,15 @@ namespace Core
                 ReturnType = ReturnType.Transform(transformation)
             };
         }
+
+        internal MethodMemberEx WithoutGenericParameters()
+        {
+            return this with
+            {
+                Parameters = Parameters?.Select(parameter => parameter.WithoutGenericParameters()).ToArray(),
+                ReturnType = ReturnType.WithoutGenericParameters()
+            };
+        }
     }
 
     internal record MethodId(MethodMemberEx MethodMember, TypeIdEx declaringType, Values<TypeIdEx>? GenericTypeArguments, Values<TypeIdEx>? GenericMethodArguments)
@@ -124,7 +149,7 @@ namespace Core
             new MethodMemberEx(methodMember, isMicrosoftAssemblyName),
             new TypeIdEx(declaringType, isMicrosoftAssemblyName),
             declaringType.GenericTypeArguments?.Select(typeId => new TypeIdEx(typeId, isMicrosoftAssemblyName)).ToArray(),
-            methodMember.GenericArguments?.Select(typeId => new TypeIdEx(typeId,isMicrosoftAssemblyName)).ToArray()
+            methodMember.GenericArguments?.Select(typeId => new TypeIdEx(typeId, isMicrosoftAssemblyName)).ToArray()
             )
         { }
     }

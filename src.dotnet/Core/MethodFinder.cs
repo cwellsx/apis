@@ -4,8 +4,8 @@ using System.Linq;
 
 namespace Core
 {
-    using MethodDictionary = Dictionary<int, MethodDetails>;
     using AssemblyMethods = Dictionary<string, Dictionary<int, MethodDetails>>;
+    using MethodDictionary = Dictionary<int, MethodDetails>;
 
     class MethodFinder
     {
@@ -120,9 +120,9 @@ namespace Core
                         return Error("Unknown MethodMember");
                     case 1:
                         decompiled = found[0];
-                        return Warning(decompiled.MetadataToken, "Approximate MethodMember", decompiled);
+                        return Warning(decompiled.MetadataToken, "Approximate MethodMember", decompiled.MethodMember);
                     default:
-                        return Error("Call overloaded MethodMember", found);
+                        return Error("Call overloaded MethodMember", found.Select(decompiled => decompiled.MethodMember).ToArray());
                 }
             }
             else
@@ -136,16 +136,16 @@ namespace Core
                     .ToArray();
 
                 // define how to transform
-                Func <Decompiled, MethodMemberEx> transform = (decompiled) =>
-                {
-                    var transformation = GetTransformation(
-                        decompiled.GenericArguments,
-                        call.GenericMethodArguments,
-                        genericTypeParameters,
-                        call.GenericTypeArguments
-                        );
-                    return decompiled.MethodMember.Transform(transformation);
-                };
+                Func<Decompiled, MethodMemberEx> transform = (decompiled) =>
+               {
+                   var transformation = GetTransformation(
+                       decompiled.GenericArguments,
+                       call.GenericMethodArguments,
+                       genericTypeParameters,
+                       call.GenericTypeArguments
+                       );
+                   return decompiled.MethodMember.Transform(transformation);
+               };
 
                 // find one single whose transformation is an exact match
                 var decompiled = candidates.SingleOrDefault(decompiled => transform(decompiled) == call.MethodMember);
@@ -154,16 +154,27 @@ namespace Core
                     return new CallDetails(call, decompiled.MetadataToken);
                 }
 
+                // there's a slight (which I have tried to explain) cause of failure which would otherwise result in an "Approximate generic member" warning
+                // which is that if the method belongs to a nested type of a generic type, and if the arguments in the call are generic parameters,
+                // then the TypeId from the TypeReader has GenericTypeArguments on the method's DeclaringType but not on that nested type's DeclaringType
+                // whereas the GenericTypeArguments are specified on both types in the call.MethodMember.DeclaringType
+                // so to detect this scenario compare the two after removing all generic parameters (not arguments) from the DeclaringType of types
+                var approximate = candidates.Where(decompiled => transform(decompiled).WithoutGenericParameters() == call.MethodMember.WithoutGenericParameters()).ToArray();
+                if (approximate.Length == 1)
+                {
+                    return new CallDetails(call, approximate[0].MetadataToken);
+                }
+
                 switch (candidates.Length)
                 {
                     case 0:
                         return Error("Unknown generic member");
                     case 1:
                         decompiled = candidates[0];
-                        return Warning(decompiled.MetadataToken, "Approximate generic member", decompiled, transform(decompiled));
+                        return Warning(decompiled.MetadataToken, "Approximate generic member", decompiled.MethodMember, transform(decompiled));
                     default:
-                        return Error("Overloaded generic member", candidates);
-                 }
+                        return Error("Overloaded generic member", candidates.Select(decompiled => decompiled.MethodMember).ToArray());
+                }
             }
         }
 

@@ -46,6 +46,7 @@ namespace Core
             {
                 default:
                 case null: return null;
+                case Core.IL.Output.Kind.GenericParameter: return TypeKind.GenericParameter;
                 case Core.IL.Output.Kind.Array: return TypeKind.Array;
                 case Core.IL.Output.Kind.Pointer: return TypeKind.Pointer;
                 case Core.IL.Output.Kind.ByReference: return TypeKind.ByReference;
