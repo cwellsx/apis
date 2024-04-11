@@ -14,68 +14,6 @@ namespace Core
             return self.ToTypeInfo();
         }
 
-        internal static void Verify(TypeInfo[] types)
-        {
-            foreach (var typeInfo in types)
-            {
-                if (typeInfo.TypeId == null && typeInfo.Exceptions == null)
-                {
-                    typeInfo.AddMessage("TypeInfo");
-                }
-            }
-            var all = types.Where(type => type.TypeId != null).ToDictionary(type => type.TypeId!);
-            foreach (var (typeId, typeInfo) in all.Select(kvp => (kvp.Key, kvp.Value)))
-            {
-                Func<Flag, bool> hasFlag = (flag) => typeInfo.Flag.HasValue && ((typeInfo.Flag.Value & flag) == flag);
-                Action<bool, string> assert = (b, message) =>
-                {
-                    if (!b)
-                    {
-                        typeInfo.AddMessage(message);
-                    }
-                };
-                var index = typeId.Name.IndexOf("`");
-                int? n = index == -1 ? null : int.Parse(typeId.Name.Substring(index + 1));
-                if (n.HasValue)
-                {
-                    assert(hasFlag(Flag.Generic), "Generic name");
-                    var args = hasFlag(Flag.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
-                    assert(n == (args?.Length) || (n.HasValue && args != null && n.Value <= args.Length), "Generic arguments");
-                }
-                else if (hasFlag(Flag.Generic))
-                {
-                    var args = hasFlag(Flag.GenericDefinition) ? typeInfo.GenericTypeParameters : typeId.GenericTypeArguments;
-                    assert(args != null, "Generic arguments");
-                }
-                assert(hasFlag(Flag.Nested) == (typeId.DeclaringType != null), "Nested");
-                if (typeId.DeclaringType != null)
-                {
-                    assert(all.ContainsKey(typeId.DeclaringType), "Declaring type");
-                }
-
-                if (typeInfo.Attributes != null)
-                {
-                    assert(typeInfo.Attributes.Distinct().Count() == typeInfo.Attributes.Length, "Unique attributes");
-                }
-
-                assert(typeId.GenericTypeArguments == null, "Generic arguments");
-                assert(typeId.AssemblyName != null, "Type assembly name");
-                assert((typeId.ElementType != null) == (typeId.Kind.NameSuffix() != null), "Type element type");
-                if (typeId.ElementType != null)
-                {
-                    assert((typeId.Name == typeId.ElementType.Name + typeId.Kind.NameSuffix()), "Type element type");
-                }
-                var methodMembers = typeInfo.Members?.MethodMembers;
-                if (methodMembers != null)
-                {
-                    foreach (var methodMember in methodMembers)
-                    {
-                        assert(methodMember.ReturnType.AssemblyName != null, "ReturnType assembly name");
-                    }
-                }
-            }
-        }
-
         Type _type;
         List<string> _exceptions = new List<string>();
 
@@ -129,7 +67,8 @@ namespace Core
                 GenericTypeArguments: GetGenericTypeArguments(),
                 DeclaringType: GetOptionalTypeId(type.DeclaringType),
                 Kind: GetTypeKind(type),
-                ElementType: type.HasElementType ? GetOptionalTypeId(type.GetElementType()) : null
+                ElementType: type.HasElementType ? GetOptionalTypeId(type.GetElementType()) : null,
+                MetadataToken: type.MetadataToken
             );
         }
         static TypeId? GetOptionalTypeId(Type? type) => type == null ? null : GetTypeId(type);
@@ -225,8 +164,7 @@ namespace Core
             var eventMembers = new List<EventMember>();
             var propertyMembers = new List<PropertyMember>();
             var typeMembers = new List<TypeId>();
-            //var constructorMembers = new List<ConstructorMember>();
-            var methodMembers = new List<MethodMember>();
+             var methodMembers = new List<MethodMember>();
 
             foreach (var memberInfo in _type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
@@ -270,7 +208,7 @@ namespace Core
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var fieldType = memberInfo.FieldType;
             bool? isStatic = memberInfo.IsStatic ? true : null;
-            return new FieldMember(memberInfo.Name, GetAttributes(memberInfo), access, GetTypeId(fieldType), isStatic);
+            return new FieldMember(memberInfo.Name, GetAttributes(memberInfo), access, GetTypeId(fieldType), isStatic, memberInfo.MetadataToken);
         }
         EventMember GetEvent(EventInfo memberInfo)
         {
@@ -280,7 +218,7 @@ namespace Core
             {
                 throw new ArgumentNullException();
             }
-            return new EventMember(memberInfo.Name, GetAttributes(memberInfo), GetAccess(addMethod), GetOptionalTypeId(eventHandlerType), addMethod.IsStatic);
+            return new EventMember(memberInfo.Name, GetAttributes(memberInfo), GetAccess(addMethod), GetOptionalTypeId(eventHandlerType), addMethod.IsStatic, memberInfo.MetadataToken);
         }
         PropertyMember GetProperty(PropertyInfo memberInfo)
         {
@@ -310,7 +248,7 @@ namespace Core
             }
             var (access, isStatic) = Get();
             var parameters = GetParameters(memberInfo);
-            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, GetTypeId(propertyType), isStatic);
+            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo), access, parameters, GetTypeId(propertyType), isStatic, memberInfo.MetadataToken);
         }
         MethodMember GetConstructor(ConstructorInfo memberInfo)
         {

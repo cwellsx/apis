@@ -50,7 +50,8 @@ namespace Core
         Values<TypeId>? GenericTypeArguments,
         TypeId? DeclaringType,
         TypeKind? Kind,
-        TypeId? ElementType
+        TypeId? ElementType,
+        int MetadataToken
         );
 
     public record TypeInfo(
@@ -85,7 +86,8 @@ namespace Core
         string[]? Attributes,
         Access Access,
         TypeId FieldType,
-        bool? IsStatic
+        bool? IsStatic,
+        int MetadataToken
         );
 
     // can't be static
@@ -95,7 +97,8 @@ namespace Core
         string[]? Attributes,
         Access Access,
         TypeId? EventHandlerType,
-        bool? IsStatic
+        bool? IsStatic,
+        int MetadataToken
         );
 
     // two Access values but these can/should be combined
@@ -105,21 +108,14 @@ namespace Core
         Access Access,
         Parameter[]? Parameters,
         TypeId PropertyType,
-        bool? IsStatic
+        bool? IsStatic,
+        int MetadataToken
         );
 
     public record Parameter(
         string? Name,
         TypeId Type
         );
-
-    //// no name, no Type, additional parameters
-    //public record ConstructorMember(
-    //    string[]? Attributes,
-    //    Access Access,
-    //    Parameter[]? Parameters,
-    //    bool? IsStatic
-    //    );
 
     public record MethodMember(
         string Name,
@@ -141,7 +137,6 @@ namespace Core
         EventMember[]? EventMembers,
         PropertyMember[]? PropertyMembers,
         TypeId[]? TypeMembers,
-        //ConstructorMember[]? ConstructorMembers,
         MethodMember[]? MethodMembers
         );
 

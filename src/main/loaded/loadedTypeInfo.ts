@@ -2,16 +2,6 @@ import { Access } from "./loadedAccess";
 import { Members } from "./loadedMembers";
 import { TypeId } from "./loadedTypeId";
 
-// dependencies/references of each assembly
-export interface IAssemblies {
-  [key: string]: string[];
-}
-
-// types of each assembly
-export interface ITypes {
-  [key: string]: TypeInfo[];
-}
-
 export const enum Flag {
   Generic = 1,
   GenericDefinition = 2,
@@ -52,25 +42,3 @@ export function isNamedTypeInfo(typeInfo: TypeInfo): typeInfo is NamedTypeInfo {
 export function isBadTypeInfo(typeInfo: NamedTypeInfo): typeInfo is BadTypeInfo {
   return (typeInfo as BadTypeInfo).exceptions !== undefined;
 }
-
-// this is the format of the data from DotNetApi.getJson
-export interface IReflectedAssemblies {
-  [key: string]: ReflectedAssembly;
-}
-export type ReflectedAssembly = {
-  referencedAssemblies: string[];
-  types: TypeInfo[];
-};
-export type Reflected = {
-  version: string; // the LoadedVersion value
-  exes: string[];
-  assemblies: IReflectedAssemblies;
-};
-
-// this is the format of the data from SqlTables
-export type Loaded = {
-  version: string; // the LoadedVersion value
-  exes: string[];
-  assemblies: IAssemblies;
-  types: ITypes;
-};

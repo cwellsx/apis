@@ -6,3 +6,11 @@ export const enum Access {
   PrivateProtected = 5,
   Private = 6,
 }
+
+export const enum TypeKind {
+  None,
+  GenericParameter,
+  Array,
+  Pointer,
+  ByReference,
+}

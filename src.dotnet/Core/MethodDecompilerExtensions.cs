@@ -37,7 +37,9 @@ namespace Core
             typeId.GenericTypeArguments.ToArrayOrNull(Transform),
             typeId.DeclaringType?.Transform(),
             typeId.Kind.Transform(),
-            typeId.ElementType?.Transform()
+            typeId.ElementType?.Transform(),
+            // MetadataToken will be discarded when this is converted to TypeIdEx
+            0
             );
 
         static TypeKind? Transform(this Core.IL.Output.Kind? kind)

@@ -14,7 +14,6 @@ export type Members = {
   fieldMembers: MemberInfo[];
   eventMembers: MemberInfo[];
   propertyMembers: MemberInfo[];
-  constructorMembers: MemberInfo[];
   methodMembers: MemberInfo[];
 };
 

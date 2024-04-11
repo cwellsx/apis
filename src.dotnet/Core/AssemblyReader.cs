@@ -18,12 +18,14 @@ namespace Core
         // this is a field not a property, so it isn't serialized in ToJson
         private MethodReader _methodReader;
         private MethodFinder _methodFinder;
+        private Invariants _invariants;
 
         internal AssemblyReader(string[] exes, Func<string, bool> isMicrosoftAssemblyName)
         {
             Exes = exes;
             _methodReader = new MethodReader(isMicrosoftAssemblyName);
             _methodFinder = new MethodFinder();
+            _invariants = new Invariants();
         }
 
         internal void Add(Assembly assembly, string path)
@@ -35,7 +37,7 @@ namespace Core
                     ReferencedAssemblies: assembly.GetReferencedAssemblies().Select(GetAssemblyName).ToArray(),
                     Types: assembly.GetTypes().Select(type => TypeReader.GetTypeInfo(type)).ToArray()
                     );
-                TypeReader.Verify(assemblyInfo.Types);
+                _invariants.Verify(assemblyName, assemblyInfo.Types);
                 Assemblies.Add(assemblyName, assemblyInfo);
                 _methodReader.Add(assemblyName, path, assemblyInfo);
             }

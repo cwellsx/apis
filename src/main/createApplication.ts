@@ -1,11 +1,11 @@
 import { BrowserWindow, ipcMain } from "electron";
 import type { AppOptions, MainApi, MouseEvent, ViewOptions } from "../shared-types";
+import { convertLoadedToTypes } from "./convertLoadedToTypes";
 import { convertLoadedToView } from "./convertLoadedToView";
 import { registerFileProtocol } from "./convertPathToUrl";
-import { convertToTypes } from "./convertToTypes";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { getAppFilename, writeFileSync } from "./fs";
-import { IAssemblies, ITypes, Reflected, loadedVersion, type Loaded } from "./loaded";
+import { IAssemblyReferences, IAssemblyTypes, Reflected, loadedVersion, type Loaded } from "./loaded";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onClick";
 import { open } from "./open";
@@ -87,7 +87,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
         hide(sqlLoaded, id);
         showSqlLoaded(sqlLoaded);
       } else {
-        const types = convertToTypes(sqlLoaded.read(), id);
+        const types = convertLoadedToTypes(sqlLoaded.read(), id);
         log("show.types");
         show.types(types);
       }
@@ -123,8 +123,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
       log("getLoaded");
       const reflected = await getReflected(dataSource.path);
       // convert Reflected to Loaded
-      const assemblies: IAssemblies = {};
-      const types: ITypes = {};
+      const assemblies: IAssemblyReferences = {};
+      const types: IAssemblyTypes = {};
       Object.entries(reflected.assemblies).forEach(([assemblyName, reflectedAssembly]) => {
         assemblies[assemblyName] = reflectedAssembly.referencedAssemblies;
         types[assemblyName] = reflectedAssembly.types;

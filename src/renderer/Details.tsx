@@ -94,7 +94,6 @@ const convertMembers = (members: Members): Node[] => {
     makeNode(memberInfo, getIcon(memberInfo.access), memberInfo.attributes.map(convertAttribute));
   result.push(...members.fieldMembers.map((memberInfo) => makeMemberNode(memberInfo, getFieldIcon)));
   result.push(...members.propertyMembers.map((memberInfo) => makeMemberNode(memberInfo, getPropertyIcon)));
-  result.push(...members.constructorMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon)));
   result.push(...members.methodMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon)));
   result.push(...members.eventMembers.map((memberInfo) => makeMemberNode(memberInfo, getEventIcon)));
   return result;

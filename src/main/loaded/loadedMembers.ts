@@ -12,6 +12,7 @@ export type FieldMember = {
   access: Access;
   fieldType: TypeId;
   isStatic?: boolean;
+  metadataToken: number;
 };
 
 export type EventMember = {
@@ -20,6 +21,7 @@ export type EventMember = {
   access: Access;
   eventHandlerType: TypeId;
   isStatic?: boolean;
+  metadataToken: number;
 };
 
 export type PropertyMember = {
@@ -29,29 +31,24 @@ export type PropertyMember = {
   parameters?: Parameter[];
   propertyType: TypeId;
   isStatic?: boolean;
-};
-
-export type ConstructorMember = {
-  attributes?: string[];
-  access: Access;
-  parameters?: Parameter[];
-  isStatic?: boolean;
+  metadataToken: number;
 };
 
 export type MethodMember = {
   name: string;
-  attributes?: string[];
   access: Access;
   parameters?: Parameter[];
   isStatic?: boolean;
+  isConstructor?: boolean;
   genericArguments?: TypeId[];
   returnType: TypeId;
+  attributes?: string[];
+  metadataToken: number;
 };
 
 export type Members = {
   fieldMembers?: FieldMember[];
   eventMembers?: EventMember[];
   propertyMembers?: PropertyMember[];
-  constructorMembers?: ConstructorMember[];
   methodMembers?: MethodMember[];
 };

@@ -1,7 +1,7 @@
 import { Database } from "better-sqlite3";
 import type { AppOptions, ViewOptions } from "../shared-types";
 import { defaultAppOptions, defaultViewOptions } from "../shared-types";
-import { IAssemblies, ITypes, Loaded } from "./loaded";
+import { IAssemblyReferences, IAssemblyTypes, Loaded } from "./loaded";
 import { log } from "./log";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable } from "./sqlTable";
@@ -20,12 +20,12 @@ type TypeColumns = {
   typeInfo: string;
 };
 
-export type ConfigColumns = {
+type ConfigColumns = {
   name: string;
   value: string;
 };
 
-export type RecentColumns = {
+type RecentColumns = {
   path: string;
   type: DataSourceType;
   when: number;
@@ -64,8 +64,8 @@ export class SqlLoaded {
     };
 
     this.read = () => {
-      const assemblies: IAssemblies = {};
-      const types: ITypes = {};
+      const assemblies: IAssemblyReferences = {};
+      const types: IAssemblyTypes = {};
       assemblyTable.selectAll().forEach((assembly) => (assemblies[assembly.name] = JSON.parse(assembly.references)));
       typeTable.selectAll().forEach((type) => (types[type.name] = JSON.parse(type.typeInfo)));
       return { assemblies, types, version: this.viewState.loadedVersion, exes: this.viewState.exes };
