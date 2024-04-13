@@ -41,6 +41,12 @@ export type Namespace = TextNode & {
 };
 
 export type Types = {
+  // assemblyId is needed because metadataToken is only unique within a given assembly
+  // so if in future you want to return types from multiple assemblies:
+  // - generate IDs that that globally unique, to replace metadataToken
+  // - concatenate assemblyId with metadataToken
+  // - or return multiple Types instances
+  assemblyId: string;
   namespaces: Namespace[];
   exceptions: Exceptions;
 };

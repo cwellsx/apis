@@ -239,9 +239,9 @@ const getMembers = (members: LoadedMembers): Members => {
   };
 };
 
-export const convertLoadedToTypes = (loaded: Loaded, id: string): Types => {
-  const typeInfos: TypeInfo[] = loaded.types[id];
-  if (!typeInfos) return { namespaces: [], exceptions: [] }; // for an assembly whose types we haven't loaded
+export const convertLoadedToTypes = (loaded: Loaded, assemblyId: string): Types => {
+  const typeInfos: TypeInfo[] = loaded.types[assemblyId];
+  if (!typeInfos) return { assemblyId, namespaces: [], exceptions: [] }; // for an assembly whose types we haven't loaded
 
   // remove all typeInfo without typeId
   const exceptions: Exceptions = [];
@@ -298,5 +298,5 @@ export const convertLoadedToTypes = (loaded: Loaded, id: string): Types => {
     })
     .sort((x, y) => x.label.localeCompare(y.label));
 
-  return { namespaces, exceptions };
+  return { assemblyId, namespaces, exceptions };
 };

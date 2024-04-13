@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { Area as MyArea, OnClick } from "../shared-types";
+import type { Area as MyArea, OnGraphClick } from "../shared-types";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 
 type GraphProps = {
@@ -7,7 +7,7 @@ type GraphProps = {
   areas: MyArea[];
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
-  onClick: OnClick;
+  onGraphClick: OnGraphClick;
 };
 
 type State = {
@@ -123,7 +123,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
   const onClick = (area: Area, index: number, event: AreaMouseEvent): void => {
     console.log(`Clicked area ${area._id}`);
     if (area._id && getIdType(area._id) === "leaf")
-      props.onClick(area._id, {
+      props.onGraphClick(area._id, {
         altKey: event.altKey,
         button: event.button,
         buttons: event.buttons,

@@ -6,7 +6,8 @@ const mainApiProxy: MainApi = {
   setGroupExpanded: (names: string[]) => ipcRenderer.send("setGroupExpanded", names),
   setViewOptions: (viewOptions: ViewOptions) => ipcRenderer.send("setViewOptions", viewOptions),
   setAppOptions: (appOptions: AppOptions) => ipcRenderer.send("setAppOptions", appOptions),
-  onClick: (id: string, event: MouseEvent) => ipcRenderer.send("onClick", id, event),
+  onGraphClick: (id: string, event: MouseEvent) => ipcRenderer.send("onGraphClick", id, event),
+  onDetailClick: (assemblyId: string, id: string) => ipcRenderer.send("onDetailClick", assemblyId, id),
 };
 
 const bindIpcRenderer = (rendererApi: RendererApi): void => {

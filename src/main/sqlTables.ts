@@ -29,6 +29,8 @@ import { SqlTable } from "./sqlTable";
   - Saved into the SQLite table
   - Reloaded into the application as a single object
 
+  The Loaded instance is not cached by the application, but rebuilt from the database whenever needed.
+
   Perhaps in future this will prove to be too much data in a single object, in which case:
   - Read incrementally from Core.exe
   - Save incrementally into the SQLite tables

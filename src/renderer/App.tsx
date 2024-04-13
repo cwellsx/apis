@@ -3,7 +3,8 @@ import type {
   AppOptions,
   BindIpc,
   MainApi,
-  OnClick,
+  OnDetailClick,
+  OnGraphClick,
   PreloadApis,
   RendererApi,
   Types,
@@ -36,7 +37,7 @@ const defaultView: View = {
   groupExpanded: [],
   viewOptions: defaultViewOptions,
 };
-const defaultTypes: Types = { namespaces: [], exceptions: [] };
+const defaultTypes: Types = { assemblyId: "", namespaces: [], exceptions: [] };
 
 let once = false;
 
@@ -83,7 +84,8 @@ const App: React.FunctionComponent = () => {
   const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
   const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.setViewOptions(viewOptions);
   const setAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.setAppOptions(appOptions);
-  const onClick: OnClick = (id, event) => mainApi.onClick(id, event);
+  const onDetailClick: OnDetailClick = (assemblyId, id) => mainApi.onDetailClick(assemblyId, id);
+  const onGraphClick: OnGraphClick = (id, event) => mainApi.onGraphClick(id, event);
 
   // display a message, or an image if there is one
   const center = greeting ? (
@@ -96,7 +98,7 @@ const App: React.FunctionComponent = () => {
       areas={view.image.areas}
       now={view.image.now}
       zoomPercent={zoomPercent}
-      onClick={onClick}
+      onGraphClick={onGraphClick}
     />
   );
 
@@ -113,7 +115,7 @@ const App: React.FunctionComponent = () => {
     </>
   );
 
-  const right = !types.namespaces.length ? undefined : <Details types={types} />;
+  const right = !types.namespaces.length ? undefined : <Details types={types} onDetailClick={onDetailClick} />;
 
   return (
     <React.StrictMode>

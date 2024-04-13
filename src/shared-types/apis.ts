@@ -1,4 +1,4 @@
-import type { OnClick } from "./mouseEvent";
+import type { OnDetailClick, OnGraphClick } from "./mouseEvent";
 import type { Types } from "./types";
 import type { AppOptions, View, ViewOptions } from "./view";
 
@@ -17,7 +17,8 @@ export interface MainApi {
   setGroupExpanded: (names: string[]) => void;
   setViewOptions: (viewOptions: ViewOptions) => void;
   setAppOptions: (appOptions: AppOptions) => void;
-  onClick: OnClick;
+  onGraphClick: OnGraphClick;
+  onDetailClick: OnDetailClick;
 }
 
 // this Api is available to the main process and its functions are all void

@@ -1,4 +1,4 @@
-// avoid importing this type into the renderer-side code, use the OnClick type instead
+// import OnGraphClick into the renderer-side code, but avoid importing MouseEvent
 // because it can be confusing because there's also a React.MouseEvent and a DOM MouseEvent
 export type MouseEvent = {
   altKey: boolean;
@@ -9,4 +9,6 @@ export type MouseEvent = {
   shiftKey: boolean;
 };
 
-export type OnClick = (id: string, event: MouseEvent) => void;
+export type OnGraphClick = (id: string, event: MouseEvent) => void;
+
+export type OnDetailClick = (assemblyId: string, id: string) => void;

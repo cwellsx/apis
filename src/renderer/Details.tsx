@@ -1,11 +1,21 @@
 import * as React from "react";
-import CheckboxTree, { Node } from "react-checkbox-tree";
-import type { Access, Exception, MemberInfo, Members, Namespace, TextNode, Type, Types } from "../shared-types";
+import CheckboxTree, { Node, OnCheckNode } from "react-checkbox-tree";
+import type {
+  Access,
+  Exception,
+  MemberInfo,
+  Members,
+  Namespace,
+  OnDetailClick,
+  TextNode,
+  Type,
+  Types,
+} from "../shared-types";
 import { isTypeException } from "../shared-types";
 import { icons } from "./3rd-party/checkboxTreeIcons";
 import * as Icon from "./Icons.Microsoft";
 
-const makeNode = (textNode: TextNode, icon: JSX.Element, children?: Node[]): Node => {
+const makeNode = (textNode: TextNode, icon: JSX.Element, className: ClassName, children?: Node[]): Node => {
   if (children && children.length === 0) children = undefined;
   return {
     label: textNode.label,
@@ -13,11 +23,12 @@ const makeNode = (textNode: TextNode, icon: JSX.Element, children?: Node[]): Nod
     showCheckbox: false,
     icon: icon,
     children,
+    className,
   };
 };
 
-const convertException = (exception: Exception): Node => makeNode(exception, <Icon.SvgExclamationPoint />);
-const convertAttribute = (attribute: TextNode): Node => makeNode(attribute, <Icon.SvgAttribute />);
+const convertException = (exception: Exception): Node => makeNode(exception, <Icon.SvgExclamationPoint />, "exception");
+const convertAttribute = (attribute: TextNode): Node => makeNode(attribute, <Icon.SvgAttribute />, "attribute");
 
 const getTypeIcon = (access: Access) => {
   switch (access) {
@@ -88,29 +99,36 @@ const getPropertyIcon = (access: Access) => {
   }
 };
 
+type ClassName = "field" | "property" | "method" | "event" | "exception" | "attribute" | "type" | "namespace";
+
 const convertMembers = (members: Members): Node[] => {
   const result: Node[] = [];
-  const makeMemberNode = (memberInfo: MemberInfo, getIcon: (access: Access) => JSX.Element): Node =>
-    makeNode(memberInfo, getIcon(memberInfo.access), memberInfo.attributes.map(convertAttribute));
-  result.push(...members.fieldMembers.map((memberInfo) => makeMemberNode(memberInfo, getFieldIcon)));
-  result.push(...members.propertyMembers.map((memberInfo) => makeMemberNode(memberInfo, getPropertyIcon)));
-  result.push(...members.methodMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon)));
-  result.push(...members.eventMembers.map((memberInfo) => makeMemberNode(memberInfo, getEventIcon)));
+
+  const makeMemberNode = (
+    memberInfo: MemberInfo,
+    getIcon: (access: Access) => JSX.Element,
+    className: ClassName
+  ): Node => makeNode(memberInfo, getIcon(memberInfo.access), className, memberInfo.attributes.map(convertAttribute));
+
+  result.push(...members.fieldMembers.map((memberInfo) => makeMemberNode(memberInfo, getFieldIcon, "field")));
+  result.push(...members.propertyMembers.map((memberInfo) => makeMemberNode(memberInfo, getPropertyIcon, "property")));
+  result.push(...members.methodMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon, "method")));
+  result.push(...members.eventMembers.map((memberInfo) => makeMemberNode(memberInfo, getEventIcon, "event")));
   return result;
 };
 
 const convertTypes = (types: Type[] | undefined): Node[] => (types ? types.map(convertType) : []);
 const convertType = (type: Type): Node =>
   isTypeException(type)
-    ? makeNode(type, <Icon.SvgExclamationPoint />)
-    : makeNode(type, getTypeIcon(type.access), [
+    ? makeNode(type, <Icon.SvgExclamationPoint />, "type")
+    : makeNode(type, getTypeIcon(type.access), "type", [
         ...type.attributes.map(convertAttribute),
         ...convertTypes(type.subtypes),
         ...convertMembers(type.members),
       ]);
 
 const convertNamespace = (namespace: Namespace): Node =>
-  makeNode(namespace, <Icon.SvgNamespace />, namespace.types.map(convertType));
+  makeNode(namespace, <Icon.SvgNamespace />, "namespace", namespace.types.map(convertType));
 
 const getNodes = (types: Types): Node[] => [
   ...types.exceptions.map(convertException),
@@ -119,6 +137,7 @@ const getNodes = (types: Types): Node[] => [
 
 type DetailsProps = {
   types: Types;
+  onDetailClick: OnDetailClick;
 };
 
 type State = {
@@ -167,6 +186,11 @@ export const Details: React.FunctionComponent<DetailsProps> = (props: DetailsPro
     if (props.types !== state.types) dispatch({ type: "NewNodes", types: props.types });
   }, [props, state.types]);
 
+  const onClick = (node: OnCheckNode): void => {
+    // caution -- this will return a click event even if the node is not a method
+    props.onDetailClick(props.types.assemblyId, node.value);
+  };
+
   return (
     <CheckboxTree
       nodes={nodes}
@@ -176,6 +200,7 @@ export const Details: React.FunctionComponent<DetailsProps> = (props: DetailsPro
       showNodeIcon={true}
       id="treeid"
       showExpandAll={false}
+      onClick={onClick}
     />
   );
 };

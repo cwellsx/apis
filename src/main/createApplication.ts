@@ -8,7 +8,7 @@ import { getAppFilename, writeFileSync } from "./fs";
 import type { Reflected } from "./loaded";
 import { convertReflectedToLoaded, loadedVersion } from "./loaded";
 import { log } from "./log";
-import { hide, showAdjacent } from "./onClick";
+import { hide, showAdjacent } from "./onGraphClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
 import { options } from "./shared-types";
@@ -78,8 +78,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlConfig.appOptions = appOptions;
       show.appOptions(appOptions);
     },
-    onClick: (id: string, event: MouseEvent): void => {
-      log("onClick");
+    onGraphClick: (id: string, event: MouseEvent): void => {
+      log("onGraphClick");
       if (!sqlLoaded) return;
       if (event.shiftKey) {
         showAdjacent(sqlLoaded, id);
@@ -93,12 +93,16 @@ export function createApplication(mainWindow: BrowserWindow): void {
         show.types(types);
       }
     },
+    onDetailClick: (assemblyId, id): void => {
+      log("onDetailClick");
+    },
   };
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
   ipcMain.on("setGroupExpanded", (event, names) => mainApi.setGroupExpanded(names));
   ipcMain.on("setViewOptions", (event, viewOptions) => mainApi.setViewOptions(viewOptions));
   ipcMain.on("setAppOptions", (event, appOptions) => mainApi.setAppOptions(appOptions));
-  ipcMain.on("onClick", (event, id, mouseEvent) => mainApi.onClick(id, mouseEvent));
+  ipcMain.on("onGraphClick", (event, id, mouseEvent) => mainApi.onGraphClick(id, mouseEvent));
+  ipcMain.on("onDetailClick", (event, assemblyId, id) => mainApi.onDetailClick(assemblyId, id));
 
   // wrap use of the renderer API
   const show: IShow = new Show(mainWindow);

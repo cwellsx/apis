@@ -28,3 +28,11 @@
 .rct-title {
   padding-right: 0;
 }
+
+.rct-node-clickable {
+  cursor: default;
+}
+
+.method .rct-node-clickable {
+  cursor: pointer;
+}
