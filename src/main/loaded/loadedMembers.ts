@@ -1,4 +1,4 @@
-import { Access } from "./loadedAccess";
+import { Access } from "./loadedEnums";
 import { TypeId } from "./loadedTypeId";
 
 export type Parameter = {

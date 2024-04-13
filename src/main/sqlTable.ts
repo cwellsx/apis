@@ -37,13 +37,15 @@ export class SqlTable<T extends object> {
   constructor(
     db: Database,
     tableName: string,
-    primaryKey: keyof T,
+    primaryKey: keyof T | (keyof T)[],
     isNullable: ((key: keyof T) => boolean) | boolean,
     t: T
   ) {
     // do everything using arrow functions in the constructor, avoid using this anywhere
     // https://github.com/WiseLibs/better-sqlite3/issues/589#issuecomment-1336812715
-    if (typeof primaryKey !== "string") throw new Error("primaryKey must be a string");
+    if (typeof primaryKey !== "string" && !Array.isArray(primaryKey)) throw new Error("primaryKey must be a string");
+    const primaryKeys = Array.isArray(primaryKey) ? primaryKey.map((key) => String(key)) : [String(primaryKey)];
+    if (!primaryKeys.length) throw new Error("must have at least one primaryKey");
 
     function isKeyNullable(key: string): boolean {
       if (typeof isNullable === "boolean") return isNullable;
@@ -53,10 +55,11 @@ export class SqlTable<T extends object> {
     const entries = Object.entries(t);
     const columnDefs = entries.map((entry) => {
       const key = entry[0];
-      const constraint = key === primaryKey ? "NOT NULL PRIMARY KEY" : !isKeyNullable(key) ? "NOT NULL" : "";
+      const constraint = !isKeyNullable(key) ? "NOT NULL" : "";
       return getColumnDefinition(entry, constraint);
     });
-    const createTable = `CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefs.join(", ")})`;
+    const primaryKeyConstraint = `PRIMARY KEY (${primaryKeys.join(", ")})`;
+    const createTable = `CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefs.join(", ")}, ${primaryKeyConstraint})`;
     db.prepare(createTable).run();
 
     const keys = Object.keys(t);
@@ -65,13 +68,14 @@ export class SqlTable<T extends object> {
     const insert = `INSERT ${insertParameters}`;
     const insertStmt = db.prepare(insert);
 
-    const index = keys.indexOf(primaryKey);
-    if (index === -1) throw new Error("primaryKey not found");
-    keys.splice(index, 1);
-    values.splice(index, 1);
-    const update = `UPDATE ${tableName} SET (${quoteAndJoin(keys)}) = (${values.join(
-      ", "
-    )}) WHERE "${primaryKey}" = @${primaryKey}`;
+    primaryKeys.forEach((primaryKey) => {
+      const index = keys.indexOf(primaryKey);
+      if (index === -1) throw new Error("primaryKey not found");
+      keys.splice(index, 1);
+      values.splice(index, 1);
+    });
+    const where = primaryKeys.map((primaryKey) => `"${primaryKey}" = @${primaryKey}`).join(" AND ");
+    const update = `UPDATE ${tableName} SET (${quoteAndJoin(keys)}) = (${values.join(", ")}) WHERE ${where}`;
     const updateStmt = db.prepare(update);
 
     const upsert = `INSERT OR REPLACE ${insertParameters}`;

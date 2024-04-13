@@ -5,7 +5,8 @@ import { convertLoadedToView } from "./convertLoadedToView";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { getAppFilename, writeFileSync } from "./fs";
-import { IAssemblyReferences, IAssemblyTypes, Reflected, loadedVersion, type Loaded } from "./loaded";
+import type { Reflected } from "./loaded";
+import { convertReflectedToLoaded, loadedVersion } from "./loaded";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onClick";
 import { open } from "./open";
@@ -123,14 +124,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
       log("getLoaded");
       const reflected = await getReflected(dataSource.path);
       // convert Reflected to Loaded
-      const assemblies: IAssemblyReferences = {};
-      const types: IAssemblyTypes = {};
-      Object.entries(reflected.assemblies).forEach(([assemblyName, reflectedAssembly]) => {
-        assemblies[assemblyName] = reflectedAssembly.referencedAssemblies;
-        types[assemblyName] = reflectedAssembly.types;
-      });
-      const { version, exes } = reflected;
-      const loaded: Loaded = { version, exes, assemblies, types };
+      const loaded = convertReflectedToLoaded(reflected);
       // save Loaded
       const jsonPath = getAppFilename(`Core.${dataSource.hash}.json`);
       writeFileSync(jsonPath, JSON.stringify(loaded, null, " "));
@@ -142,8 +136,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   const readDotNetApi = async (path: string): Promise<Reflected> => {
     const json = await dotNetApi.getJson(path);
-    const loaded = JSON.parse(json);
-    return loaded;
+    const reflected = JSON.parse(json);
+    return reflected;
   };
 
   // the caller wraps this with a try/catch handler

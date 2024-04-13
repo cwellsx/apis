@@ -1,4 +1,4 @@
-import { Access } from "./loadedAccess";
+import { Access } from "./loadedEnums";
 import { Members } from "./loadedMembers";
 import { TypeId } from "./loadedTypeId";
 

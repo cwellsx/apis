@@ -1,14 +1,40 @@
 import { Database } from "better-sqlite3";
 import type { AppOptions, ViewOptions } from "../shared-types";
 import { defaultAppOptions, defaultViewOptions } from "../shared-types";
-import { IAssemblyReferences, IAssemblyTypes, Loaded } from "./loaded";
+import { IAssemblyMethods, IAssemblyReferences, IAssemblyTypes, Loaded } from "./loaded";
 import { log } from "./log";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable } from "./sqlTable";
 
-// this defines all SQLite tables used by the application, include the record format and the methods to access them
-// they're all in this one source file, because their implementations are similar
-// the schema isn't 'relational', instead the tables are key-value pairs whose values are JSON objects akak 'documents'
+/*
+  This defines all SQLite tables used by the application, include the record format and the methods to access them
+  They're all in this one source file, because their implementations are similar
+  The schema isn't 'relational', instead the tables are key-value pairs whose values are JSON objects akak 'documents'
+
+  - SqlLoaded is implemented using
+    - SqlTable<AssemblyColumns>
+    - SqlTable<TypeColumns>
+    - ViewState i.e. ConfigCache
+  
+  - SqlConfig is implemented using
+    - SqlTable<RecentColumns>
+    - ConfigCache i.e. SqlConfigTable plus a values cache
+  
+  - SqlConfigTable is implemented using
+    - SqlTable<ConfigColumns>
+  
+  SqlLoaded saves and reads a instances of the Loaded type, which contains all TypeInfo and all MethodDetails.
+  All this data is:
+  - Obtained from Core.exe via the electron-cgi connection
+  - Saved into the SQLite table
+  - Reloaded into the application as a single object
+
+  Perhaps in future this will prove to be too much data in a single object, in which case:
+  - Read incrementally from Core.exe
+  - Save incrementally into the SQLite tables
+  - Keep most of the data only in SQLite and not instantiated in memory
+  - Read selectively i.e. without using selectAll
+*/
 
 type AssemblyColumns = {
   name: string;
@@ -16,8 +42,16 @@ type AssemblyColumns = {
 };
 
 type TypeColumns = {
+  // each record contains all TypeInfo for a single assembly, application reads one assembly at a time
   name: string;
   typeInfo: string;
+};
+
+type MethodColumns = {
+  // each record contains MethodDetails for a single method, application reads several methods at a time
+  name: string;
+  metadataToken: number;
+  methodDetails: string;
 };
 
 type ConfigColumns = {
@@ -47,6 +81,11 @@ export class SqlLoaded {
       name: "foo",
       typeInfo: "bar",
     });
+    const methodTable = new SqlTable<MethodColumns>(db, "method", ["name", "metadataToken"], () => false, {
+      name: "foo",
+      metadataToken: 1,
+      methodDetails: "bar",
+    });
 
     const done = () => {
       const result = db.pragma("wal_checkpoint(TRUNCATE)");
@@ -59,6 +98,15 @@ export class SqlLoaded {
         assemblyTable.insert({ name: key, references: JSON.stringify(loaded.assemblies[key]) });
       typeTable.deleteAll();
       for (const key in loaded.types) typeTable.insert({ name: key, typeInfo: JSON.stringify(loaded.types[key]) });
+      for (const key in loaded.methods) {
+        const methodsDictionary = loaded.methods[key];
+        for (const metadataToken in methodsDictionary)
+          methodTable.insert({
+            name: key,
+            metadataToken: +metadataToken,
+            methodDetails: JSON.stringify(methodsDictionary[metadataToken]),
+          });
+      }
       this.viewState.onSave(when, loaded.version, loaded.exes, Object.keys(loaded.assemblies));
       done();
     };
@@ -66,9 +114,16 @@ export class SqlLoaded {
     this.read = () => {
       const assemblies: IAssemblyReferences = {};
       const types: IAssemblyTypes = {};
+      const methods: IAssemblyMethods = {};
       assemblyTable.selectAll().forEach((assembly) => (assemblies[assembly.name] = JSON.parse(assembly.references)));
       typeTable.selectAll().forEach((type) => (types[type.name] = JSON.parse(type.typeInfo)));
-      return { assemblies, types, version: this.viewState.loadedVersion, exes: this.viewState.exes };
+      methodTable.selectAll().forEach((method) => {
+        const { name, metadataToken, methodDetails } = method;
+        let methodsDictionary = methods[name];
+        if (!methodsDictionary) methods[name] = methodsDictionary = {};
+        methodsDictionary[metadataToken] = JSON.parse(methodDetails);
+      });
+      return { assemblies, types, methods, version: this.viewState.loadedVersion, exes: this.viewState.exes };
     };
 
     this.close = () => {

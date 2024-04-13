@@ -1,5 +1,11 @@
 import { existsSync, readFile, stat } from "./fs";
-import { Reflected, ReflectedAssembly, TypeId, TypeInfo, isBadTypeInfo, isNamedTypeInfo } from "./loaded";
+import { AssemblyInfo, Reflected, TypeId, TypeInfo, isBadTypeInfo, isNamedTypeInfo } from "./loaded";
+
+/*
+  This is a nuisance to write and maintain -- maybe replace it with
+  https://github.com/samchon/typia
+  https://typia.io/docs/pure/
+*/
 
 const isObject = (x: object): boolean => typeof x === "object" && !Array.isArray(x) && x !== null;
 const isString = (x: string): boolean => typeof x === "string";
@@ -32,7 +38,7 @@ const isTypeInfo = (json: TypeInfo): boolean => {
   return true;
 };
 
-const isReflectedAssembly = (json: ReflectedAssembly): boolean => {
+const isReflectedAssembly = (json: AssemblyInfo): boolean => {
   if (!json.referencedAssemblies) throw new Error("Expect `referencedAssemblies` property");
   if (!json.types) throw new Error("Expect `types` property");
   if (!isStringArray(json.referencedAssemblies)) throw new Error("Expect `referencedAssemblies` type is `string[]`");

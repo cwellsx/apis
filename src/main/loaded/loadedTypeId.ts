@@ -1,4 +1,4 @@
-import { TypeKind } from "./loadedAccess";
+import { TypeKind } from "./loadedEnums";
 
 export type TypeId = {
   assemblyName: string;
