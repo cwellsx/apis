@@ -48,11 +48,17 @@ namespace Core
                 foreach (var methodMember in typeInfo.Members.MethodMembers)
                 {
                     var (asText, calls) = decompiler.Decompile(methodMember.MetadataToken);
-                    var decompiled = new Decompiled(
+                    var methodMemberEx = new MethodMemberEx(methodMember, _isMicrosoftAssemblyName);
+                    var methodDetails = new MethodDetails(
                         asText,
+                        methodMemberEx.AsString(methodMember.GenericArguments, false),
+                        typeId.AsString(false)
+                        );
+                    var decompiled = new Decompiled(
+                        methodDetails,
                         calls.Select(call => call.Transform(_isMicrosoftAssemblyName)).ToArray(),
                         methodMember.MetadataToken,
-                        new MethodMemberEx(methodMember, _isMicrosoftAssemblyName),
+                        methodMemberEx,
                         methodMember.GenericArguments
                         );
                     listDecompiled.Add(decompiled);

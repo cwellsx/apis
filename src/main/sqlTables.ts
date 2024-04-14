@@ -36,6 +36,8 @@ import { SqlTable } from "./sqlTable";
   - Save incrementally into the SQLite tables
   - Keep most of the data only in SQLite and not instantiated in memory
   - Read selectively i.e. without using selectAll
+
+  Conversely the ViewState contains a cache-on-write, which the application reads from without selecting from SQLite.
 */
 
 type AssemblyColumns = {
@@ -100,6 +102,7 @@ export class SqlLoaded {
         assemblyTable.insert({ name: key, references: JSON.stringify(loaded.assemblies[key]) });
       typeTable.deleteAll();
       for (const key in loaded.types) typeTable.insert({ name: key, typeInfo: JSON.stringify(loaded.types[key]) });
+      methodTable.deleteAll();
       for (const key in loaded.methods) {
         const methodsDictionary = loaded.methods[key];
         for (const metadataToken in methodsDictionary)

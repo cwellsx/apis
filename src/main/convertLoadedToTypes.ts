@@ -19,6 +19,8 @@ type IdKind = "!n!" | "!t!" | "!e!" | "!a!";
 type MemberIdKind = "!mm!" | "!mf!" | "!mp!" | "!me!";
 const makeId = (kind: IdKind | MemberIdKind, id: number | string): string => `${kind}${id}`;
 
+export const getMethodId = (id: string): string | undefined => (id.startsWith("!mm!") ? id.substring(4) : undefined);
+
 // use a closure to create an Exception instance with a unique id from a message string
 const pushException: (exceptions: Exceptions, message: string) => void = (function () {
   let index = 0;

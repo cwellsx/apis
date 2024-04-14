@@ -155,9 +155,10 @@ namespace Core
     }
 
     internal record Decompiled(
-        string AsText,
+        MethodDetails MethodDetails,
         MethodId[] Calls,
         int MetadataToken,
         MethodMemberEx MethodMember,
-        Values<TypeId>? GenericArguments);
+        Values<TypeId>? GenericArguments
+        );
 }

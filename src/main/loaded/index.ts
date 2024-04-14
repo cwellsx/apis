@@ -10,8 +10,8 @@ export type {
   Reflected,
 } from "./loadedAssemblies";
 export { Access } from "./loadedEnums";
-//export { Error, ITypeMethodDetails, MethodDetails, MethodId, MethodsDictionary } from "./loadedCalls";
 export type { EventMember, FieldMember, Members, MethodMember, Parameter, PropertyMember } from "./loadedMembers";
+export { CallDetails, Method, MethodDetails } from "./loadedMethodCalls";
 export type { TypeId } from "./loadedTypeId";
 export { isBadTypeInfo, isNamedTypeInfo } from "./loadedTypeInfo";
 export type { BadTypeInfo, GoodTypeInfo, NamedTypeInfo, TypeInfo } from "./loadedTypeInfo";

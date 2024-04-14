@@ -7,7 +7,7 @@ import { type Edge } from "./shared-types";
 import type { SqlLoaded } from "./sqlTables";
 
 export const convertLoadedToView = (sqlLoaded: SqlLoaded): View => {
-  log("viewSqlLoaded");
+  log("convertLoadedToView");
   // maybe we needn't read Loaded and calculate Groups more than once, but for now we do it every time
   const loaded: Loaded = sqlLoaded.read();
   const leafs: LeafNode[] = [];

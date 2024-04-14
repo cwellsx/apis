@@ -199,8 +199,8 @@ namespace Core
         { }
     }
 
-    public record MethodDetails(string AsText, List<CallDetails> Calls, List<Method> CalledBy)
+    public record MethodDetails(string AsText, string MethodMember, string DeclaringType, List<CallDetails> Calls, List<Method> CalledBy)
     {
-        internal MethodDetails(string asText) : this(asText, new List<CallDetails>(), new List<Method>()) { }
+        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType, new List<CallDetails>(), new List<Method>()) { }
     }
 }

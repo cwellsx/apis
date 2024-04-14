@@ -19,6 +19,8 @@ export type CallDetails = {
 
 export type MethodDetails = {
   asText: string;
+  methodMember: string;
+  declaringType: string;
   calls: CallDetails[];
   calledBy: Method[];
 };

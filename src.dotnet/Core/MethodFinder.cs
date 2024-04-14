@@ -22,7 +22,7 @@ namespace Core
                 {
                     foreach (var decompiled in typeMethods.ListDecompiled)
                     {
-                        methodDictionary.Add(decompiled.MetadataToken, new MethodDetails(decompiled.AsText));
+                        methodDictionary.Add(decompiled.MetadataToken, decompiled.MethodDetails);
                     }
                 }
             }

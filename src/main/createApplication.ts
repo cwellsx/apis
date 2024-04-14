@@ -1,9 +1,11 @@
 import { BrowserWindow, ipcMain } from "electron";
 import type { AppOptions, MainApi, MouseEvent, ViewOptions } from "../shared-types";
-import { convertLoadedToTypes } from "./convertLoadedToTypes";
+import { convertLoadedToMethods } from "./convertLoadedToMethods";
+import { convertLoadedToTypes, getMethodId } from "./convertLoadedToTypes";
 import { convertLoadedToView } from "./convertLoadedToView";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
+import { createImage } from "./createImage";
 import { getAppFilename, writeFileSync } from "./fs";
 import type { Reflected } from "./loaded";
 import { convertReflectedToLoaded, loadedVersion } from "./loaded";
@@ -95,6 +97,11 @@ export function createApplication(mainWindow: BrowserWindow): void {
     },
     onDetailClick: (assemblyId, id): void => {
       log("onDetailClick");
+      if (!sqlLoaded) return;
+      const methodId = getMethodId(id);
+      if (!methodId) return; // user clicked on something other than a method
+      const imageData = convertLoadedToMethods(sqlLoaded.read(), assemblyId, methodId);
+      const image = createImage(imageData);
     },
   };
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
