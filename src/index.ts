@@ -36,6 +36,12 @@ const createWindow = (): void => {
   // mainWindow.webContents.openDevTools();
   mainWindow.maximize();
   mainWindow.once("ready-to-show", () => mainWindow.show());
+
+  mainWindow.on("closed", () => {
+    if (process.platform !== "darwin") {
+      app.quit();
+    }
+  });
 };
 
 // This method will be called when Electron has finished

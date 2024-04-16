@@ -13,6 +13,7 @@ import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
+import { secondWindow } from "./secondWindow";
 import { options } from "./shared-types";
 import { IShow, Show } from "./show";
 import { showErrorBox } from "./showErrorBox";
@@ -102,6 +103,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
       if (!methodId) return; // user clicked on something other than a method
       const imageData = convertLoadedToMethods(sqlLoaded.read(), assemblyId, methodId);
       const image = createImage(imageData);
+      const window = secondWindow();
     },
   };
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
