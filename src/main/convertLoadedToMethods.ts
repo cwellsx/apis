@@ -1,3 +1,4 @@
+import { AsText } from "../shared-types";
 import { ImageData, Node } from "./createImage";
 import { CallDetails, Loaded, Method } from "./loaded";
 
@@ -6,9 +7,9 @@ type Edge = {
   server: Node;
 };
 
-export interface INodes {
+type Nodes = {
   [key: string]: { node: Node; asText: string }; // dependencies/references of each assembly
-}
+};
 
 const makeId = (assemblyId: string, methodId: string | number): string => `${assemblyId}-${methodId}`;
 
@@ -16,9 +17,10 @@ const makeNode = (assemblyId: string, methodId: string | number, methodMember: s
   return { id: makeId(assemblyId, methodId), label: `${declaringType}\n${methodMember}`, type: "node" };
 };
 
-export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, methodId: string): ImageData => {
-  const nodes: INodes = {};
+export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, methodId: string): [ImageData, AsText] => {
+  const nodes: Nodes = {};
   const edges: Edge[] = [];
+  const asText: AsText = {};
 
   const methodsDictionary = loaded.methods[assemblyId];
   const methodDetails = methodsDictionary[methodId];
@@ -33,6 +35,7 @@ export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, metho
       if (nodes[node.id]) continue; // avoid infinite loop if there's recursion or cyclic dependency
       const methodDetails = loaded.methods[method.assemblyName][method.metadataToken];
       nodes[node.id] = { node, asText: methodDetails.asText };
+      asText[node.id] = methodDetails.asText;
       findCalledBy(node, methodDetails.calledBy); // recurse
     }
   };
@@ -54,7 +57,7 @@ export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, metho
 
   findCalled(firstNode, methodDetails.calls);
 
-  return {
+  const imageData: ImageData = {
     nodes: Object.values(nodes).map((pair) => pair.node),
     edges: edges.map((edge) => {
       const clientId = edge.client.id;
@@ -63,4 +66,6 @@ export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, metho
       return { clientId, serverId, edgeId };
     }),
   };
+
+  return [imageData, asText];
 };

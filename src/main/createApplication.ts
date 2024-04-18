@@ -13,9 +13,9 @@ import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
-import { secondWindow } from "./secondWindow";
+import { getSecondWindow } from "./secondWindow";
 import { options } from "./shared-types";
-import { IShow, Show } from "./show";
+import { IShow, Show, renderer2 } from "./show";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
@@ -101,9 +101,10 @@ export function createApplication(mainWindow: BrowserWindow): void {
       if (!sqlLoaded) return;
       const methodId = getMethodId(id);
       if (!methodId) return; // user clicked on something other than a method
-      const imageData = convertLoadedToMethods(sqlLoaded.read(), assemblyId, methodId);
+      const [imageData, asText] = convertLoadedToMethods(sqlLoaded.read(), assemblyId, methodId);
       const image = createImage(imageData);
-      const window = secondWindow();
+      const callStack = { image, asText };
+      getSecondWindow(sqlConfig.appOptions).then((secondWindow) => renderer2(secondWindow).showCallStack(callStack));
     },
   };
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));

@@ -30,7 +30,19 @@ declare global {
 
 export const mainApi: MainApi = window.preloadApis.mainApi;
 export const bindIpc: BindIpc = window.preloadApis.bindIpc;
+*/
+import type { AppOptions, Bind2Ipc, CallStack, Main2Api, Preload2Apis, Renderer2Api } from "../shared-types";
+import { defaultAppOptions } from "../shared-types";
+import { log } from "./log";
 
+declare global {
+  export interface Window {
+    preload2Apis: Preload2Apis;
+  }
+}
+const mainApi: Main2Api = window.preload2Apis.mainApi;
+const bindIpc: Bind2Ipc = window.preload2Apis.bindIpc;
+/*
 const defaultView: View = {
   image: "",
   groups: [],
@@ -39,10 +51,16 @@ const defaultView: View = {
   viewOptions: defaultViewOptions,
 };
 const defaultTypes: Types = { assemblyId: "", namespaces: [], exceptions: [] };
-
+*/
 let once = false;
+const defaultCallstack: CallStack = { image: "", asText: {} };
 
 const App: React.FunctionComponent = () => {
+  const [greeting, setGreeting] = React.useState<string | undefined>("Hello World?");
+  const [callStack, setCallStack] = React.useState(defaultCallstack);
+
+  const [appOptions, setAppOptions_] = React.useState(defaultAppOptions);
+  /*
   const [greeting, setGreeting] = React.useState<string | undefined>("No data");
   const [view, setView] = React.useState(defaultView);
   const [types, setTypes] = React.useState(defaultTypes);
@@ -53,34 +71,26 @@ const App: React.FunctionComponent = () => {
   const fontSize = appOptions.fontSize;
   const onWheelZoomPercent = useZoomPercent(zoomPercent, (zoomPercent: number) => sendAppOptions({ zoomPercent }));
   const onWheelFontSize = useFontSize(fontSize, (fontSize: number) => sendAppOptions({ fontSize }));
+*/
 
   React.useEffect(() => {
     if (once) return;
     once = true;
-
-    const rendererApi: RendererApi = {
-      // tslint:disable-next-line:no-shadowed-variable
-      setGreeting(greeting: string): void {
-        setGreeting(greeting);
-      },
-      showView(view: View): void {
-        log("showView");
-        setGreeting(undefined);
-        setView(view);
-      },
-      showTypes(types: Types): void {
-        log("showTypes");
-        setGreeting(undefined);
-        setTypes(types);
+    const renderer2Api: Renderer2Api = {
+      showCallStack: (callStack: CallStack): void => {
+        log("showCallStack");
+        setCallStack(callStack);
       },
       showAppOptions(appOptions: AppOptions): void {
         log("showAppOptions");
+        setGreeting("Hello World!");
         setAppOptions_(appOptions);
       },
     };
-    bindIpc(rendererApi);
+    bindIpc(renderer2Api);
   });
 
+  /*
   const setLeafVisible: (names: string[]) => void = (names) => mainApi.setLeafVisible(names);
   const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
   const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.setViewOptions(viewOptions);
@@ -130,11 +140,11 @@ const App: React.FunctionComponent = () => {
       />
     </React.StrictMode>
   );
-};
 */
-
-const App: React.FunctionComponent = () => {
-  return <>Hello World</>;
+  return <>{greeting}</>;
 };
+
+// const App: React.FunctionComponent = () => {
+// };
 
 export const createApp = () => <App />;
