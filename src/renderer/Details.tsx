@@ -12,8 +12,8 @@ import type {
   Types,
 } from "../shared-types";
 import { isTypeException } from "../shared-types";
-import { icons } from "./3rd-party/checkboxTreeIcons";
 import * as Icon from "./Icons.Microsoft";
+import { icons } from "./checkboxTreeIcons";
 
 const makeNode = (textNode: TextNode, icon: JSX.Element, className: ClassName, children?: Node[]): Node => {
   if (children && children.length === 0) children = undefined;

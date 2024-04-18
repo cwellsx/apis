@@ -1,7 +1,7 @@
 import * as React from "react";
 import SplitPane, { SashContent } from "split-pane-react";
 import "split-pane-react/esm/themes/default.css";
-import "./3rd-party/SplitPane.css";
+import "../renderer.3rd-party/SplitPane.css";
 import "./Panes.css";
 import { Input, usePaneSizes } from "./usePaneSizes";
 import { OnWheel } from "./useZoomPercent";

@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Icons } from "react-checkbox-tree";
-import * as Icon from "../Icons";
+import * as Icon from "./Icons";
 
 // initialize using SVG icons
 // the ./icons folder at the root of this project shows how these SVG components were created
