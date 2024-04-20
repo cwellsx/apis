@@ -1,4 +1,9 @@
 import * as React from "react";
+import { Graph } from "../renderer.shared/Graph";
+import { Message } from "../renderer.shared/Message";
+import { Panes } from "../renderer.shared/Panes";
+import { log } from "../renderer.shared/log";
+import { useFontSize, useZoomPercent } from "../renderer.shared/useZoomPercent";
 import type {
   AppOptions,
   BindIpc,
@@ -13,13 +18,8 @@ import type {
 } from "../shared-types";
 import { defaultAppOptions, defaultViewOptions } from "../shared-types";
 import { Details } from "./Details";
-import { Graph } from "./Graph";
-import { Message } from "./Message";
 import { Options } from "./Options";
-import { Panes } from "./Panes";
 import { Tree } from "./Tree";
-import { log } from "./log";
-import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
 declare global {
   export interface Window {
