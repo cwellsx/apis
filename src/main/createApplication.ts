@@ -1,7 +1,8 @@
 import { BrowserWindow, ipcMain } from "electron";
 import type { AppOptions, MainApi, MouseEvent, ViewOptions } from "../shared-types";
+import { getMethodId } from "./convertLoadedToMembers";
 import { convertLoadedToMethods } from "./convertLoadedToMethods";
-import { convertLoadedToTypes, getMethodId } from "./convertLoadedToTypes";
+import { convertLoadedToTypes } from "./convertLoadedToTypes";
 import { convertLoadedToView } from "./convertLoadedToView";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
