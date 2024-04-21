@@ -1,17 +1,15 @@
-import type { Access, Exceptions, MemberInfo, Members, Namespace, TextNode, Type, Types } from "../shared-types";
+import type { Access, Exceptions, MemberInfo, Namespace, TextNode, Type, Types } from "../shared-types";
 import type {
+  AllTypeInfo,
   EventMember,
   FieldMember,
-  Loaded,
-  Members as LoadedMembers,
   MethodMember,
   NamedTypeInfo,
   Parameter,
   PropertyMember,
   TypeId,
-  TypeInfo,
 } from "./loaded";
-import { Access as LoadedAccess, isBadTypeInfo, isNamedTypeInfo } from "./loaded";
+import { Access as LoadedAccess, isPartTypeInfo, namedTypeInfo } from "./loaded";
 import { logError } from "./log";
 import { options } from "./shared-types";
 
@@ -229,35 +227,18 @@ const getMemberInfo = (
   return { getFieldMember, getEventMember, getPropertyMember, getMethodMember };
 };
 
-const getMembers = (members: LoadedMembers): Members => {
-  //
-  const { getFieldMember, getEventMember, getPropertyMember, getMethodMember } = getMemberInfo(makeTypeIdName);
-
-  return {
-    fieldMembers: members.fieldMembers?.map(getFieldMember) ?? [],
-    eventMembers: members.eventMembers?.map(getEventMember) ?? [],
-    propertyMembers: members.propertyMembers?.map(getPropertyMember) ?? [],
-    methodMembers: members.methodMembers?.map(getMethodMember) ?? [],
-  };
-};
-
-export const convertLoadedToTypes = (loaded: Loaded, assemblyId: string): Types => {
-  const typeInfos: TypeInfo[] = loaded.types[assemblyId];
-  if (!typeInfos) return { assemblyId, namespaces: [], exceptions: [] }; // for an assembly whose types we haven't loaded
-
+export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyId: string): Types => {
   // remove all typeInfo without typeId
   const exceptions: Exceptions = [];
-  const namedTypeInfos: NamedTypeInfo[] = [];
-  typeInfos.forEach((typeInfo) => {
-    if (isNamedTypeInfo(typeInfo)) namedTypeInfos.push(typeInfo);
-    else exceptions.push(...createExceptions(typeInfo.exceptions));
-  });
+  allTypeInfo.anon.forEach((typeInfo) => exceptions.push(...createExceptions(typeInfo.exceptions)));
+
+  const named = namedTypeInfo(allTypeInfo);
 
   // use declaringType to nest
-  const { parentTypeInfos, getNested } = nestTypes(namedTypeInfos);
+  const { parentTypeInfos, getNested } = nestTypes(named);
 
   // optionally remove compiler-generated types
-  const isWanted: IsWanted = !options.compilerGenerated ? unwantedTypes(namedTypeInfos, getNested) : () => true;
+  const isWanted: IsWanted = !options.compilerGenerated ? unwantedTypes(named, getNested) : () => true;
   const isWantedType = (typeInfo: NamedTypeInfo): boolean => isWanted(typeInfo.typeId);
 
   // group by namespace
@@ -274,20 +255,27 @@ export const convertLoadedToTypes = (loaded: Loaded, assemblyId: string): Types 
 
   const getType = (typeInfo: NamedTypeInfo): Type => {
     const nested = getNested(typeInfo.typeId);
-    const subtypes = nested ? nested.filter(isWantedType).map(getType) : undefined;
     const typeTextNode = {
       label: getTypeName(typeInfo),
       id: getTypeId(typeInfo.typeId),
     };
-    return isBadTypeInfo(typeInfo)
-      ? { ...typeTextNode, exceptions: createExceptions(typeInfo.exceptions) }
-      : {
-          ...typeTextNode,
-          access: getAccess(typeInfo.access),
-          attributes: getAttributes(typeInfo.attributes, typeInfo.typeId.metadataToken),
-          subtypes,
-          members: getMembers(typeInfo.members),
-        };
+    if (isPartTypeInfo(typeInfo)) return { ...typeTextNode, exceptions: createExceptions(typeInfo.exceptions) };
+
+    const subtypes = nested ? nested.filter(isWantedType).map(getType) : undefined;
+    const { getFieldMember, getEventMember, getPropertyMember, getMethodMember } = getMemberInfo(makeTypeIdName);
+
+    return {
+      ...typeTextNode,
+      access: getAccess(typeInfo.access),
+      attributes: getAttributes(typeInfo.attributes, typeInfo.typeId.metadataToken),
+      subtypes,
+      members: {
+        fieldMembers: typeInfo.members.fieldMembers?.map(getFieldMember) ?? [],
+        eventMembers: typeInfo.members.eventMembers?.map(getEventMember) ?? [],
+        propertyMembers: typeInfo.members.propertyMembers?.map(getPropertyMember) ?? [],
+        methodMembers: typeInfo.members.methodMembers?.map(getMethodMember) ?? [],
+      },
+    };
   };
 
   const namespaces: Namespace[] = [...grouped.entries()]

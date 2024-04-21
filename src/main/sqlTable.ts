@@ -1,6 +1,7 @@
-import { Database } from "better-sqlite3";
+import { Database, Statement } from "better-sqlite3";
 
 // this is an application-independent wrapper which encapsulate the better-sqlite3 API
+// could support https://www.sqlite.org/withoutrowid.html but records for this application include JSON so they're large
 
 type columnType = "TEXT" | "INT" | "REAL";
 
@@ -29,6 +30,13 @@ function verbose(message: string) {
 function quoteAndJoin(ids: string[]) {
   return ids.map((id) => `"${id}"`).join(", ");
 }
+
+export const dropTable = (db: Database, tableName: string): void => {
+  const source = `DROP TABLE IF EXISTS "${tableName}"`;
+  db.prepare(source).run();
+};
+
+const isArrayEqual = (x: string[], y: string[]) => x.length == y.length && x.every((value, index) => value == y[index]);
 
 export class SqlTable<T extends object> {
   // we need to list of keys in T to create corresponding SQL columns
@@ -68,14 +76,16 @@ export class SqlTable<T extends object> {
     const insert = `INSERT ${insertParameters}`;
     const insertStmt = db.prepare(insert);
 
+    const whereKeys = (keys: string[]) => keys.map((key) => `"${key}" = @${key}`).join(" AND ");
+
     primaryKeys.forEach((primaryKey) => {
       const index = keys.indexOf(primaryKey);
       if (index === -1) throw new Error("primaryKey not found");
       keys.splice(index, 1);
       values.splice(index, 1);
     });
-    const where = primaryKeys.map((primaryKey) => `"${primaryKey}" = @${primaryKey}`).join(" AND ");
-    const update = `UPDATE ${tableName} SET (${quoteAndJoin(keys)}) = (${values.join(", ")}) WHERE ${where}`;
+    const wherePrimaryKeys = whereKeys(primaryKeys);
+    const update = `UPDATE ${tableName} SET (${quoteAndJoin(keys)}) = (${values.join(", ")}) WHERE ${wherePrimaryKeys}`;
     const updateStmt = db.prepare(update);
 
     const upsert = `INSERT OR REPLACE ${insertParameters}`;
@@ -106,7 +116,20 @@ export class SqlTable<T extends object> {
     this.deleteAll = db.transaction(() => {
       deleteAllStmt.run();
     });
+
+    this.selectWhere = (where: Partial<T>): T[] => {
+      const keys = Object.keys(where);
+      keys.sort();
+      let statement = this.preparedSelectWhere.find((entry) => isArrayEqual(entry.keys, keys))?.statement;
+      if (!statement) {
+        statement = db.prepare(`SELECT * FROM "${tableName}" WHERE ${whereKeys(keys)}`);
+        this.preparedSelectWhere.push({ keys, statement });
+      }
+      return statement.all(where) as T[];
+    };
   }
+
+  private preparedSelectWhere: { keys: string[]; statement: Statement<unknown[]> }[] = [];
 
   insert: (t: T) => void;
   update: (t: T) => void;
@@ -114,4 +137,5 @@ export class SqlTable<T extends object> {
   insertMany: (many: T[]) => void;
   selectAll: () => T[];
   deleteAll: () => void;
+  selectWhere: (where: Partial<T>) => T[];
 }

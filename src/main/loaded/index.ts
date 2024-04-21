@@ -1,18 +1,10 @@
 // these are the data loaded from .Net assemblies
 
-export { convertReflectedToLoaded } from "./loadedAssemblies";
-export type {
-  AssemblyInfo,
-  IAssemblyMethods,
-  IAssemblyReferences,
-  IAssemblyTypes,
-  Loaded,
-  Reflected,
-} from "./loadedAssemblies";
+export type { AssemblyInfo, AssemblyReferences, IAssemblyMethods, Reflected } from "./loadedAssemblies";
 export { Access } from "./loadedEnums";
 export type { EventMember, FieldMember, Members, MethodMember, Parameter, PropertyMember } from "./loadedMembers";
-export { CallDetails, Method, MethodDetails } from "./loadedMethodCalls";
+export { CallDetails, Method, MethodDetails, MethodDictionary } from "./loadedMethodCalls";
 export type { TypeId } from "./loadedTypeId";
-export { isBadTypeInfo, isNamedTypeInfo } from "./loadedTypeInfo";
-export type { BadTypeInfo, GoodTypeInfo, NamedTypeInfo, TypeInfo } from "./loadedTypeInfo";
+export { badTypeInfo, isPartTypeInfo, namedTypeInfo, validateTypeInfo } from "./loadedTypeInfo";
+export type { AllTypeInfo, BadTypeInfo, GoodTypeInfo, NamedTypeInfo, TypeInfo } from "./loadedTypeInfo";
 export { loadedVersion } from "./loadedVersion";

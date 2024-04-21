@@ -1,19 +1,18 @@
 import type { GroupNode, Groups, LeafNode, ParentNode } from "../shared-types";
 import { isParent } from "../shared-types";
-import type { Loaded } from "./loaded";
+import type { AssemblyReferences } from "./loaded";
 import type { StringPredicate } from "./shared-types";
 import { options, remove, replace } from "./shared-types";
 /*
   This is a depth-first implementation, could if needed change it to be breadth-first.
 */
 
-export const convertLoadedToGroups = (loaded: Loaded): Groups => {
-  const assemblies = loaded.assemblies;
+export const convertLoadedToGroups = (assemblyReferences: AssemblyReferences, exes: string[]): Groups => {
   // flatten and sort all names -- these names will become leaf nodes
   const names: string[] = [];
-  for (const name in assemblies) {
+  for (const [name, references] of Object.entries(assemblyReferences)) {
     names.push(name);
-    names.push(...assemblies[name]);
+    names.push(...references);
   }
   names.sort();
 
@@ -95,7 +94,7 @@ export const convertLoadedToGroups = (loaded: Loaded): Groups => {
     metaGroupLabels.push(".NET");
   }
 
-  const exeNamespaces = loaded.exes.map((name) => name.split(".")[0]);
+  const exeNamespaces = exes.map((name) => name.split(".")[0]);
   const knownNamespaces = [...exeNamespaces, ...dotNetAssemblies, ...metaGroupLabels];
   if (options.group3rdParty && exeNamespaces.length) {
     regroup((label) => !knownNamespaces.includes(label), "3rd-party", "!3rd-party");

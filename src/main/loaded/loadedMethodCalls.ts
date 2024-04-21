@@ -25,7 +25,7 @@ export type MethodDetails = {
   calledBy: Method[];
 };
 
-export interface MethodsDictionary {
+export interface MethodDictionary {
   // this string is a stringized integer
   [metadataToken: string]: MethodDetails;
 }

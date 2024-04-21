@@ -1,22 +1,20 @@
 import type { LeafNode, View } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { convertToView } from "./convertToView";
-import { type Loaded } from "./loaded";
+import { AssemblyReferences } from "./loaded";
 import { log } from "./log";
 import { type Edge } from "./shared-types";
-import type { SqlLoaded } from "./sqlTables";
+import type { ViewState } from "./sqlTables";
 
-export const convertLoadedToView = (sqlLoaded: SqlLoaded): View => {
+export const convertLoadedToView = (assemblyReferences: AssemblyReferences, viewState: ViewState): View => {
   log("convertLoadedToView");
-  // maybe we needn't read Loaded and calculate Groups more than once, but for now we do it every time
-  const loaded: Loaded = sqlLoaded.read();
   const leafs: LeafNode[] = [];
   const edges: Edge[] = [];
-  Object.entries(loaded.assemblies).forEach(([assembly, dependencies]) => {
+  Object.entries(assemblyReferences).forEach(([assembly, dependencies]) => {
     leafs.push({ id: assembly, label: assembly, parent: null });
     dependencies.forEach((dependency) => edges.push({ clientId: assembly, serverId: dependency }));
   });
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const groups = convertLoadedToGroups(loaded);
-  return convertToView(groups, leafs, edges, sqlLoaded.viewState);
+  const groups = convertLoadedToGroups(assemblyReferences, viewState.exes);
+  return convertToView(groups, leafs, edges, viewState);
 };

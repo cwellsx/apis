@@ -1,6 +1,6 @@
 import { AsText } from "../shared-types";
 import { ImageData, Node } from "./createImage";
-import { CallDetails, Loaded, Method } from "./loaded";
+import { CallDetails, Method, MethodDictionary } from "./loaded";
 
 type Edge = {
   client: Node;
@@ -11,18 +11,24 @@ type Nodes = {
   [key: string]: { node: Node; asText: string }; // dependencies/references of each assembly
 };
 
+type GetMethods = (assemblyName: string) => MethodDictionary;
+
 const makeId = (assemblyId: string, methodId: string | number): string => `${assemblyId}-${methodId}`;
 
 const makeNode = (assemblyId: string, methodId: string | number, methodMember: string, declaringType: string): Node => {
   return { id: makeId(assemblyId, methodId), label: `${declaringType}\n${methodMember}`, type: "node" };
 };
 
-export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, methodId: string): [ImageData, AsText] => {
+export const convertLoadedToMethods = (
+  getMethods: GetMethods,
+  assemblyId: string,
+  methodId: string
+): [ImageData, AsText] => {
   const nodes: Nodes = {};
   const edges: Edge[] = [];
   const asText: AsText = {};
 
-  const methodsDictionary = loaded.methods[assemblyId];
+  const methodsDictionary = getMethods(assemblyId);
   const methodDetails = methodsDictionary[methodId];
   const firstNode = makeNode(assemblyId, methodId, methodDetails.methodMember, methodDetails.declaringType);
 
@@ -33,7 +39,7 @@ export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, metho
       const node = makeNode(method.assemblyName, method.metadataToken, method.methodMember, method.declaringType);
       edges.push({ client: node, server: called });
       if (nodes[node.id]) continue; // avoid infinite loop if there's recursion or cyclic dependency
-      const methodDetails = loaded.methods[method.assemblyName][method.metadataToken];
+      const methodDetails = getMethods(method.assemblyName)[method.metadataToken];
       nodes[node.id] = { node, asText: methodDetails.asText };
       asText[node.id] = methodDetails.asText;
       findCalledBy(node, methodDetails.calledBy); // recurse
@@ -49,7 +55,7 @@ export const convertLoadedToMethods = (loaded: Loaded, assemblyId: string, metho
       const node = makeNode(method.assemblyName, method.metadataToken, method.methodMember, method.declaringType);
       edges.push({ client: caller, server: node });
       if (nodes[node.id]) continue; // avoid infinite loop if there's recursion or cyclic dependency
-      const methodDetails = loaded.methods[method.assemblyName][method.metadataToken];
+      const methodDetails = getMethods(method.assemblyName)[method.metadataToken];
       nodes[node.id] = { node, asText: methodDetails.asText };
       findCalledBy(node, methodDetails.calledBy); // recurse
     }

@@ -1,4 +1,4 @@
-import { MethodsDictionary } from "./loadedMethodCalls";
+import { MethodDictionary } from "./loadedMethodCalls";
 import { TypeInfo } from "./loadedTypeInfo";
 
 // this is the format of the data from DotNetApi.getJson
@@ -10,6 +10,9 @@ export type AssemblyInfo = {
 interface IReflectedAssemblies {
   [key: string]: AssemblyInfo;
 }
+export interface IAssemblyMethods {
+  [key: string]: MethodDictionary;
+}
 export type Reflected = {
   version: string; // the LoadedVersion value
   exes: string[];
@@ -17,33 +20,8 @@ export type Reflected = {
   assemblyMethods: IAssemblyMethods;
 };
 
-export const convertReflectedToLoaded = (reflected: Reflected): Loaded => {
-  const assemblies: IAssemblyReferences = {};
-  const types: IAssemblyTypes = {};
-  Object.entries(reflected.assemblies).forEach(([assemblyName, reflectedAssembly]) => {
-    assemblies[assemblyName] = reflectedAssembly.referencedAssemblies;
-    types[assemblyName] = reflectedAssembly.types;
-  });
-  const { version, exes } = reflected;
-  const loaded: Loaded = { version, exes, assemblies, types, methods: reflected.assemblyMethods };
-  return loaded;
-};
+// this is the format of data from SqlLoaded
 
-// this is the format of the data from SqlTables
-
-export interface IAssemblyReferences {
+export type AssemblyReferences = {
   [key: string]: string[]; // dependencies/references of each assembly
-}
-export interface IAssemblyTypes {
-  [key: string]: TypeInfo[]; // types of each assembly
-}
-export interface IAssemblyMethods {
-  [key: string]: MethodsDictionary;
-}
-export type Loaded = {
-  version: string; // the LoadedVersion value
-  exes: string[];
-  assemblies: IAssemblyReferences;
-  types: IAssemblyTypes;
-  methods: IAssemblyMethods;
 };

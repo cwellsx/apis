@@ -8,7 +8,7 @@ import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { createImage } from "./createImage";
 import { getAppFilename, writeFileSync } from "./fs";
 import type { Reflected } from "./loaded";
-import { convertReflectedToLoaded, loadedVersion } from "./loaded";
+import { loadedVersion } from "./loaded";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
 import { open } from "./open";
@@ -84,14 +84,16 @@ export function createApplication(mainWindow: BrowserWindow): void {
     onGraphClick: (id: string, event: MouseEvent): void => {
       log("onGraphClick");
       if (!sqlLoaded) return;
+      const assemblyReferences = sqlLoaded.readAssemblyReferences();
       if (event.shiftKey) {
-        showAdjacent(sqlLoaded, id);
+        showAdjacent(assemblyReferences, sqlLoaded.viewState, id);
         showSqlLoaded(sqlLoaded);
       } else if (event.ctrlKey) {
-        hide(sqlLoaded, id);
+        hide(assemblyReferences, sqlLoaded.viewState, id);
         showSqlLoaded(sqlLoaded);
       } else {
-        const types = convertLoadedToTypes(sqlLoaded.read(), id);
+        const allTypeInfo = sqlLoaded.readTypes(id);
+        const types = convertLoadedToTypes(allTypeInfo, id);
         log("show.types");
         show.types(types);
       }
@@ -101,12 +103,15 @@ export function createApplication(mainWindow: BrowserWindow): void {
       if (!sqlLoaded) return;
       const methodId = getMethodId(id);
       if (!methodId) return; // user clicked on something other than a method
-      const [imageData, asText] = convertLoadedToMethods(sqlLoaded.read(), assemblyId, methodId);
+      const sqlLoaded_ = sqlLoaded;
+      const getMethods = (assemblyName: string) => sqlLoaded_.readMethodsDictionary(assemblyName);
+      const [imageData, asText] = convertLoadedToMethods(getMethods, assemblyId, methodId);
       const image = createImage(imageData);
       const callStack = { image, asText };
       getSecondWindow(sqlConfig.appOptions).then((secondWindow) => renderer2(secondWindow).showCallStack(callStack));
     },
   };
+
   ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
   ipcMain.on("setGroupExpanded", (event, names) => mainApi.setGroupExpanded(names));
   ipcMain.on("setViewOptions", (event, viewOptions) => mainApi.setViewOptions(viewOptions));
@@ -118,7 +123,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   const show: IShow = new Show(mainWindow);
 
   const showSqlLoaded = (sqlLoaded: SqlLoaded): void => {
-    const view = convertLoadedToView(sqlLoaded);
+    const view = convertLoadedToView(sqlLoaded.readAssemblyReferences(), sqlLoaded.viewState);
     log("show.view");
     show.view(view);
   };
@@ -137,12 +142,10 @@ export function createApplication(mainWindow: BrowserWindow): void {
     ) {
       log("getLoaded");
       const reflected = await getReflected(dataSource.path);
-      // convert Reflected to Loaded
-      const loaded = convertReflectedToLoaded(reflected);
-      // save Loaded
-      const jsonPath = getAppFilename(`Core.${dataSource.hash}.json`);
-      writeFileSync(jsonPath, JSON.stringify(loaded, null, " "));
-      sqlLoaded.save(loaded, when);
+      // save Reflected
+      const jsonPath = getAppFilename(`Reflected.${dataSource.hash}.json`);
+      writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
+      sqlLoaded.save(reflected, when);
     } else log("!getLoaded");
     mainWindow.setTitle(dataSource.path);
     showSqlLoaded(sqlLoaded);

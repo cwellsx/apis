@@ -12,6 +12,7 @@ import type {
   OnGraphClick,
   Preload2Apis,
   Renderer2Api,
+  ViewOptions,
 } from "../shared-types";
 import { defaultAppOptions } from "../shared-types";
 

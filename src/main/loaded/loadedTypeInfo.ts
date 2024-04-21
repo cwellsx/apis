@@ -22,10 +22,10 @@ export type GoodTypeInfo = {
 
 // if an exception is thrown and caught, when reading the TypeInfo
 // then the exceptions field is present and any other fields including the TypeId may be missing
-export type AnonTypeInfo = {
+type AnonTypeInfo = {
   exceptions: string[];
 };
-export type BadTypeInfo = {
+type PartTypeInfo = {
   typeId: TypeId;
   exceptions: string[];
   // plus some of the optional fields from GoodTypeInfo
@@ -34,11 +34,47 @@ export type BadTypeInfo = {
 };
 
 // the TypeInfo array may be a micture of good, bad, and very bad (i.e. anonymous) instances
-export type NamedTypeInfo = BadTypeInfo | GoodTypeInfo;
-export type TypeInfo = NamedTypeInfo | AnonTypeInfo;
-export function isNamedTypeInfo(typeInfo: TypeInfo): typeInfo is NamedTypeInfo {
-  return (typeInfo as NamedTypeInfo).typeId !== undefined;
+export type TypeInfo = GoodTypeInfo | PartTypeInfo | AnonTypeInfo;
+
+function isBadTypeInfo(typeInfo: TypeInfo): typeInfo is AnonTypeInfo | PartTypeInfo {
+  return (typeInfo as AnonTypeInfo).exceptions !== undefined || (typeInfo as PartTypeInfo).exceptions !== undefined;
 }
-export function isBadTypeInfo(typeInfo: NamedTypeInfo): typeInfo is BadTypeInfo {
-  return (typeInfo as BadTypeInfo).exceptions !== undefined;
+
+export function isPartTypeInfo(typeInfo: TypeInfo): typeInfo is PartTypeInfo {
+  return isBadTypeInfo(typeInfo) && (typeInfo as PartTypeInfo).typeId !== undefined;
 }
+
+export type AllTypeInfo = {
+  good: GoodTypeInfo[];
+  part: PartTypeInfo[];
+  anon: AnonTypeInfo[];
+};
+
+export const validateTypeInfo = (types: TypeInfo[]): AllTypeInfo => {
+  const good: GoodTypeInfo[] = [];
+  const part: PartTypeInfo[] = [];
+  const anon: AnonTypeInfo[] = [];
+  types.forEach((type) => {
+    if (!isBadTypeInfo(type)) good.push(type);
+    else if (isPartTypeInfo(type)) part.push(type);
+    else anon.push(type);
+  });
+
+  return { good, part, anon };
+};
+
+export type BadTypeInfo = PartTypeInfo | AnonTypeInfo;
+export const badTypeInfo = (all: AllTypeInfo): BadTypeInfo[] => {
+  const result: (PartTypeInfo | AnonTypeInfo)[] = [];
+  result.push(...all.anon);
+  result.push(...all.part);
+  return result;
+};
+
+export type NamedTypeInfo = PartTypeInfo | GoodTypeInfo;
+export const namedTypeInfo = (all: AllTypeInfo): NamedTypeInfo[] => {
+  const result: (PartTypeInfo | GoodTypeInfo)[] = [];
+  result.push(...all.good);
+  result.push(...all.part);
+  return result;
+};
