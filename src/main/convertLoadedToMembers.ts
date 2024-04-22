@@ -7,7 +7,7 @@ type IdKind = "!n!" | "!t!" | "!e!" | "!a!";
 type MemberIdKind = "!mm!" | "!mf!" | "!mp!" | "!me!";
 export const getId = (kind: IdKind | MemberIdKind, id: number | string): string => `${kind}${id}`;
 
-export const getMethodId = (id: string): string | undefined => (id.startsWith("!mm!") ? id.substring(4) : undefined);
+export const getMethodId = (id: string): number | undefined => (id.startsWith("!mm!") ? +id.substring(4) : undefined);
 
 export const getTypeName = (name: string, generic?: TypeId[]): string => {
   if (!generic) return name;

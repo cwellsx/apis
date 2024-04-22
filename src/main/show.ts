@@ -54,9 +54,15 @@ export class Show implements IShow {
   }
 }
 
-export const renderer2 = (secondWindow?: BrowserWindow): Renderer2Api => {
+export const renderer2 = (secondWindow?: BrowserWindow): Renderer2Api & { exception: (error: unknown) => void } => {
   const showAppOptions = (appOptions: AppOptions) => secondWindow?.webContents.send("showAppOptions", appOptions);
   const showCallStack = (callStack: CallStack) => secondWindow?.webContents.send("showCallStack", callStack);
+  const setGreeting = (greeting: string): void => secondWindow?.webContents.send("setGreeting", greeting);
 
-  return { showAppOptions, showCallStack };
+  const exception = (error: unknown): void => {
+    secondWindow?.setTitle("Error");
+    const message = getErrorString(error);
+    secondWindow?.webContents.send("setGreeting", message);
+  };
+  return { showAppOptions, showCallStack, exception, setGreeting };
 };

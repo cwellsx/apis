@@ -1,7 +1,16 @@
 import { Database } from "better-sqlite3";
 import type { AppOptions, Members, ViewOptions } from "../shared-types";
 import { defaultAppOptions, defaultViewOptions } from "../shared-types";
-import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodDictionary, Reflected } from "./loaded";
+import type {
+  AllTypeInfo,
+  AssemblyReferences,
+  BadTypeInfo,
+  GoodTypeInfo,
+  MethodDetails,
+  MethodMember,
+  Reflected,
+  TypeAndMethod,
+} from "./loaded";
 import { badTypeInfo, validateTypeInfo } from "./loaded";
 import { log } from "./log";
 import { createSqlDatabase } from "./sqlDatabase";
@@ -15,6 +24,9 @@ import { SqlTable, dropTable } from "./sqlTable";
   - SqlLoaded is implemented using
     - SqlTable<AssemblyColumns>
     - SqlTable<TypeColumns>
+    - SqlTable<MemberColumns>
+    - SqlTable<MethodColumns>
+    - SqlTable<BadTypeColumns>
     - ViewState i.e. ConfigCache
   
   - SqlConfig is implemented using
@@ -24,21 +36,14 @@ import { SqlTable, dropTable } from "./sqlTable";
   - SqlConfigTable is implemented using
     - SqlTable<ConfigColumns>
   
-  SqlLoaded saves and reads a instances of the Loaded type, which contains all TypeInfo and all MethodDetails.
-  All this data is:
+  SqlLoaded saves an instance of the Reflected type, which contains all TypeInfo and all MethodDetails, and which is:
   - Obtained from Core.exe via the electron-cgi connection
-  - Saved into the SQLite table
-  - Reloaded into the application as a single object
-
-  The Loaded instance is not cached by the application, but rebuilt from the database whenever needed.
-
-  Perhaps in future this will prove to be too much data in a single object, in which case:
-  - Read incrementally from Core.exe
-  - Save incrementally into the SQLite tables
-  - Keep most of the data only in SQLite and not instantiated in memory
-  - Read selectively i.e. without using selectAll
+  - Saved into the SQLite tables
+  - Reloaded into the application via various read methods
 
   Conversely the ViewState contains a cache-on-write, which the application reads from without selecting from SQLite.
+
+  If in future the Reflected data is too large, rework the transfer to make it incremental e.g. one assembly at a time.
 */
 
 type AssemblyColumns = {
@@ -105,7 +110,7 @@ export class SqlLoaded {
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
   readTypes: (assemblyName: string) => AllTypeInfo;
-  readMethodsDictionary: (assemblyName: string) => MethodDictionary;
+  readMethod: (assemblyName: string, methodId: number) => TypeAndMethod;
   close: () => void;
 
   constructor(db: Database) {
@@ -255,13 +260,20 @@ export class SqlLoaded {
       return allTypeInfo;
     };
 
-    this.readMethodsDictionary = (assemblyName: string): MethodDictionary => {
-      const methodDictionary: MethodDictionary = {};
-      const where = { assemblyName };
-      methodTable
-        .selectWhere(where)
-        .forEach((record) => (methodDictionary[record.metadataToken] = JSON.parse(record.methodDetails)));
-      return methodDictionary;
+    this.readMethod = (assemblyName: string, methodId: number): TypeAndMethod => {
+      const methodKey = { assemblyName, metadataToken: methodId };
+      const member = memberTable.selectOne(methodKey);
+      if (!member) throw new Error(`Member not found ${JSON.stringify(methodKey)}`);
+      const typeKey = { assemblyName, metadataToken: member.typeMetadataToken };
+      const type = typeTable.selectOne(typeKey);
+      if (!type) throw new Error(`Type not found ${JSON.stringify(typeKey)}`);
+      const method = methodTable.selectOne(methodKey);
+      if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
+      return {
+        type: { ...(JSON.parse(type.typeInfo) as SavedTypeInfo), members: {} },
+        method: { ...(JSON.parse(member.memberInfo) as MethodMember) },
+        methodDetails: { ...(JSON.parse(method.methodDetails) as MethodDetails) },
+      };
     };
 
     this.close = () => {

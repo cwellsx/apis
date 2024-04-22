@@ -50,6 +50,7 @@ export interface Main2Api {
 export interface Renderer2Api {
   showCallStack: (callStack: CallStack) => void;
   showAppOptions: (appOptions: AppOptions) => void;
+  setGreeting: (greeting: string) => void;
 }
 
 export type Bind2Ipc = (rendererApi: Renderer2Api) => void;

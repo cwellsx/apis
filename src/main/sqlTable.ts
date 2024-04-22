@@ -113,11 +113,9 @@ export class SqlTable<T extends object> {
       for (const t of many) insertStmt.run(t);
     });
     this.selectAll = () => selectStmt.all() as T[];
-    this.deleteAll = db.transaction(() => {
-      deleteAllStmt.run();
-    });
+    this.deleteAll = db.transaction(() => deleteAllStmt.run());
 
-    this.selectWhere = (where: Partial<T>): T[] => {
+    const getSelectWhere = (where: Partial<T>): Statement<unknown[]> => {
       const keys = Object.keys(where);
       keys.sort();
       let statement = this.preparedSelectWhere.find((entry) => isArrayEqual(entry.keys, keys))?.statement;
@@ -125,8 +123,11 @@ export class SqlTable<T extends object> {
         statement = db.prepare(`SELECT * FROM "${tableName}" WHERE ${whereKeys(keys)}`);
         this.preparedSelectWhere.push({ keys, statement });
       }
-      return statement.all(where) as T[];
+      return statement;
     };
+
+    this.selectWhere = (where: Partial<T>): T[] => getSelectWhere(where).all(where) as T[];
+    this.selectOne = (where: Partial<T>): T | undefined => getSelectWhere(where).get(where) as T | undefined;
   }
 
   private preparedSelectWhere: { keys: string[]; statement: Statement<unknown[]> }[] = [];
@@ -138,4 +139,5 @@ export class SqlTable<T extends object> {
   selectAll: () => T[];
   deleteAll: () => void;
   selectWhere: (where: Partial<T>) => T[];
+  selectOne: (where: Partial<T>) => T | undefined;
 }

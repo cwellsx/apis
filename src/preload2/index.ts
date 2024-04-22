@@ -9,6 +9,7 @@ const mainApiProxy: Main2Api = {
 const bindIpcRenderer = (rendererApi: Renderer2Api): void => {
   ipcRenderer.on("showCallStack", (event, callStack) => rendererApi.showCallStack(callStack));
   ipcRenderer.on("showAppOptions", (event, appOptions) => rendererApi.showAppOptions(appOptions));
+  ipcRenderer.on("setGreeting", (event, greeting) => rendererApi.setGreeting(greeting));
 };
 
 const preload2Apis: Preload2Apis = {

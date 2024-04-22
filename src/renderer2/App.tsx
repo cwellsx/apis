@@ -42,6 +42,9 @@ const App: React.FunctionComponent = () => {
     if (once) return;
     once = true;
     const renderer2Api: Renderer2Api = {
+      setGreeting(greeting: string): void {
+        setGreeting(greeting);
+      },
       showCallStack: (callStack: CallStack): void => {
         log("showCallStack");
         setGreeting(undefined);
