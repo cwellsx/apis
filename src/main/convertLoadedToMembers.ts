@@ -84,11 +84,17 @@ export const getAccess = (access: LoadedAccess): Access => {
 const getGenericName = (name: string, genericArguments: TypeId[] | undefined): string =>
   !genericArguments ? name : `${name}<${genericArguments.map(getTypeIdName).join(", ")}>`;
 
-const getMethodName = (name: string, parameters: Parameter[] | undefined): string =>
-  !parameters ? name : `${name}(${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")})`;
+export const getMethodName = (methodMember: MethodMember): string => {
+  const getName = (name: string, parameters: Parameter[] | undefined): string =>
+    !parameters ? name : `${name}(${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")})`;
+  return getName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters);
+};
 
-const getPropertyName = (name: string, parameters: Parameter[] | undefined): string =>
-  !parameters ? name : `${name}[${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")}]`;
+const getPropertyName = (propertyMember: PropertyMember): string => {
+  const getName = (name: string, parameters: Parameter[] | undefined): string =>
+    !parameters ? name : `${name}[${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")}]`;
+  return getName(propertyMember.name, propertyMember.parameters);
+};
 
 const getFromName = (
   id: string,
@@ -125,7 +131,7 @@ const getEventMember = (eventMember: EventMember): MemberInfo =>
 const getPropertyMember = (propertyMember: PropertyMember): MemberInfo =>
   getFromName(
     getId("!mp!", propertyMember.metadataToken),
-    getPropertyName(propertyMember.name, propertyMember.parameters),
+    getPropertyName(propertyMember),
     getAttributes(propertyMember.attributes, propertyMember.metadataToken),
     propertyMember.propertyType,
     propertyMember.access
@@ -133,7 +139,7 @@ const getPropertyMember = (propertyMember: PropertyMember): MemberInfo =>
 const getMethodMember = (methodMember: MethodMember): MemberInfo =>
   getFromName(
     getId("!mm!", methodMember.metadataToken),
-    getMethodName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters),
+    getMethodName(methodMember),
     getAttributes(methodMember.attributes, methodMember.metadataToken),
     methodMember.returnType,
     methodMember.access

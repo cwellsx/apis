@@ -20,7 +20,7 @@ const createExceptions = (messages: string[]): Exceptions => {
   return exceptions;
 };
 
-const getTypeInfoName = (typeInfo: NamedTypeInfo): string =>
+export const getTypeInfoName = (typeInfo: NamedTypeInfo): string =>
   getTypeName(typeInfo.typeId.name, typeInfo.genericTypeParameters ?? typeInfo.typeId.genericTypeArguments);
 
 // id can constructed using TypeId only without typeInfo.genericTypeParameters

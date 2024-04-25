@@ -106,7 +106,12 @@ export function createApplication(mainWindow: BrowserWindow): void {
       if (!methodId) return; // user clicked on something other than a method
       try {
         const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
-        const [imageData, asText] = convertLoadedToMethods(readMethod, assemblyId, methodId);
+        const [imageData, asText] = convertLoadedToMethods(
+          readMethod,
+          { assemblyName: assemblyId, metadataToken: methodId },
+          "assembly",
+          true
+        );
         const image = createImage(imageData);
         const callStack = { image, asText };
         getSecondWindow(sqlConfig.appOptions).then((secondWindow) => renderer2(secondWindow).showCallStack(callStack));

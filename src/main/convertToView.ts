@@ -16,7 +16,7 @@ export function convertToView(groups: Groups, leafs: LeafNode[], edges: Edge[], 
   const isGroupExpanded = createLookup(groupExpanded);
   const nodes = viewOptions.showGrouped ? groups : leafs;
   log("convertToImage");
-  const imageData = convertToImage(nodes, edges, isLeafVisible, isGroupExpanded, viewOptions.showGrouped);
+  const imageData = convertToImage(nodes, edges, isLeafVisible, isGroupExpanded, viewOptions.showGrouped, false);
   log("createImage");
   const image =
     imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";

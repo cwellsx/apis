@@ -11,7 +11,8 @@ export function convertToImage(
   edges: Edge[],
   isLeafVisible: StringPredicate,
   isGroupExpanded: StringPredicate,
-  showGrouped: boolean
+  showGrouped: boolean,
+  hasSublayers: boolean
 ): ImageData {
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   const closed = new Map<string, string>();
@@ -66,8 +67,10 @@ export function convertToImage(
       !metaGroupLabels.includes(node.parent.label) &&
       (!isParent(node) || !isGroupExpanded(node.id))
     ) {
-      if (!node.label.startsWith(node.parent.label)) throw new Error("Unexpected parent node name");
-      textNode.label = "*" + node.label.substring(node.parent.label.length);
+      if (!node.label.startsWith(node.parent.label)) {
+        if (!hasSublayers) throw new Error("Unexpected parent node name");
+        // else this is a sublayer so do nothing
+      } else textNode.label = "*" + node.label.substring(node.parent.label.length);
     }
     return !isParent(node)
       ? { type: "node", ...textNode }
