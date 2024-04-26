@@ -4,6 +4,7 @@ import { getTypeInfoName } from "./convertLoadedToTypes";
 import { convertToImage } from "./convertToImage";
 import { ImageData } from "./createImage";
 import { CallDetails, GoodTypeInfo, Method, TypeAndMethod } from "./loaded";
+import { log } from "./log";
 import { Edge, StringPredicate } from "./shared-types";
 
 // initially the leaf nodes are the methods i.e. TypeAndMethod instances
@@ -162,7 +163,7 @@ export const convertLoadedToMethods = (
       saveEdge(caller, calledId);
       if (called[stringId(calledId)]) continue; // avoid infinite loop if there's recursion or cyclic dependency
       const calledMethod = selectMethod(calledId, called);
-      findCalledBy(calledId, calledMethod.methodDetails.calledBy); // recurse
+      findCalled(calledId, calledMethod.methodDetails.calls); // recurse
     }
   };
 
@@ -190,12 +191,14 @@ export const convertLoadedToMethods = (
   }
 
   // convert to Groups
+  log("groupsFromTopDictionary");
   const groups: Groups = groupsFromTopDictionary(types, topType);
 
   // convert to ImageData
   const isLeafVisible: StringPredicate = () => true;
   const isGroupExpanded: StringPredicate = () => true;
 
+  log("convertToImage");
   const imageData: ImageData = convertToImage(groups, edges, isLeafVisible, isGroupExpanded, showGrouped, true);
 
   return [imageData, asText];

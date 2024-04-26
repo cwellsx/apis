@@ -5,6 +5,7 @@ import type { Image } from "../shared-types";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { existsSync, getAppFilename, readFileSync, writeFileSync } from "./fs";
+import { log } from "./log";
 import { showErrorBox } from "./showErrorBox";
 
 /*
@@ -69,6 +70,7 @@ const getDotFormat = (imageData: ImageData): string[] => {
 };
 
 export function createImage(imageData: ImageData): Image {
+  log("createImage");
   const lines = getDotFormat(imageData);
 
   const dotFilename = getAppFilename("assemblies.dot");

@@ -114,6 +114,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
         );
         const image = createImage(imageData);
         const callStack = { image, asText };
+        log("showCallStack");
         getSecondWindow(sqlConfig.appOptions).then((secondWindow) => renderer2(secondWindow).showCallStack(callStack));
       } catch (error) {
         getSecondWindow(sqlConfig.appOptions).then((secondWindow) => renderer2(secondWindow).exception(error));
