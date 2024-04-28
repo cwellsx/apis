@@ -1,8 +1,3 @@
-export type ViewOptions = {
-  showGrouped: boolean;
-};
-export const defaultViewOptions: ViewOptions = { showGrouped: true };
-
 export type AppOptions = {
   zoomPercent: number;
   fontSize: number;

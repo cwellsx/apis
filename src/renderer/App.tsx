@@ -16,7 +16,7 @@ import type {
   View,
   ViewOptions,
 } from "../shared-types";
-import { defaultAppOptions, defaultViewOptions } from "../shared-types";
+import { defaultAppOptions, defaultReferenceViewOptions } from "../shared-types";
 import { Details } from "./Details";
 import { Options } from "./Options";
 import { Tree } from "./Tree";
@@ -33,9 +33,8 @@ export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 const defaultView: View = {
   image: "",
   groups: [],
-  leafVisible: [],
-  groupExpanded: [],
-  viewOptions: defaultViewOptions,
+  viewOptions: defaultReferenceViewOptions,
+  dataSourceId: { cachedWhen: "", hash: "" },
 };
 const defaultTypes: Types = { assemblyId: "", namespaces: [], exceptions: [] };
 
@@ -80,12 +79,14 @@ const App: React.FunctionComponent = () => {
     bindIpc(rendererApi);
   });
 
-  const setLeafVisible: (names: string[]) => void = (names) => mainApi.setLeafVisible(names);
-  const setGroupExpanded: (names: string[]) => void = (names) => mainApi.setGroupExpanded(names);
+  const setLeafVisible: (names: string[]) => void = (names) =>
+    mainApi.setViewOptions({ ...view.viewOptions, leafVisible: names });
+  const setGroupExpanded: (names: string[]) => void = (names) =>
+    mainApi.setViewOptions({ ...view.viewOptions, groupExpanded: names });
   const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.setViewOptions(viewOptions);
   const setAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.setAppOptions(appOptions);
   const onDetailClick: OnDetailClick = (assemblyId, id) => mainApi.onDetailClick(assemblyId, id);
-  const onGraphClick: OnGraphClick = (id, event) => mainApi.onGraphClick(id, event);
+  const onGraphClick: OnGraphClick = (id, event) => mainApi.onGraphClick(id, view.viewOptions.viewType, event);
 
   // display a message, or an image if there is one
   const center = greeting ? (
@@ -107,8 +108,8 @@ const App: React.FunctionComponent = () => {
       <Options viewOptions={view.viewOptions} setViewOptions={setViewOptions} />
       <Tree
         nodes={view.groups}
-        leafVisible={view.leafVisible}
-        groupExpanded={view.groupExpanded}
+        leafVisible={view.viewOptions.leafVisible}
+        groupExpanded={view.viewOptions.groupExpanded}
         setLeafVisible={setLeafVisible}
         setGroupExpanded={setGroupExpanded}
       />

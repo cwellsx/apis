@@ -1,6 +1,6 @@
 import { Database } from "better-sqlite3";
-import type { AppOptions, Members, ViewOptions } from "../shared-types";
-import { defaultAppOptions, defaultViewOptions } from "../shared-types";
+import type { AppOptions, Members, MethodViewOptions, ReferenceViewOptions } from "../shared-types";
+import { defaultAppOptions, defaultMethodViewOptions, defaultReferenceViewOptions } from "../shared-types";
 import type {
   AllTypeInfo,
   AssemblyReferences,
@@ -91,7 +91,7 @@ type RecentColumns = {
   when: number;
 };
 
-const loadedSchemaVersion = "2024-04-21";
+const loadedSchemaVersion = "2024-04-27";
 
 type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
 const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
@@ -106,7 +106,7 @@ type GoodTypeDictionary = {
 };
 
 export class SqlLoaded {
-  save: (reflected: Reflected, when: string) => void;
+  save: (reflected: Reflected, when: string, hashDataSource: string) => void;
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
   readTypes: (assemblyName: string) => AllTypeInfo;
@@ -125,7 +125,7 @@ export class SqlLoaded {
       dropTable(db, "method");
       dropTable(db, "badTypes");
       this.viewState.loadedSchemaVersion = loadedSchemaVersion;
-      this.viewState.cachedWhen = undefined; // force a reload of the data
+      this.viewState.cachedWhen = ""; // force a reload of the data
     }
 
     const assemblyTable = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
@@ -166,7 +166,7 @@ export class SqlLoaded {
       log(`wal_checkpoint: ${JSON.stringify(result)}`);
     };
 
-    this.save = (reflected: Reflected, when: string) => {
+    this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
       methodTable.deleteAll();
       memberTable.deleteAll();
       typeTable.deleteAll();
@@ -223,7 +223,7 @@ export class SqlLoaded {
       }
 
       // => viewState => _cache => _sqlConfig
-      this.viewState.onSave(when, reflected.version, reflected.exes, Object.keys(reflected.assemblies));
+      this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes, Object.keys(reflected.assemblies));
 
       done();
     };
@@ -329,56 +329,58 @@ export class ViewState {
     this._cache = new ConfigCache(db);
   }
 
-  onSave(when: string, version: string, exes: string[], leafVisible: string[]) {
+  onSave(when: string, hashDataSource: string, version: string, exes: string[], assemblyNames: string[]) {
     this.cachedWhen = when;
+    this.hashDataSource = hashDataSource;
     this.loadedVersion = version;
     this.exes = exes;
-    this.leafVisible = leafVisible;
+    this.referenceViewOptions = { ...defaultReferenceViewOptions, leafVisible: assemblyNames };
+    this.methodViewOptions = defaultMethodViewOptions;
   }
 
-  get cachedWhen(): string | undefined {
-    return this._cache.getValue("cachedWhen");
-  }
-  set cachedWhen(value: string | undefined) {
-    this._cache.setValue("cachedWhen", value);
-  }
-
+  // this changes when the SQL schema definition changes
   get loadedSchemaVersion(): string | undefined {
     return this._cache.getValue("loadedSchemaVersion");
   }
   set loadedSchemaVersion(value: string | undefined) {
     this._cache.setValue("loadedSchemaVersion", value);
   }
-
-  set leafVisible(value: string[]) {
-    this._cache.setValue("leafVisible", JSON.stringify(value));
-  }
-  get leafVisible(): string[] {
-    const value = this._cache.getValue("leafVisible");
-    return value ? JSON.parse(value) : [];
-  }
-
-  set groupExpanded(names: string[]) {
-    this._cache.setValue("groupExpanded", JSON.stringify(names));
-  }
-  get groupExpanded(): string[] {
-    const value = this._cache.getValue("groupExpanded");
-    return value ? JSON.parse(value) : [];
-  }
-
-  set viewOptions(viewOptions: ViewOptions) {
-    this._cache.setValue("viewOptions", JSON.stringify(viewOptions));
-  }
-  get viewOptions(): ViewOptions {
-    const value = this._cache.getValue("viewOptions");
-    return value ? { defaultViewOptions, ...JSON.parse(value) } : defaultViewOptions;
-  }
-
+  // this changes when the format of Reflected data changes
   get loadedVersion(): string {
     return this._cache.getValue("loadedVersion") ?? "";
   }
   set loadedVersion(value: string) {
     this._cache.setValue("loadedVersion", value);
+  }
+  // this changes when the data source (e.g. the assemblies being inspected) changes
+  get cachedWhen(): string {
+    return this._cache.getValue("cachedWhen") ?? "";
+  }
+  set cachedWhen(value: string) {
+    this._cache.setValue("cachedWhen", value);
+  }
+  // this identifies the DataSource
+  get hashDataSource(): string {
+    return this._cache.getValue("hashDataSource") ?? "";
+  }
+  set hashDataSource(value: string) {
+    this._cache.setValue("hashDataSource", value);
+  }
+
+  set referenceViewOptions(viewOptions: ReferenceViewOptions) {
+    this._cache.setValue("referenceViewOptions", JSON.stringify(viewOptions));
+  }
+  get referenceViewOptions(): ReferenceViewOptions {
+    const value = this._cache.getValue("referenceViewOptions");
+    return value ? { defaultReferenceViewOptions, ...JSON.parse(value) } : defaultReferenceViewOptions;
+  }
+
+  set methodViewOptions(viewOptions: MethodViewOptions) {
+    this._cache.setValue("methodViewOptions", JSON.stringify(viewOptions));
+  }
+  get methodViewOptions(): MethodViewOptions {
+    const value = this._cache.getValue("methodViewOptions");
+    return value ? { defaultMethodViewOptions, ...JSON.parse(value) } : defaultMethodViewOptions;
   }
 
   set exes(names: string[]) {

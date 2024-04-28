@@ -1,8 +1,8 @@
 import type { CallStack } from "./callStack";
-import type { OnDetailClick, OnGraphClick } from "./mouseEvent";
-import type { AppOptions, ViewOptions } from "./options";
+import type { OnDetailClick, OnGraphViewClick } from "./mouseEvent";
+import type { AppOptions } from "./options";
 import type { Types } from "./types";
-import type { View } from "./view";
+import type { View, ViewOptions } from "./view";
 
 /*
   The underlying APIs, which the application-specific classes wrap, are:
@@ -15,11 +15,9 @@ import type { View } from "./view";
 
 // this Api is implemented in the preload script and available to the renderer
 export interface MainApi {
-  setLeafVisible: (names: string[]) => void;
-  setGroupExpanded: (names: string[]) => void;
   setViewOptions: (viewOptions: ViewOptions) => void;
   setAppOptions: (appOptions: AppOptions) => void;
-  onGraphClick: OnGraphClick;
+  onGraphClick: OnGraphViewClick;
   onDetailClick: OnDetailClick;
 }
 

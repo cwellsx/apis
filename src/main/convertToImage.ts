@@ -1,18 +1,47 @@
-import type { GroupNode, Groups, LeafNode, ParentNode } from "../shared-types";
+import type { GroupNode, Groups, Image, LeafNode, ParentNode, ViewOptions, ViewType } from "../shared-types";
 import { isParent } from "../shared-types";
-import type { ImageData, Node as ImageNode } from "./createImage";
+import { createImage, type ImageData, type Node as ImageNode } from "./createImage";
+import { log } from "./log";
 import type { Edge, StringPredicate } from "./shared-types";
 import { options } from "./shared-types";
 
 type Nodes = Groups | LeafNode[];
 
+const createLookup = (array: string[]): StringPredicate => {
+  const temp = new Set(array);
+  return (id: string) => temp.has(id);
+};
+
 export function convertToImage(
+  groups: Groups,
+  leafs: LeafNode[],
+  edges: Edge[],
+  viewOptions: ViewOptions
+): Image | string {
+  const { leafVisible, groupExpanded } = viewOptions;
+  const isLeafVisible = createLookup(leafVisible);
+  const isGroupExpanded = createLookup(groupExpanded);
+  const nodes = viewOptions.showGrouped ? groups : leafs;
+  log("convertToImage");
+  const imageData = convertToImageData(
+    nodes,
+    edges,
+    isLeafVisible,
+    isGroupExpanded,
+    viewOptions.showGrouped,
+    viewOptions.viewType
+  );
+  log("createImage");
+  return imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";
+}
+
+export function convertToImageData(
   nodes: Nodes,
   edges: Edge[],
   isLeafVisible: StringPredicate,
   isGroupExpanded: StringPredicate,
   showGrouped: boolean,
-  hasSublayers: boolean
+  viewType: ViewType
 ): ImageData {
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   const closed = new Map<string, string>();
@@ -68,7 +97,7 @@ export function convertToImage(
       (!isParent(node) || !isGroupExpanded(node.id))
     ) {
       if (!node.label.startsWith(node.parent.label)) {
-        if (!hasSublayers) throw new Error("Unexpected parent node name");
+        if (viewType == "references") throw new Error("Unexpected parent node name");
         // else this is a sublayer so do nothing
       } else textNode.label = "*" + node.label.substring(node.parent.label.length);
     }

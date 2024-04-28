@@ -1,15 +1,14 @@
-import { AsText, Groups, LeafNode, ParentNode } from "../shared-types";
+import { Groups, LeafNode, MethodViewOptions, ParentNode, TopType, ViewData } from "../shared-types";
 import { getMethodName } from "./convertLoadedToMembers";
 import { getTypeInfoName } from "./convertLoadedToTypes";
 import { convertToImage } from "./convertToImage";
-import { ImageData } from "./createImage";
 import { CallDetails, GoodTypeInfo, Method, TypeAndMethod } from "./loaded";
 import { log } from "./log";
-import { Edge, StringPredicate } from "./shared-types";
+import { Edge } from "./shared-types";
 
 // initially the leaf nodes are the methods i.e. TypeAndMethod instances
 
-type NodeId = {
+export type NodeId = {
   assemblyName: string;
   metadataToken: number;
 };
@@ -34,8 +33,6 @@ type TypeDictionary = {
 type TopDictionary = {
   [id: string]: TopNode;
 };
-
-type TopType = "assembly" | "namespace" | "none";
 
 type ReadMethod = (assemblyName: string, methodId: number) => TypeAndMethod;
 
@@ -67,24 +64,24 @@ const assertTypeAndMethodId = (lhs: NodeId, leaf: TypeAndMethod): void => {
   functions to create group nodes
 */
 
-const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethod, parent: ParentNode | null): LeafNode => ({
-  parent,
-  id: stringId(getTypeAndMethodId(typeAndMethod)),
-  label: getMethodName(typeAndMethod.method),
-});
-
-const parentFromTypeNode = (typeNode: TypeNode, parent: ParentNode | null): ParentNode => {
-  const self: ParentNode = {
-    parent,
-    id: stringId(typeNode.typeId),
-    label: getTypeInfoName(typeNode.type),
-    children: [],
-  };
-  self.children = typeNode.methods.map((method) => leafFromTypeAndMethod(method, self));
-  return self;
-};
-
 const groupsFromTopDictionary = (types: TypeDictionary, topType: TopType): Groups => {
+  const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethod, parent: ParentNode | null): LeafNode => ({
+    parent,
+    id: stringId(getTypeAndMethodId(typeAndMethod)),
+    label: getMethodName(typeAndMethod.method),
+  });
+
+  const parentFromTypeNode = (typeNode: TypeNode, parent: ParentNode | null): ParentNode => {
+    const self: ParentNode = {
+      parent,
+      id: stringId(typeNode.typeId),
+      label: getTypeInfoName(typeNode.type),
+      children: [],
+    };
+    self.children = typeNode.methods.map((method) => leafFromTypeAndMethod(method, self));
+    return self;
+  };
+
   if (topType === "none") return Object.values(types).map((typeNode) => parentFromTypeNode(typeNode, null));
   const tops: TopDictionary = {};
   for (const typeNode of Object.values(types)) {
@@ -113,10 +110,9 @@ const groupsFromTopDictionary = (types: TypeDictionary, topType: TopType): Group
 
 export const convertLoadedToMethods = (
   readMethod: ReadMethod,
-  methodId: NodeId,
-  topType: TopType,
-  showGrouped: boolean
-): [ImageData, AsText] => {
+  viewOptions: MethodViewOptions,
+  methodId?: NodeId
+): ViewData => {
   const called: LeafDictionary = {};
   const caller: LeafDictionary = {};
   const edges: Edge[] = [];
@@ -138,6 +134,9 @@ export const convertLoadedToMethods = (
   const saveEdge = (client: NodeId, server: NodeId): void => {
     edges.push({ clientId: stringId(client), serverId: stringId(server) });
   };
+
+  const isNewMethodId = !!methodId;
+  methodId ??= viewOptions.methodId;
 
   const firstLeaf = selectMethod(methodId, undefined);
   saveMethod(methodId, firstLeaf, called);
@@ -172,13 +171,10 @@ export const convertLoadedToMethods = (
   // combine the two LeafDictionary
   const leafs: LeafDictionary = { ...called, ...caller };
 
-  // build the TypeDictionary and the AsText
+  // build the TypeDictionary
   const types: TypeDictionary = {};
-  const asText: AsText = {};
 
   for (const typeAndMethod of Object.values(leafs)) {
-    asText[stringId(getTypeAndMethodId(typeAndMethod))] = typeAndMethod.methodDetails.asText;
-
     const type = typeAndMethod.type;
     const typeId = getTypeId(type);
     const id = stringId(typeId);
@@ -192,14 +188,19 @@ export const convertLoadedToMethods = (
 
   // convert to Groups
   log("groupsFromTopDictionary");
-  const groups: Groups = groupsFromTopDictionary(types, topType);
+  const groups: Groups = groupsFromTopDictionary(types, viewOptions.topType);
 
-  // convert to ImageData
-  const isLeafVisible: StringPredicate = () => true;
-  const isGroupExpanded: StringPredicate = () => true;
+  // a Group is visible iff its leafs are visible
+  if (isNewMethodId) {
+    viewOptions.leafVisible = Object.keys(leafs);
+    viewOptions.methodId = methodId;
+  }
+
+  // convert to Image
+  if (!viewOptions.showGrouped) throw new Error("");
 
   log("convertToImage");
-  const imageData: ImageData = convertToImage(groups, edges, isLeafVisible, isGroupExpanded, showGrouped, true);
+  const image = convertToImage(groups, [], edges, viewOptions);
 
-  return [imageData, asText];
+  return { image, viewOptions, groups };
 };

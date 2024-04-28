@@ -1,12 +1,11 @@
 import { BrowserWindow, ipcMain } from "electron";
-import type { AppOptions, MainApi, MouseEvent, ViewOptions } from "../shared-types";
+import type { AppOptions, MainApi, MouseEvent, View, ViewData, ViewOptions, ViewType } from "../shared-types";
 import { getMethodId } from "./convertLoadedToMembers";
-import { convertLoadedToMethods } from "./convertLoadedToMethods";
+import { NodeId, convertLoadedToMethods } from "./convertLoadedToMethods";
+import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { convertLoadedToTypes } from "./convertLoadedToTypes";
-import { convertLoadedToView } from "./convertLoadedToView";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
-import { createImage } from "./createImage";
 import { getAppFilename, writeFileSync } from "./fs";
 import type { Reflected } from "./loaded";
 import { loadedVersion } from "./loaded";
@@ -14,9 +13,8 @@ import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
-import { getSecondWindow } from "./secondWindow";
 import { options } from "./shared-types";
-import { IShow, Show, renderer2 } from "./show";
+import { IShow, Show } from "./show";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
@@ -58,23 +56,19 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   // implement the MainApi and bind it to ipcMain
   const mainApi: MainApi = {
-    setLeafVisible: (names: string[]): void => {
-      log("setLeafVisible");
-      if (!sqlLoaded) return;
-      sqlLoaded.viewState.leafVisible = names;
-      showSqlLoaded(sqlLoaded);
-    },
-    setGroupExpanded: (names: string[]): void => {
-      log("setGroupExpanded");
-      if (!sqlLoaded) return;
-      sqlLoaded.viewState.groupExpanded = names;
-      showSqlLoaded(sqlLoaded);
-    },
     setViewOptions: (viewOptions: ViewOptions): void => {
       log("setGroupExpanded");
       if (!sqlLoaded) return;
-      sqlLoaded.viewState.viewOptions = viewOptions;
-      showSqlLoaded(sqlLoaded);
+      switch (viewOptions.viewType) {
+        case "references":
+          sqlLoaded.viewState.referenceViewOptions = viewOptions;
+          showReferences(sqlLoaded);
+          break;
+        case "methods":
+          sqlLoaded.viewState.methodViewOptions = viewOptions;
+          showMethods(sqlLoaded);
+          break;
+      }
     },
     setAppOptions: (appOptions: AppOptions): void => {
       log("setAppOptions");
@@ -82,21 +76,27 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlConfig.appOptions = appOptions;
       show.appOptions(appOptions);
     },
-    onGraphClick: (id: string, event: MouseEvent): void => {
+    onGraphClick: (id: string, viewType: ViewType, event: MouseEvent): void => {
       log("onGraphClick");
       if (!sqlLoaded) return;
-      const assemblyReferences = sqlLoaded.readAssemblyReferences();
-      if (event.shiftKey) {
-        showAdjacent(assemblyReferences, sqlLoaded.viewState, id);
-        showSqlLoaded(sqlLoaded);
-      } else if (event.ctrlKey) {
-        hide(assemblyReferences, sqlLoaded.viewState, id);
-        showSqlLoaded(sqlLoaded);
-      } else {
-        const allTypeInfo = sqlLoaded.readTypes(id);
-        const types = convertLoadedToTypes(allTypeInfo, id);
-        log("show.types");
-        show.types(types);
+      if (viewType == "references") {
+        const assemblyReferences = sqlLoaded.readAssemblyReferences();
+        if (event.shiftKey) {
+          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+          showAdjacent(assemblyReferences, viewOptions, id);
+          sqlLoaded.viewState.referenceViewOptions = viewOptions;
+          showReferences(sqlLoaded);
+        } else if (event.ctrlKey) {
+          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+          hide(assemblyReferences, viewOptions, id);
+          sqlLoaded.viewState.referenceViewOptions = viewOptions;
+          showReferences(sqlLoaded);
+        } else {
+          const allTypeInfo = sqlLoaded.readTypes(id);
+          const types = convertLoadedToTypes(allTypeInfo, id);
+          log("show.types");
+          show.types(types);
+        }
       }
     },
     onDetailClick: (assemblyId, id): void => {
@@ -104,36 +104,45 @@ export function createApplication(mainWindow: BrowserWindow): void {
       if (!sqlLoaded) return;
       const methodId = getMethodId(id);
       if (!methodId) return; // user clicked on something other than a method
-      try {
-        const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
-        const [imageData, asText] = convertLoadedToMethods(
-          readMethod,
-          { assemblyName: assemblyId, metadataToken: methodId },
-          "assembly",
-          true
-        );
-        const image = createImage(imageData);
-        const callStack = { image, asText };
-        log("showCallStack");
-        getSecondWindow(sqlConfig.appOptions).then((secondWindow) => renderer2(secondWindow).showCallStack(callStack));
-      } catch (error) {
-        getSecondWindow(sqlConfig.appOptions).then((secondWindow) => renderer2(secondWindow).exception(error));
-      }
+      showMethods(sqlLoaded, { assemblyName: assemblyId, metadataToken: methodId });
     },
   };
 
-  ipcMain.on("setLeafVisible", (event, names) => mainApi.setLeafVisible(names));
-  ipcMain.on("setGroupExpanded", (event, names) => mainApi.setGroupExpanded(names));
   ipcMain.on("setViewOptions", (event, viewOptions) => mainApi.setViewOptions(viewOptions));
   ipcMain.on("setAppOptions", (event, appOptions) => mainApi.setAppOptions(appOptions));
-  ipcMain.on("onGraphClick", (event, id, mouseEvent) => mainApi.onGraphClick(id, mouseEvent));
+  ipcMain.on("onGraphClick", (event, id, viewType, mouseEvent) => mainApi.onGraphClick(id, viewType, mouseEvent));
   ipcMain.on("onDetailClick", (event, assemblyId, id) => mainApi.onDetailClick(assemblyId, id));
 
   // wrap use of the renderer API
   const show: IShow = new Show(mainWindow);
 
-  const showSqlLoaded = (sqlLoaded: SqlLoaded): void => {
-    const view = convertLoadedToView(sqlLoaded.readAssemblyReferences(), sqlLoaded.viewState);
+  const showMethods = (sqlLoaded: SqlLoaded, methodId?: NodeId): void => {
+    try {
+      const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
+      const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
+      const viewData = convertLoadedToMethods(readMethod, methodViewOptions, methodId);
+      if (methodId) sqlLoaded.viewState.methodViewOptions = methodViewOptions;
+      showView(viewData, sqlLoaded);
+    } catch (error) {
+      show.exception(error);
+    }
+  };
+
+  const showReferences = (sqlLoaded: SqlLoaded): void => {
+    const viewData = convertLoadedToReferences(
+      sqlLoaded.readAssemblyReferences(),
+      sqlLoaded.viewState.referenceViewOptions,
+      sqlLoaded.viewState.exes
+    );
+    log("show.view");
+    showView(viewData, sqlLoaded);
+  };
+
+  const showView = (viewData: ViewData, sqlLoaded: SqlLoaded): void => {
+    const view: View = {
+      ...viewData,
+      dataSourceId: { cachedWhen: sqlLoaded.viewState.cachedWhen, hash: sqlLoaded.viewState.hashDataSource },
+    };
     log("show.view");
     show.view(view);
   };
@@ -155,10 +164,10 @@ export function createApplication(mainWindow: BrowserWindow): void {
       // save Reflected
       const jsonPath = getAppFilename(`Reflected.${dataSource.hash}.json`);
       writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
-      sqlLoaded.save(reflected, when);
+      sqlLoaded.save(reflected, when, dataSource.hash);
     } else log("!getLoaded");
     mainWindow.setTitle(dataSource.path);
-    showSqlLoaded(sqlLoaded);
+    showReferences(sqlLoaded);
   };
 
   const readDotNetApi = async (path: string): Promise<Reflected> => {
