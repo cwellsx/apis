@@ -33,14 +33,6 @@ const config: ForgeConfig = {
               js: "./src/preload/index.ts",
             },
           },
-          {
-            html: "./src/renderer2/index.html",
-            js: "./src/renderer2/index.ts",
-            name: "second_window",
-            preload: {
-              js: "./src/preload2/index.ts",
-            },
-          },
         ],
       },
     }),

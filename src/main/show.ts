@@ -1,5 +1,5 @@
 import type { BrowserWindow } from "electron";
-import type { AppOptions, CallStack, Renderer2Api, RendererApi, Types, View } from "../shared-types";
+import type { AppOptions, RendererApi, Types, View } from "../shared-types";
 import { getErrorString } from "./error";
 
 export interface IShow {
@@ -53,16 +53,3 @@ export class Show implements IShow {
     this.appOptions = (appOptions: AppOptions) => rendererApi.showAppOptions(appOptions);
   }
 }
-
-export const renderer2 = (secondWindow?: BrowserWindow): Renderer2Api & { exception: (error: unknown) => void } => {
-  const showAppOptions = (appOptions: AppOptions) => secondWindow?.webContents.send("showAppOptions", appOptions);
-  const showCallStack = (callStack: CallStack) => secondWindow?.webContents.send("showCallStack", callStack);
-  const setGreeting = (greeting: string): void => secondWindow?.webContents.send("setGreeting", greeting);
-
-  const exception = (error: unknown): void => {
-    secondWindow?.setTitle("Error");
-    const message = getErrorString(error);
-    secondWindow?.webContents.send("setGreeting", message);
-  };
-  return { showAppOptions, showCallStack, exception, setGreeting };
-};

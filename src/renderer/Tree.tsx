@@ -1,9 +1,9 @@
 import * as React from "react";
 import CheckboxTree, { Node } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
-import "../renderer.3rd-party/CheckboxTree.css";
 import type { GroupNode, Groups } from "../shared-types";
 import { isParent } from "../shared-types";
+import "./3rd-party/CheckboxTree.css";
 import "./Tree.css";
 import { icons } from "./checkboxTreeIcons";
 

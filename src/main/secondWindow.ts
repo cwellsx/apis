@@ -1,6 +1,5 @@
 import { BrowserWindow } from "electron";
 import { AppOptions } from "../shared-types";
-import { renderer2 } from "./show";
 
 declare const SECOND_WINDOW_WEBPACK_ENTRY: string;
 declare const SECOND_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
@@ -22,7 +21,7 @@ const createSecondWindow = (appOptions: AppOptions): Promise<BrowserWindow> => {
   const promise = new Promise<BrowserWindow>((resolve) => {
     // resolve promise after window is loaded
     window.webContents.once("did-finish-load", () => {
-      renderer2(window).showAppOptions(appOptions);
+      // TODO set appOptions in the newly-created window
       resolve(window);
     });
 

@@ -1,13 +1,4 @@
-export type {
-  Bind2Ipc,
-  BindIpc,
-  Main2Api,
-  MainApi,
-  Preload2Apis,
-  PreloadApis,
-  Renderer2Api,
-  RendererApi,
-} from "./apis";
+export type { BindIpc, MainApi, PreloadApis, RendererApi } from "./apis";
 export type { AsText, CallStack } from "./callStack";
 export { isParent } from "./grouped";
 export type { GroupNode, Groups, LeafNode, ParentNode } from "./grouped";

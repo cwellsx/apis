@@ -1,6 +1,6 @@
 import * as React from "react";
-import { Area, AreaMouseEvent, ImageMapper, Map } from "../renderer.3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 import type { Area as MyArea, OnGraphClick } from "../shared-types";
+import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 
 type GraphProps = {
   imagePath: string;
