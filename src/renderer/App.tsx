@@ -11,7 +11,7 @@ import type {
   View,
   ViewOptions,
 } from "../shared-types";
-import { defaultAppOptions, defaultReferenceViewOptions } from "../shared-types";
+import { defaultAppOptions } from "../shared-types";
 import { Details } from "./Details";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
@@ -30,35 +30,30 @@ declare global {
 export const mainApi: MainApi = window.preloadApis.mainApi;
 export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 
-const defaultView: View = {
-  image: "",
-  groups: [],
-  viewOptions: defaultReferenceViewOptions,
-  dataSourceId: { cachedWhen: "", hash: "" },
-};
-const defaultTypes: Types = { assemblyId: "", namespaces: [], exceptions: [] };
+const defaultGreeting = "No data";
 
 let once = false;
 
 const App: React.FunctionComponent = () => {
-  const [greeting, setGreeting] = React.useState<string | undefined>("No data");
-  const [view, setView] = React.useState(defaultView);
-  const [types, setTypes] = React.useState(defaultTypes);
+  const [greeting, setGreeting] = React.useState<string | undefined>(defaultGreeting);
+  const [view, setView] = React.useState<View | undefined>(undefined);
+  const [types, setTypes] = React.useState<Types | undefined>(undefined);
 
-  const [appOptions, setAppOptions_] = React.useState(defaultAppOptions);
-  const sendAppOptions = (newOptions: Partial<AppOptions>): void => setAppOptions({ ...appOptions, ...newOptions });
+  const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
+
   const zoomPercent = appOptions.zoomPercent;
   const fontSize = appOptions.fontSize;
-  const onWheelZoomPercent = useZoomPercent(zoomPercent, (zoomPercent: number) => sendAppOptions({ zoomPercent }));
-  const onWheelFontSize = useFontSize(fontSize, (fontSize: number) => sendAppOptions({ fontSize }));
+  const onWheelZoomPercent = useZoomPercent(zoomPercent, (zoomPercent: number) =>
+    onAppOptions({ ...appOptions, zoomPercent })
+  );
+  const onWheelFontSize = useFontSize(fontSize, (fontSize: number) => onAppOptions({ ...appOptions, fontSize }));
 
   React.useEffect(() => {
     if (once) return;
     once = true;
 
     const rendererApi: RendererApi = {
-      // tslint:disable-next-line:no-shadowed-variable
-      setGreeting(greeting: string): void {
+      showGreeting(greeting: string): void {
         setGreeting(greeting);
       },
       showView(view: View): void {
@@ -73,18 +68,28 @@ const App: React.FunctionComponent = () => {
       },
       showAppOptions(appOptions: AppOptions): void {
         log("showAppOptions");
-        setAppOptions_(appOptions);
+        setAppOptions(appOptions);
       },
     };
     bindIpc(rendererApi);
   });
 
-  const setLeafVisible: (names: string[]) => void = (names) =>
-    mainApi.setViewOptions({ ...view.viewOptions, leafVisible: names });
-  const setGroupExpanded: (names: string[]) => void = (names) =>
-    mainApi.setViewOptions({ ...view.viewOptions, groupExpanded: names });
-  const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.setViewOptions(viewOptions);
-  const setAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.setAppOptions(appOptions);
+  if (!view)
+    return (
+      <React.StrictMode>
+        <Panes
+          left={<></>}
+          center={<Message message={greeting ?? defaultGreeting} />}
+          right={undefined}
+          fontSize={fontSize}
+          onWheelZoomPercent={onWheelZoomPercent}
+          onWheelFontSize={onWheelFontSize}
+        />
+      </React.StrictMode>
+    );
+
+  const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.onViewOptions(viewOptions);
+  const onAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.onAppOptions(appOptions);
   const onDetailClick: OnDetailClick = (assemblyId, id) => mainApi.onDetailClick(assemblyId, id);
   const onGraphClick: OnGraphClick = (id, event) => mainApi.onGraphClick(id, view.viewOptions.viewType, event);
 
@@ -110,13 +115,13 @@ const App: React.FunctionComponent = () => {
         nodes={view.groups}
         leafVisible={view.viewOptions.leafVisible}
         groupExpanded={view.viewOptions.groupExpanded}
-        setLeafVisible={setLeafVisible}
-        setGroupExpanded={setGroupExpanded}
+        setLeafVisible={(names) => mainApi.onViewOptions({ ...view.viewOptions, leafVisible: names })}
+        setGroupExpanded={(names) => mainApi.onViewOptions({ ...view.viewOptions, groupExpanded: names })}
       />
     </>
   );
 
-  const right = !types.namespaces.length ? undefined : <Details types={types} onDetailClick={onDetailClick} />;
+  const right = !types ? undefined : <Details types={types} onDetailClick={onDetailClick} />;
 
   return (
     <React.StrictMode>

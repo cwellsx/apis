@@ -20,5 +20,4 @@ export type {
   TypeKnown,
   Types,
 } from "./types";
-export { defaultMethodViewOptions, defaultReferenceViewOptions } from "./view";
 export type { MethodViewOptions, ReferenceViewOptions, TopType, View, ViewData, ViewOptions, ViewType } from "./view";

@@ -1,6 +1,6 @@
 import { Database } from "better-sqlite3";
 import type { AppOptions, Members, MethodViewOptions, ReferenceViewOptions } from "../shared-types";
-import { defaultAppOptions, defaultMethodViewOptions, defaultReferenceViewOptions } from "../shared-types";
+import { defaultAppOptions } from "../shared-types";
 import type {
   AllTypeInfo,
   AssemblyReferences,
@@ -103,6 +103,22 @@ const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
 
 type GoodTypeDictionary = {
   [key: number]: GoodTypeInfo;
+};
+
+const defaultReferenceViewOptions: ReferenceViewOptions = {
+  showGrouped: true,
+  leafVisible: [],
+  groupExpanded: [],
+  viewType: "references",
+};
+
+const defaultMethodViewOptions: MethodViewOptions = {
+  showGrouped: true,
+  leafVisible: [],
+  groupExpanded: [],
+  topType: "assembly",
+  methodId: { assemblyName: "", metadataToken: 0 },
+  viewType: "methods",
 };
 
 export class SqlLoaded {

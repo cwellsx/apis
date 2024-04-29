@@ -56,7 +56,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   // implement the MainApi and bind it to ipcMain
   const mainApi: MainApi = {
-    setViewOptions: (viewOptions: ViewOptions): void => {
+    onViewOptions: (viewOptions: ViewOptions): void => {
       log("setGroupExpanded");
       if (!sqlLoaded) return;
       switch (viewOptions.viewType) {
@@ -70,8 +70,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
           break;
       }
     },
-    setAppOptions: (appOptions: AppOptions): void => {
-      log("setAppOptions");
+    onAppOptions: (appOptions: AppOptions): void => {
+      log("onAppOptions");
       if (!sqlLoaded) return;
       sqlConfig.appOptions = appOptions;
       show.appOptions(appOptions);
@@ -108,8 +108,8 @@ export function createApplication(mainWindow: BrowserWindow): void {
     },
   };
 
-  ipcMain.on("setViewOptions", (event, viewOptions) => mainApi.setViewOptions(viewOptions));
-  ipcMain.on("setAppOptions", (event, appOptions) => mainApi.setAppOptions(appOptions));
+  ipcMain.on("onViewOptions", (event, viewOptions) => mainApi.onViewOptions(viewOptions));
+  ipcMain.on("onAppOptions", (event, appOptions) => mainApi.onAppOptions(appOptions));
   ipcMain.on("onGraphClick", (event, id, viewType, mouseEvent) => mainApi.onGraphClick(id, viewType, mouseEvent));
   ipcMain.on("onDetailClick", (event, assemblyId, id) => mainApi.onDetailClick(assemblyId, id));
 

@@ -21,8 +21,8 @@ export class Show implements IShow {
     // implement RendererApi using webContents.send
     const webContents = mainWindow.webContents;
     const rendererApi: RendererApi = {
-      setGreeting(greeting: string): void {
-        webContents.send("setGreeting", greeting);
+      showGreeting(greeting: string): void {
+        webContents.send("showGreeting", greeting);
       },
       showView(view: View): void {
         webContents.send("showView", view);
@@ -38,12 +38,12 @@ export class Show implements IShow {
     this.exception = (error: unknown): void => {
       mainWindow.setTitle("Error");
       const message = getErrorString(error);
-      rendererApi.setGreeting(message);
+      rendererApi.showGreeting(message);
     };
 
     this.message = (title: string, message: string): void => {
       mainWindow.setTitle(title);
-      rendererApi.setGreeting(message);
+      rendererApi.showGreeting(message);
     };
 
     this.view = (view: View) => rendererApi.showView(view);

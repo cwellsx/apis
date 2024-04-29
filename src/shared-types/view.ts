@@ -24,22 +24,6 @@ export type MethodViewOptions = {
 
 export type ViewOptions = ReferenceViewOptions | MethodViewOptions;
 
-export const defaultReferenceViewOptions: ReferenceViewOptions = {
-  showGrouped: true,
-  leafVisible: [],
-  groupExpanded: [],
-  viewType: "references",
-};
-
-export const defaultMethodViewOptions: MethodViewOptions = {
-  showGrouped: true,
-  leafVisible: [],
-  groupExpanded: [],
-  topType: "assembly",
-  methodId: { assemblyName: "", metadataToken: 0 },
-  viewType: "methods",
-};
-
 export type ViewType = "references" | "methods";
 
 export type DataSourceId = {
