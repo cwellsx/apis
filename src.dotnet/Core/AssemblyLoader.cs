@@ -27,6 +27,7 @@ namespace Core
                 {
                     try
                     {
+                        Logger.Log(path);
                         var assembly = metaDataLoadContext.LoadFromAssemblyPath(path);
                         assemblyReader.Add(assembly, path);
                     }

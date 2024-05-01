@@ -25,7 +25,7 @@ namespace Core
             bool isFramework = false;
             bool isCore = false;
             var exes = new List<string>();
-            string? targetFramework = null;
+            string? targetFrameworkFound = null;
             foreach (var exe in GetExes(directory))
             {
                 var assembly = LoadAssembly(context, exe);
@@ -38,19 +38,20 @@ namespace Core
                 {
                     exes.Add(exeName);
                 }
-                targetFramework = GetTargetFramework(assembly);
+                var targetFramework = GetTargetFramework(assembly);
                 switch (targetFramework.Split(",")[0])
                 {
                     case ".NETFramework":
                         isFramework = true;
+                        targetFrameworkFound = targetFramework;
                         break;
                     case ".NETCoreApp":
                         isCore = true;
+                        targetFrameworkFound = targetFramework;
                         break;
                     default:
                         throw new ArgumentException($"Unexpected TargetFramework {targetFramework}");
                 }
-                targetFramework = null;
             }
 
             if (exes.Count == 0)
@@ -62,26 +63,27 @@ namespace Core
                     {
                         continue;
                     }
-                    targetFramework = GetTargetFramework(assembly);
+                    var targetFramework = GetTargetFramework(assembly);
                     switch (targetFramework.Split(",")[0])
                     {
                         case ".NETFramework":
                             isFramework = true;
+                            targetFrameworkFound = targetFramework;
                             break;
                         case ".NETCoreApp":
                             isCore = true;
+                            targetFrameworkFound = targetFramework;
                             break;
                         default:
                             throw new ArgumentException($"Unexpected TargetFramework {targetFramework}");
                     }
-                    targetFramework = null;
                 }
             }
 
-            Logger.Log($"Found {exes.Count} *exe, isCore:{isCore}, isFramework:{isFramework}");
+            Logger.Log($"Found {exes.Count} *exe, isCore:{isCore}, isFramework:{isFramework}, targetFramework:{targetFrameworkFound}");
 
             assemblyPaths = ((!isFramework && !isCore) || (isCore && isFramework) || isCore) ? dotnetCoreFiles ?? dotnetFrameworkFiles : dotnetFrameworkFiles ?? dotnetCoreFiles;
-            return (assemblyPaths!, exes.ToArray(), targetFramework);
+            return (assemblyPaths!, exes.ToArray(), targetFrameworkFound);
         }
 
         static string GetTargetFramework(Assembly assembly)

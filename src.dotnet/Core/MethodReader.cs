@@ -50,6 +50,7 @@ namespace Core
                     assemblyInfo,
                     (methodMember, typeId) => GetDecompiled(methodMember, typeId, exception)
                     );
+                throw;
             }
         }
 

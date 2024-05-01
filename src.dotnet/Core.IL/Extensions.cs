@@ -15,20 +15,21 @@ namespace Core.IL
 
         static Method Transform(IMethod method)
         {
+            var declaringType = method.DeclaringType.Transform();
             return new Method(
                 method.Name,
                 method.Parameters.Select(parameter => (parameter.Name, parameter.Type.Transform())).ToArrayOrNull(),
-                method.TypeArguments.Select(Transform).ToArrayOrNull(),
+                method.TypeArguments.Select(arg => arg.Transform(declaringType.AssemblyName)).ToArrayOrNull(),
                 method.ReturnType.Transform(),
                 method.IsStatic,
                 method.IsConstructor,
-                method.DeclaringType.Transform(),
+                declaringType,
                 GetAttributes(method.GetAttributes()),
                 (Core.IL.Output.Accessibility)method.Accessibility
                );
         }
 
-        static TypeId Transform(this IType type)
+        static TypeId Transform(this IType type, string? declaringAssemblyName = null)
         {
             bool isElementType = (type as TypeWithElementType)?.ElementType != null;
             var elementType = (type as TypeWithElementType)?.ElementType ?? type;
@@ -57,13 +58,18 @@ namespace Core.IL
                 assemblyName = elementTypeTransformed.AssemblyName;
             }
 
+            if (type.Kind == TypeKind.TypeParameter)
+            {
+                assemblyName ??= declaringAssemblyName;
+            }
+
             var @namespace = elementType.Namespace == string.Empty ? null : type.Namespace;
 
             return new TypeId(
                 assemblyName.NotNull(@namespace, name),
                 @namespace,
                 name,
-                typeArguments.Select(Transform).ToArrayOrNull(),
+                typeArguments.Select(arg => arg.Transform(null)).ToArrayOrNull(),
                 type.DeclaringType?.Transform(),
                 Kind: type.Kind.Transform(),
                 ElementType: elementTypeTransformed
