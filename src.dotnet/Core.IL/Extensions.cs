@@ -57,9 +57,11 @@ namespace Core.IL
                 assemblyName = elementTypeTransformed.AssemblyName;
             }
 
+            var @namespace = elementType.Namespace == string.Empty ? null : type.Namespace;
+
             return new TypeId(
-                assemblyName.NotNull(),
-                elementType.Namespace == string.Empty ? null : type.Namespace,
+                assemblyName.NotNull(@namespace, name),
+                @namespace,
                 name,
                 typeArguments.Select(Transform).ToArrayOrNull(),
                 type.DeclaringType?.Transform(),
@@ -68,13 +70,13 @@ namespace Core.IL
                );
         }
 
-        internal static string NotNull(this string? name)
+        internal static string NotNull(this string? assemblyName, string? @namespace, string name)
         {
-            if (name == null)
+            if (assemblyName == null)
             {
-                throw new System.ArgumentNullException("Unexpected null Name");
+                throw new System.ArgumentNullException("assemblyName", $"Core.Il type {@namespace}.{name}");
             }
-            return name;
+            return assemblyName;
         }
 
         static Kind? Transform(this TypeKind typeKind)

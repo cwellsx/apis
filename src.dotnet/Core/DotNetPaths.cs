@@ -8,7 +8,7 @@ namespace Core
 {
     internal static class DotNetPaths
     {
-        internal static (string[], string[]) FindPaths(string directory)
+        internal static (string[], string[], string?) FindPaths(string directory)
         {
             var dotnetCoreFiles = _dotnetCoreFiles.Value;
             var dotnetFrameworkFiles = _dotnetFrameworkFiles.Value;
@@ -25,6 +25,7 @@ namespace Core
             bool isFramework = false;
             bool isCore = false;
             var exes = new List<string>();
+            string? targetFramework = null;
             foreach (var exe in GetExes(directory))
             {
                 var assembly = LoadAssembly(context, exe);
@@ -37,7 +38,7 @@ namespace Core
                 {
                     exes.Add(exeName);
                 }
-                var targetFramework = GetTargetFramework(assembly);
+                targetFramework = GetTargetFramework(assembly);
                 switch (targetFramework.Split(",")[0])
                 {
                     case ".NETFramework":
@@ -49,6 +50,7 @@ namespace Core
                     default:
                         throw new ArgumentException($"Unexpected TargetFramework {targetFramework}");
                 }
+                targetFramework = null;
             }
 
             if (exes.Count == 0)
@@ -60,7 +62,7 @@ namespace Core
                     {
                         continue;
                     }
-                    var targetFramework = GetTargetFramework(assembly);
+                    targetFramework = GetTargetFramework(assembly);
                     switch (targetFramework.Split(",")[0])
                     {
                         case ".NETFramework":
@@ -72,13 +74,14 @@ namespace Core
                         default:
                             throw new ArgumentException($"Unexpected TargetFramework {targetFramework}");
                     }
+                    targetFramework = null;
                 }
             }
 
             Logger.Log($"Found {exes.Count} *exe, isCore:{isCore}, isFramework:{isFramework}");
 
             assemblyPaths = ((!isFramework && !isCore) || (isCore && isFramework) || isCore) ? dotnetCoreFiles ?? dotnetFrameworkFiles : dotnetFrameworkFiles ?? dotnetCoreFiles;
-            return (assemblyPaths!, exes.ToArray());
+            return (assemblyPaths!, exes.ToArray(), targetFramework);
         }
 
         static string GetTargetFramework(Assembly assembly)

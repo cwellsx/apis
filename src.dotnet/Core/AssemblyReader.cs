@@ -12,20 +12,22 @@ namespace Core
     {
         public Dictionary<string, AssemblyInfo> Assemblies { get; } = new Dictionary<string, AssemblyInfo>();
         public List<string> Exceptions { get; } = new List<string>();
-        public string Version { get; } = "2024-04-13"; // see also src\main\shared-types\loaded.ts
+        public string Version { get; } = "2024-05-01"; // see also src\main\shared-types\loaded\loadedVersion.ts
         public string[] Exes { get; }
         public AssemblyMethods AssemblyMethods => _methodFinder.Dictionary;
         // this is a field not a property, so it isn't serialized in ToJson
         private MethodReader _methodReader;
         private MethodFinder _methodFinder;
         private Invariants _invariants;
+        private string? _targetFramework;
 
-        internal AssemblyReader(string[] exes, Func<string, bool> isMicrosoftAssemblyName)
+        internal AssemblyReader(string[] exes, Func<string, bool> isMicrosoftAssemblyName, string? targetFramework)
         {
             Exes = exes;
             _methodReader = new MethodReader(isMicrosoftAssemblyName);
             _methodFinder = new MethodFinder();
             _invariants = new Invariants();
+            _targetFramework = targetFramework;
         }
 
         internal void Add(Assembly assembly, string path)
@@ -39,7 +41,7 @@ namespace Core
                     );
                 _invariants.Verify(assemblyName, assemblyInfo.Types);
                 Assemblies.Add(assemblyName, assemblyInfo);
-                _methodReader.Add(assemblyName, path, assemblyInfo);
+                _methodReader.Add(assemblyName, path, assemblyInfo, _targetFramework);
             }
             catch (Exception e)
             {

@@ -99,7 +99,9 @@ namespace Core
 
             if (!isGeneric)
             {
-                var decompiled = listDecompiled.SingleOrDefault(d => d.MethodMember == call.MethodMember);
+#pragma warning disable CS0252 // Possible unintended reference comparison; left hand side needs cast
+                var decompiled = listDecompiled.SingleOrDefault(d => d.MethodMember == call.MethodMember && d.GenericArguments == null);
+#pragma warning restore CS0252 // Possible unintended reference comparison; left hand side needs cast
                 if (decompiled != null)
                 {
                     return new CallDetails(call, decompiled.MetadataToken);

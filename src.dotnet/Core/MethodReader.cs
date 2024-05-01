@@ -30,11 +30,31 @@ namespace Core
             _isMicrosoftAssemblyName = isMicrosoftAssemblyName;
         }
 
-        internal void Add(string assemblyName, string path, AssemblyInfo assemblyInfo)
+        internal void Add(string assemblyName, string path, AssemblyInfo assemblyInfo, string? targetFramework)
         {
             var typeDictionary = new TypeDictionary();
             Dictionary.Add(assemblyName, typeDictionary);
-            var decompiler = new Core.IL.Decompiler(path);
+            try
+            {
+                var decompiler = new Core.IL.Decompiler(path, targetFramework);
+                Add(
+                    typeDictionary,
+                    assemblyInfo,
+                    (methodMember, typeId) => GetDecompiled(methodMember, typeId, decompiler)
+                    );
+            }
+            catch (Exception exception)
+            {
+                Add(
+                    typeDictionary,
+                    assemblyInfo,
+                    (methodMember, typeId) => GetDecompiled(methodMember, typeId, exception)
+                    );
+            }
+        }
+
+        private void Add(TypeDictionary typeDictionary, AssemblyInfo assemblyInfo, Func<MethodMember, TypeIdEx, Decompiled> decompile)
+        {
             foreach (var typeInfo in assemblyInfo.Types)
             {
                 if (typeInfo.TypeId == null || typeInfo.Members?.MethodMembers == null)
@@ -47,23 +67,54 @@ namespace Core
                 typeDictionary.Add(typeId, typeMethods);
                 foreach (var methodMember in typeInfo.Members.MethodMembers)
                 {
-                    var (asText, calls) = decompiler.Decompile(methodMember.MetadataToken);
-                    var methodMemberEx = new MethodMemberEx(methodMember, _isMicrosoftAssemblyName);
-                    var methodDetails = new MethodDetails(
-                        asText,
-                        methodMemberEx.AsString(methodMember.GenericArguments, false),
-                        typeId.AsString(false)
-                        );
-                    var decompiled = new Decompiled(
-                        methodDetails,
-                        calls.Select(call => call.Transform(_isMicrosoftAssemblyName)).ToArray(),
-                        methodMember.MetadataToken,
-                        methodMemberEx,
-                        methodMember.GenericArguments
-                        );
+                    var decompiled = decompile(methodMember, typeId);
                     listDecompiled.Add(decompiled);
                 }
             }
+        }
+
+        Decompiled GetDecompiled(MethodMember methodMember, TypeIdEx typeId, Core.IL.Decompiler decompiler)
+        {
+            try
+            {
+                var methodMemberEx = new MethodMemberEx(methodMember, _isMicrosoftAssemblyName);
+                var (asText, calls) = decompiler.Decompile(methodMember.MetadataToken);
+                var methodDetails = new MethodDetails(
+                    asText,
+                    methodMemberEx.AsString(methodMember.GenericArguments, false),
+                    typeId.AsString(false)
+                    );
+                var decompiled = new Decompiled(
+                    methodDetails,
+                    calls.Select(call => call.Transform(_isMicrosoftAssemblyName)).ToArray(),
+                    methodMember.MetadataToken,
+                    methodMemberEx,
+                    methodMember.GenericArguments
+                    );
+                return decompiled;
+            }
+            catch (Exception exception)
+            {
+                return GetDecompiled(methodMember, typeId, exception);
+            }
+        }
+
+        Decompiled GetDecompiled(MethodMember methodMember, TypeIdEx typeId, Exception exception)
+        {
+            var methodMemberEx = new MethodMemberEx(methodMember, _isMicrosoftAssemblyName);
+            var methodDetails = new MethodDetails(
+                methodMemberEx.AsString(methodMember.GenericArguments, false),
+                typeId.AsString(false),
+                exception
+                );
+            var decompiled = new Decompiled(
+                methodDetails,
+                Array.Empty<MethodId>(),
+                methodMember.MetadataToken,
+                methodMemberEx,
+                methodMember.GenericArguments
+                );
+            return decompiled;
         }
     }
 }

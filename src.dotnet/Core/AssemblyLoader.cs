@@ -14,13 +14,13 @@ namespace Core
             {
                 throw new Exception($"Input directory not found: `{directory}`");
             }
-            var (dotNetPaths, exes) = DotNetPaths.FindPaths(directory);
+            var (dotNetPaths, exes, targetFramework) = DotNetPaths.FindPaths(directory);
             var pathAssemblyResolver = new PathAssemblyResolver(GetAllFiles(directory).Concat(dotNetPaths));
 
             Func<string, bool> isMicrosoftAssemblyName = (string name) =>
                 IsMicrosoftAssembly(name) || dotNetPaths.Any(path => Path.GetFileNameWithoutExtension(path) == name);
 
-            var assemblyReader = new AssemblyReader(exes, isMicrosoftAssemblyName);
+            var assemblyReader = new AssemblyReader(exes, isMicrosoftAssemblyName, targetFramework);
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
                 foreach (var path in GetFiles(directory))

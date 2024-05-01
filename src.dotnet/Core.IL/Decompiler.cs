@@ -32,7 +32,7 @@ namespace Core.IL
         MetadataReader metadata => module.PEFile.Metadata;
         IDebugInfoProvider? DebugInfoProvider => null;
 
-        public Decompiler(string fileName)
+        public Decompiler(string fileName, string? targetFramework)
         {
             // This constructs a CSharpDecompiler.
             // Instead of using the simplest overload of the CSharpDecompiler constructor,
@@ -48,7 +48,8 @@ namespace Core.IL
                 metadataOptions: settings.ApplyWindowsRuntimeProjections ? MetadataReaderOptions.ApplyWindowsRuntimeProjections : MetadataReaderOptions.None
                 );
             var resolver = new UniversalAssemblyResolver(fileName, settings.ThrowOnAssemblyResolveErrors,
-                file.DetectTargetFrameworkId(), file.DetectRuntimePack(),
+                targetFramework ?? file.DetectTargetFrameworkId(),
+                file.DetectRuntimePack(),
                 settings.LoadInMemory ? PEStreamOptions.PrefetchMetadata : PEStreamOptions.Default,
                 settings.ApplyWindowsRuntimeProjections ? MetadataReaderOptions.ApplyWindowsRuntimeProjections : MetadataReaderOptions.None);
 

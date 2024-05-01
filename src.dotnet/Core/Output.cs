@@ -199,8 +199,9 @@ namespace Core
         { }
     }
 
-    public record MethodDetails(string AsText, string MethodMember, string DeclaringType, List<CallDetails> Calls, List<Method> CalledBy)
+    public record MethodDetails(string AsText, string MethodMember, string DeclaringType, List<CallDetails> Calls, List<Method> CalledBy, string? Exception)
     {
-        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType, new List<CallDetails>(), new List<Method>()) { }
+        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType, new List<CallDetails>(), new List<Method>(), null) { }
+        internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType, new List<CallDetails>(), new List<Method>(), exception.ToString()) { }
     }
 }

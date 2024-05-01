@@ -27,7 +27,7 @@ export type ImageAttribute = {
 
 export type ImageAttributes = { [index: string]: ImageAttribute };
 
-export type Node = (Text & { type: "node" | "group" /*shape: Shape*/ }) | Subgraph;
+export type Node = (Text & { type: "node" | "group" }) | Subgraph;
 type Subgraph = Text & { type: "subgraph"; children: Node[] };
 
 export type ImageData = {
