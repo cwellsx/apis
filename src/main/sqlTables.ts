@@ -9,17 +9,16 @@ import type {
   MethodDetails,
   MethodMember,
   Reflected,
-  TypeAndMethod,
 } from "./loaded";
 import { badTypeInfo, validateTypeInfo } from "./loaded";
 import { log } from "./log";
+import { TypeAndMethod } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
 
 /*
   This defines all SQLite tables used by the application, include the record format and the methods to access them
   They're all in this one source file, because their implementations are similar
-  The schema isn't 'relational', instead the tables are key-value pairs whose values are JSON objects akak 'documents'
 
   - SqlLoaded is implemented using
     - SqlTable<AssemblyColumns>
@@ -44,6 +43,9 @@ import { SqlTable, dropTable } from "./sqlTable";
   Conversely the ViewState contains a cache-on-write, which the application reads from without selecting from SQLite.
 
   If in future the Reflected data is too large, rework the transfer to make it incremental e.g. one assembly at a time.
+
+  A future refactoring could remove the column definitions to another module, e.g. sqlColumns.ts could define and export
+  the *Columns types, with corresponding load* and save* methods to wrap JSON and convert to and from application types.
 */
 
 type AssemblyColumns = {

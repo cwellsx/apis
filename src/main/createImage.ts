@@ -17,12 +17,23 @@ type Text = {
   label: string;
 };
 
-export type Node = (Text & { type: "node" | "group" }) | Subgraph;
+type Shape = "folder" | "rect" | "none";
+export type ImageAttribute = {
+  // used for leafs and for non-expanded groups
+  shape?: Shape;
+  // used for clusters i.e. for exapnded groups -- https://graphviz.org/docs/attr-types/style/
+  style?: "rounded";
+};
+
+export type ImageAttributes = { [index: string]: ImageAttribute };
+
+export type Node = (Text & { type: "node" | "group" /*shape: Shape*/ }) | Subgraph;
 type Subgraph = Text & { type: "subgraph"; children: Node[] };
 
 export type ImageData = {
   nodes: Node[];
   edges: { clientId: string; serverId: string; edgeId: string }[];
+  imageAttributes?: ImageAttributes;
 };
 
 const findDotExe = (): string => {
@@ -35,6 +46,19 @@ const findDotExe = (): string => {
   throw new Error("graphviz not found");
 };
 
+const defaultShape = (node: Node): Shape => {
+  switch (node.type) {
+    case "group":
+      return "rect";
+    case "node":
+      return "folder";
+    // Shape is unused for subgraphs
+    // https://stackoverflow.com/questions/49139028/change-subgraph-cluster-shape-to-rounded-rectangle
+    case "subgraph":
+      return "none";
+  }
+};
+
 const getDotFormat = (imageData: ImageData): string[] => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
@@ -43,15 +67,18 @@ const getDotFormat = (imageData: ImageData): string[] => {
   const pushLayer = (layer: Node[], level: number): void => {
     const prefix = " ".repeat(2 * (level + 1));
     for (const node of layer) {
+      const imageAttribute = imageData.imageAttributes ? imageData.imageAttributes[node.id] : undefined;
+      const shape = imageAttribute?.shape ?? defaultShape(node);
       switch (node.type) {
         case "node":
-          lines.push(`${prefix}"${node.id}" [shape=folder, id="${node.id}", label="${node.label}" href=foo];`);
+          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${node.label}" href=foo];`);
           break;
         case "group":
-          lines.push(`${prefix}"${node.id}" [shape=rect, id="${node.id}", label="${node.label}" href=foo];`);
+          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${node.label}" href=foo];`);
           break;
         case "subgraph":
           lines.push(`${prefix}subgraph "cluster_${node.id}" {`);
+          if (imageAttribute?.style) lines.push(`${prefix}  style="${imageAttribute?.style}"`);
           lines.push(`${prefix}  label="${node.label}"`);
           pushLayer(node.children, level + 1);
           lines.push(`}`);

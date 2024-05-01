@@ -6,6 +6,7 @@ import { Reflected, loadedVersion } from "./loaded";
   https://github.com/samchon/typia
   https://typia.io/docs/pure/
 */
+
 const assertIsReflected = (json: Reflected): Reflected => {
   if (!json.version) throw new Error("Expect `version` property");
   if (!json.exes) throw new Error("Expect `exes` property");

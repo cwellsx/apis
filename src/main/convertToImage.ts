@@ -1,6 +1,6 @@
 import type { GroupNode, Groups, Image, LeafNode, ParentNode, ViewOptions, ViewType } from "../shared-types";
 import { isParent } from "../shared-types";
-import { createImage, type ImageData, type Node as ImageNode } from "./createImage";
+import { ImageAttributes, createImage, type ImageData, type Node as ImageNode } from "./createImage";
 import { log } from "./log";
 import type { Edge, StringPredicate } from "./shared-types";
 import { options } from "./shared-types";
@@ -16,7 +16,8 @@ export function convertToImage(
   groups: Groups,
   leafs: LeafNode[],
   edges: Edge[],
-  viewOptions: ViewOptions
+  viewOptions: ViewOptions,
+  imageAttributes?: ImageAttributes
 ): Image | string {
   const { leafVisible, groupExpanded } = viewOptions;
   const isLeafVisible = createLookup(leafVisible);
@@ -31,6 +32,7 @@ export function convertToImage(
     viewOptions.showGrouped,
     viewOptions.viewType
   );
+  imageData.imageAttributes = imageAttributes;
   log("createImage");
   return imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";
 }

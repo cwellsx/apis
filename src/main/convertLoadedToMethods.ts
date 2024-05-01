@@ -2,9 +2,10 @@ import { Groups, LeafNode, MethodViewOptions, ParentNode, TopType, ViewData } fr
 import { getMethodName } from "./convertLoadedToMembers";
 import { getTypeInfoName } from "./convertLoadedToTypes";
 import { convertToImage } from "./convertToImage";
-import { CallDetails, GoodTypeInfo, Method, TypeAndMethod } from "./loaded";
+import { ImageAttribute, ImageAttributes } from "./createImage";
+import { CallDetails, GoodTypeInfo, Method } from "./loaded";
 import { log } from "./log";
-import { Edge } from "./shared-types";
+import { Edge, TypeAndMethod } from "./shared-types";
 
 // initially the leaf nodes are the methods i.e. TypeAndMethod instances
 
@@ -116,6 +117,7 @@ export const convertLoadedToMethods = (
   const called: LeafDictionary = {};
   const caller: LeafDictionary = {};
   const edges: Edge[] = [];
+  const imageAttributes: ImageAttributes = {};
 
   const saveMethod = (methodId: NodeId, result: TypeAndMethod, leafs: LeafDictionary): void => {
     const id = stringId(methodId);
@@ -170,9 +172,12 @@ export const convertLoadedToMethods = (
 
   // combine the two LeafDictionary
   const leafs: LeafDictionary = { ...called, ...caller };
+  const methodAttributes: ImageAttribute = { shape: "none" };
+  Object.keys(leafs).forEach((id) => (imageAttributes[id] = methodAttributes));
 
   // build the TypeDictionary
   const types: TypeDictionary = {};
+  const typeAttributes: ImageAttribute = { shape: "folder", style: "rounded" };
 
   for (const typeAndMethod of Object.values(leafs)) {
     const type = typeAndMethod.type;
@@ -182,6 +187,7 @@ export const convertLoadedToMethods = (
     if (!typeNode) {
       typeNode = { typeId: typeId, type, methods: [] };
       types[id] = typeNode;
+      imageAttributes[id] = typeAttributes;
     }
     typeNode.methods.push(typeAndMethod);
   }
@@ -200,7 +206,7 @@ export const convertLoadedToMethods = (
   if (!viewOptions.showGrouped) throw new Error("");
 
   log("convertToImage");
-  const image = convertToImage(groups, [], edges, viewOptions);
+  const image = convertToImage(groups, [], edges, viewOptions, imageAttributes);
 
   return { image, viewOptions, groups };
 };

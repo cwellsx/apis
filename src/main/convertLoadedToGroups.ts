@@ -3,6 +3,7 @@ import { isParent } from "../shared-types";
 import type { AssemblyReferences } from "./loaded";
 import type { StringPredicate } from "./shared-types";
 import { options, remove, replace } from "./shared-types";
+
 /*
   This is a depth-first implementation, could if needed change it to be breadth-first.
 */
