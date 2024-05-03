@@ -16,11 +16,12 @@ namespace Core.IL
         static Method Transform(IMethod method)
         {
             var declaringType = method.DeclaringType.Transform();
+            var assemblyName = declaringType.AssemblyName;
             return new Method(
                 method.Name,
-                method.Parameters.Select(parameter => (parameter.Name, parameter.Type.Transform())).ToArrayOrNull(),
-                method.TypeArguments.Select(arg => arg.Transform(declaringType.AssemblyName)).ToArrayOrNull(),
-                method.ReturnType.Transform(),
+                method.Parameters.Select(parameter => (parameter.Name, parameter.Type.Transform(assemblyName))).ToArrayOrNull(),
+                method.TypeArguments.Select(arg => arg.Transform(assemblyName)).ToArrayOrNull(),
+                method.ReturnType.Transform(assemblyName),
                 method.IsStatic,
                 method.IsConstructor,
                 declaringType,
@@ -69,7 +70,7 @@ namespace Core.IL
                 assemblyName.NotNull(@namespace, name),
                 @namespace,
                 name,
-                typeArguments.Select(arg => arg.Transform(null)).ToArrayOrNull(),
+                typeArguments.Select(arg => arg.Transform(declaringAssemblyName)).ToArrayOrNull(),
                 type.DeclaringType?.Transform(),
                 Kind: type.Kind.Transform(),
                 ElementType: elementTypeTransformed

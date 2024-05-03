@@ -70,7 +70,7 @@ namespace Core
             CallDetails Warning(int metadataToken, string message, params object[] more)
             {
                 var error = new Error(message, call, more);
-                return new CallDetails(call, error);
+                return new CallDetails(call, metadataToken, error);
             }
 
             if (call.declaringType.AssemblyName == null)
