@@ -1,19 +1,60 @@
-import { BrowserWindow } from "electron";
+import { BrowserWindow, IpcMainEvent } from "electron";
 import type { AppOptions, MainApi, MouseEvent, View, ViewData, ViewOptions, ViewType } from "../shared-types";
 import { getMethodId } from "./convertLoadedToMembers";
 import { NodeId, convertLoadedToMethods } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { convertLoadedToTypes } from "./convertLoadedToTypes";
+import { createBrowserWindow, loadURL } from "./createBrowserWindow";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
+const createSecondWindow = (): Promise<BrowserWindow> => {
+  const window = createBrowserWindow();
+
+  const promise = new Promise<BrowserWindow>((resolve) => {
+    // resolve promise after window is loaded
+    window.webContents.once("did-finish-load", () => {
+      // TODO set appOptions in the newly-created window
+      resolve(window);
+    });
+
+    // and load the index.html of the window
+    loadURL(window);
+    //window.webContents.openDevTools();
+    window.maximize();
+  });
+
+  return promise;
+};
+
 export type AppWindow = {
   mainApi: MainApi;
   window: BrowserWindow;
   showReferences: () => void;
+  showMethods: (methodId?: NodeId) => void;
 };
+
+export const appWindows = (() => {
+  const instances: { [index: number]: AppWindow } = {};
+
+  const find = (event: IpcMainEvent): AppWindow | undefined => instances[event.sender.id];
+  const add = (appWindow: AppWindow): void => {
+    const id = appWindow.window.webContents.id;
+    instances[id] = appWindow;
+    appWindow.window.on("closed", () => {
+      delete instances[id];
+    });
+  };
+  const closeAll = (mainWindow: BrowserWindow): void =>
+    Object.entries(instances).forEach(([index, appWindow]) => {
+      if (appWindow.window !== mainWindow) appWindow.window.close();
+      delete instances[+index];
+    });
+
+  return { find, add, closeAll };
+})();
 
 export const createAppWindow = (
   window: BrowserWindow,
@@ -70,7 +111,11 @@ export const createAppWindow = (
       log("onDetailClick");
       const methodId = getMethodId(id);
       if (!methodId) return; // user clicked on something other than a method
-      showMethods({ assemblyName: assemblyId, metadataToken: methodId });
+      // launch in a separate window
+      createSecondWindow().then((secondWindow) => {
+        const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, "Method");
+        appWindow.showMethods({ assemblyName: assemblyId, metadataToken: methodId });
+      });
     },
   };
 
@@ -92,7 +137,6 @@ export const createAppWindow = (
       sqlLoaded.viewState.referenceViewOptions,
       sqlLoaded.viewState.exes
     );
-    log("show.view");
     showView(viewData, sqlLoaded);
   };
 
@@ -108,5 +152,7 @@ export const createAppWindow = (
   window.setTitle(title);
   renderer.showAppOptions(sqlConfig.appOptions);
 
-  return { mainApi, window, showReferences };
+  const self: AppWindow = { mainApi, window, showReferences, showMethods };
+  appWindows.add(self);
+  return self;
 };

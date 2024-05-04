@@ -1,7 +1,7 @@
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
 import type { MainApi } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
-import { AppWindow, createAppWindow } from "./createAppWindow";
+import { appWindows, createAppWindow } from "./createAppWindow";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { getAppFilename, writeFileSync } from "./fs";
 import type { Reflected } from "./loaded";
@@ -41,26 +41,10 @@ export function createApplication(mainWindow: BrowserWindow): void {
     log("changeSqlLoaded");
     if (sqlLoaded) {
       sqlLoaded.close();
-      appWindows.closeAll();
+      appWindows.closeAll(mainWindow);
     }
     return createSqlLoaded(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
   };
-
-  const appWindows = (() => {
-    const instances: { [index: number]: AppWindow } = {};
-
-    const find = (event: IpcMainEvent): AppWindow | undefined => instances[event.sender.id];
-    const add = (appWindow: AppWindow): void => {
-      instances[appWindow.window.webContents.id] = appWindow;
-    };
-    const closeAll = (): void =>
-      Object.entries(instances).forEach(([index, appWindow]) => {
-        if (appWindow.window !== mainWindow) appWindow.window.close();
-        delete instances[+index];
-      });
-
-    return { find, add, closeAll };
-  })();
 
   const on = (event: IpcMainEvent): MainApi | undefined => appWindows.find(event)?.mainApi;
 
@@ -92,7 +76,6 @@ export function createApplication(mainWindow: BrowserWindow): void {
       sqlLoaded.save(reflected, when, dataSource.hash);
     } else log("!getLoaded");
     const appWindow = createAppWindow(mainWindow, sqlLoaded, sqlConfig, dataSource.path);
-    appWindows.add(appWindow);
     appWindow.showReferences();
   };
 
