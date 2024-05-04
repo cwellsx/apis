@@ -1,35 +1,22 @@
-import { BrowserWindow, ipcMain } from "electron";
-import type { AppOptions, MainApi, MouseEvent, View, ViewData, ViewOptions, ViewType } from "../shared-types";
-import { getMethodId } from "./convertLoadedToMembers";
-import { NodeId, convertLoadedToMethods } from "./convertLoadedToMethods";
-import { convertLoadedToReferences } from "./convertLoadedToReferences";
-import { convertLoadedToTypes } from "./convertLoadedToTypes";
+import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
+import type { MainApi } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
+import { AppWindow, createAppWindow } from "./createAppWindow";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { getAppFilename, writeFileSync } from "./fs";
 import type { Reflected } from "./loaded";
 import { loadedVersion } from "./loaded";
 import { log } from "./log";
-import { hide, showAdjacent } from "./onGraphClick";
 import { open } from "./open";
 import { readCoreJson, whenCoreJson } from "./readCoreJson";
 import { options } from "./shared-types";
-import { IShow, Show } from "./show";
+import { show } from "./show";
 import { showErrorBox } from "./showErrorBox";
 import { DataSource, SqlLoaded, createSqlConfig, createSqlLoaded } from "./sqlTables";
 
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
   So other modules export data and function definitions, but don't invoke functions when they're imported.
-
-  These APIs are created when this function is run:
-  - mainApi
-  - renderApi
-  - dotNetApi
-  - sqlTables
-
-  So these are local variables of this function, and injected into the function which needs them --
-  specifically the open function, whose contents were previously inline this module.
 
   The fact that open needs a lot of parameters suggests it isn't natural to split it from this module --
   but doing so keeps the source files shorter, so more readable.
@@ -46,106 +33,44 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   // instantiate the Config SQL
   const sqlConfig = createSqlConfig(getAppFilename("config.db"));
+
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
+
   const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
     log("changeSqlLoaded");
-    if (sqlLoaded) sqlLoaded.close();
+    if (sqlLoaded) {
+      sqlLoaded.close();
+      appWindows.closeAll();
+    }
     return createSqlLoaded(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
   };
 
-  // implement the MainApi and bind it to ipcMain
-  const mainApi: MainApi = {
-    onViewOptions: (viewOptions: ViewOptions): void => {
-      log("setGroupExpanded");
-      if (!sqlLoaded) return;
-      switch (viewOptions.viewType) {
-        case "references":
-          sqlLoaded.viewState.referenceViewOptions = viewOptions;
-          showReferences(sqlLoaded);
-          break;
-        case "methods":
-          sqlLoaded.viewState.methodViewOptions = viewOptions;
-          showMethods(sqlLoaded);
-          break;
-      }
-    },
-    onAppOptions: (appOptions: AppOptions): void => {
-      log("onAppOptions");
-      if (!sqlLoaded) return;
-      sqlConfig.appOptions = appOptions;
-      show.appOptions(appOptions);
-    },
-    onGraphClick: (id: string, viewType: ViewType, event: MouseEvent): void => {
-      log("onGraphClick");
-      if (!sqlLoaded) return;
-      if (viewType == "references") {
-        const assemblyReferences = sqlLoaded.readAssemblyReferences();
-        if (event.shiftKey) {
-          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-          showAdjacent(assemblyReferences, viewOptions, id);
-          sqlLoaded.viewState.referenceViewOptions = viewOptions;
-          showReferences(sqlLoaded);
-        } else if (event.ctrlKey) {
-          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-          hide(assemblyReferences, viewOptions, id);
-          sqlLoaded.viewState.referenceViewOptions = viewOptions;
-          showReferences(sqlLoaded);
-        } else {
-          const allTypeInfo = sqlLoaded.readTypes(id);
-          const types = convertLoadedToTypes(allTypeInfo, id);
-          log("show.types");
-          show.types(types);
-        }
-      }
-    },
-    onDetailClick: (assemblyId, id): void => {
-      log("onDetailClick");
-      if (!sqlLoaded) return;
-      const methodId = getMethodId(id);
-      if (!methodId) return; // user clicked on something other than a method
-      showMethods(sqlLoaded, { assemblyName: assemblyId, metadataToken: methodId });
-    },
-  };
+  const appWindows = (() => {
+    const instances: { [index: number]: AppWindow } = {};
 
-  ipcMain.on("onViewOptions", (event, viewOptions) => mainApi.onViewOptions(viewOptions));
-  ipcMain.on("onAppOptions", (event, appOptions) => mainApi.onAppOptions(appOptions));
-  ipcMain.on("onGraphClick", (event, id, viewType, mouseEvent) => mainApi.onGraphClick(id, viewType, mouseEvent));
-  ipcMain.on("onDetailClick", (event, assemblyId, id) => mainApi.onDetailClick(assemblyId, id));
-
-  // wrap use of the renderer API
-  const show: IShow = new Show(mainWindow);
-
-  const showMethods = (sqlLoaded: SqlLoaded, methodId?: NodeId): void => {
-    try {
-      const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
-      const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const viewData = convertLoadedToMethods(readMethod, methodViewOptions, methodId);
-      if (methodId) sqlLoaded.viewState.methodViewOptions = methodViewOptions;
-      showView(viewData, sqlLoaded);
-    } catch (error) {
-      show.exception(error);
-    }
-  };
-
-  const showReferences = (sqlLoaded: SqlLoaded): void => {
-    const viewData = convertLoadedToReferences(
-      sqlLoaded.readAssemblyReferences(),
-      sqlLoaded.viewState.referenceViewOptions,
-      sqlLoaded.viewState.exes
-    );
-    log("show.view");
-    showView(viewData, sqlLoaded);
-  };
-
-  const showView = (viewData: ViewData, sqlLoaded: SqlLoaded): void => {
-    const view: View = {
-      ...viewData,
-      dataSourceId: { cachedWhen: sqlLoaded.viewState.cachedWhen, hash: sqlLoaded.viewState.hashDataSource },
+    const find = (event: IpcMainEvent): AppWindow | undefined => instances[event.sender.id];
+    const add = (appWindow: AppWindow): void => {
+      instances[appWindow.window.webContents.id] = appWindow;
     };
-    log("show.view");
-    show.view(view);
-  };
+    const closeAll = (): void =>
+      Object.entries(instances).forEach(([index, appWindow]) => {
+        if (appWindow.window !== mainWindow) appWindow.window.close();
+        delete instances[+index];
+      });
+
+    return { find, add, closeAll };
+  })();
+
+  const on = (event: IpcMainEvent): MainApi | undefined => appWindows.find(event)?.mainApi;
+
+  ipcMain.on("onViewOptions", (event, viewOptions) => on(event)?.onViewOptions(viewOptions));
+  ipcMain.on("onAppOptions", (event, appOptions) => on(event)?.onAppOptions(appOptions));
+  ipcMain.on("onGraphClick", (event, id, viewType, mouseEvent) => on(event)?.onGraphClick(id, viewType, mouseEvent));
+  ipcMain.on("onDetailClick", (event, assemblyId, id) => on(event)?.onDetailClick(assemblyId, id));
+
+  // these mutate sqlLoaded so they're declared inline
+  // perhaps these and sqlLoaded could be migrated together to another module
 
   const openSqlLoaded = async (
     dataSource: DataSource,
@@ -166,8 +91,9 @@ export function createApplication(mainWindow: BrowserWindow): void {
       writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
       sqlLoaded.save(reflected, when, dataSource.hash);
     } else log("!getLoaded");
-    mainWindow.setTitle(dataSource.path);
-    showReferences(sqlLoaded);
+    const appWindow = createAppWindow(mainWindow, sqlLoaded, sqlConfig, dataSource.path);
+    appWindows.add(appWindow);
+    appWindow.showReferences();
   };
 
   const readDotNetApi = async (path: string): Promise<Reflected> => {
@@ -180,7 +106,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   const onOpen = async (dataSource: DataSource): Promise<void> => {
     log("openDataSource");
     const path = dataSource.path;
-    show.message(`Loading ${path}`, "Loading...");
+    show(mainWindow).showMessage(`Loading ${path}`, "Loading...");
     switch (dataSource.type) {
       case "loadedAssemblies":
         await openSqlLoaded(dataSource, await dotNetApi.getWhen(dataSource.path), readDotNetApi);
@@ -196,8 +122,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   async function onRendererLoaded(): Promise<void> {
     log("onRendererLoaded");
-    show.appOptions(sqlConfig.appOptions);
-    await open(mainWindow, show, onOpen, sqlConfig);
+    await open(mainWindow, onOpen, sqlConfig);
   }
 
   mainWindow.webContents.once("did-finish-load", onRendererLoaded);

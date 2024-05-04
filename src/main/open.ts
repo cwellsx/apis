@@ -2,7 +2,7 @@ import { dialog, type BrowserWindow } from "electron";
 import { pathJoin } from "./fs";
 import { hash } from "./hash";
 import { createMenu } from "./menu";
-import { IShow } from "./show";
+import { show } from "./show";
 import { showErrorBox } from "./showErrorBox";
 import { SqlConfig, type DataSource } from "./sqlTables";
 
@@ -10,12 +10,7 @@ declare const CORE_EXE: string;
 
 type OnOpen = (dataSource: DataSource) => Promise<void>;
 
-export const open = async (
-  mainWindow: BrowserWindow,
-  show: IShow,
-  onOpen: OnOpen,
-  sqlConfig: SqlConfig
-): Promise<void> => {
+export const open = async (mainWindow: BrowserWindow, onOpen: OnOpen, sqlConfig: SqlConfig): Promise<void> => {
   // wrap a try/catch handler around onOpenDataSource
   const openDataSource = async (dataSource: DataSource): Promise<void> => {
     try {
@@ -25,7 +20,7 @@ export const open = async (
       // update the list of recently opened paths by recreating the menu
       setApplicationMenu();
     } catch (error: unknown | Error) {
-      show.exception(error);
+      show(mainWindow).showException(error);
     }
   };
 
@@ -76,6 +71,6 @@ export const open = async (
   if (sqlConfig.dataSource) {
     await openDataSource(sqlConfig.dataSource);
   } else {
-    show.message("No data", "Use the File menu, to open a data source.");
+    show(mainWindow).showMessage("No data", "Use the File menu, to open a data source.");
   }
 };

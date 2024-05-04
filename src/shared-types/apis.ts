@@ -13,20 +13,20 @@ import type { View, ViewOptions } from "./view";
 */
 
 // this Api is implemented in the preload script and available to the renderer
-export interface MainApi {
+export type MainApi = {
   onViewOptions: (viewOptions: ViewOptions) => void;
   onAppOptions: (appOptions: AppOptions) => void;
   onGraphClick: OnGraphViewClick;
   onDetailClick: OnDetailClick;
-}
+};
 
 // this Api is available to the main process and its functions are all void
-export interface RendererApi {
+export type RendererApi = {
   showGreeting: (greeting: string) => void;
   showView: (view: View) => void;
   showTypes: (types: Types) => void;
   showAppOptions: (appOptions: AppOptions) => void;
-}
+};
 
 export type BindIpc = (rendererApi: RendererApi) => void;
 
