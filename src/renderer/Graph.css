@@ -1,0 +1,16 @@
+area.leaf {
+  cursor: help;
+}
+area.closed {
+  cursor: zoom-in;
+}
+area.expanded {
+  cursor: zoom-out;
+}
+
+div.shiftKey area.leaf {
+  cursor:zoom-in;
+}
+div.ctrlKey area.leaf {
+  cursor:zoom-out;
+}

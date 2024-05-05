@@ -117,7 +117,6 @@ export const convertLoadedToMethods = (
   const called: LeafDictionary = {};
   const caller: LeafDictionary = {};
   const edges: Edge[] = [];
-  const imageAttributes: ImageAttributes = {};
 
   const saveMethod = (methodId: NodeId, result: TypeAndMethod, leafs: LeafDictionary): void => {
     const id = stringId(methodId);
@@ -170,10 +169,15 @@ export const convertLoadedToMethods = (
 
   findCalled(methodId, firstLeaf.methodDetails.calls);
 
+  // begin to convert to image input format
+  const imageAttributes: ImageAttributes = {};
+
   // combine the two LeafDictionary
   const leafs: LeafDictionary = { ...called, ...caller };
   const methodAttributes: ImageAttribute = { shape: "none" };
-  Object.keys(leafs).forEach((id) => (imageAttributes[id] = methodAttributes));
+  Object.entries(leafs).forEach(
+    ([id, typeAndMethod]) => (imageAttributes[id] = { ...methodAttributes, shortLabel: typeAndMethod.method.name })
+  );
 
   // build the TypeDictionary
   const types: TypeDictionary = {};

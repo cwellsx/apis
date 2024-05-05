@@ -1,7 +1,8 @@
 import React, { FC, useEffect, useRef } from "react";
 
 // this is copy-and-pasted from https://github.com/yj-ang/react-image-mapper2/blob/master/src/components/ImageMapper.tsx
-// because of https://github.com/yj-ang/react-image-mapper2/issues/4 but it's used as-is without modification
+// - because of https://github.com/yj-ang/react-image-mapper2/issues/4
+// - and for slight modification e.g. adding className and tooltip as Area properties
 
 export type AreaMouseEvent = /*Event |*/ React.MouseEvent<HTMLAreaElement, MouseEvent>;
 
@@ -22,6 +23,8 @@ export type Area = {
   strokeColor?: string;
   fillColor?: string;
   center?: number[];
+  className?: string;
+  tooltip?: string;
 };
 
 export type Map = {
@@ -39,6 +42,7 @@ export interface ImageMapperProps {
   height?: number;
   active?: boolean;
   imgWidth?: number;
+  className?: string;
   onLoad?: () => void;
   onClick?: (area: Area, index: number, event: AreaMouseEvent) => void;
   onMouseEnter?: (area: Area, index: number, event: AreaMouseEvent) => void;
@@ -58,6 +62,7 @@ export const ImageMapper: FC<ImageMapperProps> = ({
   height,
   active,
   imgWidth,
+  className,
   onLoad,
   onClick,
   onMouseEnter,
@@ -82,7 +87,7 @@ export const ImageMapper: FC<ImageMapperProps> = ({
   }, [src, map, fillColor, strokeColor, lineWidth, width, height, active, imgWidth]);
 
   const drawrect = (coords: number[], fillColor: string, lineWidth: number, strokeColor: string) => {
-    let [left, top, right, bot] = coords;
+    const [left, top, right, bot] = coords;
     const ctx = canvas.current?.getContext("2d");
     if (!ctx) return;
     ctx.fillStyle = fillColor;
@@ -270,6 +275,8 @@ export const ImageMapper: FC<ImageMapperProps> = ({
           key={area._id || index}
           shape={area.shape}
           coords={scaledCoords.join(",")}
+          className={area.className}
+          title={area.tooltip}
           onMouseEnter={(event) =>
             hoverOn({
               area: extendedArea,
@@ -305,7 +312,7 @@ export const ImageMapper: FC<ImageMapperProps> = ({
   };
 
   return (
-    <div style={styles.container} ref={container}>
+    <div style={styles.container} ref={container} className={className}>
       <img
         style={styles.img}
         src={src}

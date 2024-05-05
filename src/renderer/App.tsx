@@ -105,6 +105,7 @@ const App: React.FunctionComponent = () => {
       now={view.image.now}
       zoomPercent={zoomPercent}
       onGraphClick={onGraphClick}
+      useKeyStates={view.viewOptions.viewType == "references"}
     />
   );
 

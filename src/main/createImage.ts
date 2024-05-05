@@ -1,7 +1,7 @@
 import child_process from "child_process";
 import os from "os";
 import path from "path";
-import type { Image } from "../shared-types";
+import type { AreaClass, Image } from "../shared-types";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { existsSync, getAppFilename, readFileSync, writeFileSync } from "./fs";
@@ -21,11 +21,14 @@ type Shape = "folder" | "rect" | "none";
 export type ImageAttribute = {
   // used for leafs and for non-expanded groups
   shape?: Shape;
-  // used for clusters i.e. for exapnded groups -- https://graphviz.org/docs/attr-types/style/
+  // used for clusters i.e. for expanded groups -- https://graphviz.org/docs/attr-types/style/
   style?: "rounded";
+  // if this is defined then this is the label and label is the tooltip
+  shortLabel?: string;
+  tooltip?: string;
 };
 
-export type ImageAttributes = { [index: string]: ImageAttribute };
+export type ImageAttributes = { [index: string]: ImageAttribute | undefined };
 
 export type Node = (Text & { type: "node" | "group" }) | Subgraph;
 type Subgraph = Text & { type: "subgraph"; children: Node[] };
@@ -33,7 +36,8 @@ type Subgraph = Text & { type: "subgraph"; children: Node[] };
 export type ImageData = {
   nodes: Node[];
   edges: { clientId: string; serverId: string; edgeId: string }[];
-  imageAttributes?: ImageAttributes;
+  imageAttributes: ImageAttributes;
+  classNames: { [type: string]: AreaClass };
 };
 
 const findDotExe = (): string => {
@@ -67,19 +71,23 @@ const getDotFormat = (imageData: ImageData): string[] => {
   const pushLayer = (layer: Node[], level: number): void => {
     const prefix = " ".repeat(2 * (level + 1));
     for (const node of layer) {
-      const imageAttribute = imageData.imageAttributes ? imageData.imageAttributes[node.id] : undefined;
+      const imageAttribute = imageData.imageAttributes[node.id];
       const shape = imageAttribute?.shape ?? defaultShape(node);
+      const label = imageAttribute?.shortLabel ?? node.label;
+      if (imageAttribute?.shortLabel && !imageAttribute.tooltip) imageAttribute.tooltip = node.label;
       switch (node.type) {
         case "node":
-          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${node.label}" href=foo];`);
+          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${label}" href=foo];`);
           break;
         case "group":
-          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${node.label}" href=foo];`);
+          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${label}" href=foo];`);
           break;
         case "subgraph":
           lines.push(`${prefix}subgraph "cluster_${node.id}" {`);
-          if (imageAttribute?.style) lines.push(`${prefix}  style="${imageAttribute?.style}"`);
-          lines.push(`${prefix}  label="${node.label}"`);
+          if (imageAttribute?.style) lines.push(`${prefix}  style="${imageAttribute.style}"`);
+          lines.push(`${prefix}  label="${label}"`);
+          lines.push(`${prefix}  id="${node.id}"`);
+          lines.push(`${prefix}  href=foo`);
           pushLayer(node.children, level + 1);
           lines.push(`}`);
       }
@@ -113,5 +121,16 @@ export function createImage(imageData: ImageData): Image {
 
   const xml = readFileSync(mapFilename);
 
-  return { imagePath: convertPathToUrl(pngFilename), areas: convertXmlMapToAreas(xml), now: Date.now() };
+  const getNodeAttributes = (id: string) => {
+    const imageAttribute: ImageAttribute | undefined = imageData.imageAttributes[id];
+    const className = imageData.classNames[id];
+    const tooltip = imageAttribute?.tooltip;
+    return { className, tooltip };
+  };
+
+  return {
+    imagePath: convertPathToUrl(pngFilename),
+    areas: convertXmlMapToAreas(xml, getNodeAttributes),
+    now: Date.now(),
+  };
 }

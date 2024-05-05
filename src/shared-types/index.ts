@@ -2,7 +2,7 @@ export type { BindIpc, MainApi, PreloadApis, RendererApi } from "./apis";
 export type { AsText, CallStack } from "./callStack";
 export { isParent } from "./grouped";
 export type { GroupNode, Groups, LeafNode, ParentNode } from "./grouped";
-export type { Area, Image } from "./image";
+export type { Area, AreaClass, Image } from "./image";
 export type { MouseEvent, OnDetailClick, OnGraphClick, OnGraphViewClick } from "./mouseEvent";
 export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";

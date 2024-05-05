@@ -1,5 +1,5 @@
 import { ElementCompact, xml2js } from "xml-js";
-import { Area } from "../shared-types";
+import { Area, AreaClass } from "../shared-types";
 
 /*
 Input is a *.map file, created by Graphviz, which has a format like this:
@@ -59,14 +59,19 @@ type Attributes = {
   };
 };
 
-export function convertXmlMapToAreas(xml: string): Area[] {
+type NodeAttributes = {
+  className: AreaClass;
+  tooltip?: string;
+};
+
+export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string) => NodeAttributes): Area[] {
   const root: ElementCompact = xml2js(xml, { compact: true });
   const converted: Attributes[] | Attributes = root["map"]["area"];
   const areas: Attributes[] = Array.isArray(converted) ? converted : [converted];
   return areas.map((el) => {
     const attr = el._attributes;
     const coords = attr.coords.split(",").map((s) => parseInt(s));
-    const area = { id: attr.id, shape: attr.shape, coords };
+    const area = { id: attr.id, shape: attr.shape, coords, ...getNodeAttributes(attr.id) };
     if (!area.id || (area.shape != "poly" && area.shape != "rect") || coords.length == 0 || coords.length % 2 != 0)
       throw new Error("Missing Area property");
     return area;

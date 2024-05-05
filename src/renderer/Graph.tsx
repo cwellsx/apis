@@ -1,6 +1,8 @@
 import * as React from "react";
 import type { Area as MyArea, OnGraphClick } from "../shared-types";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
+import "./Graph.css";
+import { log } from "./log";
 
 type GraphProps = {
   imagePath: string;
@@ -8,6 +10,7 @@ type GraphProps = {
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
   onGraphClick: OnGraphClick;
+  useKeyStates: boolean;
 };
 
 type State = {
@@ -51,7 +54,14 @@ const initialState = (props: GraphProps): State => {
       name: "foo",
       // convert from MyArea (defined in "../shared-types") to Area (defined in "./ImageMapper")
       areas: props.areas.map((area) => {
-        return { shape: area.shape, coords: area.coords, _id: area.id, strokeColor: getIdColor(area.id) };
+        return {
+          shape: area.shape,
+          coords: area.coords,
+          _id: area.id,
+          strokeColor: getIdColor(area.id),
+          className: area.className,
+          tooltip: area.tooltip,
+        };
       }),
     },
     // size undefined until ActionImageLoaded
@@ -95,6 +105,7 @@ const getIdType = (id: string): "leaf" | "group" | "edge" =>
 
 export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState(props));
+  const [className, setClassName] = React.useState<string | undefined>(undefined);
 
   const { src, map, size, zoomPercent } = state;
 
@@ -104,6 +115,22 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
   }, [props, src, zoomPercent]);
 
   if (!src) return <>Loading...</>;
+
+  const keyboardEvent: (event: KeyboardEvent) => void = (event) => {
+    const shiftKey: boolean = event.shiftKey && props.useKeyStates;
+    const ctrlKey: boolean = event.ctrlKey && props.useKeyStates;
+    const newClassName: string | undefined = shiftKey
+      ? ctrlKey
+        ? "shiftKey ctrlKey"
+        : "shiftKey"
+      : ctrlKey
+      ? "ctrlKey"
+      : undefined;
+    setClassName(newClassName);
+    log(`setClassName(${newClassName})`);
+  };
+  document.addEventListener("keydown", keyboardEvent);
+  document.addEventListener("keyup", keyboardEvent);
 
   // if we don't yet know the size of the image then display the naked image first
   if (!size) {
@@ -122,7 +149,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
 
   const onClick = (area: Area, index: number, event: AreaMouseEvent): void => {
     console.log(`Clicked area ${area._id}`);
-    if (area._id && getIdType(area._id) === "leaf")
+    if (area._id)
       props.onGraphClick(area._id, {
         altKey: event.altKey,
         button: event.button,
@@ -145,6 +172,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
         imgWidth={imgWidth}
         width={width}
         height={height}
+        className={className}
       />
       <span className="zoom">{`${zoomPercent}%`}</span>
     </>

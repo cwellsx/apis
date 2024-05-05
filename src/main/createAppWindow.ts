@@ -7,6 +7,7 @@ import { convertLoadedToTypes } from "./convertLoadedToTypes";
 import { createBrowserWindow, loadURL } from "./createBrowserWindow";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
+import { remove } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
@@ -86,8 +87,17 @@ export const createAppWindow = (
       renderer.showAppOptions(appOptions);
     },
     onGraphClick: (id: string, viewType: ViewType, event: MouseEvent): void => {
-      log("onGraphClick");
+      log(`onGraphClick ${id}`);
       if (viewType == "references") {
+        if (id[0] === "!") {
+          // this is a group of assemblies, not the id of an assembly
+          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+          if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
+          else viewOptions.groupExpanded.push(id);
+          sqlLoaded.viewState.referenceViewOptions = viewOptions;
+          showReferences();
+          return;
+        }
         const assemblyReferences = sqlLoaded.readAssemblyReferences();
         if (event.shiftKey) {
           const viewOptions = sqlLoaded.viewState.referenceViewOptions;
@@ -118,6 +128,10 @@ export const createAppWindow = (
       });
     },
   };
+
+  // const showApis = (): void =>{
+
+  // }
 
   const showMethods = (methodId?: NodeId): void => {
     try {

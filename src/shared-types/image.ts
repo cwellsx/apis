@@ -1,7 +1,11 @@
+export type AreaClass = "leaf" | "expanded" | "closed"; // not "edge"
+
 export type Area = {
   id: string;
   shape: "poly" | "rect";
   coords: number[];
+  className: AreaClass;
+  tooltip?: string;
 };
 
 export type Image = {

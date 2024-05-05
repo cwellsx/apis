@@ -1,6 +1,7 @@
-import type { GroupNode, Groups, Image, LeafNode, ParentNode, ViewOptions, ViewType } from "../shared-types";
+import type { AreaClass, GroupNode, Groups, Image, LeafNode, ParentNode, ViewOptions } from "../shared-types";
 import { isParent } from "../shared-types";
-import { ImageAttributes, createImage, type ImageData, type Node as ImageNode } from "./createImage";
+import type { ImageAttributes, ImageData, Node as ImageNode } from "./createImage";
+import { createImage } from "./createImage";
 import { log } from "./log";
 import type { Edge, StringPredicate } from "./shared-types";
 import { options } from "./shared-types";
@@ -23,28 +24,35 @@ export function convertToImage(
   const isLeafVisible = createLookup(leafVisible);
   const isGroupExpanded = createLookup(groupExpanded);
   const nodes = viewOptions.showGrouped ? groups : leafs;
-  log("convertToImage");
-  const imageData = convertToImageData(
-    nodes,
-    edges,
-    isLeafVisible,
-    isGroupExpanded,
-    viewOptions.showGrouped,
-    viewOptions.viewType
-  );
-  imageData.imageAttributes = imageAttributes;
-  log("createImage");
-  return imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";
-}
 
-export function convertToImageData(
-  nodes: Nodes,
-  edges: Edge[],
-  isLeafVisible: StringPredicate,
-  isGroupExpanded: StringPredicate,
-  showGrouped: boolean,
-  viewType: ViewType
-): ImageData {
+  // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
+  // also assert that the parent fields are set correctly
+  const unique = new Set<string>();
+  // also take this opportunity to initialize
+  const classNames: { [id: string]: AreaClass } = {};
+
+  const assertUnique = (node: GroupNode): void => {
+    const id = node.id;
+    if (unique.has(id)) {
+      throw new Error(`Duplicate node id: ${id}`);
+    }
+    unique.add(id);
+    let className: AreaClass;
+    if (isParent(node)) {
+      className = viewOptions.groupExpanded.includes(node.id) ? "expanded" : "closed";
+      node.children.forEach((child) => {
+        assertUnique(child);
+        if (child.parent !== node) {
+          throw new Error(`Unexpected parent of:  ${id}`);
+        }
+      });
+    } else className = "leaf";
+    classNames[node.id] = className;
+  };
+  nodes.forEach(assertUnique);
+
+  const showGrouped = viewOptions.showGrouped;
+
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   const closed = new Map<string, string>();
   if (showGrouped) {
@@ -99,7 +107,7 @@ export function convertToImageData(
       (!isParent(node) || !isGroupExpanded(node.id))
     ) {
       if (!node.label.startsWith(node.parent.label)) {
-        if (viewType == "references") throw new Error("Unexpected parent node name");
+        if (viewOptions.viewType == "references") throw new Error("Unexpected parent node name");
         // else this is a sublayer so do nothing
       } else textNode.label = "*" + node.label.substring(node.parent.label.length);
     }
@@ -112,10 +120,15 @@ export function convertToImageData(
 
   const toImageNodes = (nodes: Nodes): ImageNode[] => nodes.filter(isGroupNodeVisible).map(toImageNode);
 
-  return {
+  const imageData: ImageData = {
     nodes: toImageNodes(nodes),
     edges: edgeIds.map((edgeId) => {
       return { edgeId, ...fromEdgeId(edgeId) };
     }),
+    imageAttributes: imageAttributes ?? {},
+    classNames,
   };
+
+  log("createImage");
+  return imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";
 }
