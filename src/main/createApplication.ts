@@ -50,7 +50,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   ipcMain.on("onViewOptions", (event, viewOptions) => on(event)?.onViewOptions(viewOptions));
   ipcMain.on("onAppOptions", (event, appOptions) => on(event)?.onAppOptions(appOptions));
-  ipcMain.on("onGraphClick", (event, id, viewType, mouseEvent) => on(event)?.onGraphClick(id, viewType, mouseEvent));
+  ipcMain.on("onGraphClick", (event, graphEvent) => on(event)?.onGraphClick(graphEvent));
   ipcMain.on("onDetailClick", (event, assemblyId, id) => on(event)?.onDetailClick(assemblyId, id));
 
   // these mutate sqlLoaded so they're declared inline

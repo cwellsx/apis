@@ -1,7 +1,7 @@
 import type { LeafNode, ReferenceViewOptions, ViewData } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { convertToImage } from "./convertToImage";
-import { AssemblyReferences } from "./loaded";
+import type { AssemblyReferences } from "./loaded";
 import { log } from "./log";
 import { type Edge } from "./shared-types";
 

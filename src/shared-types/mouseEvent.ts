@@ -1,3 +1,4 @@
+import { AreaClass } from "./image";
 import { ViewType } from "./view";
 
 // import OnGraphClick into the renderer-side code, but avoid importing MouseEvent
@@ -11,7 +12,8 @@ export type MouseEvent = {
   shiftKey: boolean;
 };
 
-export type OnGraphViewClick = (id: string, viewType: ViewType, event: MouseEvent) => void;
-export type OnGraphClick = (id: string, event: MouseEvent) => void;
+export type GraphEvent = { id: string; className: AreaClass; viewType: ViewType; event: MouseEvent };
+
+export type OnGraphViewClick = (graphEvent: GraphEvent) => void;
 
 export type OnDetailClick = (assemblyId: string, id: string) => void;

@@ -1,7 +1,8 @@
 import { BrowserWindow, IpcMainEvent } from "electron";
-import type { AppOptions, MainApi, MouseEvent, View, ViewData, ViewOptions, ViewType } from "../shared-types";
+import type { AppOptions, GraphEvent, MainApi, View, ViewData, ViewOptions } from "../shared-types";
 import { getMethodId } from "./convertLoadedToMembers";
-import { NodeId, convertLoadedToMethods } from "./convertLoadedToMethods";
+import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
+import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { convertLoadedToTypes } from "./convertLoadedToTypes";
 import { createBrowserWindow, loadURL } from "./createBrowserWindow";
@@ -86,34 +87,68 @@ export const createAppWindow = (
       sqlConfig.appOptions = appOptions;
       renderer.showAppOptions(appOptions);
     },
-    onGraphClick: (id: string, viewType: ViewType, event: MouseEvent): void => {
+    onGraphClick: (graphEvent: GraphEvent): void => {
+      const { id, className, viewType, event } = graphEvent;
       log(`onGraphClick ${id}`);
-      if (viewType == "references") {
-        if (id[0] === "!") {
-          // this is a group of assemblies, not the id of an assembly
-          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-          if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
-          else viewOptions.groupExpanded.push(id);
-          sqlLoaded.viewState.referenceViewOptions = viewOptions;
-          showReferences();
-          return;
+      switch (viewType) {
+        case "methods": {
+          switch (className) {
+            case "closed":
+            case "expanded": {
+              const viewOptions = sqlLoaded.viewState.methodViewOptions;
+              if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
+              else viewOptions.groupExpanded.push(id);
+              sqlLoaded.viewState.methodViewOptions = viewOptions;
+              showMethods();
+              return;
+            }
+            case "leaf": {
+              const { assemblyName, metadataToken } = fromStringId(id);
+              const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
+              const methodBody = convertLoadedToMethodBody(typeAndMethod);
+              log("renderer.showMethodBody");
+              renderer.showMethodBody(methodBody);
+              return;
+            }
+            default:
+              return;
+          }
         }
-        const assemblyReferences = sqlLoaded.readAssemblyReferences();
-        if (event.shiftKey) {
-          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-          showAdjacent(assemblyReferences, viewOptions, id);
-          sqlLoaded.viewState.referenceViewOptions = viewOptions;
-          showReferences();
-        } else if (event.ctrlKey) {
-          const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-          hide(assemblyReferences, viewOptions, id);
-          sqlLoaded.viewState.referenceViewOptions = viewOptions;
-          showReferences();
-        } else {
-          const allTypeInfo = sqlLoaded.readTypes(id);
-          const types = convertLoadedToTypes(allTypeInfo, id);
-          log("show.types");
-          renderer.showTypes(types);
+        case "references": {
+          switch (className) {
+            case "closed":
+            case "expanded": {
+              // this is a group of assemblies, not the id of an assembly
+              const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+              if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
+              else viewOptions.groupExpanded.push(id);
+              sqlLoaded.viewState.referenceViewOptions = viewOptions;
+              showReferences();
+              return;
+            }
+            case "leaf": {
+              const assemblyReferences = sqlLoaded.readAssemblyReferences();
+              if (event.shiftKey) {
+                const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+                showAdjacent(assemblyReferences, viewOptions, id);
+                sqlLoaded.viewState.referenceViewOptions = viewOptions;
+                showReferences();
+              } else if (event.ctrlKey) {
+                const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+                hide(assemblyReferences, viewOptions, id);
+                sqlLoaded.viewState.referenceViewOptions = viewOptions;
+                showReferences();
+              } else {
+                const allTypeInfo = sqlLoaded.readTypes(id);
+                const types = convertLoadedToTypes(allTypeInfo, id);
+                log("renderer.showTypes");
+                renderer.showTypes(types);
+              }
+              return;
+            }
+            default:
+              return;
+          }
         }
       }
     },
@@ -159,7 +194,7 @@ export const createAppWindow = (
       ...viewData,
       dataSourceId: { cachedWhen: sqlLoaded.viewState.cachedWhen, hash: sqlLoaded.viewState.hashDataSource },
     };
-    log("show.view");
+    log("renderer.showView");
     renderer.showView(view);
   };
 

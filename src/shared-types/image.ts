@@ -1,4 +1,4 @@
-export type AreaClass = "leaf" | "expanded" | "closed"; // not "edge"
+export type AreaClass = "leaf" | "expanded" | "closed" | undefined; // not "edge"
 
 export type Area = {
   id: string;

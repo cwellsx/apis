@@ -3,8 +3,8 @@ import type {
   AppOptions,
   BindIpc,
   MainApi,
+  MethodBody,
   OnDetailClick,
-  OnGraphClick,
   PreloadApis,
   RendererApi,
   Types,
@@ -13,8 +13,9 @@ import type {
 } from "../shared-types";
 import { defaultAppOptions } from "../shared-types";
 import { Details } from "./Details";
-import { Graph } from "./Graph";
+import { Graph, OnGraphClick } from "./Graph";
 import { Message } from "./Message";
+import { MethodDetails } from "./MethodDetails";
 import { Options } from "./Options";
 import { Panes } from "./Panes";
 import { Tree } from "./Tree";
@@ -38,6 +39,7 @@ const App: React.FunctionComponent = () => {
   const [greeting, setGreeting] = React.useState<string | undefined>(defaultGreeting);
   const [view, setView] = React.useState<View | undefined>(undefined);
   const [types, setTypes] = React.useState<Types | undefined>(undefined);
+  const [methodBody, setMethodBody] = React.useState<MethodBody | undefined>(undefined);
 
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
 
@@ -66,6 +68,11 @@ const App: React.FunctionComponent = () => {
         setGreeting(undefined);
         setTypes(types);
       },
+      showMethodBody(methodBody: MethodBody): void {
+        log("showMethodBody");
+        setGreeting(undefined);
+        setMethodBody(methodBody);
+      },
       showAppOptions(appOptions: AppOptions): void {
         log("showAppOptions");
         setAppOptions(appOptions);
@@ -88,10 +95,12 @@ const App: React.FunctionComponent = () => {
       </React.StrictMode>
     );
 
+  const viewType = view.viewOptions.viewType;
+
   const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.onViewOptions(viewOptions);
   const onAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.onAppOptions(appOptions);
   const onDetailClick: OnDetailClick = (assemblyId, id) => mainApi.onDetailClick(assemblyId, id);
-  const onGraphClick: OnGraphClick = (id, event) => mainApi.onGraphClick(id, view.viewOptions.viewType, event);
+  const onGraphClick: OnGraphClick = (id, className, event) => mainApi.onGraphClick({ id, className, viewType, event });
 
   // display a message, or an image if there is one
   const center = greeting ? (
@@ -105,7 +114,7 @@ const App: React.FunctionComponent = () => {
       now={view.image.now}
       zoomPercent={zoomPercent}
       onGraphClick={onGraphClick}
-      useKeyStates={view.viewOptions.viewType == "references"}
+      useKeyStates={viewType == "references"}
     />
   );
 
@@ -122,7 +131,11 @@ const App: React.FunctionComponent = () => {
     </>
   );
 
-  const right = !types ? undefined : <Details types={types} onDetailClick={onDetailClick} />;
+  const right = types ? (
+    <Details types={types} onDetailClick={onDetailClick} />
+  ) : methodBody ? (
+    <MethodDetails methodBody={methodBody} />
+  ) : undefined;
 
   return (
     <React.StrictMode>

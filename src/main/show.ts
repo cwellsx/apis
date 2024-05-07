@@ -1,5 +1,5 @@
 import type { BrowserWindow } from "electron";
-import type { AppOptions, RendererApi, Types, View } from "../shared-types";
+import type { AppOptions, MethodBody, RendererApi, Types, View } from "../shared-types";
 import { getErrorString } from "./error";
 
 export type Show = {
@@ -30,7 +30,8 @@ export const renderer = (mainWindow: BrowserWindow): RendererApi => {
   const showGreeting = (greeting: string): void => webContents.send("showGreeting", greeting);
   const showView = (view: View): void => webContents.send("showView", view);
   const showTypes = (types: Types): void => webContents.send("showTypes", types);
+  const showMethodBody = (methodBody: MethodBody): void => webContents.send("showMethodBody", methodBody);
   const showAppOptions = (appOptions: AppOptions): void => webContents.send("showAppOptions", appOptions);
 
-  return { showGreeting, showView, showTypes, showAppOptions };
+  return { showGreeting, showView, showTypes, showMethodBody, showAppOptions };
 };

@@ -1,3 +1,4 @@
+import { MethodBody } from "./methodBody";
 import type { OnDetailClick, OnGraphViewClick } from "./mouseEvent";
 import type { AppOptions } from "./options";
 import type { Types } from "./types";
@@ -25,6 +26,7 @@ export type RendererApi = {
   showGreeting: (greeting: string) => void;
   showView: (view: View) => void;
   showTypes: (types: Types) => void;
+  showMethodBody: (methodBody: MethodBody) => void;
   showAppOptions: (appOptions: AppOptions) => void;
 };
 

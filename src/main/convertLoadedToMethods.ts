@@ -1,11 +1,11 @@
-import { Groups, LeafNode, MethodViewOptions, ParentNode, TopType, ViewData } from "../shared-types";
+import type { Groups, LeafNode, MethodViewOptions, ParentNode, TopType, ViewData } from "../shared-types";
 import { getMethodName } from "./convertLoadedToMembers";
 import { getTypeInfoName } from "./convertLoadedToTypes";
 import { convertToImage } from "./convertToImage";
-import { ImageAttribute, ImageAttributes } from "./createImage";
-import { CallDetails, GoodTypeInfo, Method } from "./loaded";
+import type { ImageAttribute, ImageAttributes } from "./createImage";
+import { CallDetails, GoodTypeInfo, MethodIdNamed } from "./loaded";
 import { log } from "./log";
-import { Edge, TypeAndMethod } from "./shared-types";
+import type { Edge, TypeAndMethod } from "./shared-types";
 
 // initially the leaf nodes are the methods i.e. TypeAndMethod instances
 
@@ -46,7 +46,7 @@ const getTypeAndMethodId: (leaf: TypeAndMethod) => NodeId = (leaf: TypeAndMethod
   assemblyName: leaf.type.typeId.assemblyName,
   metadataToken: leaf.method.metadataToken,
 });
-const getMethodId: (leaf: Method) => NodeId = (method: Method) => ({
+const getMethodId: (leaf: MethodIdNamed) => NodeId = (method: MethodIdNamed) => ({
   assemblyName: method.assemblyName,
   metadataToken: method.metadataToken,
 });
@@ -59,6 +59,12 @@ const assertTypeAndMethodId = (lhs: NodeId, leaf: TypeAndMethod): void => {
   const rhs = getTypeAndMethodId(leaf);
   if (lhs.assemblyName !== rhs.assemblyName || lhs.metadataToken !== rhs.metadataToken)
     throw new Error("Unexpected leaf id");
+};
+
+export const fromStringId = (id: string): NodeId => {
+  const split = id.split("-");
+  if (split.length !== 2) throw new Error("Unexpected Id");
+  return { assemblyName: split[0], metadataToken: +split[1] };
 };
 
 /*
@@ -109,6 +115,10 @@ const groupsFromTopDictionary = (types: TypeDictionary, topType: TopType): Group
   return Object.entries(tops).map(entryToGroupNode);
 };
 
+/*
+  exported
+*/
+
 export const convertLoadedToMethods = (
   readMethod: ReadMethod,
   viewOptions: MethodViewOptions,
@@ -143,7 +153,7 @@ export const convertLoadedToMethods = (
   saveMethod(methodId, firstLeaf, called);
   saveMethod(methodId, firstLeaf, caller);
 
-  const findCalledBy = (called: NodeId, calledBy: Method[]): void => {
+  const findCalledBy = (called: NodeId, calledBy: MethodIdNamed[]): void => {
     for (const method of calledBy) {
       const calledById: NodeId = getMethodId(method);
       saveEdge(calledById, called);

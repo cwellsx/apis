@@ -1,4 +1,4 @@
-export type Method = {
+export type MethodIdNamed = {
   methodMember: string;
   declaringType: string;
   assemblyName: string;
@@ -12,7 +12,7 @@ export type Error = {
 };
 
 export type CallDetails = {
-  called: Method;
+  called: MethodIdNamed;
   error?: Error;
   isWarning?: boolean;
 };
@@ -22,7 +22,7 @@ export type MethodDetails = {
   methodMember: string;
   declaringType: string;
   calls: CallDetails[];
-  calledBy: Method[];
+  calledBy: MethodIdNamed[];
 };
 
 export interface MethodDictionary {
