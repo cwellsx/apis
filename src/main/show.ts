@@ -1,5 +1,5 @@
 import type { BrowserWindow } from "electron";
-import type { AppOptions, MethodBody, RendererApi, Types, View } from "../shared-types";
+import type { AppOptions, RendererApi, View, ViewDetails, ViewGreeting } from "../shared-types";
 import { getErrorString } from "./error";
 
 export type Show = {
@@ -9,8 +9,14 @@ export type Show = {
 
 export const show = (mainWindow: BrowserWindow): Show => {
   const webContents = mainWindow.webContents;
-  const showGreeting = (greeting: string): void => webContents.send("showGreeting", greeting);
 
+  const showGreeting = (greeting: string): void => {
+    const view: ViewGreeting = {
+      greeting,
+      viewOptions: { viewType: "greeting" },
+    };
+    webContents.send("showView", view);
+  };
   const showException = (error: unknown): void => {
     mainWindow.setTitle("Error");
     const message = getErrorString(error);
@@ -27,11 +33,9 @@ export const show = (mainWindow: BrowserWindow): Show => {
 export const renderer = (mainWindow: BrowserWindow): RendererApi => {
   const webContents = mainWindow.webContents;
 
-  const showGreeting = (greeting: string): void => webContents.send("showGreeting", greeting);
   const showView = (view: View): void => webContents.send("showView", view);
-  const showTypes = (types: Types): void => webContents.send("showTypes", types);
-  const showMethodBody = (methodBody: MethodBody): void => webContents.send("showMethodBody", methodBody);
+  const showDetails = (details: ViewDetails): void => webContents.send("showDetails", details);
   const showAppOptions = (appOptions: AppOptions): void => webContents.send("showAppOptions", appOptions);
 
-  return { showGreeting, showView, showTypes, showMethodBody, showAppOptions };
+  return { showView, showDetails, showAppOptions };
 };

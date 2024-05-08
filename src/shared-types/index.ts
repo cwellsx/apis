@@ -1,3 +1,4 @@
+export type { AllViewOptions, View, ViewDetails, ViewType } from "./all";
 export type { BindIpc, MainApi, PreloadApis, RendererApi } from "./apis";
 export type { AsText, CallStack } from "./callStack";
 export { isParent } from "./grouped";
@@ -21,4 +22,5 @@ export type {
   TypeKnown,
   Types,
 } from "./types";
-export type { MethodViewOptions, ReferenceViewOptions, TopType, View, ViewData, ViewOptions, ViewType } from "./view";
+export type { GraphViewOptions, GraphViewType, MethodViewOptions, ReferenceViewOptions } from "./viewOptions";
+export type { ViewGraph, ViewGreeting } from "./views";

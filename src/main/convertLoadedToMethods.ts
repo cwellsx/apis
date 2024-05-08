@@ -1,4 +1,4 @@
-import type { Groups, LeafNode, MethodViewOptions, ParentNode, TopType, ViewData } from "../shared-types";
+import type { Groups, LeafNode, MethodViewOptions, ParentNode, ViewGraph } from "../shared-types";
 import { getMethodName } from "./convertLoadedToMembers";
 import { getTypeInfoName } from "./convertLoadedToTypes";
 import { convertToImage } from "./convertToImage";
@@ -71,7 +71,7 @@ export const fromStringId = (id: string): NodeId => {
   functions to create group nodes
 */
 
-const groupsFromTopDictionary = (types: TypeDictionary, topType: TopType): Groups => {
+const groupsFromTopDictionary = (types: TypeDictionary, viewOptions: MethodViewOptions): Groups => {
   const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethod, parent: ParentNode | null): LeafNode => ({
     parent,
     id: stringId(getTypeAndMethodId(typeAndMethod)),
@@ -89,6 +89,7 @@ const groupsFromTopDictionary = (types: TypeDictionary, topType: TopType): Group
     return self;
   };
 
+  const topType = viewOptions.topType;
   if (topType === "none") return Object.values(types).map((typeNode) => parentFromTypeNode(typeNode, null));
   const tops: TopDictionary = {};
   for (const typeNode of Object.values(types)) {
@@ -123,7 +124,7 @@ export const convertLoadedToMethods = (
   readMethod: ReadMethod,
   viewOptions: MethodViewOptions,
   methodId?: NodeId
-): ViewData => {
+): ViewGraph => {
   const called: LeafDictionary = {};
   const caller: LeafDictionary = {};
   const edges: Edge[] = [];
@@ -208,7 +209,7 @@ export const convertLoadedToMethods = (
 
   // convert to Groups
   log("groupsFromTopDictionary");
-  const groups: Groups = groupsFromTopDictionary(types, viewOptions.topType);
+  const groups: Groups = groupsFromTopDictionary(types, viewOptions);
 
   // a Group is visible iff its leafs are visible
   if (isNewMethodId) {

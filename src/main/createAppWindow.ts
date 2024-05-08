@@ -1,5 +1,5 @@
 import { BrowserWindow, IpcMainEvent } from "electron";
-import type { AppOptions, GraphEvent, MainApi, View, ViewData, ViewOptions, ViewType } from "../shared-types";
+import type { AllViewOptions, AppOptions, GraphEvent, MainApi, ViewType } from "../shared-types";
 import { getMethodId } from "./convertLoadedToMembers";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
@@ -69,7 +69,7 @@ export const createAppWindow = (
 
   // implement the MainApi and bind it to ipcMain
   const mainApi: MainApi = {
-    onViewOptions: (viewOptions: ViewOptions): void => {
+    onViewOptions: (viewOptions: AllViewOptions): void => {
       log("setGroupExpanded");
       switch (viewOptions.viewType) {
         case "references":
@@ -106,8 +106,8 @@ export const createAppWindow = (
               const { assemblyName, metadataToken } = fromStringId(id);
               const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
               const methodBody = convertLoadedToMethodBody(typeAndMethod);
-              log("renderer.showMethodBody");
-              renderer.showMethodBody(methodBody);
+              log("renderer.showDetails");
+              renderer.showDetails(methodBody);
               return;
             }
             default:
@@ -142,7 +142,7 @@ export const createAppWindow = (
                 const allTypeInfo = sqlLoaded.readTypes(id);
                 const types = convertLoadedToTypes(allTypeInfo, id);
                 log("renderer.showTypes");
-                renderer.showTypes(types);
+                renderer.showDetails(types);
               }
               return;
             }
@@ -174,7 +174,8 @@ export const createAppWindow = (
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
       const viewData = convertLoadedToMethods(readMethod, methodViewOptions, methodId);
       if (methodId) sqlLoaded.viewState.methodViewOptions = methodViewOptions;
-      showView(viewData, sqlLoaded);
+      log("renderer.showView");
+      renderer.showView(viewData);
     } catch (error) {
       show.showException(error);
     }
@@ -186,7 +187,8 @@ export const createAppWindow = (
       sqlLoaded.viewState.referenceViewOptions,
       sqlLoaded.viewState.exes
     );
-    showView(viewData, sqlLoaded);
+    log("renderer.showView");
+    renderer.showView(viewData);
   };
 
   const showViewType = (viewType?: ViewType): void => {
@@ -199,15 +201,6 @@ export const createAppWindow = (
       default:
         throw new Error("ViewType not implemented");
     }
-  };
-
-  const showView = (viewData: ViewData, sqlLoaded: SqlLoaded): void => {
-    const view: View = {
-      ...viewData,
-      dataSourceId: { cachedWhen: sqlLoaded.viewState.cachedWhen, hash: sqlLoaded.viewState.hashDataSource },
-    };
-    log("renderer.showView");
-    renderer.showView(view);
   };
 
   window.setTitle(title);

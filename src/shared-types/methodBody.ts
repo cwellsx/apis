@@ -12,4 +12,5 @@ export type MethodBody = {
   };
   asText: string;
   errors?: MethodError[];
+  detailType: "methodBody";
 };

@@ -1,8 +1,6 @@
-import { MethodBody } from "./methodBody";
+import type { AllViewOptions, View, ViewDetails } from "./all";
 import type { OnDetailClick, OnGraphViewClick } from "./mouseEvent";
 import type { AppOptions } from "./options";
-import type { Types } from "./types";
-import type { View, ViewOptions } from "./view";
 
 /*
   The underlying APIs, which the application-specific classes wrap, are:
@@ -15,7 +13,7 @@ import type { View, ViewOptions } from "./view";
 
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {
-  onViewOptions: (viewOptions: ViewOptions) => void;
+  onViewOptions: (viewOptions: AllViewOptions) => void;
   onAppOptions: (appOptions: AppOptions) => void;
   onGraphClick: OnGraphViewClick;
   onDetailClick: OnDetailClick;
@@ -23,10 +21,8 @@ export type MainApi = {
 
 // this Api is available to the main process and its functions are all void
 export type RendererApi = {
-  showGreeting: (greeting: string) => void;
   showView: (view: View) => void;
-  showTypes: (types: Types) => void;
-  showMethodBody: (methodBody: MethodBody) => void;
+  showDetails: (details: ViewDetails) => void;
   showAppOptions: (appOptions: AppOptions) => void;
 };
 

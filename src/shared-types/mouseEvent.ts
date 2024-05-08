@@ -1,5 +1,5 @@
 import { AreaClass } from "./image";
-import { ViewType } from "./view";
+import { GraphViewType } from "./viewOptions";
 
 // import OnGraphClick into the renderer-side code, but avoid importing MouseEvent
 // because it can be confusing because there's also a React.MouseEvent and a DOM MouseEvent
@@ -12,7 +12,7 @@ export type MouseEvent = {
   shiftKey: boolean;
 };
 
-export type GraphEvent = { id: string; className: AreaClass; viewType: ViewType; event: MouseEvent };
+export type GraphEvent = { id: string; className: AreaClass; viewType: GraphViewType; event: MouseEvent };
 
 export type OnGraphViewClick = (graphEvent: GraphEvent) => void;
 

@@ -26,4 +26,5 @@ export const convertLoadedToMethodBody = (typeAndMethod: TypeAndMethod): MethodB
   },
   asText: typeAndMethod.methodDetails.asText,
   errors: getErrors(typeAndMethod.methodDetails.calls),
+  detailType: "methodBody",
 });

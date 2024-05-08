@@ -1,4 +1,4 @@
-import type { LeafNode, ReferenceViewOptions, ViewData } from "../shared-types";
+import type { LeafNode, ReferenceViewOptions, ViewGraph } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { convertToImage } from "./convertToImage";
 import type { AssemblyReferences } from "./loaded";
@@ -9,7 +9,7 @@ export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,
   viewOptions: ReferenceViewOptions,
   exes: string[]
-): ViewData => {
+): ViewGraph => {
   log("convertLoadedToView");
   const leafs: LeafNode[] = [];
   const edges: Edge[] = [];

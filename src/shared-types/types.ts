@@ -49,4 +49,5 @@ export type Types = {
   assemblyId: string;
   namespaces: Namespace[];
   exceptions: Exceptions;
+  detailType: "types";
 };

@@ -128,5 +128,5 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyId: strin
     })
     .sort((x, y) => x.label.localeCompare(y.label));
 
-  return { assemblyId, namespaces, exceptions };
+  return { assemblyId, namespaces, exceptions, detailType: "types" };
 };

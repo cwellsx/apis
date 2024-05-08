@@ -1,16 +1,6 @@
 import * as React from "react";
 import CheckboxTree, { Node, OnCheckNode } from "react-checkbox-tree";
-import type {
-  Access,
-  Exception,
-  MemberInfo,
-  Members,
-  Namespace,
-  OnDetailClick,
-  TextNode,
-  Type,
-  Types,
-} from "../shared-types";
+import type { Access, Exception, MemberInfo, Namespace, OnDetailClick, TextNode, Type, Types } from "../shared-types";
 import { isTypeException } from "../shared-types";
 import * as Icon from "./Icons.Microsoft";
 import { icons } from "./checkboxTreeIcons";
@@ -101,31 +91,25 @@ const getPropertyIcon = (access: Access) => {
 
 type ClassName = "field" | "property" | "method" | "event" | "exception" | "attribute" | "type" | "namespace";
 
-const convertMembers = (members: Members): Node[] => {
-  const result: Node[] = [];
-
+const convertTypes = (types: Type[] | undefined): Node[] => (types ? types.map(convertType) : []);
+const convertType = (type: Type): Node => {
   const makeMemberNode = (
     memberInfo: MemberInfo,
     getIcon: (access: Access) => JSX.Element,
     className: ClassName
   ): Node => makeNode(memberInfo, getIcon(memberInfo.access), className, memberInfo.attributes.map(convertAttribute));
 
-  result.push(...members.fieldMembers.map((memberInfo) => makeMemberNode(memberInfo, getFieldIcon, "field")));
-  result.push(...members.propertyMembers.map((memberInfo) => makeMemberNode(memberInfo, getPropertyIcon, "property")));
-  result.push(...members.methodMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon, "method")));
-  result.push(...members.eventMembers.map((memberInfo) => makeMemberNode(memberInfo, getEventIcon, "event")));
-  return result;
-};
-
-const convertTypes = (types: Type[] | undefined): Node[] => (types ? types.map(convertType) : []);
-const convertType = (type: Type): Node =>
-  isTypeException(type)
+  return isTypeException(type)
     ? makeNode(type, <Icon.SvgExclamationPoint />, "type")
     : makeNode(type, getTypeIcon(type.access), "type", [
         ...type.attributes.map(convertAttribute),
         ...convertTypes(type.subtypes),
-        ...convertMembers(type.members),
+        ...type.members.fieldMembers.map((memberInfo) => makeMemberNode(memberInfo, getFieldIcon, "field")),
+        ...type.members.propertyMembers.map((memberInfo) => makeMemberNode(memberInfo, getPropertyIcon, "property")),
+        ...type.members.methodMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon, "method")),
+        ...type.members.eventMembers.map((memberInfo) => makeMemberNode(memberInfo, getEventIcon, "event")),
       ]);
+};
 
 const convertNamespace = (namespace: Namespace): Node =>
   makeNode(namespace, <Icon.SvgNamespace />, "namespace", namespace.types.map(convertType));

@@ -1,4 +1,4 @@
-import type { AreaClass, GroupNode, Groups, Image, LeafNode, ParentNode, ViewOptions } from "../shared-types";
+import type { AreaClass, GraphViewOptions, GroupNode, Groups, Image, LeafNode, ParentNode } from "../shared-types";
 import { isParent } from "../shared-types";
 import type { ImageAttributes, ImageData, Node as ImageNode } from "./createImage";
 import { createImage } from "./createImage";
@@ -17,7 +17,7 @@ export function convertToImage(
   groups: Groups,
   leafs: LeafNode[],
   edges: Edge[],
-  viewOptions: ViewOptions,
+  viewOptions: GraphViewOptions,
   imageAttributes?: ImageAttributes
 ): Image | string {
   const { leafVisible, groupExpanded } = viewOptions;

@@ -1,18 +1,17 @@
 import * as React from "react";
-import type { AreaClass, MouseEvent, Area as MyArea } from "../shared-types";
+import type { AreaClass, GraphViewType, Area as MyArea, OnGraphViewClick } from "../shared-types";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 import "./Graph.css";
 import { log } from "./log";
-
-export type OnGraphClick = (id: string, className: AreaClass, event: MouseEvent) => void;
 
 type GraphProps = {
   imagePath: string;
   areas: MyArea[];
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
-  onGraphClick: OnGraphClick;
+  onGraphClick: OnGraphViewClick;
   useKeyStates: boolean;
+  viewType: GraphViewType;
 };
 
 type State = {
@@ -152,13 +151,18 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
   const onClick = (area: Area, index: number, event: AreaMouseEvent): void => {
     console.log(`Clicked area ${area._id} ${area.className}`);
     if (area._id)
-      props.onGraphClick(area._id, area.className as AreaClass, {
-        altKey: event.altKey,
-        button: event.button,
-        buttons: event.buttons,
-        ctrlKey: event.ctrlKey,
-        metaKey: event.metaKey,
-        shiftKey: event.shiftKey,
+      props.onGraphClick({
+        id: area._id,
+        className: area.className as AreaClass,
+        viewType: props.viewType,
+        event: {
+          altKey: event.altKey,
+          button: event.button,
+          buttons: event.buttons,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+          shiftKey: event.shiftKey,
+        },
       });
   };
 

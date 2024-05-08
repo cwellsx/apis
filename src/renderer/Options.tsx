@@ -1,10 +1,10 @@
 import * as React from "react";
-import type { ViewOptions } from "../shared-types";
+import type { GraphViewOptions } from "../shared-types";
 import "./Options.css";
 
 type OptionsProps = {
-  viewOptions: ViewOptions;
-  setViewOptions: (viewOptions: ViewOptions) => void;
+  viewOptions: GraphViewOptions;
+  setViewOptions: (viewOptions: GraphViewOptions) => void;
 };
 
 export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {

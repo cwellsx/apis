@@ -1,19 +1,21 @@
 import * as React from "react";
 import type {
+  AllViewOptions,
   AppOptions,
   BindIpc,
+  GraphEvent,
   MainApi,
-  MethodBody,
   OnDetailClick,
+  OnGraphViewClick,
   PreloadApis,
   RendererApi,
-  Types,
   View,
-  ViewOptions,
+  ViewDetails,
+  ViewGreeting,
 } from "../shared-types";
 import { defaultAppOptions } from "../shared-types";
 import { Details } from "./Details";
-import { Graph, OnGraphClick } from "./Graph";
+import { Graph } from "./Graph";
 import { Message } from "./Message";
 import { MethodDetails } from "./MethodDetails";
 import { Options } from "./Options";
@@ -32,15 +34,26 @@ export const mainApi: MainApi = window.preloadApis.mainApi;
 export const bindIpc: BindIpc = window.preloadApis.bindIpc;
 
 const defaultGreeting = "No data";
+const defaultView: ViewGreeting = {
+  greeting: defaultGreeting,
+  viewOptions: {
+    viewType: "greeting",
+  },
+};
+
+// function isViewGraph(view: View): view is ViewGraph {
+//   const viewTypes: ViewType[] = ["references", "methods"];
+//   return viewTypes.includes(view.viewOptions.viewType);
+// }
+function isGreeting(view: View): view is ViewGreeting {
+  return view.viewOptions.viewType === "greeting";
+}
 
 let once = false;
 
 const App: React.FunctionComponent = () => {
-  const [greeting, setGreeting] = React.useState<string | undefined>(defaultGreeting);
-  const [view, setView] = React.useState<View | undefined>(undefined);
-  const [types, setTypes] = React.useState<Types | undefined>(undefined);
-  const [methodBody, setMethodBody] = React.useState<MethodBody | undefined>(undefined);
-
+  const [view, setView] = React.useState<View>(defaultView);
+  const [details, setDetails] = React.useState<ViewDetails | undefined>(undefined);
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
 
   const zoomPercent = appOptions.zoomPercent;
@@ -55,23 +68,14 @@ const App: React.FunctionComponent = () => {
     once = true;
 
     const rendererApi: RendererApi = {
-      showGreeting(greeting: string): void {
-        setGreeting(greeting);
-      },
       showView(view: View): void {
         log("showView");
-        setGreeting(undefined);
         setView(view);
+        if (isGreeting(view)) setDetails(undefined);
       },
-      showTypes(types: Types): void {
-        log("showTypes");
-        setGreeting(undefined);
-        setTypes(types);
-      },
-      showMethodBody(methodBody: MethodBody): void {
-        log("showMethodBody");
-        setGreeting(undefined);
-        setMethodBody(methodBody);
+      showDetails(details: ViewDetails): void {
+        log("showDetails");
+        setDetails(details);
       },
       showAppOptions(appOptions: AppOptions): void {
         log("showAppOptions");
@@ -81,68 +85,63 @@ const App: React.FunctionComponent = () => {
     bindIpc(rendererApi);
   });
 
-  if (!view)
-    return (
-      <React.StrictMode>
-        <Panes
-          left={<></>}
-          center={<Message message={greeting ?? defaultGreeting} />}
-          right={undefined}
-          fontSize={fontSize}
-          onWheelZoomPercent={onWheelZoomPercent}
-          onWheelFontSize={onWheelFontSize}
-        />
-      </React.StrictMode>
-    );
+  const viewOptions = view.viewOptions;
+  const viewType = viewOptions.viewType;
 
-  const viewType = view.viewOptions.viewType;
-
-  const setViewOptions: (viewOptions: ViewOptions) => void = (viewOptions) => mainApi.onViewOptions(viewOptions);
+  const setViewOptions: (viewOptions: AllViewOptions) => void = (viewOptions) => mainApi.onViewOptions(viewOptions);
   const onAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.onAppOptions(appOptions);
   const onDetailClick: OnDetailClick = (assemblyId, id) => mainApi.onDetailClick(assemblyId, id);
-  const onGraphClick: OnGraphClick = (id, className, event) => mainApi.onGraphClick({ id, className, viewType, event });
+  const onGraphClick: OnGraphViewClick = (graphEvent: GraphEvent) => mainApi.onGraphClick(graphEvent);
 
-  // display a message, or an image if there is one
-  const center = greeting ? (
-    <Message message={greeting} />
-  ) : typeof view.image === "string" ? (
-    <Message message={view.image} />
-  ) : (
-    <Graph
-      imagePath={view.image.imagePath}
-      areas={view.image.areas}
-      now={view.image.now}
-      zoomPercent={zoomPercent}
-      onGraphClick={onGraphClick}
-      useKeyStates={viewType == "references"}
-    />
-  );
+  const getLeft = (): JSX.Element => {
+    if (isGreeting(view)) return <></>;
 
-  const left = (
-    <>
-      <Options viewOptions={view.viewOptions} setViewOptions={setViewOptions} />
-      <Tree
-        nodes={view.groups}
-        leafVisible={view.viewOptions.leafVisible}
-        groupExpanded={view.viewOptions.groupExpanded}
-        setLeafVisible={(names) => mainApi.onViewOptions({ ...view.viewOptions, leafVisible: names })}
-        setGroupExpanded={(names) => mainApi.onViewOptions({ ...view.viewOptions, groupExpanded: names })}
+    const viewOptions = view.viewOptions;
+    return (
+      <>
+        <Options viewOptions={view.viewOptions} setViewOptions={setViewOptions} />
+        <Tree
+          nodes={view.groups}
+          leafVisible={viewOptions.leafVisible}
+          groupExpanded={viewOptions.groupExpanded}
+          setLeafVisible={(names) => mainApi.onViewOptions({ ...viewOptions, leafVisible: names })}
+          setGroupExpanded={(names) => mainApi.onViewOptions({ ...viewOptions, groupExpanded: names })}
+        />
+      </>
+    );
+  };
+
+  const getCenter = (): JSX.Element => {
+    if (isGreeting(view)) return <Message message={view.greeting} />;
+
+    // display a message, or an image if there is one
+    if (typeof view.image === "string") return <Message message={view.image} />;
+
+    return (
+      <Graph
+        imagePath={view.image.imagePath}
+        areas={view.image.areas}
+        now={view.image.now}
+        zoomPercent={zoomPercent}
+        onGraphClick={onGraphClick}
+        useKeyStates={viewType == "references"}
+        viewType={view.viewOptions.viewType}
       />
-    </>
-  );
+    );
+  };
 
-  const right = types ? (
-    <Details types={types} onDetailClick={onDetailClick} />
-  ) : methodBody ? (
-    <MethodDetails methodBody={methodBody} />
-  ) : undefined;
+  const getRight = (): JSX.Element => {
+    if (!details) return <></>;
+    if (details.detailType === "types") return <Details types={details} onDetailClick={onDetailClick} />;
+    return <MethodDetails methodBody={details} />;
+  };
 
   return (
     <React.StrictMode>
       <Panes
-        left={left}
-        center={center}
-        right={right}
+        left={getLeft()}
+        center={getCenter()}
+        right={getRight()}
         fontSize={fontSize}
         onWheelZoomPercent={onWheelZoomPercent}
         onWheelFontSize={onWheelFontSize}
