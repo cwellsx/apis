@@ -24,7 +24,7 @@ export type MethodViewOptions = {
 
 export type ViewOptions = ReferenceViewOptions | MethodViewOptions;
 
-export type ViewType = "references" | "methods";
+export type ViewType = "references" | "methods" | "errors";
 
 export type DataSourceId = {
   cachedWhen: string;

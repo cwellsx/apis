@@ -1,5 +1,5 @@
 import { BrowserWindow, IpcMainEvent } from "electron";
-import type { AppOptions, GraphEvent, MainApi, View, ViewData, ViewOptions } from "../shared-types";
+import type { AppOptions, GraphEvent, MainApi, View, ViewData, ViewOptions, ViewType } from "../shared-types";
 import { getMethodId } from "./convertLoadedToMembers";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
@@ -34,7 +34,7 @@ const createSecondWindow = (): Promise<BrowserWindow> => {
 export type AppWindow = {
   mainApi: MainApi;
   window: BrowserWindow;
-  showReferences: () => void;
+  showViewType: () => void;
   showMethods: (methodId?: NodeId) => void;
 };
 
@@ -189,6 +189,18 @@ export const createAppWindow = (
     showView(viewData, sqlLoaded);
   };
 
+  const showViewType = (viewType?: ViewType): void => {
+    if (viewType) sqlLoaded.viewState.viewType = viewType;
+    else viewType = sqlLoaded.viewState.viewType;
+    switch (viewType) {
+      case "references":
+        showReferences();
+        break;
+      default:
+        throw new Error("ViewType not implemented");
+    }
+  };
+
   const showView = (viewData: ViewData, sqlLoaded: SqlLoaded): void => {
     const view: View = {
       ...viewData,
@@ -201,7 +213,7 @@ export const createAppWindow = (
   window.setTitle(title);
   renderer.showAppOptions(sqlConfig.appOptions);
 
-  const self: AppWindow = { mainApi, window, showReferences, showMethods };
+  const self: AppWindow = { mainApi, window, showViewType, showMethods };
   appWindows.add(self);
   return self;
 };
