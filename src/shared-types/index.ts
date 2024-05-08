@@ -1,11 +1,20 @@
+export { defaultView } from "./all";
 export type { AllViewOptions, View, ViewDetails, ViewType } from "./all";
-export type { BindIpc, MainApi, PreloadApis, RendererApi } from "./apis";
+export type {
+  MainApi,
+  OnAppOptions,
+  OnDetailClick,
+  OnGraphClick,
+  OnViewOptions,
+  PreloadApis,
+  RendererApi,
+} from "./apis";
 export type { AsText, CallStack } from "./callStack";
 export { isParent } from "./grouped";
 export type { GroupNode, Groups, LeafNode, ParentNode } from "./grouped";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodBody, MethodError } from "./methodBody";
-export type { GraphEvent, MouseEvent, OnDetailClick, OnGraphViewClick } from "./mouseEvent";
+export type { GraphEvent } from "./mouseEvent";
 export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";
 export type { TextNode } from "./textNode";

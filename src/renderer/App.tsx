@@ -1,26 +1,17 @@
 import * as React from "react";
 import type {
-  AllViewOptions,
   AppOptions,
-  BindIpc,
-  GraphEvent,
-  MainApi,
+  OnAppOptions,
   OnDetailClick,
-  OnGraphViewClick,
+  OnGraphClick,
+  OnViewOptions,
   PreloadApis,
-  RendererApi,
   View,
   ViewDetails,
-  ViewGreeting,
 } from "../shared-types";
-import { defaultAppOptions } from "../shared-types";
-import { Details } from "./Details";
-import { Graph } from "./Graph";
-import { Message } from "./Message";
-import { MethodDetails } from "./MethodDetails";
-import { Options } from "./Options";
+import { defaultAppOptions, defaultView } from "../shared-types";
 import { Panes } from "./Panes";
-import { Tree } from "./Tree";
+import { getCenter, getLeft, getRight, isGreeting } from "./appViews";
 import { log } from "./log";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
@@ -30,24 +21,7 @@ declare global {
   }
 }
 
-export const mainApi: MainApi = window.preloadApis.mainApi;
-export const bindIpc: BindIpc = window.preloadApis.bindIpc;
-
-const defaultGreeting = "No data";
-const defaultView: ViewGreeting = {
-  greeting: defaultGreeting,
-  viewOptions: {
-    viewType: "greeting",
-  },
-};
-
-// function isViewGraph(view: View): view is ViewGraph {
-//   const viewTypes: ViewType[] = ["references", "methods"];
-//   return viewTypes.includes(view.viewOptions.viewType);
-// }
-function isGreeting(view: View): view is ViewGreeting {
-  return view.viewOptions.viewType === "greeting";
-}
+const mainApi = window.preloadApis.mainApi;
 
 let once = false;
 
@@ -57,17 +31,18 @@ const App: React.FunctionComponent = () => {
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
 
   const zoomPercent = appOptions.zoomPercent;
+  const setZoomPercent = (zoomPercent: number): void => onAppOptions({ ...appOptions, zoomPercent });
+  const onWheelZoomPercent = useZoomPercent(zoomPercent, setZoomPercent);
+
   const fontSize = appOptions.fontSize;
-  const onWheelZoomPercent = useZoomPercent(zoomPercent, (zoomPercent: number) =>
-    onAppOptions({ ...appOptions, zoomPercent })
-  );
-  const onWheelFontSize = useFontSize(fontSize, (fontSize: number) => onAppOptions({ ...appOptions, fontSize }));
+  const setFontSize = (fontSize: number): void => onAppOptions({ ...appOptions, fontSize });
+  const onWheelFontSize = useFontSize(fontSize, setFontSize);
 
   React.useEffect(() => {
     if (once) return;
     once = true;
 
-    const rendererApi: RendererApi = {
+    window.preloadApis.bindIpc({
       showView(view: View): void {
         log("showView");
         setView(view);
@@ -81,67 +56,20 @@ const App: React.FunctionComponent = () => {
         log("showAppOptions");
         setAppOptions(appOptions);
       },
-    };
-    bindIpc(rendererApi);
+    });
   });
 
-  const viewOptions = view.viewOptions;
-  const viewType = viewOptions.viewType;
-
-  const setViewOptions: (viewOptions: AllViewOptions) => void = (viewOptions) => mainApi.onViewOptions(viewOptions);
-  const onAppOptions: (appOptions: AppOptions) => void = (appOptions) => mainApi.onAppOptions(appOptions);
+  const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
+  const onAppOptions: OnAppOptions = (appOptions) => mainApi.onAppOptions(appOptions);
   const onDetailClick: OnDetailClick = (assemblyId, id) => mainApi.onDetailClick(assemblyId, id);
-  const onGraphClick: OnGraphViewClick = (graphEvent: GraphEvent) => mainApi.onGraphClick(graphEvent);
-
-  const getLeft = (): JSX.Element => {
-    if (isGreeting(view)) return <></>;
-
-    const viewOptions = view.viewOptions;
-    return (
-      <>
-        <Options viewOptions={view.viewOptions} setViewOptions={setViewOptions} />
-        <Tree
-          nodes={view.groups}
-          leafVisible={viewOptions.leafVisible}
-          groupExpanded={viewOptions.groupExpanded}
-          setLeafVisible={(names) => mainApi.onViewOptions({ ...viewOptions, leafVisible: names })}
-          setGroupExpanded={(names) => mainApi.onViewOptions({ ...viewOptions, groupExpanded: names })}
-        />
-      </>
-    );
-  };
-
-  const getCenter = (): JSX.Element => {
-    if (isGreeting(view)) return <Message message={view.greeting} />;
-
-    // display a message, or an image if there is one
-    if (typeof view.image === "string") return <Message message={view.image} />;
-
-    return (
-      <Graph
-        imagePath={view.image.imagePath}
-        areas={view.image.areas}
-        now={view.image.now}
-        zoomPercent={zoomPercent}
-        onGraphClick={onGraphClick}
-        useKeyStates={viewType == "references"}
-        viewType={view.viewOptions.viewType}
-      />
-    );
-  };
-
-  const getRight = (): JSX.Element => {
-    if (!details) return <></>;
-    if (details.detailType === "types") return <Details types={details} onDetailClick={onDetailClick} />;
-    return <MethodDetails methodBody={details} />;
-  };
+  const onGraphClick: OnGraphClick = (graphEvent) => mainApi.onGraphClick(graphEvent);
 
   return (
     <React.StrictMode>
       <Panes
-        left={getLeft()}
-        center={getCenter()}
-        right={getRight()}
+        left={getLeft(view, onViewOptions)}
+        center={getCenter(view, onGraphClick, zoomPercent)}
+        right={getRight(details, onDetailClick)}
         fontSize={fontSize}
         onWheelZoomPercent={onWheelZoomPercent}
         onWheelFontSize={onWheelFontSize}

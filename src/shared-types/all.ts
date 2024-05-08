@@ -7,11 +7,13 @@ export type AllViewOptions = ReferenceViewOptions | MethodViewOptions | ErrorsVi
 
 export type ViewType = "references" | "methods" | "errors" | "greeting";
 
-// export type DataSourceId = {
-//   cachedWhen: string;
-//   hash: string;
-// };
-
-export type View = ViewGraph | ViewGreeting; // & { dataSourceId: DataSourceId };
-
+export type View = ViewGraph | ViewGreeting;
 export type ViewDetails = MethodBody | Types;
+
+const defaultGreeting = "No data";
+export const defaultView: ViewGreeting = {
+  greeting: defaultGreeting,
+  viewOptions: {
+    viewType: "greeting",
+  },
+};

@@ -1,5 +1,5 @@
 import type { AllViewOptions, View, ViewDetails } from "./all";
-import type { OnDetailClick, OnGraphViewClick } from "./mouseEvent";
+import type { GraphEvent } from "./mouseEvent";
 import type { AppOptions } from "./options";
 
 /*
@@ -11,11 +11,16 @@ import type { AppOptions } from "./options";
   - https://www.electronjs.org/docs/latest/tutorial/ipc
 */
 
+export type OnViewOptions = (viewOptions: AllViewOptions) => void;
+export type OnAppOptions = (appOptions: AppOptions) => void;
+export type OnGraphClick = (graphEvent: GraphEvent) => void;
+export type OnDetailClick = (assemblyId: string, id: string) => void;
+
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {
-  onViewOptions: (viewOptions: AllViewOptions) => void;
-  onAppOptions: (appOptions: AppOptions) => void;
-  onGraphClick: OnGraphViewClick;
+  onViewOptions: OnViewOptions;
+  onAppOptions: OnAppOptions;
+  onGraphClick: OnGraphClick;
   onDetailClick: OnDetailClick;
 };
 
@@ -26,9 +31,7 @@ export type RendererApi = {
   showAppOptions: (appOptions: AppOptions) => void;
 };
 
-export type BindIpc = (rendererApi: RendererApi) => void;
-
 export type PreloadApis = {
   mainApi: MainApi;
-  bindIpc: BindIpc;
+  bindIpc: (rendererApi: RendererApi) => void;
 };

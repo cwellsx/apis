@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { AreaClass, GraphViewType, Area as MyArea, OnGraphViewClick } from "../shared-types";
+import type { AreaClass, GraphViewType, Area as MyArea, OnGraphClick } from "../shared-types";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 import "./Graph.css";
 import { log } from "./log";
@@ -9,7 +9,7 @@ type GraphProps = {
   areas: MyArea[];
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
-  onGraphClick: OnGraphViewClick;
+  onGraphClick: OnGraphClick;
   useKeyStates: boolean;
   viewType: GraphViewType;
 };

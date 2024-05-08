@@ -141,7 +141,7 @@ export const createAppWindow = (
               } else {
                 const allTypeInfo = sqlLoaded.readTypes(id);
                 const types = convertLoadedToTypes(allTypeInfo, id);
-                log("renderer.showTypes");
+                log("renderer.showDetails");
                 renderer.showDetails(types);
               }
               return;

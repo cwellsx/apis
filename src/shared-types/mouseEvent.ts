@@ -3,7 +3,7 @@ import { GraphViewType } from "./viewOptions";
 
 // import OnGraphClick into the renderer-side code, but avoid importing MouseEvent
 // because it can be confusing because there's also a React.MouseEvent and a DOM MouseEvent
-export type MouseEvent = {
+type MouseEvent = {
   altKey: boolean;
   button: number;
   buttons: number;
@@ -13,7 +13,3 @@ export type MouseEvent = {
 };
 
 export type GraphEvent = { id: string; className: AreaClass; viewType: GraphViewType; event: MouseEvent };
-
-export type OnGraphViewClick = (graphEvent: GraphEvent) => void;
-
-export type OnDetailClick = (assemblyId: string, id: string) => void;
