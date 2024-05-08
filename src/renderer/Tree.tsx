@@ -1,22 +1,22 @@
 import * as React from "react";
-import CheckboxTree, { Node } from "react-checkbox-tree";
+import CheckboxTree, { Node as CheckboxNode } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
-import type { GroupNode, Groups } from "../shared-types";
+import type { Node as TreeNode } from "../shared-types";
 import { isParent } from "../shared-types";
 import "./3rd-party/CheckboxTree.css";
 import "./Tree.css";
 import { icons } from "./checkboxTreeIcons";
 
 type TreeProps = {
-  nodes: Groups | null;
+  nodes: TreeNode[] | null;
   leafVisible: string[];
   groupExpanded: string[];
   setLeafVisible: (names: string[]) => void;
   setGroupExpanded: (names: string[]) => void;
 };
 
-// convert from GroupNode (defined in "../shared-types") to Node (defined in "react-checkbox-tree")
-const convert = (node: GroupNode): Node => {
+// convert from GroupNode (defined in "../shared-types") to CheckboxNode (defined in "react-checkbox-tree")
+const convert = (node: TreeNode): CheckboxNode => {
   return {
     label: node.label,
     // a parent node may have the same label as its first child, so mangle the id of all parents
@@ -25,7 +25,7 @@ const convert = (node: GroupNode): Node => {
   };
 };
 
-const getNodes = (nodes: Groups | null): Node[] => (nodes ? nodes.map(convert) : []);
+const getNodes = (nodes: TreeNode[] | null): CheckboxNode[] => (nodes ? nodes.map(convert) : []);
 
 export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const { leafVisible, nodes, groupExpanded } = props;

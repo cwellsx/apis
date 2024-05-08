@@ -1,15 +1,17 @@
-import type { Exceptions, Namespace, Type, Types } from "../shared-types";
+import type { Named, Namespace, Type, Types } from "../shared-types";
 import { getAccess, getAttributes, getId, getMembers, getTypeName } from "./convertLoadedToMembers";
 import type { AllTypeInfo, NamedTypeInfo, TypeId } from "./loaded";
 import { isPartTypeInfo, namedTypeInfo } from "./loaded";
 import { logError } from "./log";
 import { options } from "./shared-types";
 
+type Exceptions = Named[];
+
 // use a closure to create an Exception instance with a unique id from a message string
 const pushException: (exceptions: Exceptions, message: string) => void = (function () {
   let index = 0;
   const result = (exceptions: Exceptions, message: string) => {
-    const exception = { label: message, id: getId("!e!", (++index).toString()) };
+    const exception = { name: message, id: getId("!e!", (++index).toString()) };
     exceptions.push(exception);
   };
   return result;
@@ -102,7 +104,7 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyId: strin
   const getType = (typeInfo: NamedTypeInfo): Type => {
     const nested = getNested(typeInfo.typeId);
     const typeTextNode = {
-      label: getTypeInfoName(typeInfo),
+      name: getTypeInfoName(typeInfo),
       id: getTypeId(typeInfo.typeId),
     };
     if (isPartTypeInfo(typeInfo)) return { ...typeTextNode, exceptions: createExceptions(typeInfo.exceptions) };
@@ -121,12 +123,12 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyId: strin
   const namespaces: Namespace[] = [...grouped.entries()]
     .map(([name, typeInfos]) => {
       return {
-        label: name,
+        name,
         id: getId("!n!", name),
-        types: typeInfos.map(getType).sort((x, y) => x.label.localeCompare(y.label)),
+        types: typeInfos.map(getType).sort((x, y) => x.name.localeCompare(y.name)),
       };
     })
-    .sort((x, y) => x.label.localeCompare(y.label));
+    .sort((x, y) => x.name.localeCompare(y.name));
 
   return { assemblyId, namespaces, exceptions, detailType: "types" };
 };

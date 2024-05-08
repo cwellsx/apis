@@ -115,23 +115,33 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     else if (zoomPercent !== props.zoomPercent) dispatch({ type: "ZoomPercent", zoomPercent: props.zoomPercent });
   }, [props, src, zoomPercent]);
 
-  if (!src) return <>Loading...</>;
+  React.useEffect(() => {
+    // like https://github.com/donavon/use-event-listener
 
-  const keyboardEvent: (event: KeyboardEvent) => void = (event) => {
-    const shiftKey: boolean = event.shiftKey && props.useKeyStates;
-    const ctrlKey: boolean = event.ctrlKey && props.useKeyStates;
-    const newClassName: string | undefined = shiftKey
-      ? ctrlKey
-        ? "shiftKey ctrlKey"
-        : "shiftKey"
-      : ctrlKey
-      ? "ctrlKey"
-      : undefined;
-    setClassName(newClassName);
-    log(`setClassName(${newClassName})`);
-  };
-  document.addEventListener("keydown", keyboardEvent);
-  document.addEventListener("keyup", keyboardEvent);
+    const keyboardEvent: (event: KeyboardEvent) => void = (event) => {
+      if (event.repeat) return; // don't spike the CPU if a key is held down
+      const shiftKey: boolean = event.shiftKey && props.useKeyStates;
+      const ctrlKey: boolean = event.ctrlKey && props.useKeyStates;
+      const newClassName: string | undefined = shiftKey
+        ? ctrlKey
+          ? "shiftKey ctrlKey"
+          : "shiftKey"
+        : ctrlKey
+        ? "ctrlKey"
+        : undefined;
+      setClassName(newClassName);
+      log(`setClassName(${newClassName})`);
+    };
+    document.addEventListener("keydown", keyboardEvent);
+    document.addEventListener("keyup", keyboardEvent);
+
+    return () => {
+      document.removeEventListener("keydown", keyboardEvent);
+      document.removeEventListener("keyup", keyboardEvent);
+    };
+  });
+
+  if (!src) return <>Loading...</>;
 
   // if we don't yet know the size of the image then display the naked image first
   if (!size) {

@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { Groups } from "../shared-types";
+import type { Node } from "../shared-types";
 import { logJson } from "./log";
 import { showErrorBox } from "./showErrorBox";
 
@@ -71,8 +71,8 @@ const assertElement = (element: any): void => {
   });
 };
 
-const readNodes = (customData: CustomData): Groups => {
-  const result: Groups = [];
+const readNodes = (customData: CustomData): Node[] => {
+  const result: Node[] = [];
   // get all the ids
   const ids = new Set<string>();
   customData.forEach((node) => {
@@ -88,7 +88,7 @@ const readNodes = (customData: CustomData): Groups => {
   return result;
 };
 
-export const readCustomJson = (customData: any): Groups => {
+export const readCustomJson = (customData: any): Node[] => {
   // assert we've been given an array of something
   if (!Array.isArray(customData)) {
     showErrorBox("Bad data", "Expected array of nodes");

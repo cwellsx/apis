@@ -1,12 +1,9 @@
-import { TextNode } from "./textNode";
+import { Named } from "./named";
 
 export type Access = "public" | "protected" | "internal" | "private";
 
-export type Exception = TextNode;
-export type Exceptions = Exception[];
-
-export type MemberInfo = TextNode & {
-  attributes: TextNode[];
+export type MemberInfo = Named & {
+  attributes: Named[];
   access: Access;
 };
 
@@ -17,17 +14,17 @@ export type Members = {
   methodMembers: MemberInfo[];
 };
 
-export type TypeKnown = TextNode & {
+export type TypeKnown = Named & {
   access: Access;
-  attributes: TextNode[];
+  attributes: Named[];
   subtypes?: Type[];
   members: Members;
 };
 
 // if there was an exception when reading the type then only display the exception and not other data,
 // because other data (e.g. the Access) might be missing, which would take more effort to handle safely
-export type TypeException = TextNode & {
-  exceptions: Exceptions;
+export type TypeException = Named & {
+  exceptions: Named[];
 };
 
 export function isTypeException(type: Type): type is TypeException {
@@ -36,7 +33,7 @@ export function isTypeException(type: Type): type is TypeException {
 
 export type Type = TypeKnown | TypeException;
 
-export type Namespace = TextNode & {
+export type Namespace = Named & {
   types: Type[];
 };
 
@@ -48,6 +45,6 @@ export type Types = {
   // - or return multiple Types instances
   assemblyId: string;
   namespaces: Namespace[];
-  exceptions: Exceptions;
+  exceptions: Named[];
   detailType: "types";
 };

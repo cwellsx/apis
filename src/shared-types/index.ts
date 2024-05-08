@@ -10,26 +10,15 @@ export type {
   RendererApi,
 } from "./apis";
 export type { AsText, CallStack } from "./callStack";
-export { isParent } from "./grouped";
-export type { GroupNode, Groups, LeafNode, ParentNode } from "./grouped";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodBody, MethodError } from "./methodBody";
 export type { GraphEvent } from "./mouseEvent";
+export type { Named } from "./named";
 export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";
-export type { TextNode } from "./textNode";
+export { isParent } from "./treeNodes";
+export type { Leaf, Node, Parent } from "./treeNodes";
 export { isTypeException } from "./types";
-export type {
-  Access,
-  Exception,
-  Exceptions,
-  MemberInfo,
-  Members,
-  Namespace,
-  Type,
-  TypeException,
-  TypeKnown,
-  Types,
-} from "./types";
+export type { Access, MemberInfo, Members, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
 export type { GraphViewOptions, GraphViewType, MethodViewOptions, ReferenceViewOptions } from "./viewOptions";
 export type { ViewGraph, ViewGreeting } from "./views";

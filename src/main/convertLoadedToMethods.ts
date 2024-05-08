@@ -1,4 +1,4 @@
-import type { Groups, LeafNode, MethodViewOptions, ParentNode, ViewGraph } from "../shared-types";
+import type { Leaf, MethodViewOptions, Node, Parent, ViewGraph } from "../shared-types";
 import { getMethodName } from "./convertLoadedToMembers";
 import { getTypeInfoName } from "./convertLoadedToTypes";
 import { convertToImage } from "./convertToImage";
@@ -71,15 +71,15 @@ export const fromStringId = (id: string): NodeId => {
   functions to create group nodes
 */
 
-const groupsFromTopDictionary = (types: TypeDictionary, viewOptions: MethodViewOptions): Groups => {
-  const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethod, parent: ParentNode | null): LeafNode => ({
+const groupsFromTopDictionary = (types: TypeDictionary, viewOptions: MethodViewOptions): Node[] => {
+  const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethod, parent: Parent | null): Leaf => ({
     parent,
     id: stringId(getTypeAndMethodId(typeAndMethod)),
     label: getMethodName(typeAndMethod.method),
   });
 
-  const parentFromTypeNode = (typeNode: TypeNode, parent: ParentNode | null): ParentNode => {
-    const self: ParentNode = {
+  const parentFromTypeNode = (typeNode: TypeNode, parent: Parent | null): Parent => {
+    const self: Parent = {
       parent,
       id: stringId(typeNode.typeId),
       label: getTypeInfoName(typeNode.type),
@@ -102,9 +102,9 @@ const groupsFromTopDictionary = (types: TypeDictionary, viewOptions: MethodViewO
     }
     topNode.types.push(typeNode);
   }
-  const entryToGroupNode = (entry: [string, TopNode]): ParentNode => {
+  const entryToGroupNode = (entry: [string, TopNode]): Parent => {
     const [topId, topNode] = entry;
-    const self: ParentNode = {
+    const self: Parent = {
       id: topId,
       label: topId,
       parent: null,
@@ -209,7 +209,7 @@ export const convertLoadedToMethods = (
 
   // convert to Groups
   log("groupsFromTopDictionary");
-  const groups: Groups = groupsFromTopDictionary(types, viewOptions);
+  const groups: Node[] = groupsFromTopDictionary(types, viewOptions);
 
   // a Group is visible iff its leafs are visible
   if (isNewMethodId) {

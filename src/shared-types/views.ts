@@ -1,5 +1,5 @@
-import { Groups } from "./grouped";
 import { Image } from "./image";
+import { Node } from "./treeNodes";
 import { GraphViewOptions, GreetingViewOptions } from "./viewOptions";
 
 export type ViewGraph = {
@@ -9,7 +9,7 @@ export type ViewGraph = {
   // could send null if previously-sent Groups has not changed
   // but that would require useState and useEffect in the render
   // https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state
-  groups: Groups;
+  groups: Node[];
 
   viewOptions: GraphViewOptions;
 };

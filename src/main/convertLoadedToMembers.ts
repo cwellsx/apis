@@ -1,4 +1,4 @@
-import type { Access, MemberInfo, Members, TextNode } from "../shared-types";
+import type { Access, MemberInfo, Members, Named } from "../shared-types";
 import type { EventMember, FieldMember, MethodMember, Parameter, PropertyMember, TypeId } from "./loaded";
 import { Access as LoadedAccess, Members as LoadedMembers } from "./loaded";
 import { options } from "./shared-types";
@@ -16,7 +16,7 @@ export const getTypeName = (name: string, generic?: TypeId[]): string => {
 };
 const getTypeIdName = (typeId: TypeId): string => getTypeName(typeId.name, typeId.genericTypeArguments);
 
-export const getAttributes = (attributes: string[] | undefined, containerId: number): TextNode[] => {
+export const getAttributes = (attributes: string[] | undefined, containerId: number): Named[] => {
   const parseAttribute = (attribute: string): { namespace?: string; name: string; args?: string } => {
     if (attribute[0] != "[" || attribute[attribute.length - 1] != "]")
       throw new Error(`Unexpected attribute ${attribute}`);
@@ -60,7 +60,7 @@ export const getAttributes = (attributes: string[] | undefined, containerId: num
   if (!attributes) return [];
   return filterAttributes(attributes).map((attribute) => {
     return {
-      label: attribute,
+      name: attribute,
       id: getId("!a!", `${containerId}!${attribute}`),
     };
   });
@@ -99,13 +99,13 @@ const getPropertyName = (propertyMember: PropertyMember): string => {
 const getFromName = (
   id: string,
   name: string,
-  attributes: TextNode[],
+  attributes: Named[],
   memberTypeId: TypeId | undefined, // undefined iff it's a constructor
   access: LoadedAccess
 ): MemberInfo => {
-  const label = !memberTypeId ? name : `${name} : ${getTypeIdName(memberTypeId)}`;
+  name = !memberTypeId ? name : `${name} : ${getTypeIdName(memberTypeId)}`;
   return {
-    label,
+    name,
     id,
     attributes,
     access: getAccess(access),

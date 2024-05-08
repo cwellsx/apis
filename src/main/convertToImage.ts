@@ -1,4 +1,4 @@
-import type { AreaClass, GraphViewOptions, GroupNode, Groups, Image, LeafNode, ParentNode } from "../shared-types";
+import type { AreaClass, GraphViewOptions, Image, Leaf, Node, Parent } from "../shared-types";
 import { isParent } from "../shared-types";
 import type { ImageAttributes, ImageData, Node as ImageNode } from "./createImage";
 import { createImage } from "./createImage";
@@ -6,7 +6,7 @@ import { log } from "./log";
 import type { Edge, StringPredicate } from "./shared-types";
 import { options } from "./shared-types";
 
-type Nodes = Groups | LeafNode[];
+type Nodes = Node[] | Leaf[];
 
 const createLookup = (array: string[]): StringPredicate => {
   const temp = new Set(array);
@@ -14,8 +14,8 @@ const createLookup = (array: string[]): StringPredicate => {
 };
 
 export function convertToImage(
-  groups: Groups,
-  leafs: LeafNode[],
+  groups: Node[],
+  leafs: Leaf[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
   imageAttributes?: ImageAttributes
@@ -31,7 +31,7 @@ export function convertToImage(
   // also take this opportunity to initialize
   const classNames: { [id: string]: AreaClass } = {};
 
-  const assertUnique = (node: GroupNode): void => {
+  const assertUnique = (node: Node): void => {
     const id = node.id;
     if (unique.has(id)) {
       throw new Error(`Duplicate node id: ${id}`);
@@ -56,7 +56,7 @@ export function convertToImage(
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   const closed = new Map<string, string>();
   if (showGrouped) {
-    const findClosed = (node: GroupNode, isClosedBy: ParentNode | null): void => {
+    const findClosed = (node: Node, isClosedBy: Parent | null): void => {
       if (isParent(node)) {
         if (!isClosedBy && !isGroupExpanded(node.id)) isClosedBy = node;
         node.children.forEach((child) => findClosed(child, isClosedBy));
@@ -88,7 +88,7 @@ export function convertToImage(
   const edgeIds: string[] = [...edgeGroups.keys()];
 
   // whether a group is visible depends on whether it contains visible leafs
-  const isGroupNodeVisible = (node: GroupNode): boolean =>
+  const isGroupNodeVisible = (node: Node): boolean =>
     showGrouped
       ? isParent(node)
         ? node.children.some((child) => isGroupNodeVisible(child))
@@ -96,7 +96,7 @@ export function convertToImage(
       : !isParent(node) && isLeafVisible(node.id);
 
   const metaGroupLabels = [".NET", "3rd-party"];
-  const toImageNode = (node: GroupNode): ImageNode => {
+  const toImageNode = (node: Node): ImageNode => {
     const textNode = { id: node.id, label: node.label };
     // implement this option here to affect the label on the image but not in the tree of groups
     if (
