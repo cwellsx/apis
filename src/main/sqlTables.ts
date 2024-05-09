@@ -5,7 +5,6 @@ import type {
   AllTypeInfo,
   AssemblyReferences,
   BadTypeInfo,
-  CallDetails,
   GoodTypeInfo,
   MethodDetails,
   MethodMember,
@@ -17,7 +16,8 @@ import { TypeAndMethod } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
 
-export type BadCallInfo = CallDetails & { metadataToken: number };
+export type BadCallInfo = { metadataToken: number };
+export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallInfos: BadCallInfo[] };
 
 /*
   This defines all SQLite tables used by the application, include the record format and the methods to access them
@@ -133,7 +133,7 @@ export class SqlLoaded {
   readAssemblyReferences: () => AssemblyReferences;
   readTypes: (assemblyName: string) => AllTypeInfo;
   readMethod: (assemblyName: string, methodId: number) => TypeAndMethod;
-  readErrors: () => ErrorsColumns[];
+  readErrors: () => ErrorsInfo[];
   close: () => void;
 
   constructor(db: Database) {
@@ -246,11 +246,7 @@ export class SqlLoaded {
         const badCallInfos: BadCallInfo[] = [];
 
         const methods: MethodColumns[] = Object.entries(methodsDictionary).map(([key, methodDetails]) => {
-          badCallInfos.push(
-            ...methodDetails.calls
-              .filter((callDetails) => callDetails.error)
-              .map<BadCallInfo>((callDetails) => ({ ...callDetails, metadataToken: +key }))
-          );
+          if (methodDetails.calls.some((callDetails) => callDetails.error)) badCallInfos.push({ metadataToken: +key });
           return { assemblyName, metadataToken: +key, methodDetails: JSON.stringify(methodDetails) };
         });
 
@@ -326,7 +322,12 @@ export class SqlLoaded {
       };
     };
 
-    this.readErrors = (): ErrorsColumns[] => errorsTable.selectAll();
+    this.readErrors = (): ErrorsInfo[] =>
+      errorsTable.selectAll().map((errorColumns) => ({
+        assemblyName: errorColumns.assemblyName,
+        badTypeInfos: JSON.parse(errorColumns.badTypeInfos),
+        badCallInfos: JSON.parse(errorColumns.badCallInfos),
+      }));
 
     this.close = () => {
       done();

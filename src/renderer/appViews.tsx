@@ -1,5 +1,13 @@
 import * as React from "react";
-import type { AllViewOptions, OnDetailClick, OnGraphClick, View, ViewDetails, ViewGreeting } from "../shared-types";
+import type {
+  AllViewOptions,
+  OnDetailClick,
+  OnGraphClick,
+  View,
+  ViewDetails,
+  ViewErrors,
+  ViewGreeting,
+} from "../shared-types";
 import { Details } from "./Details";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
@@ -14,9 +22,12 @@ import { Tree } from "./Tree";
 export function isGreeting(view: View): view is ViewGreeting {
   return view.viewOptions.viewType === "greeting";
 }
+export function isErrors(view: View): view is ViewErrors {
+  return view.viewOptions.viewType === "errors";
+}
 
 export const getLeft = (view: View, onViewOptions: (viewOptions: AllViewOptions) => void): JSX.Element => {
-  if (isGreeting(view)) return <></>;
+  if (isGreeting(view) || isErrors(view)) return <></>;
 
   const viewOptions = view.viewOptions;
   return (
@@ -35,6 +46,15 @@ export const getLeft = (view: View, onViewOptions: (viewOptions: AllViewOptions)
 
 export const getCenter = (view: View, onGraphClick: OnGraphClick, zoomPercent: number): JSX.Element => {
   if (isGreeting(view)) return <Message message={view.greeting} />;
+
+  if (isErrors(view))
+    return (
+      <>
+        {view.methods.map((methodBody, index) => (
+          <MethodDetails methodBody={methodBody} key={index} />
+        ))}
+      </>
+    );
 
   // display a message, or an image if there is one
   if (typeof view.image === "string") return <Message message={view.image} />;

@@ -21,4 +21,4 @@ export type { Leaf, Node, Parent } from "./treeNodes";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
 export type { GraphViewOptions, GraphViewType, MethodViewOptions, ReferenceViewOptions } from "./viewOptions";
-export type { ViewGraph, ViewGreeting } from "./views";
+export type { ViewErrors, ViewGraph, ViewGreeting } from "./views";

@@ -1,6 +1,7 @@
 import { Image } from "./image";
+import { MethodBody } from "./methodBody";
 import { Node } from "./treeNodes";
-import { GraphViewOptions, GreetingViewOptions } from "./viewOptions";
+import { ErrorsViewOptions, GraphViewOptions, GreetingViewOptions } from "./viewOptions";
 
 export type ViewGraph = {
   // string is a message if there isn't an Image
@@ -17,4 +18,9 @@ export type ViewGraph = {
 export type ViewGreeting = {
   greeting: string;
   viewOptions: GreetingViewOptions;
+};
+
+export type ViewErrors = {
+  methods: MethodBody[];
+  viewOptions: ErrorsViewOptions;
 };

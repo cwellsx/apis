@@ -1,5 +1,5 @@
 import { BrowserWindow, IpcMainEvent } from "electron";
-import type { AllViewOptions, AppOptions, GraphEvent, MainApi, ViewType } from "../shared-types";
+import type { AllViewOptions, AppOptions, GraphEvent, MainApi, ViewErrors, ViewType } from "../shared-types";
 import { getMethodId } from "./convertLoadedToMembers";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
@@ -8,7 +8,7 @@ import { convertLoadedToTypes } from "./convertLoadedToTypes";
 import { createBrowserWindow, loadURL } from "./createBrowserWindow";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
-import { remove } from "./shared-types";
+import { TypeAndMethod, remove } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
@@ -172,23 +172,38 @@ export const createAppWindow = (
     try {
       const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const viewData = convertLoadedToMethods(readMethod, methodViewOptions, methodId);
+      const viewGraph = convertLoadedToMethods(readMethod, methodViewOptions, methodId);
       if (methodId) sqlLoaded.viewState.methodViewOptions = methodViewOptions;
       log("renderer.showView");
-      renderer.showView(viewData);
+      renderer.showView(viewGraph);
     } catch (error) {
       show.showException(error);
     }
   };
 
   const showReferences = (): void => {
-    const viewData = convertLoadedToReferences(
+    const viewGraph = convertLoadedToReferences(
       sqlLoaded.readAssemblyReferences(),
       sqlLoaded.viewState.referenceViewOptions,
       sqlLoaded.viewState.exes
     );
     log("renderer.showView");
-    renderer.showView(viewData);
+    renderer.showView(viewGraph);
+  };
+
+  const showErrors = (): void => {
+    const errors = sqlLoaded.readErrors();
+    const methods = errors.flatMap<TypeAndMethod>((error) =>
+      error.badCallInfos.map((badCallInfo) => sqlLoaded.readMethod(error.assemblyName, badCallInfo.metadataToken))
+    );
+    const viewErrors: ViewErrors = {
+      methods: methods.map((typeAndMethod) => convertLoadedToMethodBody(typeAndMethod)),
+      viewOptions: {
+        viewType: "errors",
+      },
+    };
+    log("renderer.showView");
+    renderer.showView(viewErrors);
   };
 
   const showViewType = (viewType?: ViewType): void => {
@@ -197,6 +212,9 @@ export const createAppWindow = (
     switch (viewType) {
       case "references":
         showReferences();
+        break;
+      case "errors":
+        showErrors();
         break;
       default:
         throw new Error("ViewType not implemented");
