@@ -1,3 +1,12 @@
 pre.methodBody {
   tab-size: 4; 
 }
+.methodDetails + .methodDetails {
+  border-top: 1px solid black;
+}
+.methodDetails pre {
+  white-space: pre-wrap;
+}
+.methodDetails caption {
+  caption-side: top;
+}
