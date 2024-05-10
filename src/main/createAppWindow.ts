@@ -1,5 +1,16 @@
 import { BrowserWindow, IpcMainEvent } from "electron";
-import type { AllViewOptions, AppOptions, GraphEvent, MainApi, ViewErrors, ViewType } from "../shared-types";
+import type {
+  AllViewOptions,
+  AppOptions,
+  GraphEvent,
+  GraphViewOptions,
+  GraphViewType,
+  MainApi,
+  ViewErrors,
+  ViewType,
+} from "../shared-types";
+import { isGraphViewOptions } from "../shared-types";
+import { convertLoadedToApis } from "./convertLoadedToApis";
 import { getMethodId } from "./convertLoadedToMembers";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
@@ -34,7 +45,7 @@ const createSecondWindow = (): Promise<BrowserWindow> => {
 export type AppWindow = {
   mainApi: MainApi;
   window: BrowserWindow;
-  showViewType: () => void;
+  showViewType: (viewType?: ViewType) => void;
   showMethods: (methodId?: NodeId) => void;
 };
 
@@ -67,20 +78,39 @@ export const createAppWindow = (
   const show = createShow(window);
   const renderer = createRenderer(window);
 
+  const setGraphViewOptions = (viewOptions: GraphViewOptions): void => {
+    switch (viewOptions.viewType) {
+      case "references":
+        sqlLoaded.viewState.referenceViewOptions = viewOptions;
+        break;
+      case "methods":
+        sqlLoaded.viewState.methodViewOptions = viewOptions;
+        break;
+      case "apis":
+        sqlLoaded.viewState.apiViewOptions = viewOptions;
+        break;
+    }
+  };
+
+  const getGraphViewOptions = (viewType: GraphViewType): GraphViewOptions => {
+    switch (viewType) {
+      case "references":
+        return sqlLoaded.viewState.referenceViewOptions;
+      case "methods":
+        return sqlLoaded.viewState.methodViewOptions;
+      case "apis":
+        return sqlLoaded.viewState.apiViewOptions;
+    }
+  };
+
   // implement the MainApi and bind it to ipcMain
   const mainApi: MainApi = {
     onViewOptions: (viewOptions: AllViewOptions): void => {
       log("setGroupExpanded");
-      switch (viewOptions.viewType) {
-        case "references":
-          sqlLoaded.viewState.referenceViewOptions = viewOptions;
-          showReferences();
-          break;
-        case "methods":
-          sqlLoaded.viewState.methodViewOptions = viewOptions;
-          showMethods();
-          break;
+      if (isGraphViewOptions(viewOptions)) {
+        setGraphViewOptions(viewOptions);
       }
+      showViewType(viewOptions.viewType);
     },
     onAppOptions: (appOptions: AppOptions): void => {
       log("onAppOptions");
@@ -90,19 +120,19 @@ export const createAppWindow = (
     onGraphClick: (graphEvent: GraphEvent): void => {
       const { id, className, viewType, event } = graphEvent;
       log(`onGraphClick ${id}`);
-      switch (viewType) {
-        case "methods": {
-          switch (className) {
-            case "closed":
-            case "expanded": {
-              const viewOptions = sqlLoaded.viewState.methodViewOptions;
-              if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
-              else viewOptions.groupExpanded.push(id);
-              sqlLoaded.viewState.methodViewOptions = viewOptions;
-              showMethods();
-              return;
-            }
-            case "leaf": {
+      switch (className) {
+        case "closed":
+        case "expanded": {
+          const viewOptions = getGraphViewOptions(viewType);
+          if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
+          else viewOptions.groupExpanded.push(id);
+          setGraphViewOptions(viewOptions);
+          showViewType(viewOptions.viewType);
+          return;
+        }
+        case "leaf":
+          switch (viewType) {
+            case "methods": {
               const { assemblyName, metadataToken } = fromStringId(id);
               const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
               const methodBody = convertLoadedToMethodBody(typeAndMethod);
@@ -110,23 +140,7 @@ export const createAppWindow = (
               renderer.showDetails(methodBody);
               return;
             }
-            default:
-              return;
-          }
-        }
-        case "references": {
-          switch (className) {
-            case "closed":
-            case "expanded": {
-              // this is a group of assemblies, not the id of an assembly
-              const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-              if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
-              else viewOptions.groupExpanded.push(id);
-              sqlLoaded.viewState.referenceViewOptions = viewOptions;
-              showReferences();
-              return;
-            }
-            case "leaf": {
+            case "references": {
               const assemblyReferences = sqlLoaded.readAssemblyReferences();
               if (event.shiftKey) {
                 const viewOptions = sqlLoaded.viewState.referenceViewOptions;
@@ -146,10 +160,7 @@ export const createAppWindow = (
               }
               return;
             }
-            default:
-              return;
           }
-        }
       }
     },
     onDetailClick: (assemblyId, id): void => {
@@ -163,10 +174,6 @@ export const createAppWindow = (
       });
     },
   };
-
-  // const showApis = (): void =>{
-
-  // }
 
   const showMethods = (methodId?: NodeId): void => {
     try {
@@ -206,6 +213,16 @@ export const createAppWindow = (
     renderer.showView(viewErrors);
   };
 
+  const showApis = (): void => {
+    const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
+    const apis = sqlLoaded.readCalls(apiViewOptions.groupExpanded);
+    const savedTypeInfos = sqlLoaded.readSavedTypeInfos();
+    const viewGraph = convertLoadedToApis(apis, apiViewOptions, savedTypeInfos, sqlLoaded.viewState.exes);
+    show.showMessage("foo", `${apis.length} records`);
+    log("renderer.showView");
+    renderer.showView(viewGraph);
+  };
+
   const showViewType = (viewType?: ViewType): void => {
     if (viewType) sqlLoaded.viewState.viewType = viewType;
     else viewType = sqlLoaded.viewState.viewType;
@@ -213,8 +230,14 @@ export const createAppWindow = (
       case "references":
         showReferences();
         break;
+      case "methods":
+        showMethods();
+        break;
       case "errors":
         showErrors();
+        break;
+      case "apis":
+        showApis();
         break;
       default:
         throw new Error("ViewType not implemented");

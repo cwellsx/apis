@@ -1,5 +1,12 @@
 import { Database } from "better-sqlite3";
-import type { AppOptions, Members, MethodViewOptions, ReferenceViewOptions, ViewType } from "../shared-types";
+import type {
+  ApiViewOptions,
+  AppOptions,
+  Members,
+  MethodViewOptions,
+  ReferenceViewOptions,
+  ViewType,
+} from "../shared-types";
 import { defaultAppOptions } from "../shared-types";
 import type {
   AllTypeInfo,
@@ -12,12 +19,13 @@ import type {
 } from "./loaded";
 import { badTypeInfo, validateTypeInfo } from "./loaded";
 import { log } from "./log";
-import { TypeAndMethod } from "./shared-types";
+import { TypeAndMethod, distinctor } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
 
 export type BadCallInfo = { metadataToken: number };
 export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallInfos: BadCallInfo[] };
+export type ApiColumns = { fromAssemblyName: string; fromTypeId: number; toAssemblyName: string; toTypeId: number };
 
 /*
   This defines all SQLite tables used by the application, include the record format and the methods to access them
@@ -28,7 +36,8 @@ export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; ba
     - SqlTable<TypeColumns>
     - SqlTable<MemberColumns>
     - SqlTable<MethodColumns>
-    - SqlTable<BadTypeColumns>
+    - SqlTable<ErrorsColumns>
+    - SqlTable<CallsColumns>
     - ViewState i.e. ConfigCache
   
   - SqlConfig is implemented using
@@ -49,6 +58,9 @@ export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; ba
 
   A future refactoring could remove the column definitions to another module, e.g. sqlColumns.ts could define and export
   the *Columns types, with corresponding load* and save* methods to wrap JSON and convert to and from application types.
+
+  These tables don't use WITHOUT ROWID because https://www.sqlite.org/withoutrowid.html#when_to_use_without_rowid
+  says to do it when the rows are less than 50 bytes in size, however these tables contain serialized JSON columns.
 */
 
 type AssemblyColumns = {
@@ -86,6 +98,18 @@ type ErrorsColumns = {
   badCallInfos: string;
 };
 
+type CallsColumns = {
+  // this could be refactored as one table with three or four columns, plus a join table
+  fromAssemblyName: string;
+  fromNamespace: string | undefined;
+  fromTypeId: number;
+  fromMethodId: number;
+  toAssemblyName: string;
+  toNamespace: string | undefined;
+  toTypeId: number;
+  toMethodId: number;
+};
+
 type ConfigColumns = {
   name: string;
   value: string;
@@ -97,15 +121,17 @@ type RecentColumns = {
   when: number;
 };
 
-const loadedSchemaVersion = "2024-05-08";
+const loadedSchemaVersion = "2024-05-09a";
 
-type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
+export type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
 const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
   const result: SavedTypeInfo = { ...typeInfo };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   delete (result as any)["members"];
   return result;
 };
+
+export type SavedTypeInfos = { [assemblyName: string]: { [typeId: number]: SavedTypeInfo } };
 
 type GoodTypeDictionary = {
   [key: number]: GoodTypeInfo;
@@ -127,6 +153,13 @@ const defaultMethodViewOptions: MethodViewOptions = {
   viewType: "methods",
 };
 
+const defaultApiViewOptions: ApiViewOptions = {
+  showGrouped: true,
+  leafVisible: [],
+  groupExpanded: [],
+  viewType: "apis",
+};
+
 export class SqlLoaded {
   save: (reflected: Reflected, when: string, hashDataSource: string) => void;
   viewState: ViewState;
@@ -134,6 +167,8 @@ export class SqlLoaded {
   readTypes: (assemblyName: string) => AllTypeInfo;
   readMethod: (assemblyName: string, methodId: number) => TypeAndMethod;
   readErrors: () => ErrorsInfo[];
+  readCalls: (assemblyNames: string[]) => ApiColumns[];
+  readSavedTypeInfos: () => SavedTypeInfos;
   close: () => void;
 
   constructor(db: Database) {
@@ -147,6 +182,7 @@ export class SqlLoaded {
       dropTable(db, "member");
       dropTable(db, "method");
       dropTable(db, "errors");
+      dropTable(db, "calls");
       this.viewState.loadedSchemaVersion = loadedSchemaVersion;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
@@ -184,6 +220,22 @@ export class SqlLoaded {
       badTypeInfos: "bar",
       badCallInfos: "baz",
     });
+    const callsTable = new SqlTable<CallsColumns>(
+      db,
+      "calls",
+      ["fromAssemblyName", "fromMethodId", "toAssemblyName", "toMethodId"],
+      (key) => key === "fromNamespace" || key === "toNamespace",
+      {
+        fromAssemblyName: "foo",
+        fromNamespace: "foo",
+        fromTypeId: 0,
+        fromMethodId: 0,
+        toAssemblyName: "bar",
+        toNamespace: "bar",
+        toTypeId: 0,
+        toMethodId: 0,
+      }
+    );
 
     const done = () => {
       const result = db.pragma("wal_checkpoint(TRUNCATE)");
@@ -199,7 +251,18 @@ export class SqlLoaded {
 
       log("save reflected.assemblies");
 
+      // create a dictionary to find typeId from methodId
+      const assemblyTypes: {
+        [assemblyName: string]: { [methodId: number]: { typeId: number; namespace: string | undefined } };
+      } = {};
+
+      const assemblyTypeIds: string[] = [];
+
       for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
+        // typeIds dictionary
+        const methodTypes: { [methodId: number]: { typeId: number; namespace: string | undefined } } = {};
+        assemblyTypes[assemblyName] = methodTypes;
+
         // => assemblyTable
         assemblyTable.insert({ assemblyName, references: JSON.stringify(assemblyInfo.referencedAssemblies) });
 
@@ -217,8 +280,15 @@ export class SqlLoaded {
             typeInfo: JSON.stringify(typeInfo),
           });
 
+          assemblyTypeIds.push(`${assemblyName}-${typeInfo.typeId.metadataToken}`);
+
+          const typeIdAndNamespace = { typeId: typeInfo.typeId.metadataToken, namespace: typeInfo.typeId.namespace };
+
           for (const [memberType, memberInfos] of Object.entries(members)) {
             const many: MemberColumns[] = memberInfos.map((memberInfo) => {
+              if ((memberType as keyof Members) == "methodMembers")
+                methodTypes[memberInfo.metadataToken] = typeIdAndNamespace;
+
               return {
                 assemblyName,
                 // memberType is string[] -- https://github.com/microsoft/TypeScript/pull/12253#issuecomment-263132208
@@ -242,11 +312,31 @@ export class SqlLoaded {
 
       log("save reflected.assemblyMethods");
 
+      const assemblyCalls: {
+        [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
+      } = {};
+
+      const distinctCalls = distinctor<{ assemblyName: string; methodId: number }>(
+        (lhs, rhs) => lhs.assemblyName == rhs.assemblyName && lhs.methodId == rhs.methodId
+      );
+
       for (const [assemblyName, methodsDictionary] of Object.entries(reflected.assemblyMethods)) {
         const badCallInfos: BadCallInfo[] = [];
 
+        const methodCalls: { [methodId: number]: { assemblyName: string; methodId: number }[] } = {};
+        assemblyCalls[assemblyName] = methodCalls;
+
         const methods: MethodColumns[] = Object.entries(methodsDictionary).map(([key, methodDetails]) => {
+          // remember any which are bad
           if (methodDetails.calls.some((callDetails) => callDetails.error)) badCallInfos.push({ metadataToken: +key });
+          // remember all to be copied into CallsColumns
+          methodCalls[+key] = methodDetails.calls
+            .filter((callDetails) => !callDetails.error || callDetails.isWarning)
+            .map((callDetails) => ({
+              assemblyName: callDetails.called.assemblyName,
+              methodId: callDetails.called.metadataToken,
+            }))
+            .filter(distinctCalls);
           return { assemblyName, metadataToken: +key, methodDetails: JSON.stringify(methodDetails) };
         });
 
@@ -266,8 +356,38 @@ export class SqlLoaded {
         methodTable.insertMany(methods);
       }
 
+      const callsColumns: CallsColumns[] = [];
+      Object.entries(assemblyCalls).forEach(([assemblyName, methodCalls]) =>
+        Object.keys(methodCalls).forEach((key) => {
+          const methodId = +key;
+          const fromType = assemblyTypes[assemblyName][methodId];
+          methodCalls[methodId].forEach((called) => {
+            const toType = assemblyTypes[called.assemblyName][called.methodId];
+            callsColumns.push({
+              fromAssemblyName: assemblyName,
+              fromNamespace: fromType.namespace,
+              fromTypeId: fromType.typeId,
+              fromMethodId: methodId,
+              toAssemblyName: called.assemblyName,
+              toNamespace: toType.namespace,
+              toTypeId: toType.typeId,
+              toMethodId: called.methodId,
+            });
+          });
+        })
+      );
+
+      callsTable.insertMany(callsColumns);
+
       // => viewState => _cache => _sqlConfig
-      this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes, Object.keys(reflected.assemblies));
+      this.viewState.onSave(
+        when,
+        hashDataSource,
+        reflected.version,
+        reflected.exes,
+        Object.keys(reflected.assemblies),
+        assemblyTypeIds
+      );
 
       log("save complete");
       done();
@@ -329,6 +449,34 @@ export class SqlLoaded {
         badCallInfos: JSON.parse(errorColumns.badCallInfos),
       }));
 
+    this.readCalls = (assemblyNames: string[]): ApiColumns[] => {
+      const sample: ApiColumns = { fromAssemblyName: "foo", fromTypeId: 0, toAssemblyName: "bar", toTypeId: 0 };
+      const result = callsTable.selectCustomSpecific(sample, true, "fromAssemblyName != toAssemblyName");
+      assemblyNames.forEach((assemblyName) =>
+        result.push(
+          ...callsTable.selectCustom(true, "fromAssemblyName == toAssemblyName AND fromAssemblyName == @assemblyName", {
+            assemblyName,
+          })
+        )
+      );
+      return result;
+    };
+
+    this.readSavedTypeInfos = (): SavedTypeInfos => {
+      const types = typeTable.selectAll();
+      const result: SavedTypeInfos = {};
+      types.forEach((type) => {
+        const { assemblyName, metadataToken, typeInfo } = type;
+        let assemblyTypes = result[assemblyName];
+        if (!assemblyTypes) {
+          assemblyTypes = {};
+          result[assemblyName] = assemblyTypes;
+        }
+        assemblyTypes[metadataToken] = JSON.parse(typeInfo);
+      });
+      return result;
+    };
+
     this.close = () => {
       done();
       db.close();
@@ -382,13 +530,21 @@ export class ViewState {
     this._cache = new ConfigCache(db);
   }
 
-  onSave(when: string, hashDataSource: string, version: string, exes: string[], assemblyNames: string[]) {
+  onSave(
+    when: string,
+    hashDataSource: string,
+    version: string,
+    exes: string[],
+    assemblyNames: string[],
+    assemblyTypeIds: string[]
+  ) {
     this.cachedWhen = when;
     this.hashDataSource = hashDataSource;
     this.loadedVersion = version;
     this.exes = exes;
     this.referenceViewOptions = { ...defaultReferenceViewOptions, leafVisible: assemblyNames };
     this.methodViewOptions = defaultMethodViewOptions;
+    this.apiViewOptions = { ...defaultApiViewOptions, leafVisible: assemblyTypeIds };
   }
 
   // this changes when the SQL schema definition changes
@@ -434,6 +590,14 @@ export class ViewState {
   get methodViewOptions(): MethodViewOptions {
     const value = this._cache.getValue("methodViewOptions");
     return value ? { defaultMethodViewOptions, ...JSON.parse(value) } : defaultMethodViewOptions;
+  }
+
+  set apiViewOptions(viewOptions: ApiViewOptions) {
+    this._cache.setValue("apiViewOptions", JSON.stringify(viewOptions));
+  }
+  get apiViewOptions(): ApiViewOptions {
+    const value = this._cache.getValue("apiViewOptions");
+    return value ? { defaultMethodViewOptions, ...JSON.parse(value) } : defaultApiViewOptions;
   }
 
   set exes(names: string[]) {

@@ -1,4 +1,5 @@
 import { dialog, type BrowserWindow } from "electron";
+import { ViewType } from "../shared-types";
 import { appWindows, createAppWindow } from "./createAppWindow";
 import { DotNetApi } from "./createDotNetApi";
 import { getAppFilename, pathJoin, writeFileSync } from "./fs";
@@ -61,7 +62,14 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
 
       // initialize ViewMenu before the menu is recreated
       const hasErrors = sqlLoaded.readErrors().length !== 0;
-      viewMenu = { hasErrors, viewType: sqlLoaded.viewState.viewType, showViewType: appWindow.showViewType };
+      viewMenu = {
+        hasErrors,
+        getViewType: () => sqlLoaded?.viewState.viewType,
+        showViewType: (viewType?: ViewType): void => {
+          appWindow.showViewType(viewType);
+          setApplicationMenu();
+        },
+      };
     };
 
     const readDotNetApi = async (path: string): Promise<Reflected> => {

@@ -41,7 +41,7 @@ type ReadMethod = (assemblyName: string, methodId: number) => TypeAndMethod;
   functions to create Ids
 */
 
-const stringId: (id: NodeId) => string = (id: NodeId) => `${id.assemblyName}-${id.metadataToken}`;
+export const stringId: (id: NodeId) => string = (id: NodeId) => `${id.assemblyName}-${id.metadataToken}`;
 const getTypeAndMethodId: (leaf: TypeAndMethod) => NodeId = (leaf: TypeAndMethod) => ({
   assemblyName: leaf.type.typeId.assemblyName,
   metadataToken: leaf.method.metadataToken,

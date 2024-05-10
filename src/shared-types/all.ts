@@ -1,11 +1,28 @@
 import { MethodBody } from "./methodBody";
 import { Types } from "./types";
-import { ErrorsViewOptions, GreetingViewOptions, MethodViewOptions, ReferenceViewOptions } from "./viewOptions";
+import type {
+  ApiViewOptions,
+  ErrorsViewOptions,
+  GraphViewOptions,
+  GreetingViewOptions,
+  MethodViewOptions,
+  ReferenceViewOptions,
+} from "./viewOptions";
+import { graphViewTypes } from "./viewOptions";
 import { ViewErrors, ViewGraph, ViewGreeting } from "./views";
 
-export type AllViewOptions = ReferenceViewOptions | MethodViewOptions | ErrorsViewOptions | GreetingViewOptions;
+export type AllViewOptions =
+  | ReferenceViewOptions
+  | MethodViewOptions
+  | ErrorsViewOptions
+  | GreetingViewOptions
+  | ApiViewOptions;
 
-export type ViewType = "references" | "methods" | "errors" | "greeting";
+export function isGraphViewOptions(viewOptions: AllViewOptions): viewOptions is GraphViewOptions {
+  return graphViewTypes.includes(viewOptions.viewType);
+}
+
+export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis";
 
 export type View = ViewGraph | ViewGreeting | ViewErrors;
 

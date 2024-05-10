@@ -4,6 +4,7 @@ import type { AllTypeInfo, NamedTypeInfo, TypeId } from "./loaded";
 import { isPartTypeInfo, namedTypeInfo } from "./loaded";
 import { logError } from "./log";
 import { options } from "./shared-types";
+import { SavedTypeInfo } from "./sqlTables";
 
 type Exceptions = Named[];
 
@@ -22,7 +23,7 @@ const createExceptions = (messages: string[]): Exceptions => {
   return exceptions;
 };
 
-export const getTypeInfoName = (typeInfo: NamedTypeInfo): string =>
+export const getTypeInfoName = (typeInfo: NamedTypeInfo | SavedTypeInfo): string =>
   getTypeName(typeInfo.typeId.name, typeInfo.genericTypeParameters ?? typeInfo.typeId.genericTypeArguments);
 
 // id can constructed using TypeId only without typeInfo.genericTypeParameters

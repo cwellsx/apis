@@ -1,4 +1,4 @@
-export { defaultView } from "./all";
+export { defaultView, isGraphViewOptions } from "./all";
 export type { AllViewOptions, View, ViewDetails, ViewType } from "./all";
 export type {
   MainApi,
@@ -20,5 +20,11 @@ export { isParent } from "./treeNodes";
 export type { Leaf, Node, Parent } from "./treeNodes";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
-export type { GraphViewOptions, GraphViewType, MethodViewOptions, ReferenceViewOptions } from "./viewOptions";
+export type {
+  ApiViewOptions,
+  GraphViewOptions,
+  GraphViewType,
+  MethodViewOptions,
+  ReferenceViewOptions,
+} from "./viewOptions";
 export type { ViewErrors, ViewGraph, ViewGreeting } from "./views";

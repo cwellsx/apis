@@ -17,8 +17,14 @@ export const convertLoadedToReferences = (
     leafs.push({ id: assembly, label: assembly, parent: null });
     dependencies.forEach((dependency) => edges.push({ clientId: assembly, serverId: dependency }));
   });
+  // flatten and sort all names -- these names will become leaf nodes
+  const names: string[] = [];
+  for (const [name, references] of Object.entries(assemblyReferences)) {
+    names.push(name);
+    names.push(...references);
+  }
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const groups = convertLoadedToGroups(assemblyReferences, exes);
+  const { groups } = convertLoadedToGroups(names, exes);
   const image = convertToImage(groups, leafs, edges, viewOptions);
   return { groups, image, viewOptions };
 };

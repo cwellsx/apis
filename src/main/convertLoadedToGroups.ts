@@ -1,32 +1,26 @@
 import type { Leaf, Node, Parent } from "../shared-types";
 import { isParent } from "../shared-types";
-import type { AssemblyReferences } from "./loaded";
 import type { StringPredicate } from "./shared-types";
-import { options, remove, replace } from "./shared-types";
+import { distinctor, options, remove, replace } from "./shared-types";
 
 /*
   This is a depth-first implementation, could if needed change it to be breadth-first.
 */
 
-export const convertLoadedToGroups = (assemblyReferences: AssemblyReferences, exes: string[]): Node[] => {
-  // flatten and sort all names -- these names will become leaf nodes
-  const names: string[] = [];
-  for (const [name, references] of Object.entries(assemblyReferences)) {
-    names.push(name);
-    names.push(...references);
-  }
+export const convertLoadedToGroups = (
+  names: string[],
+  exes: string[]
+): {
+  nodes: { [id: string]: Node };
+  groups: Node[];
+} => {
+  // sort all names -- these names will become leaf nodes
   names.sort();
-
-  // names contains many duplicates
-  const done = new Set<string>();
-  const once: StringPredicate = (name) => {
-    if (done.has(name)) return false;
-    done.add(name);
-    return true;
-  };
+  // names many contain duplicate
+  const distinctNames = distinctor<string>((lhs, rhs) => lhs === rhs);
 
   const result: Node[] = [];
-  for (const name of names.filter(once)) {
+  for (const name of names.filter(distinctNames)) {
     let partial = "";
     let nodes = result;
 
@@ -104,13 +98,11 @@ export const convertLoadedToGroups = (assemblyReferences: AssemblyReferences, ex
 
   // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
   // also assert that the parent fields are set correctly
-  const unique = new Set<string>();
+  const unique: { [id: string]: Node } = {};
   const assertUnique = (node: Node): void => {
     const id = node.id;
-    if (unique.has(id)) {
-      throw new Error(`Duplicate node id: ${id}`);
-    }
-    unique.add(id);
+    if (unique[id]) throw new Error(`Duplicate node id: ${id}`);
+    unique[id] = node;
     if (isParent(node))
       node.children.forEach((child) => {
         assertUnique(child);
@@ -121,6 +113,5 @@ export const convertLoadedToGroups = (assemblyReferences: AssemblyReferences, ex
   };
 
   result.forEach(assertUnique);
-
-  return result;
+  return { groups: result, nodes: unique };
 };

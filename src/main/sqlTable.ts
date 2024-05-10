@@ -118,19 +118,38 @@ export class SqlTable<T extends object> {
     const getSelectWhere = (where: Partial<T>): Statement<unknown[]> => {
       const keys = Object.keys(where);
       keys.sort();
-      let statement = this.preparedSelectWhere.find((entry) => isArrayEqual(entry.keys, keys))?.statement;
-      if (!statement) {
-        statement = db.prepare(`SELECT * FROM "${tableName}" WHERE ${whereKeys(keys)}`);
-        this.preparedSelectWhere.push({ keys, statement });
-      }
-      return statement;
+      const source = `SELECT * FROM "${tableName}" WHERE ${whereKeys(keys)}`;
+      return prepare(source);
     };
 
     this.selectWhere = (where: Partial<T>): T[] => getSelectWhere(where).all(where) as T[];
     this.selectOne = (where: Partial<T>): T | undefined => getSelectWhere(where).get(where) as T | undefined;
-  }
 
-  private preparedSelectWhere: { keys: string[]; statement: Statement<unknown[]> }[] = [];
+    this.selectCustom = (distinct: boolean, custom: string, where?: object): T[] => {
+      const source = `${distinct ? "SELECT DISTINCT" : "SELECT"} * FROM "${tableName}" WHERE ${custom}`;
+      const statement = prepare(source);
+      return !where ? (statement.all() as T[]) : (statement.all(where) as T[]);
+    };
+
+    this.selectCustomSpecific = <U extends object>(u: U, distinct: boolean, custom: string, where?: object): U[] => {
+      const keys = Object.keys(u);
+      const source = `${distinct ? "SELECT DISTINCT" : "SELECT"} ${quoteAndJoin(
+        keys
+      )} FROM "${tableName}" WHERE ${custom}`;
+      const statement = prepare(source);
+      return !where ? (statement.all() as U[]) : (statement.all(where) as U[]);
+    };
+
+    const prepared: { [source: string]: Statement<unknown[]> | undefined } = {};
+    const prepare = (source: string): Statement<unknown[]> => {
+      let statement = prepared[source];
+      if (!statement) {
+        statement = db.prepare(source);
+        prepared[source] = statement;
+      }
+      return statement;
+    };
+  }
 
   insert: (t: T) => void;
   update: (t: T) => void;
@@ -140,4 +159,6 @@ export class SqlTable<T extends object> {
   deleteAll: () => void;
   selectWhere: (where: Partial<T>) => T[];
   selectOne: (where: Partial<T>) => T | undefined;
+  selectCustom: (distinct: boolean, custom: string, where?: object) => T[];
+  selectCustomSpecific: <U extends object>(u: U, distinct: boolean, custom: string, where?: object) => U[];
 }
