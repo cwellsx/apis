@@ -11,12 +11,16 @@ type AnyOtherFields = {
 
 type CustomDependency = { id: string; label: string } & AnyOtherFields;
 
-export type CustomNode = AnyOtherFields & {
+type CustomFields = {
   id: string;
   label?: string;
   tags?: string[];
   dependencies: CustomDependency[];
 };
+
+export type CustomNode = CustomFields & AnyOtherFields;
+
+export const isAnyOtherCustomField = (key: string): boolean => !["id", "label", "tags", "dependencies"].includes(key);
 
 const isString = (value: unknown): boolean => typeof value === "string";
 const isNumber = (value: unknown): boolean => typeof value === "number";
@@ -58,9 +62,16 @@ const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
     element.dependencies = [];
   }
   if (element.tags) {
-    if (!Array.isArray(element.tags)) error("Non-array tags");
-    if (!element.tags.every((tag) => isString(tag))) error("Non-string tags");
-    delete element["tags"];
+    if (!Array.isArray(element.tags)) {
+      error("Non-array tags");
+      delete element["tags"];
+      return;
+    }
+    if (!element.tags.every((tag) => isString(tag))) {
+      error("Non-string tags");
+      delete element["tags"];
+      return;
+    }
   }
 
   assertAnyOtherFields(element);

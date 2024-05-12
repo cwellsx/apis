@@ -6,7 +6,7 @@ export const options = {
   ungroupSingle: true,
   shortLeafNames: true,
   noSelfEdges: true,
-  alwaysReload: false,
+  alwaysReload: true,
   compilerAttributes: true,
   compilerGenerated: true,
 };

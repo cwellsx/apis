@@ -10,7 +10,7 @@ import type {
   ViewType,
 } from "../shared-types";
 import { defaultAppOptions } from "../shared-types";
-import type { CustomNode } from "./customJson";
+import { isAnyOtherCustomField, type CustomNode } from "./customJson";
 import type {
   AllTypeInfo,
   AssemblyReferences,
@@ -163,6 +163,9 @@ const defaultApiViewOptions: ApiViewOptions = {
 const defaultCustomViewOptions: CustomViewOptions = {
   leafVisible: [],
   groupExpanded: [],
+  nodeProperties: [],
+  groupedBy: [],
+  tags: [],
   viewType: "custom",
 };
 
@@ -170,7 +173,13 @@ export class SqlCustom {
   save: (nodes: CustomNode[], errors: CustomError[], when: string) => void;
   shouldReload: (when: string) => boolean;
   viewState: {
-    onSave: (when: string, customSchemaVersion: string, nodeIds: string[]) => void;
+    onSave: (
+      when: string,
+      customSchemaVersion: string,
+      nodeIds: string[],
+      nodeProperties: string[],
+      tags: string[]
+    ) => void;
     set customViewOptions(viewOptions: CustomViewOptions);
     get customViewOptions(): CustomViewOptions;
     get viewType(): ViewType;
@@ -204,10 +213,23 @@ export class SqlCustom {
     this.save = (nodes: CustomNode[], errors: CustomError[], when: string): void => {
       configTable.insert({ name: "nodes", value: JSON.stringify(nodes) });
       configTable.insert({ name: "errors", value: JSON.stringify(errors) });
+
+      const nodeProperties = new Set<string>();
+      nodes.forEach((node) =>
+        Object.keys(node)
+          .filter(isAnyOtherCustomField)
+          .forEach((key) => nodeProperties.add(key))
+      );
+
+      const tags = new Set<string>();
+      nodes.forEach((node) => node.tags?.forEach((tag) => tags.add(tag)));
+
       this.viewState.onSave(
         when,
         expectedSchemaVersion,
-        nodes.map((node) => node.id)
+        nodes.map((node) => node.id),
+        [...nodeProperties],
+        [...tags]
       );
       done();
     };
@@ -230,10 +252,23 @@ export class SqlCustom {
     };
 
     this.viewState = {
-      onSave: (when: string, customSchemaVersion: string, nodeIds: string[]): void => {
+      onSave: (
+        when: string,
+        customSchemaVersion: string,
+        nodeIds: string[],
+        nodeProperties: string[],
+        tags: string[]
+      ): void => {
         configTable.upsert({ name: "when", value: when });
         configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
-        this.viewState.customViewOptions = { ...defaultCustomViewOptions, leafVisible: nodeIds };
+        nodeProperties.sort();
+        tags.sort();
+        this.viewState.customViewOptions = {
+          ...defaultCustomViewOptions,
+          leafVisible: nodeIds,
+          nodeProperties,
+          tags: tags.map((tag) => ({ tag, shown: true })),
+        };
       },
       set customViewOptions(viewOptions: CustomViewOptions) {
         configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });

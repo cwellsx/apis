@@ -218,8 +218,6 @@ export const convertLoadedToMethods = (
   }
 
   // convert to Image
-  if (!viewOptions.showGrouped) throw new Error("");
-
   log("convertToImage");
   const image = convertToImage(groups, edges, viewOptions, imageAttributes);
 

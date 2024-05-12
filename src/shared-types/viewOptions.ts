@@ -26,6 +26,9 @@ export type ApiViewOptions = {
 export type CustomViewOptions = {
   leafVisible: string[];
   groupExpanded: string[];
+  nodeProperties: string[];
+  groupedBy: string[];
+  tags: { tag: string; shown: boolean }[];
   viewType: "custom";
 };
 
