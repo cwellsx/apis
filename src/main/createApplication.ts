@@ -2,7 +2,7 @@ import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
 import type { MainApi } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
-import { appWindows } from "./createAppWindow";
+import { appWindows } from "./createBrowserWindow";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { log } from "./log";
 

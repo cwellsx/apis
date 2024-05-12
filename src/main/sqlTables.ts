@@ -2,12 +2,14 @@ import { Database } from "better-sqlite3";
 import type {
   ApiViewOptions,
   AppOptions,
+  CustomViewOptions,
   Members,
   MethodViewOptions,
   ReferenceViewOptions,
   ViewType,
 } from "../shared-types";
 import { defaultAppOptions } from "../shared-types";
+import { CustomNode } from "./isCustomJson";
 import type {
   AllTypeInfo,
   AssemblyReferences,
@@ -159,6 +161,100 @@ const defaultApiViewOptions: ApiViewOptions = {
   groupExpanded: [],
   viewType: "apis",
 };
+
+const defaultCustomViewOptions: CustomViewOptions = {
+  showGrouped: true,
+  leafVisible: [],
+  groupExpanded: [],
+  viewType: "custom",
+};
+
+export class SqlCustom {
+  save: (nodes: CustomNode[], errors: string[], when: string) => void;
+  viewState: {
+    onSave: (when: string, nodeIds: string[]) => void;
+    set customViewOptions(viewOptions: CustomViewOptions);
+    get customViewOptions(): CustomViewOptions;
+    get cachedWhen(): string;
+    get viewType(): ViewType;
+    set viewType(value: ViewType);
+  };
+  readErrors: () => string[];
+  readAll: () => CustomNode[];
+  close: () => void;
+
+  constructor(db: Database) {
+    // even though the CustomNode elements each have a unique id
+    // don't bother to store the data in normalized tables
+    // because there isn't much of the data (it's hand-written)
+    const configTable = new SqlTable<ConfigColumns>(db, "configCustom", "name", () => false, {
+      name: "foo",
+      value: "bar",
+    });
+
+    configTable.deleteAll();
+
+    const done = () => {
+      const result = db.pragma("wal_checkpoint(TRUNCATE)");
+      log(`wal_checkpoint: ${JSON.stringify(result)}`);
+    };
+
+    this.save = (nodes: CustomNode[], errors: string[], when: string): void => {
+      configTable.insert({ name: "nodes", value: JSON.stringify(nodes) });
+      configTable.insert({ name: "errors", value: JSON.stringify(errors) });
+      this.viewState.onSave(
+        when,
+        nodes.map((node) => node.id)
+      );
+      done();
+    };
+
+    this.readErrors = (): string[] => {
+      const o = configTable.selectOne({ name: "errors" });
+      if (!o) throw new Error("Errors not initialized");
+      return JSON.parse(o.value) as string[];
+    };
+
+    this.readAll = (): CustomNode[] => {
+      const o = configTable.selectOne({ name: "nodes" });
+      if (!o) throw new Error("Nodes not initialized");
+      return JSON.parse(o.value) as CustomNode[];
+    };
+
+    this.viewState = {
+      onSave: (when: string, nodeIds: string[]): void => {
+        configTable.insert({ name: "when", value: when });
+        this.viewState.customViewOptions = { ...defaultCustomViewOptions, leafVisible: nodeIds };
+      },
+      set customViewOptions(viewOptions: CustomViewOptions) {
+        configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });
+      },
+      get customViewOptions(): CustomViewOptions {
+        const o = configTable.selectOne({ name: "viewOptions" });
+        if (!o) throw new Error("viewOptions not initialized");
+        return JSON.parse(o.value) as CustomViewOptions;
+      },
+      get cachedWhen(): string {
+        const o = configTable.selectOne({ name: "when" });
+        if (!o) return "";
+        return o.value;
+      },
+      get viewType(): ViewType {
+        const o = configTable.selectOne({ name: "viewType" });
+        if (!o) return "custom";
+        return o.value as ViewType;
+      },
+      set viewType(value: ViewType) {
+        configTable.upsert({ name: "viewType", value });
+      },
+    };
+
+    this.close = () => {
+      done();
+      db.close();
+    };
+  }
+}
 
 export class SqlLoaded {
   save: (reflected: Reflected, when: string, hashDataSource: string) => void;
@@ -616,7 +712,7 @@ export class ViewState {
   }
 }
 
-type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";
+export type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";
 
 export type DataSource = {
   path: string;
@@ -672,6 +768,11 @@ export class SqlConfig {
 export function createSqlLoaded(filename: string): SqlLoaded {
   log("createSqlLoaded");
   return new SqlLoaded(createSqlDatabase(filename));
+}
+
+export function createSqlCustom(filename: string): SqlCustom {
+  log("createSqlCustom");
+  return new SqlCustom(createSqlDatabase(filename));
 }
 
 export function createSqlConfig(filename: string): SqlConfig {

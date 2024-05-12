@@ -45,18 +45,15 @@ export const convertLoadedToApis = (
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
   const { groups, nodes } = convertLoadedToGroups(Object.keys(assemblyTypes), exes);
 
-  const leafs: Leaf[] = [];
-
   Object.entries(assemblyTypes).forEach(([assemblyName, types]) => {
     const node = nodes[assemblyName];
     if (isParent(node)) throw new Error("Unexpected parent");
     const parent = node as Parent;
     const children: Leaf[] = Object.values(types);
     children.forEach((child) => (child.parent = parent));
-    leafs.push(...children);
     parent["children"] = children;
   });
 
-  const image = convertToImage(groups, leafs, edges, viewOptions);
+  const image = convertToImage(groups, edges, viewOptions);
   return { groups, image, viewOptions };
 };

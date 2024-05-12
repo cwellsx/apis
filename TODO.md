@@ -4,6 +4,19 @@ This may be out-of-date and updated occasionally.
 
 There is no "Done" section in this document, instead see the history of updates/commits.
 
+## Refactor and improve
+
+- API view option hideNestedTypes
+- New module `namedIds.ts`
+- Click on edge to show APIs as a detail
+- Better naming of nested types
+- Precomputed type and method names
+- Precomputed declaring types
+- Sanitize the Error schema in the Reflected data
+- Add tooltips to edges -- names of methods or types depending on whether the target is expanded
+- Maybe normalize the database, plus materialize various joins at save-time
+- Custom JSON
+
 ## Features
 
 - Demo on another machine
@@ -13,7 +26,6 @@ There is no "Done" section in this document, instead see the history of updates/
 - Read assemblies from multiple subdirectories and group by subdirectory
 - Find and show inter-process connections e.g. WCF and gRPC
 - Read and show target framework (from assembly or project)
-- List of recently-opened documents
 
 ## Tasks
 

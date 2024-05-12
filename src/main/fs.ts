@@ -17,10 +17,30 @@ export const appendFileSync = (path: string, data: string): void => fs.appendFil
 
 export const existsSync = (path: string): boolean => fs.existsSync(path);
 
-export const stat = (path: string): Promise<fs.Stats> => fsPromises.stat(path);
+const stat = (path: string): Promise<fs.Stats> => fsPromises.stat(path);
 
 export const readFileSync = (path: string): string => fs.readFileSync(path, { encoding: "utf8" });
 
 export const readFile = (path: string): Promise<string> => fsPromises.readFile(path, { encoding: "utf8" });
 
 export const writeFileSync = (path: string, data: string): void => fs.writeFileSync(path, data);
+
+export const whenFile = async (path: string): Promise<string> => {
+  if (!existsSync(path)) throw new Error(`File not found: ${path}`);
+  const stats = await stat(path);
+  return stats.mtime.toISOString();
+};
+
+type TypeGuard<T> = (json: unknown) => json is T;
+
+const parseJsonT = <T>(text: string, typeGuard: TypeGuard<T>): T => {
+  const json = JSON.parse(text);
+  if (typeGuard(json)) return json;
+  throw new Error("Unexpected"); // the type guard should return true or throw an explicit exception
+};
+
+export const readJsonT = async <T>(path: string, typeGuard: TypeGuard<T>): Promise<T> => {
+  if (!existsSync(path)) throw new Error(`File not found: ${path}`);
+  const text = await readFile(path);
+  return parseJsonT(text, typeGuard);
+};

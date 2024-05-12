@@ -2,15 +2,17 @@ import { Menu, MenuItemConstructorOptions } from "electron";
 import { ViewType } from "../shared-types";
 import { insert } from "./shared-types/remove";
 
+export type ViewMenuItem = { label: string; viewType: ViewType };
+
 export type ViewMenu = {
-  hasErrors: boolean;
+  menuItems: ViewMenuItem[];
   getViewType: () => ViewType | undefined;
   showViewType: (viewType?: ViewType) => void;
 };
 
 export const createMenu = (
   openAssemblies: () => Promise<void>,
-  openCustomJson: () => void,
+  openCustomJson: () => Promise<void>,
   openCoreJson: () => Promise<void>,
   recent: string[],
   openRecent: (path: string) => Promise<void>,
@@ -35,7 +37,7 @@ export const createMenu = (
         },
         {
           label: "JSON file containing `id` and `dependencies`",
-          click: openCustomJson,
+          click: async () => await openCustomJson(),
         },
         {
           label: "Core.json file created by running Core.exe",
@@ -54,7 +56,8 @@ export const createMenu = (
   if (viewMenu && currentViewType) {
     const submenu: MenuItemConstructorOptions[] = [];
 
-    const create = (label: string, viewType: ViewType): void => {
+    const create = (viewMenuItem: ViewMenuItem): void => {
+      const { label, viewType } = viewMenuItem;
       const menuItem: MenuItemConstructorOptions = { label, type: "checkbox" };
       if (currentViewType === viewType) {
         menuItem.checked = true;
@@ -66,9 +69,7 @@ export const createMenu = (
       submenu.push(menuItem);
     };
 
-    create("Assembly references", "references");
-    create("APIs", "apis");
-    if (viewMenu.hasErrors) create(".NET reflection errors", "errors");
+    viewMenu.menuItems.forEach(create);
 
     insert(menuTemplate, 1, { label: "View", submenu });
   }

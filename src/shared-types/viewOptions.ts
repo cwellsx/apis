@@ -24,6 +24,13 @@ export type ApiViewOptions = {
   viewType: "apis";
 };
 
+export type CustomViewOptions = {
+  showGrouped: boolean;
+  leafVisible: string[];
+  groupExpanded: string[];
+  viewType: "custom";
+};
+
 export type ErrorsViewOptions = {
   viewType: "errors";
 };
@@ -32,7 +39,7 @@ export type GreetingViewOptions = {
   viewType: "greeting";
 };
 
-export type GraphViewOptions = ReferenceViewOptions | MethodViewOptions | ApiViewOptions;
-export type GraphViewType = "references" | "methods" | "apis";
+export type GraphViewOptions = ReferenceViewOptions | MethodViewOptions | ApiViewOptions | CustomViewOptions;
+export type GraphViewType = "references" | "methods" | "apis" | "custom";
 
 export const graphViewTypes = ["references", "methods", "apis"];

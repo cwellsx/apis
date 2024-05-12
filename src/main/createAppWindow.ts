@@ -1,4 +1,4 @@
-import { BrowserWindow, IpcMainEvent } from "electron";
+import { BrowserWindow } from "electron";
 import type {
   AllViewOptions,
   AppOptions,
@@ -16,65 +16,19 @@ import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { convertLoadedToTypes } from "./convertLoadedToTypes";
-import { createBrowserWindow, loadURL } from "./createBrowserWindow";
+import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";
 import { TypeAndMethod, remove } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
-const createSecondWindow = (): Promise<BrowserWindow> => {
-  const window = createBrowserWindow();
-
-  const promise = new Promise<BrowserWindow>((resolve) => {
-    // resolve promise after window is loaded
-    window.webContents.once("did-finish-load", () => {
-      // TODO set appOptions in the newly-created window
-      resolve(window);
-    });
-
-    // and load the index.html of the window
-    loadURL(window);
-    //window.webContents.openDevTools();
-    window.maximize();
-  });
-
-  return promise;
-};
-
-export type AppWindow = {
-  mainApi: MainApi;
-  window: BrowserWindow;
-  showViewType: (viewType?: ViewType) => void;
-  showMethods: (methodId?: NodeId) => void;
-};
-
-export const appWindows = (() => {
-  const instances: { [index: number]: AppWindow } = {};
-
-  const find = (event: IpcMainEvent): AppWindow | undefined => instances[event.sender.id];
-  const add = (appWindow: AppWindow): void => {
-    const id = appWindow.window.webContents.id;
-    instances[id] = appWindow;
-    appWindow.window.on("closed", () => {
-      delete instances[id];
-    });
-  };
-  const closeAll = (mainWindow: BrowserWindow): void =>
-    Object.entries(instances).forEach(([index, appWindow]) => {
-      if (appWindow.window !== mainWindow) appWindow.window.close();
-      delete instances[+index];
-    });
-
-  return { find, add, closeAll };
-})();
-
 export const createAppWindow = (
   window: BrowserWindow,
   sqlLoaded: SqlLoaded,
   sqlConfig: SqlConfig,
   title: string
-): AppWindow => {
+): AppWindow & { showMethods: (methodId?: NodeId) => void } => {
   const show = createShow(window);
   const renderer = createRenderer(window);
 
@@ -100,10 +54,12 @@ export const createAppWindow = (
         return sqlLoaded.viewState.methodViewOptions;
       case "apis":
         return sqlLoaded.viewState.apiViewOptions;
+      case "custom":
+        throw new Error("Unexpected viewType");
     }
   };
 
-  // implement the MainApi and bind it to ipcMain
+  // implement the MainApi which will be bound to ipcMain
   const mainApi: MainApi = {
     onViewOptions: (viewOptions: AllViewOptions): void => {
       log("setGroupExpanded");
@@ -204,6 +160,7 @@ export const createAppWindow = (
       error.badCallInfos.map((badCallInfo) => sqlLoaded.readMethod(error.assemblyName, badCallInfo.metadataToken))
     );
     const viewErrors: ViewErrors = {
+      errors: [],
       methods: methods.map((typeAndMethod) => convertLoadedToMethodBody(typeAndMethod)),
       viewOptions: {
         viewType: "errors",
@@ -247,7 +204,7 @@ export const createAppWindow = (
   window.setTitle(title);
   renderer.showAppOptions(sqlConfig.appOptions);
 
-  const self: AppWindow = { mainApi, window, showViewType, showMethods };
+  const self = { mainApi, window, showViewType, showMethods };
   appWindows.add(self);
   return self;
 };

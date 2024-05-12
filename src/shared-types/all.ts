@@ -2,6 +2,7 @@ import { MethodBody } from "./methodBody";
 import { Types } from "./types";
 import type {
   ApiViewOptions,
+  CustomViewOptions,
   ErrorsViewOptions,
   GraphViewOptions,
   GreetingViewOptions,
@@ -16,13 +17,14 @@ export type AllViewOptions =
   | MethodViewOptions
   | ErrorsViewOptions
   | GreetingViewOptions
+  | CustomViewOptions
   | ApiViewOptions;
 
 export function isGraphViewOptions(viewOptions: AllViewOptions): viewOptions is GraphViewOptions {
   return graphViewTypes.includes(viewOptions.viewType);
 }
 
-export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis";
+export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom";
 
 export type View = ViewGraph | ViewGreeting | ViewErrors;
 

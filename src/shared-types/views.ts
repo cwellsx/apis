@@ -21,6 +21,7 @@ export type ViewGreeting = {
 };
 
 export type ViewErrors = {
+  errors: string[];
   methods: MethodBody[];
   viewOptions: ErrorsViewOptions;
 };

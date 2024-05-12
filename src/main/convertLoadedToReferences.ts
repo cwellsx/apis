@@ -25,6 +25,6 @@ export const convertLoadedToReferences = (
   }
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
   const { groups } = convertLoadedToGroups(names, exes);
-  const image = convertToImage(groups, leafs, edges, viewOptions);
+  const image = convertToImage(viewOptions.showGrouped ? groups : leafs, edges, viewOptions);
   return { groups, image, viewOptions };
 };

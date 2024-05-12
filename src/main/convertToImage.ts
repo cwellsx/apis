@@ -14,8 +14,7 @@ const createLookup = (array: string[]): StringPredicate => {
 };
 
 export function convertToImage(
-  groups: Node[],
-  leafs: Leaf[],
+  nodes: Node[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
   imageAttributes?: ImageAttributes
@@ -23,7 +22,6 @@ export function convertToImage(
   const { leafVisible, groupExpanded } = viewOptions;
   const isLeafVisible = createLookup(leafVisible);
   const isGroupExpanded = createLookup(groupExpanded);
-  const nodes = viewOptions.showGrouped ? groups : leafs;
 
   // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
   // also assert that the parent fields are set correctly

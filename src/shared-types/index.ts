@@ -22,6 +22,7 @@ export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
 export type {
   ApiViewOptions,
+  CustomViewOptions,
   GraphViewOptions,
   GraphViewType,
   MethodViewOptions,

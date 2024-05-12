@@ -1,17 +1,19 @@
-import { dialog, type BrowserWindow } from "electron";
+import { FileFilter, dialog, type BrowserWindow } from "electron";
 import { ViewType } from "../shared-types";
-import { appWindows, createAppWindow } from "./createAppWindow";
+import { createAppWindow } from "./createAppWindow";
+import { appWindows } from "./createBrowserWindow";
+import { createCustomWindow } from "./createCustomWindow";
 import { DotNetApi } from "./createDotNetApi";
-import { getAppFilename, pathJoin, writeFileSync } from "./fs";
+import { getAppFilename, pathJoin, readJsonT, whenFile, writeFileSync } from "./fs";
 import { hash } from "./hash";
+import { fixCustomJson, isCustomJson, type CustomNode } from "./isCustomJson";
+import { isReflected } from "./isReflected";
 import { Reflected, loadedVersion } from "./loaded";
 import { log } from "./log";
-import { ViewMenu, createMenu } from "./menu";
-import { readCoreJson, whenCoreJson } from "./readCoreJson";
+import { ViewMenu, ViewMenuItem, createMenu } from "./menu";
 import { options } from "./shared-types";
 import { show } from "./show";
-import { showErrorBox } from "./showErrorBox";
-import { SqlLoaded, createSqlConfig, createSqlLoaded, type DataSource } from "./sqlTables";
+import { SqlCustom, SqlLoaded, createSqlConfig, createSqlCustom, createSqlLoaded, type DataSource } from "./sqlTables";
 
 declare const CORE_EXE: string;
 
@@ -21,17 +23,25 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
 
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
+  let sqlCustom: SqlCustom | undefined;
 
   // not yet the ViewMenu
   let viewMenu: ViewMenu | undefined;
 
   const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
     log("changeSqlLoaded");
-    if (sqlLoaded) {
-      sqlLoaded.close();
-      appWindows.closeAll(mainWindow);
-    }
+    if (sqlLoaded) sqlLoaded.close();
+    if (sqlCustom) sqlCustom.close();
+    appWindows.closeAll(mainWindow);
     return createSqlLoaded(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
+  };
+
+  const changeSqlCustom = (dataSource: DataSource): SqlCustom => {
+    log("changeSqlCustom");
+    if (sqlLoaded) sqlLoaded.close();
+    if (sqlCustom) sqlCustom.close();
+    appWindows.closeAll(mainWindow);
+    return createSqlCustom(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
   };
 
   /*
@@ -61,12 +71,43 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
       appWindow.showViewType();
 
       // initialize ViewMenu before the menu is recreated
-      const hasErrors = sqlLoaded.readErrors().length !== 0;
+      const menuItems: ViewMenuItem[] = [
+        { label: "Assembly references", viewType: "references" },
+        { label: "APIs", viewType: "apis" },
+      ];
+      if (sqlLoaded.readErrors().length !== 0) menuItems.push({ label: ".NET reflection errors", viewType: "errors" });
       viewMenu = {
-        hasErrors,
+        menuItems,
         getViewType: () => sqlLoaded?.viewState.viewType,
         showViewType: (viewType?: ViewType): void => {
           appWindow.showViewType(viewType);
+          setApplicationMenu();
+        },
+      };
+    };
+
+    const openSqlCustom = async (when: string, getCustom: (path: string) => Promise<CustomNode[]>): Promise<void> => {
+      sqlCustom = changeSqlCustom(dataSource);
+      if (
+        options.alwaysReload ||
+        !sqlCustom.viewState.cachedWhen ||
+        Date.parse(sqlCustom.viewState.cachedWhen) < Date.parse(when)
+      ) {
+        const nodes = await getCustom(dataSource.path);
+        const errors = fixCustomJson(nodes);
+        sqlCustom.save(nodes, errors, when);
+      }
+      const customWindow = createCustomWindow(mainWindow, sqlCustom, sqlConfig, dataSource.path);
+      customWindow.showViewType();
+
+      const menuItems: ViewMenuItem[] = [{ label: "Custom JSON", viewType: "custom" }];
+      if (sqlCustom.readErrors().length !== 0)
+        menuItems.push({ label: "Custom JSON syntax errors", viewType: "errors" });
+      viewMenu = {
+        menuItems,
+        getViewType: () => sqlCustom?.viewState.viewType,
+        showViewType: (viewType?: ViewType): void => {
+          customWindow.showViewType(viewType);
           setApplicationMenu();
         },
       };
@@ -77,6 +118,10 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
       const reflected = JSON.parse(json);
       return reflected;
     };
+
+    const readCoreJson = async (path: string): Promise<Reflected> => await readJsonT(path, isReflected);
+
+    const readCustomJson = async (path: string): Promise<CustomNode[]> => await readJsonT(path, isCustomJson);
 
     /*
       statements wrapped in a try/catch handler
@@ -92,10 +137,10 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
           await openSqlLoaded(await dotNetApi.getWhen(dataSource.path), readDotNetApi);
           break;
         case "coreJson":
-          await openSqlLoaded(await whenCoreJson(dataSource.path), readCoreJson);
+          await openSqlLoaded(await whenFile(dataSource.path), readCoreJson);
           break;
         case "customJson":
-          showErrorBox("Not implemented", "This option isn't implemented yet");
+          await openSqlCustom(await whenFile(dataSource.path), readCustomJson);
           return;
       }
       // remember as most-recently-opened iff it opens successfully
@@ -119,19 +164,23 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     await openDataSource(dataSource);
   };
 
-  const openCustomJson = (): void => {
-    showErrorBox("Not implemented", "This option isn't implemented yet");
+  const openJsonPath = async (filters: FileFilter[], defaultPath?: string): Promise<string | undefined> => {
+    const paths = dialog.showOpenDialogSync(mainWindow, { properties: ["openFile"], filters, defaultPath });
+    if (!paths) return;
+    return paths[0];
   };
 
   const openCoreJson = async (): Promise<void> => {
-    const paths = dialog.showOpenDialogSync(mainWindow, {
-      properties: ["openFile"],
-      filters: [{ name: "Core", extensions: ["json"] }],
-      defaultPath: pathJoin(CORE_EXE, "Core.json"),
-    });
-    if (!paths) return;
-    const path = paths[0];
+    const path = await openJsonPath([{ name: "Core", extensions: ["json"] }], pathJoin(CORE_EXE, "Core.json"));
+    if (!path) return;
     const dataSource: DataSource = { path, type: "coreJson", hash: hash(path) };
+    await openDataSource(dataSource);
+  };
+
+  const openCustomJson = async (): Promise<void> => {
+    const path = await openJsonPath([{ name: "*", extensions: ["json"] }]);
+    if (!path) return;
+    const dataSource: DataSource = { path, type: "customJson", hash: hash(path) };
     await openDataSource(dataSource);
   };
 
