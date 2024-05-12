@@ -166,6 +166,14 @@ const defaultCustomViewOptions: CustomViewOptions = {
   nodeProperties: [],
   groupedBy: [],
   tags: [],
+  edgeLabels: {
+    label: true,
+    attributes: false,
+  },
+  groupedLabels: {
+    serverLabel: true,
+    edgeLabel: false,
+  },
   viewType: "custom",
 };
 

@@ -89,6 +89,76 @@ const getFilteredBy = (
   );
 };
 
+const getEdgeLabels = (
+  viewOptions: GraphViewOptions,
+  setViewOptions: (viewOptions: GraphViewOptions) => void
+): JSX.Element | undefined => {
+  if (viewOptions.viewType !== "custom") return <></>;
+  const edgeLabels = viewOptions.edgeLabels;
+
+  const onLabelChange = (): void => {
+    viewOptions.edgeLabels.label = !viewOptions.edgeLabels.label;
+    setViewOptions(viewOptions);
+  };
+
+  const onAttributesChange = (): void => {
+    viewOptions.edgeLabels.attributes = !viewOptions.edgeLabels.attributes;
+    setViewOptions(viewOptions);
+  };
+
+  return (
+    <p>
+      Edge labels:
+      <br />
+      <label>
+        <input type="checkbox" checked={edgeLabels.label} onChange={onLabelChange} />
+        JSON label
+      </label>
+      <br />
+      <label>
+        <input type="checkbox" checked={edgeLabels.attributes} onChange={onAttributesChange} />
+        Boolean attributes
+      </label>
+      <br />
+    </p>
+  );
+};
+
+const getGroupedLabels = (
+  viewOptions: GraphViewOptions,
+  setViewOptions: (viewOptions: GraphViewOptions) => void
+): JSX.Element | undefined => {
+  if (viewOptions.viewType !== "custom") return <></>;
+  const groupedLabels = viewOptions.groupedLabels;
+
+  const onServerChange = (): void => {
+    viewOptions.groupedLabels.serverLabel = !viewOptions.groupedLabels.serverLabel;
+    setViewOptions(viewOptions);
+  };
+
+  const onEdgeChange = (): void => {
+    viewOptions.groupedLabels.edgeLabel = !viewOptions.groupedLabels.edgeLabel;
+    setViewOptions(viewOptions);
+  };
+
+  return (
+    <p>
+      Grouped edge labels:
+      <br />
+      <label>
+        <input type="checkbox" checked={groupedLabels.serverLabel} onChange={onServerChange} />
+        Target node label
+      </label>
+      <br />
+      <label>
+        <input type="checkbox" checked={groupedLabels.edgeLabel} onChange={onEdgeChange} />
+        Edge label
+      </label>
+      <br />
+    </p>
+  );
+};
+
 export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
   const { viewOptions, setViewOptions } = props;
   if (viewOptions.viewType == "methods") return <></>;
@@ -99,6 +169,8 @@ export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsPro
       {getShowGrouped(viewOptions, setViewOptions)}
       {getGroupedBy(viewOptions, setViewOptions)}
       {getFilteredBy(viewOptions, setViewOptions)}
+      {getEdgeLabels(viewOptions, setViewOptions)}
+      {getGroupedLabels(viewOptions, setViewOptions)}
     </fieldset>
   );
 };

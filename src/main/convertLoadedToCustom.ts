@@ -1,4 +1,4 @@
-import { CustomViewOptions, Leaf, Node, Parent, ViewGraph } from "../shared-types";
+import { CustomViewOptions, Leaf, Node, Parent, ViewGraph, joinLabel } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
@@ -30,14 +30,24 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
     node.dependencies
       .filter((dependency) => !hiddenNodeIds.has(dependency.id))
       .forEach((dependency) => {
+        // create an optional label
         const booleans: string[] = [];
         Object.entries(dependency).forEach(([key, value]) => {
           if (value === true) booleans.push(key);
         });
+        const attributes = booleans.join(", ");
+
+        const label = joinLabel(
+          viewOptions.edgeLabels.label,
+          dependency.label,
+          viewOptions.edgeLabels.attributes,
+          attributes
+        );
+
         edges.push({
           clientId: node.id,
           serverId: dependency.id,
-          label: dependency.label + (booleans.length ? `(${booleans.join(", ")})` : ""),
+          label,
         });
       });
   });
@@ -66,6 +76,6 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
     });
   } else groups.push(...Object.values(leafs));
 
-  const image = convertToImage(groups, edges, viewOptions);
+  const image = convertToImage(groups, edges, viewOptions, {}, viewOptions.groupedLabels);
   return { groups, image, viewOptions };
 };

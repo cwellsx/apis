@@ -22,11 +22,13 @@ export { isParent } from "./treeNodes";
 export type { Leaf, Node, Parent } from "./treeNodes";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
+export { joinLabel } from "./viewOptions";
 export type {
   ApiViewOptions,
   CustomViewOptions,
   GraphViewOptions,
   GraphViewType,
+  GroupedLabels,
   MethodViewOptions,
   ReferenceViewOptions,
 } from "./viewOptions";

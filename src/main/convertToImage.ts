@@ -1,5 +1,5 @@
-import type { AreaClass, GraphViewOptions, Image, Leaf, Node, Parent } from "../shared-types";
-import { isParent } from "../shared-types";
+import type { AreaClass, GraphViewOptions, GroupedLabels, Image, Leaf, Node, Parent } from "../shared-types";
+import { isParent, joinLabel } from "../shared-types";
 import type { ImageAttributes, ImageData, Node as ImageNode } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
@@ -17,7 +17,8 @@ export function convertToImage(
   nodes: Node[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
-  imageAttributes?: ImageAttributes
+  imageAttributes?: ImageAttributes,
+  groupedLabels?: GroupedLabels
 ): Image | string {
   const { leafVisible, groupExpanded } = viewOptions;
   const isLeafVisible = createLookup(leafVisible);
@@ -25,16 +26,16 @@ export function convertToImage(
 
   // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
   // also assert that the parent fields are set correctly
-  const unique = new Set<string>();
+  const allNodes: { [id: string]: Node } = {};
   // also take this opportunity to initialize
   const classNames: { [id: string]: AreaClass } = {};
 
   const assertUnique = (node: Node): void => {
     const id = node.id;
-    if (unique.has(id)) {
+    if (allNodes[id]) {
       throw new Error(`Duplicate node id: ${id}`);
     }
-    unique.add(id);
+    allNodes[id] = node;
     let className: AreaClass;
     if (isParent(node)) {
       className = viewOptions.groupExpanded.includes(node.id) ? "expanded" : "closed";
@@ -115,7 +116,14 @@ export function convertToImage(
       const edges = edgeGroups.get(edgeId);
       const labels: string[] = [];
       edges?.forEach((edge) => {
-        if (edge.label) labels.push(edge.label);
+        const isGroupedEdge = edgeId !== makeEdgeId(edge.clientId, edge.serverId);
+        // no need to show the serverLabel unless this is a group of edges
+        const label = !isGroupedEdge
+          ? edge.label
+          : !groupedLabels
+          ? undefined
+          : joinLabel(groupedLabels.serverLabel, allNodes[edge.serverId].label, groupedLabels.edgeLabel, edge.label);
+        if (label) labels.push(label);
       });
       return { edgeId, ...fromEdgeId(edgeId), labels };
     }),
