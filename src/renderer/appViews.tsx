@@ -9,6 +9,7 @@ import type {
   ViewGreeting,
 } from "../shared-types";
 import { Details } from "./Details";
+import { ErrorDetails } from "./ErrorDetails";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
 import { MethodDetails } from "./MethodDetails";
@@ -50,7 +51,10 @@ export const getCenter = (view: View, onGraphClick: OnGraphClick, zoomPercent: n
   if (isErrors(view))
     return (
       <>
-        {view.methods.map((methodBody, index) => (
+        {view.customErrors?.map((customError, index) => (
+          <ErrorDetails error={customError} key={index} />
+        ))}
+        {view.methods?.map((methodBody, index) => (
           <MethodDetails methodBody={methodBody} key={index} />
         ))}
       </>

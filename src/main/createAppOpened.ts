@@ -4,11 +4,12 @@ import { createAppWindow } from "./createAppWindow";
 import { appWindows } from "./createBrowserWindow";
 import { createCustomWindow } from "./createCustomWindow";
 import { DotNetApi } from "./createDotNetApi";
+import type { CustomNode } from "./customJson";
+import { fixCustomJson, isCustomJson } from "./customJson";
 import { getAppFilename, pathJoin, readJsonT, whenFile, writeFileSync } from "./fs";
 import { hash } from "./hash";
-import { fixCustomJson, isCustomJson, type CustomNode } from "./isCustomJson";
-import { isReflected } from "./isReflected";
-import { Reflected, loadedVersion } from "./loaded";
+import type { Reflected } from "./loaded";
+import { isReflected } from "./loaded";
 import { log } from "./log";
 import { ViewMenu, ViewMenuItem, createMenu } from "./menu";
 import { options } from "./shared-types";
@@ -54,12 +55,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     */
     const openSqlLoaded = async (when: string, getReflected: (path: string) => Promise<Reflected>): Promise<void> => {
       sqlLoaded = changeSqlLoaded(dataSource);
-      if (
-        options.alwaysReload ||
-        !sqlLoaded.viewState.cachedWhen ||
-        loadedVersion !== sqlLoaded.viewState.loadedVersion ||
-        Date.parse(sqlLoaded.viewState.cachedWhen) < Date.parse(when)
-      ) {
+      if (options.alwaysReload || sqlLoaded.shouldReload(when)) {
         log("getLoaded");
         const reflected = await getReflected(dataSource.path);
         // save Reflected
@@ -88,11 +84,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
 
     const openSqlCustom = async (when: string, getCustom: (path: string) => Promise<CustomNode[]>): Promise<void> => {
       sqlCustom = changeSqlCustom(dataSource);
-      if (
-        options.alwaysReload ||
-        !sqlCustom.viewState.cachedWhen ||
-        Date.parse(sqlCustom.viewState.cachedWhen) < Date.parse(when)
-      ) {
+      if (options.alwaysReload || sqlCustom.shouldReload(when)) {
         const nodes = await getCustom(dataSource.path);
         const errors = fixCustomJson(nodes);
         sqlCustom.save(nodes, errors, when);
@@ -141,7 +133,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
           break;
         case "customJson":
           await openSqlCustom(await whenFile(dataSource.path), readCustomJson);
-          return;
+          break;
       }
       // remember as most-recently-opened iff it opens successfully
       sqlConfig.dataSource = dataSource;

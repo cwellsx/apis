@@ -1,8 +1,7 @@
 import { randomUUID } from "crypto";
 import os from "os";
+import { CustomError } from "../shared-types";
 import { remove } from "./shared-types";
-
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 type Scalar = string | number | boolean;
 
@@ -10,28 +9,34 @@ type AnyOtherFields = {
   [key: string]: Scalar;
 };
 
+type CustomDependency = { id: string; label: string } & AnyOtherFields;
+
 export type CustomNode = AnyOtherFields & {
   id: string;
   label?: string;
   tags?: string[];
-  dependencies: ({ id: string; label: string } & AnyOtherFields)[];
+  dependencies: CustomDependency[];
 };
 
-const isString = (value: any): boolean => typeof value === "string";
-const isNumber = (value: any): boolean => typeof value === "number";
-const isBoolean = (value: any): boolean => typeof value === "boolean";
+const isString = (value: unknown): boolean => typeof value === "string";
+const isNumber = (value: unknown): boolean => typeof value === "number";
+const isBoolean = (value: unknown): boolean => typeof value === "boolean";
 
 const precondition = (element: unknown): boolean => !!element && typeof element === "object";
 
 const jsonStringify = (element: unknown) => JSON.stringify(element, null, " ");
-const errorMessage = (elementJson: string, errors: string[]) => [...errors, elementJson].join(os.EOL);
-const errorMessageEx = (element: unknown, ...errors: string[]) => errorMessage(jsonStringify(element), errors);
+const createCustomError = (element: CustomNode, message: string): CustomError => ({
+  messages: [message],
+  elementJson: jsonStringify(element),
+});
 
-const findAndFixErrors = (element: CustomNode): string | undefined => {
-  const elementJson = jsonStringify(element);
-  const errors: string[] = [];
+const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
+  const customError: CustomError = {
+    messages: [],
+    elementJson: jsonStringify(element),
+  };
 
-  const error = (message: string) => errors.push(message);
+  const error = (message: string) => customError.messages.push(message);
 
   const assertAnyOtherFields = (o: object): void =>
     Object.entries(o).forEach(([key, value]) => {
@@ -60,12 +65,17 @@ const findAndFixErrors = (element: CustomNode): string | undefined => {
 
   assertAnyOtherFields(element);
 
-  const dependencies: any[] = element.dependencies;
-  dependencies.slice().forEach((dependency: any) => {
+  const dependencies: unknown[] = element.dependencies;
+  dependencies.slice().forEach((item: unknown) => {
+    if (!precondition(item)) {
+      error("Dependency is not an object");
+      remove(dependencies, item);
+      return;
+    }
+    const dependency = item as CustomDependency;
     if (!dependency.id || !isString(dependency.id)) {
       error("Missing dependency id");
-      const index = dependencies.indexOf(dependency);
-      dependencies.splice(index, 1);
+      remove(dependencies, item);
     }
     if (!dependency.label || !isString(dependency.label)) {
       error("Missing dependency label");
@@ -74,37 +84,38 @@ const findAndFixErrors = (element: CustomNode): string | undefined => {
     assertAnyOtherFields(dependency);
   });
 
-  return errors.length ? errorMessage(elementJson, errors) : undefined;
+  return customError.messages.length ? customError : undefined;
 };
 
-export const fixCustomJson = (nodes: CustomNode[]): string[] => {
-  const errors: string[] = [];
+export const fixCustomJson = (nodes: CustomNode[]): CustomError[] => {
+  const customErrors: CustomError[] = [];
   nodes.slice().forEach((element) => {
     if (!precondition(element)) {
       remove(nodes, element);
-      errors.push(errorMessageEx(element, "Node is not an object"));
+      customErrors.push(createCustomError(element, "Node is not an object"));
       return;
     }
     const error = findAndFixErrors(element);
-    if (error) errors.push(error);
+    if (error) customErrors.push(error);
   });
 
   // get all the ids
   const ids = new Set<string>();
   nodes.forEach((node) => {
     if (ids.has(node.id)) {
-      errors.push(errorMessageEx(node, "Node id is not unique"));
+      customErrors.push(createCustomError(node, "Node id is not unique"));
       node.id = randomUUID();
     } else ids.add(node.id);
   });
   // assert the ids in the dependencies
   nodes.forEach((node) => {
     node.dependencies.forEach((dependency) => {
-      if (!ids.has(dependency.id)) errors.push(errorMessageEx(node, `Dependency id "${dependency.id}" is unknown`));
+      if (!ids.has(dependency.id))
+        customErrors.push(createCustomError(node, `Dependency id "${dependency.id}" is unknown`));
     });
   });
 
-  return errors;
+  return customErrors;
 };
 
 export const isCustomJson = (json: unknown): json is CustomNode[] => {
@@ -117,7 +128,8 @@ export const isCustomJson = (json: unknown): json is CustomNode[] => {
   // do the validation is two stages
   // 1. here, return true or false depending on whether the first node is error-free
   // 2. later, sanitize all the nodes, correct them if needed, return error messages
-  const error = findAndFixErrors(first as CustomNode);
-  if (error) throw new Error(error);
+  const customError = findAndFixErrors(first as CustomNode);
+
+  if (customError) throw new Error([...customError.messages, customError.elementJson].join(os.EOL));
   return true;
 };

@@ -1,3 +1,4 @@
+import { CustomError } from "./customError";
 import { Image } from "./image";
 import { MethodBody } from "./methodBody";
 import { Node } from "./treeNodes";
@@ -21,7 +22,7 @@ export type ViewGreeting = {
 };
 
 export type ViewErrors = {
-  errors: string[];
-  methods: MethodBody[];
+  customErrors?: CustomError[];
+  methods?: MethodBody[];
   viewOptions: ErrorsViewOptions;
 };

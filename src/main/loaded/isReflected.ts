@@ -1,4 +1,5 @@
-import { Reflected, loadedVersion } from "./loaded";
+import { Reflected } from "./loadedAssemblies";
+import { loadedVersion } from "./loadedVersion";
 
 /*
   This is a nuisance to write and maintain -- maybe replace it with

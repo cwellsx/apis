@@ -1,6 +1,6 @@
 import { CustomViewOptions, Leaf, ViewGraph } from "../shared-types";
 import { convertToImage } from "./convertToImage";
-import { CustomNode } from "./isCustomJson";
+import { CustomNode } from "./customJson";
 import { log } from "./log";
 import { Edge } from "./shared-types";
 

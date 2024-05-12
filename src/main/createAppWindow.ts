@@ -160,7 +160,6 @@ export const createAppWindow = (
       error.badCallInfos.map((badCallInfo) => sqlLoaded.readMethod(error.assemblyName, badCallInfo.metadataToken))
     );
     const viewErrors: ViewErrors = {
-      errors: [],
       methods: methods.map((typeAndMethod) => convertLoadedToMethodBody(typeAndMethod)),
       viewOptions: {
         viewType: "errors",

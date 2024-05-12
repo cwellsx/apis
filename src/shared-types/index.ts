@@ -10,6 +10,8 @@ export type {
   RendererApi,
 } from "./apis";
 export type { AsText, CallStack } from "./callStack";
+export { isCustomError } from "./customError";
+export type { CustomError } from "./customError";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodBody, MethodError } from "./methodBody";
 export type { GraphEvent } from "./mouseEvent";

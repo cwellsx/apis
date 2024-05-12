@@ -89,11 +89,10 @@ export const createCustomWindow = (
   };
 
   const showErrors = (): void => {
-    const errors = sqlCustom.readErrors();
+    const customErrors = sqlCustom.readErrors();
 
     const viewErrors: ViewErrors = {
-      errors,
-      methods: [],
+      customErrors,
       viewOptions: {
         viewType: "errors",
       },

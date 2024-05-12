@@ -2,6 +2,7 @@ import { Database } from "better-sqlite3";
 import type {
   ApiViewOptions,
   AppOptions,
+  CustomError,
   CustomViewOptions,
   Members,
   MethodViewOptions,
@@ -9,7 +10,7 @@ import type {
   ViewType,
 } from "../shared-types";
 import { defaultAppOptions } from "../shared-types";
-import { CustomNode } from "./isCustomJson";
+import type { CustomNode } from "./customJson";
 import type {
   AllTypeInfo,
   AssemblyReferences,
@@ -19,7 +20,7 @@ import type {
   MethodMember,
   Reflected,
 } from "./loaded";
-import { badTypeInfo, validateTypeInfo } from "./loaded";
+import { badTypeInfo, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
 import { TypeAndMethod, distinctor } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
@@ -123,8 +124,6 @@ type RecentColumns = {
   when: number;
 };
 
-const loadedSchemaVersion = "2024-05-09a";
-
 export type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
 const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
   const result: SavedTypeInfo = { ...typeInfo };
@@ -170,23 +169,28 @@ const defaultCustomViewOptions: CustomViewOptions = {
 };
 
 export class SqlCustom {
-  save: (nodes: CustomNode[], errors: string[], when: string) => void;
+  save: (nodes: CustomNode[], errors: CustomError[], when: string) => void;
+  shouldReload: (when: string) => boolean;
   viewState: {
-    onSave: (when: string, nodeIds: string[]) => void;
+    onSave: (when: string, customSchemaVersion: string, nodeIds: string[]) => void;
     set customViewOptions(viewOptions: CustomViewOptions);
     get customViewOptions(): CustomViewOptions;
-    get cachedWhen(): string;
     get viewType(): ViewType;
     set viewType(value: ViewType);
+    get cachedWhen(): string;
+    get customSchemaVersion(): string;
   };
-  readErrors: () => string[];
+  readErrors: () => CustomError[];
   readAll: () => CustomNode[];
   close: () => void;
 
   constructor(db: Database) {
+    const expectedSchemaVersion = "2024-05-12";
+
     // even though the CustomNode elements each have a unique id
     // don't bother to store the data in normalized tables
     // because there isn't much of the data (it's hand-written)
+    // also a schema mismatch doesn't drop and recreate the table
     const configTable = new SqlTable<ConfigColumns>(db, "configCustom", "name", () => false, {
       name: "foo",
       value: "bar",
@@ -199,20 +203,26 @@ export class SqlCustom {
       log(`wal_checkpoint: ${JSON.stringify(result)}`);
     };
 
-    this.save = (nodes: CustomNode[], errors: string[], when: string): void => {
+    this.save = (nodes: CustomNode[], errors: CustomError[], when: string): void => {
       configTable.insert({ name: "nodes", value: JSON.stringify(nodes) });
       configTable.insert({ name: "errors", value: JSON.stringify(errors) });
       this.viewState.onSave(
         when,
+        expectedSchemaVersion,
         nodes.map((node) => node.id)
       );
       done();
     };
 
-    this.readErrors = (): string[] => {
+    this.shouldReload = (when: string): boolean =>
+      !this.viewState.cachedWhen ||
+      expectedSchemaVersion !== this.viewState.customSchemaVersion ||
+      Date.parse(this.viewState.cachedWhen) < Date.parse(when);
+
+    this.readErrors = (): CustomError[] => {
       const o = configTable.selectOne({ name: "errors" });
       if (!o) throw new Error("Errors not initialized");
-      return JSON.parse(o.value) as string[];
+      return JSON.parse(o.value) as CustomError[];
     };
 
     this.readAll = (): CustomNode[] => {
@@ -222,8 +232,9 @@ export class SqlCustom {
     };
 
     this.viewState = {
-      onSave: (when: string, nodeIds: string[]): void => {
-        configTable.insert({ name: "when", value: when });
+      onSave: (when: string, customSchemaVersion: string, nodeIds: string[]): void => {
+        configTable.upsert({ name: "when", value: when });
+        configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
         this.viewState.customViewOptions = { ...defaultCustomViewOptions, leafVisible: nodeIds };
       },
       set customViewOptions(viewOptions: CustomViewOptions) {
@@ -234,11 +245,6 @@ export class SqlCustom {
         if (!o) throw new Error("viewOptions not initialized");
         return JSON.parse(o.value) as CustomViewOptions;
       },
-      get cachedWhen(): string {
-        const o = configTable.selectOne({ name: "when" });
-        if (!o) return "";
-        return o.value;
-      },
       get viewType(): ViewType {
         const o = configTable.selectOne({ name: "viewType" });
         if (!o) return "custom";
@@ -246,6 +252,16 @@ export class SqlCustom {
       },
       set viewType(value: ViewType) {
         configTable.upsert({ name: "viewType", value });
+      },
+      get cachedWhen(): string {
+        const o = configTable.selectOne({ name: "when" });
+        if (!o) return "";
+        return o.value;
+      },
+      get customSchemaVersion(): string {
+        const o = configTable.selectOne({ name: "customSchemaVersion" });
+        if (!o) return "";
+        return o.value;
       },
     };
 
@@ -258,6 +274,7 @@ export class SqlCustom {
 
 export class SqlLoaded {
   save: (reflected: Reflected, when: string, hashDataSource: string) => void;
+  shouldReload: (when: string) => boolean;
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
   readTypes: (assemblyName: string) => AllTypeInfo;
@@ -268,10 +285,12 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
+    const expectedSchemaVersion = "2024-05-09a";
+
     this.viewState = new ViewState(db);
 
     const schema = this.viewState.loadedSchemaVersion;
-    if (schema !== loadedSchemaVersion) {
+    if (schema !== expectedSchemaVersion) {
       // schema has changed
       dropTable(db, "assembly");
       dropTable(db, "type");
@@ -279,7 +298,7 @@ export class SqlLoaded {
       dropTable(db, "method");
       dropTable(db, "errors");
       dropTable(db, "calls");
-      this.viewState.loadedSchemaVersion = loadedSchemaVersion;
+      this.viewState.loadedSchemaVersion = expectedSchemaVersion;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
 
@@ -489,6 +508,11 @@ export class SqlLoaded {
       done();
       log("save done");
     };
+
+    this.shouldReload = (when: string): boolean =>
+      !this.viewState.cachedWhen ||
+      loadedVersion !== this.viewState.loadedVersion ||
+      Date.parse(this.viewState.cachedWhen) < Date.parse(when);
 
     this.readAssemblyReferences = () =>
       assemblyTable.selectAll().reduce<AssemblyReferences>((found, entry) => {
