@@ -6,7 +6,6 @@ export type ReferenceViewOptions = {
 };
 
 export type MethodViewOptions = {
-  showGrouped: boolean;
   leafVisible: string[];
   groupExpanded: string[];
   topType: "assembly" | "namespace" | "none";
@@ -25,7 +24,6 @@ export type ApiViewOptions = {
 };
 
 export type CustomViewOptions = {
-  showGrouped: boolean;
   leafVisible: string[];
   groupExpanded: string[];
   viewType: "custom";

@@ -29,19 +29,27 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   // not yet the ViewMenu
   let viewMenu: ViewMenu | undefined;
 
+  const closeAll = (): void => {
+    if (sqlLoaded) {
+      sqlLoaded.close();
+      sqlLoaded = undefined;
+    }
+    if (sqlCustom) {
+      sqlCustom.close();
+      sqlCustom = undefined;
+    }
+    appWindows.closeAll(mainWindow);
+  };
+
   const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
     log("changeSqlLoaded");
-    if (sqlLoaded) sqlLoaded.close();
-    if (sqlCustom) sqlCustom.close();
-    appWindows.closeAll(mainWindow);
+    closeAll();
     return createSqlLoaded(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
   };
 
   const changeSqlCustom = (dataSource: DataSource): SqlCustom => {
     log("changeSqlCustom");
-    if (sqlLoaded) sqlLoaded.close();
-    if (sqlCustom) sqlCustom.close();
-    appWindows.closeAll(mainWindow);
+    closeAll();
     return createSqlCustom(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
   };
 

@@ -146,7 +146,6 @@ const defaultReferenceViewOptions: ReferenceViewOptions = {
 };
 
 const defaultMethodViewOptions: MethodViewOptions = {
-  showGrouped: true,
   leafVisible: [],
   groupExpanded: [],
   topType: "assembly",
@@ -162,7 +161,6 @@ const defaultApiViewOptions: ApiViewOptions = {
 };
 
 const defaultCustomViewOptions: CustomViewOptions = {
-  showGrouped: true,
   leafVisible: [],
   groupExpanded: [],
   viewType: "custom",
