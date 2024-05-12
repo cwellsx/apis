@@ -391,10 +391,12 @@ export class SqlLoaded {
     };
 
     this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
+      // delete in reverse order
+      callsTable.deleteAll();
+      errorsTable.deleteAll();
       methodTable.deleteAll();
       memberTable.deleteAll();
       typeTable.deleteAll();
-      errorsTable.deleteAll();
       assemblyTable.deleteAll();
 
       log("save reflected.assemblies");

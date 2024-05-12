@@ -3,13 +3,7 @@ import os from "os";
 import { CustomError } from "../shared-types";
 import { remove } from "./shared-types";
 
-type Scalar = string | number | boolean;
-
-type AnyOtherFields = {
-  [key: string]: Scalar;
-};
-
-type CustomDependency = { id: string; label: string } & AnyOtherFields;
+type CustomDependency = { id: string; label: string } & { [key: string]: boolean };
 
 type CustomFields = {
   id: string;
@@ -18,7 +12,7 @@ type CustomFields = {
   dependencies: CustomDependency[];
 };
 
-export type CustomNode = CustomFields & AnyOtherFields;
+export type CustomNode = CustomFields & { [key: string]: string | number };
 
 export const isAnyOtherCustomField = (key: string): boolean => !["id", "label", "tags", "dependencies"].includes(key);
 
@@ -42,9 +36,9 @@ const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
 
   const error = (message: string) => customError.messages.push(message);
 
-  const assertAnyOtherFields = (o: object): void =>
+  const assertAnyOtherFields = (o: object, isExpected: (value: unknown) => boolean): void =>
     Object.entries(o).forEach(([key, value]) => {
-      if (key == "dependencies" || key == "tags" || isString(value) || isNumber(value) || isBoolean(value)) return;
+      if (!isAnyOtherCustomField(key) || isExpected(value)) return;
       error(`Unpexpected non-scalar value type for key ${key}`);
       delete element[key];
     });
@@ -74,7 +68,7 @@ const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
     }
   }
 
-  assertAnyOtherFields(element);
+  assertAnyOtherFields(element, (value) => isNumber(value) || isString(value));
 
   const dependencies: unknown[] = element.dependencies;
   dependencies.slice().forEach((item: unknown) => {
@@ -92,7 +86,7 @@ const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
       error("Missing dependency label");
       dependency.label = dependency.id;
     }
-    assertAnyOtherFields(dependency);
+    assertAnyOtherFields(dependency, isBoolean);
   });
 
   return customError.messages.length ? customError : undefined;

@@ -112,7 +112,12 @@ export function convertToImage(
   const imageData: ImageData = {
     nodes: toImageNodes(nodes),
     edges: edgeIds.map((edgeId) => {
-      return { edgeId, ...fromEdgeId(edgeId) };
+      const edges = edgeGroups.get(edgeId);
+      const labels: string[] = [];
+      edges?.forEach((edge) => {
+        if (edge.label) labels.push(edge.label);
+      });
+      return { edgeId, ...fromEdgeId(edgeId), labels };
     }),
     imageAttributes: imageAttributes ?? {},
     classNames,

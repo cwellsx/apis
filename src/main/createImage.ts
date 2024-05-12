@@ -35,7 +35,7 @@ type Subgraph = Text & { type: "subgraph"; children: Node[] };
 
 export type ImageData = {
   nodes: Node[];
-  edges: { clientId: string; serverId: string; edgeId: string }[];
+  edges: { clientId: string; serverId: string; edgeId: string; labels: string[] }[];
   imageAttributes: ImageAttributes;
   classNames: { [type: string]: AreaClass };
 };
@@ -96,9 +96,11 @@ const getDotFormat = (imageData: ImageData): string[] => {
   pushLayer(imageData.nodes, 0);
 
   // push the map of grouped edges
-  imageData.edges.forEach(({ clientId, serverId, edgeId }) =>
-    lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo]`)
-  );
+  imageData.edges.forEach(({ clientId, serverId, edgeId, labels }) => {
+    const label = labels.join("\r\n");
+    const labelAttributes = `, label="${label}", tooltip="${label}"`;
+    lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
+  });
 
   lines.push("}");
   return lines;

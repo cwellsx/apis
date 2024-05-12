@@ -30,10 +30,14 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
     node.dependencies
       .filter((dependency) => !hiddenNodeIds.has(dependency.id))
       .forEach((dependency) => {
+        const booleans: string[] = [];
+        Object.entries(dependency).forEach(([key, value]) => {
+          if (value === true) booleans.push(key);
+        });
         edges.push({
           clientId: node.id,
           serverId: dependency.id,
-          label: dependency.label,
+          label: dependency.label + (booleans.length ? `(${booleans.join(", ")})` : ""),
         });
       });
   });
