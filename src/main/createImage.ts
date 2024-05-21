@@ -66,6 +66,7 @@ const defaultShape = (node: Node): Shape => {
 const getDotFormat = (imageData: ImageData): string[] => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
+  lines.push("  labeljust=l");
 
   // push the tree of nodes -- use subgraphs for exapanded groups
   const pushLayer = (layer: Node[], level: number): void => {
