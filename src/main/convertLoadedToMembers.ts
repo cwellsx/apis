@@ -1,13 +1,14 @@
-import type { Access, MemberInfo, Members, Named } from "../shared-types";
+import type { Access, GetArtificialKey, MemberInfo, Members, Named, NodeId } from "../shared-types";
+import { artificialNodeId, metadataTokenNodeId } from "../shared-types";
 import type { EventMember, FieldMember, MethodMember, Parameter, PropertyMember, TypeId } from "./loaded";
 import { Access as LoadedAccess, Members as LoadedMembers } from "./loaded";
 import { options } from "./shared-types";
 
-type IdKind = "!n!" | "!t!" | "!e!" | "!a!";
-type MemberIdKind = "!mm!" | "!mf!" | "!mp!" | "!me!";
-export const getId = (kind: IdKind | MemberIdKind, id: number | string): string => `${kind}${id}`;
+// type IdKind = "!n!" | "!t!" | "!e!" | "!a!";
+// type MemberIdKind = "!mm!" | "!mf!" | "!mp!" | "!me!";
+// export const getId = (kind: IdKind | MemberIdKind, id: number | string): string => `${kind}${id}`;
 
-export const getMethodId = (id: string): number | undefined => (id.startsWith("!mm!") ? +id.substring(4) : undefined);
+// export const getMethodId = (id: string): number | undefined => (id.startsWith("!mm!") ? +id.substring(4) : undefined);
 
 export const getTypeName = (name: string, generic?: TypeId[]): string => {
   if (!generic) return name;
@@ -16,7 +17,7 @@ export const getTypeName = (name: string, generic?: TypeId[]): string => {
 };
 const getTypeIdName = (typeId: TypeId): string => getTypeName(typeId.name, typeId.genericTypeArguments);
 
-export const getAttributes = (attributes: string[] | undefined, containerId: number): Named[] => {
+export const getAttributes = (attributes: string[] | undefined, getArtificialKey: GetArtificialKey): Named[] => {
   const parseAttribute = (attribute: string): { namespace?: string; name: string; args?: string } => {
     if (attribute[0] != "[" || attribute[attribute.length - 1] != "]")
       throw new Error(`Unexpected attribute ${attribute}`);
@@ -61,7 +62,8 @@ export const getAttributes = (attributes: string[] | undefined, containerId: num
   return filterAttributes(attributes).map((attribute) => {
     return {
       name: attribute,
-      id: getId("!a!", `${containerId}!${attribute}`),
+      nodeId: artificialNodeId("attribute", getArtificialKey),
+      //id: getId("!a!", `${containerId}!${attribute}`),
     };
   });
 };
@@ -96,58 +98,66 @@ const getPropertyName = (propertyMember: PropertyMember): string => {
   return getName(propertyMember.name, propertyMember.parameters);
 };
 
-const getFromName = (
-  id: string,
-  name: string,
-  attributes: Named[],
-  memberTypeId: TypeId | undefined, // undefined iff it's a constructor
-  access: LoadedAccess
-): MemberInfo => {
-  name = !memberTypeId ? name : `${name} : ${getTypeIdName(memberTypeId)}`;
+export const getMembers = (
+  members: LoadedMembers,
+  getArtificialKey: GetArtificialKey,
+  assemblyName: string
+): Members => {
+  const getFromName = (
+    nodeId: NodeId,
+    name: string,
+    attributes: Named[],
+    memberTypeId: TypeId | undefined, // undefined iff it's a constructor
+    access: LoadedAccess
+  ): MemberInfo => {
+    name = !memberTypeId ? name : `${name} : ${getTypeIdName(memberTypeId)}`;
+    return {
+      name,
+      nodeId,
+      attributes,
+      access: getAccess(access),
+    };
+  };
+
+  // const getNodeId = (type: )
+
+  const getFieldMember = (fieldMember: FieldMember): MemberInfo =>
+    getFromName(
+      metadataTokenNodeId("field", assemblyName, fieldMember.metadataToken),
+      fieldMember.name,
+      getAttributes(fieldMember.attributes, getArtificialKey),
+      fieldMember.fieldType,
+      fieldMember.access
+    );
+  const getEventMember = (eventMember: EventMember): MemberInfo =>
+    getFromName(
+      metadataTokenNodeId("event", assemblyName, eventMember.metadataToken),
+      eventMember.name,
+      getAttributes(eventMember.attributes, getArtificialKey),
+      eventMember.eventHandlerType,
+      eventMember.access
+    );
+  const getPropertyMember = (propertyMember: PropertyMember): MemberInfo =>
+    getFromName(
+      metadataTokenNodeId("property", assemblyName, propertyMember.metadataToken),
+      getPropertyName(propertyMember),
+      getAttributes(propertyMember.attributes, getArtificialKey),
+      propertyMember.propertyType,
+      propertyMember.access
+    );
+  const getMethodMember = (methodMember: MethodMember): MemberInfo =>
+    getFromName(
+      metadataTokenNodeId("method", assemblyName, methodMember.metadataToken),
+      getMethodName(methodMember),
+      getAttributes(methodMember.attributes, getArtificialKey),
+      methodMember.returnType,
+      methodMember.access
+    );
+
   return {
-    name,
-    id,
-    attributes,
-    access: getAccess(access),
+    fieldMembers: members.fieldMembers?.map(getFieldMember) ?? [],
+    eventMembers: members.eventMembers?.map(getEventMember) ?? [],
+    propertyMembers: members.propertyMembers?.map(getPropertyMember) ?? [],
+    methodMembers: members.methodMembers?.map(getMethodMember) ?? [],
   };
 };
-
-const getFieldMember = (fieldMember: FieldMember): MemberInfo =>
-  getFromName(
-    getId("!mf!", fieldMember.metadataToken),
-    fieldMember.name,
-    getAttributes(fieldMember.attributes, fieldMember.metadataToken),
-    fieldMember.fieldType,
-    fieldMember.access
-  );
-const getEventMember = (eventMember: EventMember): MemberInfo =>
-  getFromName(
-    getId("!me!", eventMember.metadataToken),
-    eventMember.name,
-    getAttributes(eventMember.attributes, eventMember.metadataToken),
-    eventMember.eventHandlerType,
-    eventMember.access
-  );
-const getPropertyMember = (propertyMember: PropertyMember): MemberInfo =>
-  getFromName(
-    getId("!mp!", propertyMember.metadataToken),
-    getPropertyName(propertyMember),
-    getAttributes(propertyMember.attributes, propertyMember.metadataToken),
-    propertyMember.propertyType,
-    propertyMember.access
-  );
-const getMethodMember = (methodMember: MethodMember): MemberInfo =>
-  getFromName(
-    getId("!mm!", methodMember.metadataToken),
-    getMethodName(methodMember),
-    getAttributes(methodMember.attributes, methodMember.metadataToken),
-    methodMember.returnType,
-    methodMember.access
-  );
-
-export const getMembers = (members: LoadedMembers): Members => ({
-  fieldMembers: members.fieldMembers?.map(getFieldMember) ?? [],
-  eventMembers: members.eventMembers?.map(getEventMember) ?? [],
-  propertyMembers: members.propertyMembers?.map(getPropertyMember) ?? [],
-  methodMembers: members.methodMembers?.map(getMethodMember) ?? [],
-});

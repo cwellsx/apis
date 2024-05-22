@@ -61,7 +61,7 @@ const App: React.FunctionComponent = () => {
 
   const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
   const onAppOptions: OnAppOptions = (appOptions) => mainApi.onAppOptions(appOptions);
-  const onDetailClick: OnDetailClick = (assemblyId, id) => mainApi.onDetailClick(assemblyId, id);
+  const onDetailClick: OnDetailClick = (nodeId) => mainApi.onDetailClick(nodeId);
   const onGraphClick: OnGraphClick = (graphEvent) => mainApi.onGraphClick(graphEvent);
 
   return (

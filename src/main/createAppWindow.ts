@@ -11,7 +11,6 @@ import type {
 } from "../shared-types";
 import { isGraphViewOptions } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
-import { getMethodId } from "./convertLoadedToMembers";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
@@ -119,14 +118,13 @@ export const createAppWindow = (
           }
       }
     },
-    onDetailClick: (assemblyId, id): void => {
+    onDetailClick: (nodeId): void => {
       log("onDetailClick");
-      const methodId = getMethodId(id);
-      if (!methodId) return; // user clicked on something other than a method
+      if (nodeId.type !== "method") return; // user clicked on something other than a method
       // launch in a separate window
       createSecondWindow().then((secondWindow) => {
         const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, "Method");
-        appWindow.showMethods({ assemblyName: assemblyId, metadataToken: methodId });
+        appWindow.showMethods({ assemblyName: nodeId.assemblyName, metadataToken: nodeId.metadataToken });
       });
     },
   };

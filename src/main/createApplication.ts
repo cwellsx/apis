@@ -28,7 +28,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   ipcMain.on("onViewOptions", (event, viewOptions) => on(event)?.onViewOptions(viewOptions));
   ipcMain.on("onAppOptions", (event, appOptions) => on(event)?.onAppOptions(appOptions));
   ipcMain.on("onGraphClick", (event, graphEvent) => on(event)?.onGraphClick(graphEvent));
-  ipcMain.on("onDetailClick", (event, assemblyId, id) => on(event)?.onDetailClick(assemblyId, id));
+  ipcMain.on("onDetailClick", (event, nodeId) => on(event)?.onDetailClick(nodeId));
 
   // these mutate sqlLoaded so they're declared inline
   // perhaps these and sqlLoaded could be migrated together to another module

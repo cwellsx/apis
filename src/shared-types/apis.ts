@@ -1,5 +1,6 @@
 import type { AllViewOptions, View, ViewDetails } from "./all";
 import type { GraphEvent } from "./mouseEvent";
+import type { NodeId } from "./nodeId";
 import type { AppOptions } from "./options";
 
 /*
@@ -14,7 +15,7 @@ import type { AppOptions } from "./options";
 export type OnViewOptions = (viewOptions: AllViewOptions) => void;
 export type OnAppOptions = (appOptions: AppOptions) => void;
 export type OnGraphClick = (graphEvent: GraphEvent) => void;
-export type OnDetailClick = (assemblyId: string, id: string) => void;
+export type OnDetailClick = (nodeId: NodeId) => void;
 
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {

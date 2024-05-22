@@ -1,7 +1,7 @@
 import * as React from "react";
 import CheckboxTree, { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
 import type { Access, MemberInfo, Named, Namespace, OnDetailClick, Type, Types } from "../shared-types";
-import { isTypeException } from "../shared-types";
+import { isTypeException, nodeIdToText, textToNodeId } from "../shared-types";
 import * as Icon from "./Icons.Microsoft";
 import { icons } from "./checkboxTreeIcons";
 
@@ -14,7 +14,7 @@ const makeNode = (
   if (children && children.length === 0) children = undefined;
   return {
     label: textNode.name,
-    value: textNode.id,
+    value: nodeIdToText(textNode.nodeId),
     showCheckbox: false,
     icon: icon,
     children,
@@ -179,7 +179,7 @@ export const Details: React.FunctionComponent<DetailsProps> = (props: DetailsPro
 
   const onClick = (node: OnCheckNode): void => {
     // caution -- this will return a click event even if the node is not a method
-    props.onDetailClick(props.types.assemblyId, node.value);
+    props.onDetailClick(textToNodeId(node.value));
   };
 
   return (

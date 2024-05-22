@@ -1,11 +1,19 @@
 import { contextBridge, ipcRenderer } from "electron";
-import type { AllViewOptions, AppOptions, GraphEvent, MainApi, PreloadApis, RendererApi } from "../shared-types";
+import type {
+  AllViewOptions,
+  AppOptions,
+  GraphEvent,
+  MainApi,
+  NodeId,
+  PreloadApis,
+  RendererApi,
+} from "../shared-types";
 
 const mainApiProxy: MainApi = {
   onViewOptions: (viewOptions: AllViewOptions) => ipcRenderer.send("onViewOptions", viewOptions),
   onAppOptions: (appOptions: AppOptions) => ipcRenderer.send("onAppOptions", appOptions),
   onGraphClick: (graphEvent: GraphEvent) => ipcRenderer.send("onGraphClick", graphEvent),
-  onDetailClick: (assemblyId: string, id: string) => ipcRenderer.send("onDetailClick", assemblyId, id),
+  onDetailClick: (nodeId: NodeId) => ipcRenderer.send("onDetailClick", nodeId),
 };
 
 const bindIpcRenderer = (rendererApi: RendererApi): void => {

@@ -1,4 +1,10 @@
-import { Named } from "./named";
+import { NodeId } from "./nodeId";
+
+export type Named = {
+  name: string;
+  //  id: string; // unique within graph and/or within group tree
+  nodeId: NodeId; // unique within graph and/or within group tree
+};
 
 export type Access = "public" | "protected" | "internal" | "private";
 
@@ -43,7 +49,6 @@ export type Types = {
   // - generate IDs that that globally unique, to replace metadataToken
   // - concatenate assemblyId with metadataToken
   // - or return multiple Types instances
-  assemblyId: string;
   namespaces: Namespace[];
   exceptions: Named[];
   detailType: "types";

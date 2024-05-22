@@ -76,7 +76,7 @@ export const createCustomWindow = (
           return;
       }
     },
-    onDetailClick: (assemblyId, id): void => {
+    onDetailClick: (nodeId): void => {
       // unexpected
     },
   };

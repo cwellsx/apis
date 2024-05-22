@@ -15,13 +15,21 @@ export type { CustomError } from "./customError";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodBody, MethodError } from "./methodBody";
 export type { GraphEvent } from "./mouseEvent";
-export type { Named } from "./named";
+export {
+  artificialKeyFactory,
+  artificialNodeId,
+  metadataTokenNodeId,
+  nodeIdSeparator,
+  nodeIdToText,
+  textToNodeId,
+} from "./nodeId";
+export type { GetArtificialKey, NodeId } from "./nodeId";
 export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";
 export { isParent } from "./treeNodes";
 export type { Leaf, Node, Parent } from "./treeNodes";
 export { isTypeException } from "./types";
-export type { Access, MemberInfo, Members, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
+export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
 export { joinLabel } from "./viewOptions";
 export type {
   ApiViewOptions,
