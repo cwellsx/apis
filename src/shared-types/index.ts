@@ -15,14 +15,7 @@ export type { CustomError } from "./customError";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodBody, MethodError } from "./methodBody";
 export type { GraphEvent } from "./mouseEvent";
-export {
-  artificialKeyFactory,
-  artificialNodeId,
-  metadataTokenNodeId,
-  nodeIdSeparator,
-  nodeIdToText,
-  textToNodeId,
-} from "./nodeId";
+export { artificialKeyFactory, metadataTokenNodeId, nodeIdSeparator, nodeIdToText, textToNodeId } from "./nodeId";
 export type { GetArtificialKey, NodeId } from "./nodeId";
 export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";

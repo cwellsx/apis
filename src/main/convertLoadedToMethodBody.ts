@@ -1,6 +1,5 @@
 import type { MethodBody, MethodError } from "../shared-types";
-import { getMethodName } from "./convertLoadedToMembers";
-import { getTypeInfoName } from "./convertLoadedToTypes";
+import { getMethodName, getTypeInfoName } from "./convertLoadedToTypeDetails";
 import { CallDetails } from "./loaded";
 import type { TypeAndMethod } from "./shared-types";
 

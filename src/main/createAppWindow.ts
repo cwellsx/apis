@@ -14,7 +14,7 @@ import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
-import { convertLoadedToTypes } from "./convertLoadedToTypes";
+import { convertLoadedToTypes } from "./convertLoadedToTypeDetails";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
 import { hide, showAdjacent } from "./onGraphClick";

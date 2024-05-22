@@ -1,6 +1,5 @@
 import type { Leaf, MethodViewOptions, Node, Parent, ViewGraph } from "../shared-types";
-import { getMethodName } from "./convertLoadedToMembers";
-import { getTypeInfoName } from "./convertLoadedToTypes";
+import { getMethodName, getTypeInfoName } from "./convertLoadedToTypeDetails";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute, ImageAttributes } from "./createImage";
 import { CallDetails, GoodTypeInfo, MethodIdNamed } from "./loaded";

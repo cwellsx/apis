@@ -1,7 +1,7 @@
 import { Parent, isParent, type ApiViewOptions, type Leaf, type ViewGraph } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { stringId } from "./convertLoadedToMethods";
-import { getTypeInfoName } from "./convertLoadedToTypes";
+import { getTypeInfoName } from "./convertLoadedToTypeDetails";
 import { convertToImage } from "./convertToImage";
 import { log } from "./log";
 import { type Edge } from "./shared-types";
