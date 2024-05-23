@@ -1,28 +1,24 @@
-import { ReferenceViewOptions } from "../shared-types";
-import { AssemblyReferences } from "./loaded";
-import { remove } from "./shared-types";
+import type { ReferenceViewOptions } from "../shared-types";
+import { isNameNodeId, nameNodeId, nodeIdToText, textToNodeId } from "../shared-types";
+import type { AssemblyReferences } from "./loaded";
 
 export const showAdjacent = (
   assemblyReferences: AssemblyReferences,
   viewOptions: ReferenceViewOptions,
-  id: string
+  assemblyName: string
 ): void => {
   const leafVisible = viewOptions.leafVisible;
   if (!leafVisible) return; // initial default is that they are all visible
 
   const adjacent = new Set<string>();
   Object.entries(assemblyReferences).forEach(([assembly, dependencies]) => {
-    if (assembly === id) dependencies.forEach((dependency) => adjacent.add(dependency));
-    else if (dependencies.includes(id)) adjacent.add(assembly);
+    if (assembly === assemblyName) dependencies.forEach((dependency) => adjacent.add(dependency));
+    else if (dependencies.includes(assemblyName)) adjacent.add(assembly);
   });
-  leafVisible.forEach((leaf) => adjacent.add(leaf));
-  viewOptions.leafVisible = [...adjacent];
-};
-
-export const hide = (assemblyReferences: AssemblyReferences, viewOptions: ReferenceViewOptions, id: string): void => {
-  // initial default is that they are all visible
-  const leafVisible = viewOptions.leafVisible ?? Object.keys(assemblyReferences);
-
-  remove(leafVisible, id);
-  viewOptions.leafVisible = leafVisible;
+  leafVisible.forEach((leaf) => {
+    const nodeId = textToNodeId(leaf);
+    if (!isNameNodeId(nodeId, "assembly")) throw new Error("Expected assembly Id");
+    adjacent.add(nodeId.name);
+  });
+  viewOptions.leafVisible = [...adjacent].map((assemblyName) => nodeIdToText(nameNodeId("assembly", assemblyName)));
 };

@@ -2,7 +2,6 @@ import { NodeId } from "./nodeId";
 
 export type Named = {
   name: string;
-  //  id: string; // unique within graph and/or within group tree
   nodeId: NodeId; // unique within graph and/or within group tree
 };
 

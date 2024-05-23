@@ -2,7 +2,7 @@ import * as React from "react";
 import CheckboxTree, { Node as CheckboxNode } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
 import type { Node as TreeNode } from "../shared-types";
-import { isParent } from "../shared-types";
+import { isParent, nodeIdToText } from "../shared-types";
 import "./3rd-party/CheckboxTree.css";
 import "./Tree.css";
 import { icons } from "./checkboxTreeIcons";
@@ -20,7 +20,7 @@ const convert = (node: TreeNode): CheckboxNode => {
   return {
     label: node.label,
     // a parent node may have the same label as its first child, so mangle the id of all parents
-    value: node.id,
+    value: nodeIdToText(node.nodeId),
     children: isParent(node) ? node.children.map(convert) : undefined,
   };
 };

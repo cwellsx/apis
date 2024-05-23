@@ -6,10 +6,12 @@ import type {
   CustomViewOptions,
   Members,
   MethodViewOptions,
+  NodeId,
   ReferenceViewOptions,
+  TypeNodeId,
   ViewType,
 } from "../shared-types";
-import { defaultAppOptions } from "../shared-types";
+import { defaultAppOptions, methodNodeId, nameNodeId, nodeIdToText, typeNodeId } from "../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "./customJson";
 import type {
   AllTypeInfo,
@@ -22,7 +24,7 @@ import type {
 } from "./loaded";
 import { badTypeInfo, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
-import { TypeAndMethod, distinctor } from "./shared-types";
+import { TypeAndMethodDetails, distinctor } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
 
@@ -149,7 +151,7 @@ const defaultMethodViewOptions: MethodViewOptions = {
   leafVisible: [],
   groupExpanded: [],
   topType: "assembly",
-  methodId: { assemblyName: "", metadataToken: 0 },
+  methodId: methodNodeId("?", 0),
   viewType: "methods",
 };
 
@@ -184,7 +186,7 @@ export class SqlCustom {
     onSave: (
       when: string,
       customSchemaVersion: string,
-      nodeIds: string[],
+      nodeIds: NodeId[],
       nodeProperties: string[],
       tags: string[]
     ) => void;
@@ -235,7 +237,7 @@ export class SqlCustom {
       this.viewState.onSave(
         when,
         expectedSchemaVersion,
-        nodes.map((node) => node.id),
+        nodes.map((node) => nameNodeId("customLeaf", node.id)),
         [...nodeProperties],
         [...tags]
       );
@@ -263,7 +265,7 @@ export class SqlCustom {
       onSave: (
         when: string,
         customSchemaVersion: string,
-        nodeIds: string[],
+        nodeIds: NodeId[],
         nodeProperties: string[],
         tags: string[]
       ): void => {
@@ -273,7 +275,7 @@ export class SqlCustom {
         tags.sort();
         this.viewState.customViewOptions = {
           ...defaultCustomViewOptions,
-          leafVisible: nodeIds,
+          leafVisible: nodeIds.map(nodeIdToText),
           nodeProperties,
           tags: tags.map((tag) => ({ tag, shown: true })),
         };
@@ -319,7 +321,7 @@ export class SqlLoaded {
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
   readTypes: (assemblyName: string) => AllTypeInfo;
-  readMethod: (assemblyName: string, methodId: number) => TypeAndMethod;
+  readMethod: (assemblyName: string, methodId: number) => TypeAndMethodDetails;
   readErrors: () => ErrorsInfo[];
   readCalls: (assemblyNames: string[]) => ApiColumns[];
   readSavedTypeInfos: () => SavedTypeInfos;
@@ -414,7 +416,7 @@ export class SqlLoaded {
         [assemblyName: string]: { [methodId: number]: { typeId: number; namespace: string | undefined } };
       } = {};
 
-      const assemblyTypeIds: string[] = [];
+      const assemblyTypeIds: TypeNodeId[] = [];
 
       for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
         // typeIds dictionary
@@ -438,7 +440,7 @@ export class SqlLoaded {
             typeInfo: JSON.stringify(typeInfo),
           });
 
-          assemblyTypeIds.push(`${assemblyName}-${typeInfo.typeId.metadataToken}`);
+          assemblyTypeIds.push(typeNodeId(assemblyName, typeInfo.typeId.metadataToken));
 
           const typeIdAndNamespace = { typeId: typeInfo.typeId.metadataToken, namespace: typeInfo.typeId.namespace };
 
@@ -589,7 +591,7 @@ export class SqlLoaded {
       return allTypeInfo;
     };
 
-    this.readMethod = (assemblyName: string, methodId: number): TypeAndMethod => {
+    this.readMethod = (assemblyName: string, methodId: number): TypeAndMethodDetails => {
       const methodKey = { assemblyName, metadataToken: methodId };
       const member = memberTable.selectOne(methodKey);
       if (!member) throw new Error(`Member not found ${JSON.stringify(methodKey)}`);
@@ -699,15 +701,18 @@ export class ViewState {
     version: string,
     exes: string[],
     assemblyNames: string[],
-    assemblyTypeIds: string[]
+    assemblyTypeIds: TypeNodeId[]
   ) {
     this.cachedWhen = when;
     this.hashDataSource = hashDataSource;
     this.loadedVersion = version;
     this.exes = exes;
-    this.referenceViewOptions = { ...defaultReferenceViewOptions, leafVisible: assemblyNames };
+    this.referenceViewOptions = {
+      ...defaultReferenceViewOptions,
+      leafVisible: assemblyNames.map((assemblyName) => nodeIdToText(nameNodeId("assembly", assemblyName))),
+    };
     this.methodViewOptions = defaultMethodViewOptions;
-    this.apiViewOptions = { ...defaultApiViewOptions, leafVisible: assemblyTypeIds };
+    this.apiViewOptions = { ...defaultApiViewOptions, leafVisible: assemblyTypeIds.map(nodeIdToText) };
   }
 
   // this changes when the SQL schema definition changes
@@ -760,7 +765,7 @@ export class ViewState {
   }
   get apiViewOptions(): ApiViewOptions {
     const value = this._cache.getValue("apiViewOptions");
-    return value ? { defaultMethodViewOptions, ...JSON.parse(value) } : defaultApiViewOptions;
+    return value ? { defaultApiViewOptions, ...JSON.parse(value) } : defaultApiViewOptions;
   }
 
   set exes(names: string[]) {

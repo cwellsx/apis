@@ -1,7 +1,7 @@
 import type { MethodBody, MethodError } from "../shared-types";
 import { getMethodName, getTypeInfoName } from "./convertLoadedToTypeDetails";
 import { CallDetails } from "./loaded";
-import type { TypeAndMethod } from "./shared-types";
+import type { TypeAndMethodDetails } from "./shared-types";
 
 const getErrors = (calls: CallDetails[]): MethodError[] | undefined => {
   const result: MethodError[] = calls.reduce<MethodError[]>((found, callDetails) => {
@@ -17,7 +17,7 @@ const getErrors = (calls: CallDetails[]): MethodError[] | undefined => {
   return result.length !== 0 ? result : undefined;
 };
 
-export const convertLoadedToMethodBody = (typeAndMethod: TypeAndMethod): MethodBody => ({
+export const convertLoadedToMethodBody = (typeAndMethod: TypeAndMethodDetails): MethodBody => ({
   title: {
     assemblyName: typeAndMethod.type.typeId.assemblyName,
     typeName: getTypeInfoName(typeAndMethod.type),

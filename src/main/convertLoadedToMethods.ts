@@ -1,95 +1,81 @@
-import type { Leaf, MethodViewOptions, Node, Parent, ViewGraph } from "../shared-types";
+import type { Leaf, MetadataNodeId, MethodNodeId, MethodViewOptions, Node, Parent, ViewGraph } from "../shared-types";
+import { metadataNodeId, methodNodeId, nameNodeId, nodeIdToText } from "../shared-types";
 import { getMethodName, getTypeInfoName } from "./convertLoadedToTypeDetails";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute, ImageAttributes } from "./createImage";
 import { CallDetails, GoodTypeInfo, MethodIdNamed } from "./loaded";
 import { log } from "./log";
-import type { Edge, TypeAndMethod } from "./shared-types";
+import type { Edge, TypeAndMethodDetails } from "./shared-types";
 
-// initially the leaf nodes are the methods i.e. TypeAndMethod instances
-
-export type NodeId = {
-  assemblyName: string;
-  metadataToken: number;
-};
-
-type TypeNode = {
-  typeId: NodeId;
+type TypeMethods = {
+  typeId: MetadataNodeId;
   type: GoodTypeInfo;
-  methods: TypeAndMethod[];
-};
-
-type TopNode = {
-  topId: string;
-  types: TypeNode[];
+  methods: TypeAndMethodDetails[];
 };
 
 type LeafDictionary = {
-  [id: string]: TypeAndMethod;
-};
-type TypeDictionary = {
-  [id: string]: TypeNode;
-};
-type TopDictionary = {
-  [id: string]: TopNode;
+  [id: string]: TypeAndMethodDetails;
 };
 
-type ReadMethod = (assemblyName: string, methodId: number) => TypeAndMethod;
+type TypeDictionary = {
+  [id: string]: TypeMethods;
+};
+
+type ReadMethod = (assemblyName: string, methodId: number) => TypeAndMethodDetails;
 
 /*
   functions to create Ids
 */
 
-export const stringId: (id: NodeId) => string = (id: NodeId) => `${id.assemblyName}-${id.metadataToken}`;
-const getTypeAndMethodId: (leaf: TypeAndMethod) => NodeId = (leaf: TypeAndMethod) => ({
-  assemblyName: leaf.type.typeId.assemblyName,
-  metadataToken: leaf.method.metadataToken,
-});
-const getMethodId: (leaf: MethodIdNamed) => NodeId = (method: MethodIdNamed) => ({
-  assemblyName: method.assemblyName,
-  metadataToken: method.metadataToken,
-});
-const getTypeId: (type: GoodTypeInfo) => NodeId = (type: GoodTypeInfo) => ({
-  assemblyName: type.typeId.assemblyName,
-  metadataToken: type.typeId.metadataToken,
-});
+const getTypeAndMethodId: (leaf: TypeAndMethodDetails) => MethodNodeId = (leaf: TypeAndMethodDetails) =>
+  methodNodeId(leaf.type.typeId.assemblyName, leaf.method.metadataToken);
 
-const assertTypeAndMethodId = (lhs: NodeId, leaf: TypeAndMethod): void => {
+const getMethodId: (leaf: MethodIdNamed) => MethodNodeId = (method: MethodIdNamed) =>
+  methodNodeId(method.assemblyName, method.metadataToken);
+
+const getTypeId: (type: GoodTypeInfo) => MetadataNodeId = (type: GoodTypeInfo) =>
+  metadataNodeId("type", type.typeId.assemblyName, type.typeId.metadataToken);
+
+const assertTypeAndMethodId = (lhs: MetadataNodeId, leaf: TypeAndMethodDetails): void => {
   const rhs = getTypeAndMethodId(leaf);
   if (lhs.assemblyName !== rhs.assemblyName || lhs.metadataToken !== rhs.metadataToken)
     throw new Error("Unexpected leaf id");
-};
-
-export const fromStringId = (id: string): NodeId => {
-  const split = id.split("-");
-  if (split.length !== 2) throw new Error("Unexpected Id");
-  return { assemblyName: split[0], metadataToken: +split[1] };
 };
 
 /*
   functions to create group nodes
 */
 
-const groupsFromTopDictionary = (types: TypeDictionary, viewOptions: MethodViewOptions): Node[] => {
-  const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethod, parent: Parent | null): Leaf => ({
+const groupsFromTypeDictionary = (types: TypeDictionary, viewOptions: MethodViewOptions): Node[] => {
+  const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethodDetails, parent: Parent | null): Leaf => ({
     parent,
-    id: stringId(getTypeAndMethodId(typeAndMethod)),
+    nodeId: getTypeAndMethodId(typeAndMethod),
     label: getMethodName(typeAndMethod.method),
   });
 
-  const parentFromTypeNode = (typeNode: TypeNode, parent: Parent | null): Parent => {
+  const parentFromTypeMethods = (typeMethods: TypeMethods, parent: Parent | null): Parent => {
     const self: Parent = {
       parent,
-      id: stringId(typeNode.typeId),
-      label: getTypeInfoName(typeNode.type),
+      nodeId: typeMethods.typeId,
+      label: getTypeInfoName(typeMethods.type),
       children: [],
     };
-    self.children = typeNode.methods.map((method) => leafFromTypeAndMethod(method, self));
+    self.children = typeMethods.methods.map((method) => leafFromTypeAndMethod(method, self));
     return self;
   };
 
   const topType = viewOptions.topType;
-  if (topType === "none") return Object.values(types).map((typeNode) => parentFromTypeNode(typeNode, null));
+  if (topType === "none") return Object.values(types).map((typeMethods) => parentFromTypeMethods(typeMethods, null));
+
+  type TopNode = {
+    topId: string;
+    types: TypeMethods[];
+  };
+
+  type TopDictionary = {
+    [id: string]: TopNode;
+  };
+
   const tops: TopDictionary = {};
   for (const typeNode of Object.values(types)) {
     let topId = topType === "assembly" ? typeNode.typeId.assemblyName : typeNode.type.typeId.namespace;
@@ -104,12 +90,12 @@ const groupsFromTopDictionary = (types: TypeDictionary, viewOptions: MethodViewO
   const entryToGroupNode = (entry: [string, TopNode]): Parent => {
     const [topId, topNode] = entry;
     const self: Parent = {
-      id: topId,
+      nodeId: nameNodeId(topType, topId),
       label: topId,
       parent: null,
       children: [],
     };
-    self.children = topNode.types.map((typeNode) => parentFromTypeNode(typeNode, self));
+    self.children = topNode.types.map((typeNode) => parentFromTypeMethods(typeNode, self));
     return self;
   };
   return Object.entries(tops).map(entryToGroupNode);
@@ -122,19 +108,19 @@ const groupsFromTopDictionary = (types: TypeDictionary, viewOptions: MethodViewO
 export const convertLoadedToMethods = (
   readMethod: ReadMethod,
   viewOptions: MethodViewOptions,
-  methodId?: NodeId
+  methodId?: MethodNodeId
 ): ViewGraph => {
   const called: LeafDictionary = {};
   const caller: LeafDictionary = {};
   const edges: Edge[] = [];
 
-  const saveMethod = (methodId: NodeId, result: TypeAndMethod, leafs: LeafDictionary): void => {
-    const id = stringId(methodId);
+  const saveMethod = (methodId: MetadataNodeId, result: TypeAndMethodDetails, leafs: LeafDictionary): void => {
+    const id = nodeIdToText(methodId);
     if (leafs[id]) throw new Error("Duplicate leaf id");
     leafs[id] = result;
   };
 
-  const selectMethod = (methodId: NodeId, leafs: LeafDictionary | undefined): TypeAndMethod => {
+  const selectMethod = (methodId: MetadataNodeId, leafs: LeafDictionary | undefined): TypeAndMethodDetails => {
     const result = readMethod(methodId.assemblyName, methodId.metadataToken);
     assertTypeAndMethodId(methodId, result);
     if (leafs) saveMethod(methodId, result, leafs);
@@ -142,8 +128,8 @@ export const convertLoadedToMethods = (
     return result;
   };
 
-  const saveEdge = (client: NodeId, server: NodeId): void => {
-    edges.push({ clientId: stringId(client), serverId: stringId(server) });
+  const saveEdge = (client: MetadataNodeId, server: MetadataNodeId): void => {
+    edges.push({ clientId: nodeIdToText(client), serverId: nodeIdToText(server) });
   };
 
   const isNewMethodId = !!methodId;
@@ -153,11 +139,11 @@ export const convertLoadedToMethods = (
   saveMethod(methodId, firstLeaf, called);
   saveMethod(methodId, firstLeaf, caller);
 
-  const findCalledBy = (called: NodeId, calledBy: MethodIdNamed[]): void => {
+  const findCalledBy = (called: MethodNodeId, calledBy: MethodIdNamed[]): void => {
     for (const method of calledBy) {
-      const calledById: NodeId = getMethodId(method);
+      const calledById: MethodNodeId = getMethodId(method);
       saveEdge(calledById, called);
-      if (caller[stringId(calledById)]) continue; // avoid infinite loop if there's recursion or cyclic dependency
+      if (caller[nodeIdToText(calledById)]) continue; // avoid infinite loop if there's recursion or cyclic dependency
       const calledByMethod = selectMethod(calledById, caller);
       findCalledBy(calledById, calledByMethod.methodDetails.calledBy); // recurse
     }
@@ -165,13 +151,13 @@ export const convertLoadedToMethods = (
 
   findCalledBy(methodId, firstLeaf.methodDetails.calledBy);
 
-  const findCalled = (caller: NodeId, calls: CallDetails[]): void => {
+  const findCalled = (caller: MethodNodeId, calls: CallDetails[]): void => {
     for (const call of calls) {
       if (call.error && !call.isWarning) continue; //the metadataToken is invalid because the method was not found
       const method = call.called;
-      const calledId: NodeId = getMethodId(method);
+      const calledId: MethodNodeId = getMethodId(method);
       saveEdge(caller, calledId);
-      if (called[stringId(calledId)]) continue; // avoid infinite loop if there's recursion or cyclic dependency
+      if (called[nodeIdToText(calledId)]) continue; // avoid infinite loop if there's recursion or cyclic dependency
       const calledMethod = selectMethod(calledId, called);
       findCalled(calledId, calledMethod.methodDetails.calls); // recurse
     }
@@ -196,7 +182,7 @@ export const convertLoadedToMethods = (
   for (const typeAndMethod of Object.values(leafs)) {
     const type = typeAndMethod.type;
     const typeId = getTypeId(type);
-    const id = stringId(typeId);
+    const id = nodeIdToText(typeId);
     let typeNode = types[id];
     if (!typeNode) {
       typeNode = { typeId: typeId, type, methods: [] };
@@ -207,8 +193,8 @@ export const convertLoadedToMethods = (
   }
 
   // convert to Groups
-  log("groupsFromTopDictionary");
-  const groups: Node[] = groupsFromTopDictionary(types, viewOptions);
+  log("groupsFromTypeDictionary");
+  const groups: Node[] = groupsFromTypeDictionary(types, viewOptions);
 
   // a Group is visible iff its leafs are visible
   if (isNewMethodId) {

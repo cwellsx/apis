@@ -6,19 +6,20 @@ import type {
   GraphViewOptions,
   GraphViewType,
   MainApi,
+  MethodNodeId,
   ViewErrors,
   ViewType,
 } from "../shared-types";
-import { isGraphViewOptions } from "../shared-types";
+import { isGraphViewOptions, isMethodNodeId, isNameNodeId, textToNodeId } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
-import { NodeId, convertLoadedToMethods, fromStringId } from "./convertLoadedToMethods";
+import { convertLoadedToMethods } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { convertLoadedToTypes } from "./convertLoadedToTypeDetails";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
-import { hide, showAdjacent } from "./onGraphClick";
-import { TypeAndMethod, remove } from "./shared-types";
+import { showAdjacent } from "./onGraphClick";
+import { TypeAndMethodDetails, remove } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
@@ -27,7 +28,7 @@ export const createAppWindow = (
   sqlLoaded: SqlLoaded,
   sqlConfig: SqlConfig,
   title: string
-): AppWindow & { showMethods: (methodId?: NodeId) => void } => {
+): AppWindow & { showMethods: (methodId?: MethodNodeId) => void } => {
   const show = createShow(window);
   const renderer = createRenderer(window);
 
@@ -74,7 +75,10 @@ export const createAppWindow = (
     },
     onGraphClick: (graphEvent: GraphEvent): void => {
       const { id, className, viewType, event } = graphEvent;
+
       log(`onGraphClick ${id}`);
+      if (!className) return; // edge
+      const nodeId = textToNodeId(id);
       switch (className) {
         case "closed":
         case "expanded": {
@@ -88,7 +92,8 @@ export const createAppWindow = (
         case "leaf":
           switch (viewType) {
             case "methods": {
-              const { assemblyName, metadataToken } = fromStringId(id);
+              if (!isMethodNodeId(nodeId)) throw new Error("Expected method id");
+              const { assemblyName, metadataToken } = nodeId;
               const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
               const methodBody = convertLoadedToMethodBody(typeAndMethod);
               log("renderer.showDetails");
@@ -96,20 +101,24 @@ export const createAppWindow = (
               return;
             }
             case "references": {
+              if (!isNameNodeId(nodeId, "assembly")) throw new Error("Expected assembly id");
+              const { name: assemblyName } = nodeId;
               const assemblyReferences = sqlLoaded.readAssemblyReferences();
               if (event.shiftKey) {
                 const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-                showAdjacent(assemblyReferences, viewOptions, id);
+                showAdjacent(assemblyReferences, viewOptions, assemblyName);
                 sqlLoaded.viewState.referenceViewOptions = viewOptions;
                 showReferences();
               } else if (event.ctrlKey) {
                 const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-                hide(assemblyReferences, viewOptions, id);
+                const leafVisible = viewOptions.leafVisible ?? Object.keys(assemblyReferences);
+                remove(leafVisible, id);
+                viewOptions.leafVisible = leafVisible;
                 sqlLoaded.viewState.referenceViewOptions = viewOptions;
                 showReferences();
               } else {
-                const allTypeInfo = sqlLoaded.readTypes(id);
-                const types = convertLoadedToTypes(allTypeInfo, id);
+                const allTypeInfo = sqlLoaded.readTypes(assemblyName);
+                const types = convertLoadedToTypes(allTypeInfo, assemblyName);
                 log("renderer.showDetails");
                 renderer.showDetails(types);
               }
@@ -120,16 +129,16 @@ export const createAppWindow = (
     },
     onDetailClick: (nodeId): void => {
       log("onDetailClick");
-      if (nodeId.type !== "method") return; // user clicked on something other than a method
+      if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
       createSecondWindow().then((secondWindow) => {
         const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, "Method");
-        appWindow.showMethods({ assemblyName: nodeId.assemblyName, metadataToken: nodeId.metadataToken });
+        appWindow.showMethods(nodeId);
       });
     },
   };
 
-  const showMethods = (methodId?: NodeId): void => {
+  const showMethods = (methodId?: MethodNodeId): void => {
     try {
       const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
@@ -154,7 +163,7 @@ export const createAppWindow = (
 
   const showErrors = (): void => {
     const errors = sqlLoaded.readErrors();
-    const methods = errors.flatMap<TypeAndMethod>((error) =>
+    const methods = errors.flatMap<TypeAndMethodDetails>((error) =>
       error.badCallInfos.map((badCallInfo) => sqlLoaded.readMethod(error.assemblyName, badCallInfo.metadataToken))
     );
     const viewErrors: ViewErrors = {

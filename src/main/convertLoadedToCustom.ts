@@ -1,4 +1,5 @@
-import { CustomViewOptions, Leaf, Node, Parent, ViewGraph, joinLabel } from "../shared-types";
+import type { CustomViewOptions, Leaf, Node, Parent, ViewGraph } from "../shared-types";
+import { groupByNodeId, joinLabel, nameNodeId, nodeIdToText } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
@@ -19,7 +20,7 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
     else
       leafs[node.id] = {
         label: node.label ?? node.id,
-        id: node.id,
+        nodeId: nameNodeId("customLeaf", node.id),
         parent: null,
       };
   });
@@ -45,8 +46,8 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
         );
 
         edges.push({
-          clientId: node.id,
-          serverId: dependency.id,
+          clientId: nodeIdToText(nameNodeId("customLeaf", node.id)),
+          serverId: nodeIdToText(nameNodeId("customLeaf", dependency.id)),
           label,
         });
       });
@@ -67,7 +68,7 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
       groupName = "" + groupName;
       let parent: Parent = parents[groupName];
       if (!parent) {
-        parent = { label: groupName, id: `!${groupedBy}!${groupName}`, parent: null, children: [] };
+        parent = { label: groupName, nodeId: groupByNodeId(groupedBy, groupName), parent: null, children: [] };
         groups.push(parent);
         parents[groupName] = parent;
       }

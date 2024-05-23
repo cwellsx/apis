@@ -1,3 +1,5 @@
+import { MethodNodeId } from "./nodeId";
+
 export type ReferenceViewOptions = {
   showGrouped: boolean;
   leafVisible: string[];
@@ -9,10 +11,7 @@ export type MethodViewOptions = {
   leafVisible: string[];
   groupExpanded: string[];
   topType: "assembly" | "namespace" | "none";
-  methodId: {
-    assemblyName: string;
-    metadataToken: number;
-  };
+  methodId: MethodNodeId;
   viewType: "methods";
 };
 

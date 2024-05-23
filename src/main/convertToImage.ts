@@ -1,5 +1,5 @@
-import type { AreaClass, GraphViewOptions, GroupedLabels, Image, Leaf, Node, Parent } from "../shared-types";
-import { isParent, joinLabel } from "../shared-types";
+import type { AreaClass, GraphViewOptions, GroupedLabels, Image, Leaf, Node } from "../shared-types";
+import { fromEdgeId, isParent, joinLabel, makeEdgeId, nodeIdToText } from "../shared-types";
 import type { ImageAttributes, ImageData, Node as ImageNode } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
@@ -31,14 +31,14 @@ export function convertToImage(
   const classNames: { [id: string]: AreaClass } = {};
 
   const assertUnique = (node: Node): void => {
-    const id = node.id;
+    const id = nodeIdToText(node.nodeId);
     if (allNodes[id]) {
       throw new Error(`Duplicate node id: ${id}`);
     }
     allNodes[id] = node;
     let className: AreaClass;
     if (isParent(node)) {
-      className = viewOptions.groupExpanded.includes(node.id) ? "expanded" : "closed";
+      className = viewOptions.groupExpanded.includes(id) ? "expanded" : "closed";
       node.children.forEach((child) => {
         assertUnique(child);
         if (child.parent !== node) {
@@ -46,26 +46,21 @@ export function convertToImage(
         }
       });
     } else className = "leaf";
-    classNames[node.id] = className;
+    classNames[id] = className;
   };
   nodes.forEach(assertUnique);
 
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   const closed = new Map<string, string>();
 
-  const findClosed = (node: Node, isClosedBy: Parent | null): void => {
+  const findClosed = (node: Node, isClosedByParentId: string | null): void => {
+    const id = nodeIdToText(node.nodeId);
     if (isParent(node)) {
-      if (!isClosedBy && !isGroupExpanded(node.id)) isClosedBy = node;
-      node.children.forEach((child) => findClosed(child, isClosedBy));
-    } else if (isClosedBy) closed.set(node.id, isClosedBy.id);
+      if (!isClosedByParentId && !isGroupExpanded(id)) isClosedByParentId = id;
+      node.children.forEach((child) => findClosed(child, isClosedByParentId));
+    } else if (isClosedByParentId) closed.set(id, isClosedByParentId);
   };
   nodes.forEach((node) => findClosed(node, null));
-
-  const makeEdgeId = (clientId: string, serverId: string): string => `${clientId}|${serverId}`;
-  const fromEdgeId = (edgeId: string): { clientId: string; serverId: string } => {
-    const split = edgeId.split("|");
-    return { clientId: split[0], serverId: split[1] };
-  };
 
   // create groups of visible edges
   const edgeGroups = new Map<string, Edge[]>();
@@ -85,16 +80,20 @@ export function convertToImage(
 
   // whether a group is visible depends on whether it contains visible leafs
   const isGroupNodeVisible = (node: Node): boolean =>
-    isParent(node) ? node.children.some((child) => isGroupNodeVisible(child)) : isLeafVisible(node.id);
+    isParent(node)
+      ? node.children.some((child) => isGroupNodeVisible(child))
+      : isLeafVisible(nodeIdToText(node.nodeId));
+
   const metaGroupLabels = [".NET", "3rd-party"];
   const toImageNode = (node: Node): ImageNode => {
-    const textNode = { id: node.id, label: node.label };
+    const id = nodeIdToText(node.nodeId);
+    const textNode = { id, label: node.label };
     // implement this option here to affect the label on the image but not in the tree of groups
     if (
       options.shortLeafNames &&
       node.parent &&
       !metaGroupLabels.includes(node.parent.label) &&
-      (!isParent(node) || !isGroupExpanded(node.id))
+      (!isParent(node) || !isGroupExpanded(id))
     ) {
       if (!node.label.startsWith(node.parent.label)) {
         if (viewOptions.viewType == "references") throw new Error("Unexpected parent node name");
@@ -103,7 +102,7 @@ export function convertToImage(
     }
     return !isParent(node)
       ? { type: "node", ...textNode }
-      : !isGroupExpanded(node.id)
+      : !isGroupExpanded(id)
       ? { type: "group", ...textNode }
       : { type: "subgraph", ...textNode, children: toImageNodes(node.children) };
   };

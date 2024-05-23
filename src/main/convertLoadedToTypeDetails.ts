@@ -1,6 +1,6 @@
 import type {
   Access,
-  GetArtificialKey,
+  GetArtificialNodeId,
   MemberInfo,
   Members,
   Named,
@@ -9,7 +9,7 @@ import type {
   Type,
   Types,
 } from "../shared-types";
-import { artificialKeyFactory, metadataTokenNodeId } from "../shared-types";
+import { artificialNodeIdFactory, metadataNodeId } from "../shared-types";
 import type {
   AllTypeInfo,
   EventMember,
@@ -34,7 +34,7 @@ export const getTypeName = (name: string, generic?: TypeId[]): string => {
 };
 const getTypeIdName = (typeId: TypeId): string => getTypeName(typeId.name, typeId.genericTypeArguments);
 
-const getAttributes = (attributes: string[] | undefined, getArtificialKey: GetArtificialKey): Named[] => {
+const getAttributes = (attributes: string[] | undefined, getArtificialNodeId: GetArtificialNodeId): Named[] => {
   const parseAttribute = (attribute: string): { namespace?: string; name: string; args?: string } => {
     if (attribute[0] != "[" || attribute[attribute.length - 1] != "]")
       throw new Error(`Unexpected attribute ${attribute}`);
@@ -76,7 +76,10 @@ const getAttributes = (attributes: string[] | undefined, getArtificialKey: GetAr
   };
 
   if (!attributes) return [];
-  return filterAttributes(attributes).map((attribute) => ({ name: attribute, nodeId: getArtificialKey("attribute") }));
+  return filterAttributes(attributes).map((attribute) => ({
+    name: attribute,
+    nodeId: getArtificialNodeId("attribute"),
+  }));
 };
 
 const getAccess = (access: LoadedAccess): Access => {
@@ -150,7 +153,7 @@ const nestTypes = (
 };
 
 export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: string): Types => {
-  const getArtificialKey = artificialKeyFactory();
+  const getArtificialNodeId = artificialNodeIdFactory();
 
   const getMembers = (members: LoadedMembers): Members => {
     const getFromName = (
@@ -171,33 +174,33 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: str
 
     const getFieldMember = (fieldMember: FieldMember): MemberInfo =>
       getFromName(
-        metadataTokenNodeId("field", assemblyName, fieldMember.metadataToken),
+        metadataNodeId("field", assemblyName, fieldMember.metadataToken),
         fieldMember.name,
-        getAttributes(fieldMember.attributes, getArtificialKey),
+        getAttributes(fieldMember.attributes, getArtificialNodeId),
         fieldMember.fieldType,
         fieldMember.access
       );
     const getEventMember = (eventMember: EventMember): MemberInfo =>
       getFromName(
-        metadataTokenNodeId("event", assemblyName, eventMember.metadataToken),
+        metadataNodeId("event", assemblyName, eventMember.metadataToken),
         eventMember.name,
-        getAttributes(eventMember.attributes, getArtificialKey),
+        getAttributes(eventMember.attributes, getArtificialNodeId),
         eventMember.eventHandlerType,
         eventMember.access
       );
     const getPropertyMember = (propertyMember: PropertyMember): MemberInfo =>
       getFromName(
-        metadataTokenNodeId("property", assemblyName, propertyMember.metadataToken),
+        metadataNodeId("property", assemblyName, propertyMember.metadataToken),
         getPropertyName(propertyMember),
-        getAttributes(propertyMember.attributes, getArtificialKey),
+        getAttributes(propertyMember.attributes, getArtificialNodeId),
         propertyMember.propertyType,
         propertyMember.access
       );
     const getMethodMember = (methodMember: MethodMember): MemberInfo =>
       getFromName(
-        metadataTokenNodeId("method", assemblyName, methodMember.metadataToken),
+        metadataNodeId("method", assemblyName, methodMember.metadataToken),
         getMethodName(methodMember),
-        getAttributes(methodMember.attributes, getArtificialKey),
+        getAttributes(methodMember.attributes, getArtificialNodeId),
         methodMember.returnType,
         methodMember.access
       );
@@ -213,7 +216,7 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: str
   // remove all typeInfo without typeId
   const exceptions: Exceptions = [];
   const createExceptions = (exceptions: string[]): Exceptions =>
-    exceptions.map((exceptionMessage) => ({ name: exceptionMessage, nodeId: getArtificialKey("exception") }));
+    exceptions.map((exceptionMessage) => ({ name: exceptionMessage, nodeId: getArtificialNodeId("exception") }));
   allTypeInfo.anon.forEach((typeInfo) => exceptions.push(...createExceptions(typeInfo.exceptions)));
 
   const named = namedTypeInfo(allTypeInfo);
@@ -249,7 +252,7 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: str
     return {
       ...typeTextNode,
       access: getAccess(typeInfo.access),
-      attributes: getAttributes(typeInfo.attributes, getArtificialKey),
+      attributes: getAttributes(typeInfo.attributes, getArtificialNodeId),
       subtypes,
       members: getMembers(typeInfo.members),
     };

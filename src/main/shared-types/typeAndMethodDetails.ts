@@ -1,6 +1,6 @@
 import { GoodTypeInfo, MethodDetails, MethodMember } from "../loaded";
 
-export type TypeAndMethod = {
+export type TypeAndMethodDetails = {
   type: GoodTypeInfo;
   method: MethodMember;
   methodDetails: MethodDetails;

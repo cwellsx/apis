@@ -59,7 +59,7 @@ const initialState = (props: GraphProps): State => {
           shape: area.shape,
           coords: area.coords,
           _id: area.id,
-          strokeColor: getIdColor(area.id),
+          strokeColor: area.className === "leaf" ? "green" : "red",
           className: area.className,
           tooltip: area.tooltip,
         };
@@ -98,11 +98,6 @@ const reducer = (state: State, action: Action): State => {
       };
   }
 };
-
-const getIdColor = (id: string): "red" | "green" => (getIdType(id) === "leaf" ? "green" : "red");
-
-const getIdType = (id: string): "leaf" | "group" | "edge" =>
-  id[0] === "!" ? "group" : id.includes("|") ? "edge" : "leaf";
 
 export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState(props));

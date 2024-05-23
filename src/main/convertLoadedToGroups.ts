@@ -1,5 +1,5 @@
-import type { Leaf, Node, Parent } from "../shared-types";
-import { isParent } from "../shared-types";
+import type { Leaf, NameTypes, Node, Parent } from "../shared-types";
+import { isParent, nameNodeId, nodeIdToText } from "../shared-types";
 import type { StringPredicate } from "./shared-types";
 import { distinctor, options, remove, replace } from "./shared-types";
 
@@ -9,7 +9,8 @@ import { distinctor, options, remove, replace } from "./shared-types";
 
 export const convertLoadedToGroups = (
   names: string[],
-  exes: string[]
+  exes: string[],
+  nameType: NameTypes
 ): {
   nodes: { [id: string]: Node };
   groups: Node[];
@@ -30,11 +31,11 @@ export const convertLoadedToGroups = (
       partial = !partial ? part : `${partial}.${part}`;
       // append the leaf if this is the leaf
       if (partial === name) {
-        const newLeaf: Leaf = { label: name, id: name, parent };
+        const newLeaf: Leaf = { label: name, nodeId: nameNodeId(nameType, name), parent };
         nodes.push(newLeaf);
       } else {
         // find or create the parent -- if it already exists then it's the last node, because names are sorted
-        const newParent: Parent = { label: partial, id: `!${partial}`, children: [], parent };
+        const newParent: Parent = { label: partial, nodeId: nameNodeId("group", partial), children: [], parent };
         if (!nodes.length || nodes[nodes.length - 1].label !== partial) nodes.push(newParent);
         const found = nodes[nodes.length - 1];
         if (isParent(found)) {
@@ -74,7 +75,7 @@ export const convertLoadedToGroups = (
 
   const regroup = (predicate: StringPredicate, label: string, id: string): void => {
     const found = result.filter((node) => predicate(node.label));
-    const parent = { label, id, parent: null, children: found };
+    const parent = { label, nodeId: nameNodeId("group", id), parent: null, children: found };
     found.forEach((child) => {
       child.parent = parent;
       remove(result, child);
@@ -100,7 +101,7 @@ export const convertLoadedToGroups = (
   // also assert that the parent fields are set correctly
   const unique: { [id: string]: Node } = {};
   const assertUnique = (node: Node): void => {
-    const id = node.id;
+    const id = nodeIdToText(node.nodeId);
     if (unique[id]) throw new Error(`Duplicate node id: ${id}`);
     unique[id] = node;
     if (isParent(node))
