@@ -34,7 +34,7 @@ type Subgraph = ImageText & { type: "subgraph"; children: ImageNode[] };
 export type ImageNode = (ImageText & { type: "node" | "group" }) | Subgraph;
 
 export type ImageData = {
-  nodes: { [nodeId: string]: ImageNode };
+  nodes: ImageNode[];
   edges: { clientId: string; serverId: string; edgeId: string; labels: string[] }[];
 };
 
@@ -61,16 +61,19 @@ const defaultShape = (node: ImageNode): Shape => {
   }
 };
 
-const getDotFormat = (imageData: ImageData): string[] => {
+const getDotFormat = (imageData: ImageData): { lines: string[]; nodes: { [nodeId: string]: ImageNode } } => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   lines.push("  labeljust=l");
+
+  const nodes: { [nodeId: string]: ImageNode } = {};
 
   // push the tree of nodes -- use subgraphs for exapanded groups
   const pushLayer = (layer: ImageNode[], level: number): void => {
     const prefix = " ".repeat(2 * (level + 1));
     for (const node of layer) {
-      //const imageAttribute = imageData.imageAttributes[node.id];
+      nodes[node.id] = node;
+
       const shape = node?.shape ?? defaultShape(node);
       const label = node?.shortLabel ?? node.label;
       if (node?.shortLabel && !node.tooltip) node.tooltip = node.label;
@@ -102,12 +105,12 @@ const getDotFormat = (imageData: ImageData): string[] => {
   });
 
   lines.push("}");
-  return lines;
+  return { lines, nodes };
 };
 
 export function createImage(imageData: ImageData): Image {
   log("createImage");
-  const lines = getDotFormat(imageData);
+  const { lines, nodes } = getDotFormat(imageData);
 
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");
@@ -124,7 +127,7 @@ export function createImage(imageData: ImageData): Image {
 
   const getAreaAttributes = (id: string) => {
     // may be undefined because this is also called for edges
-    const node: ImageNode | undefined = imageData.nodes[id];
+    const node: ImageNode | undefined = nodes[id];
     const className = node?.className;
     const tooltip = node?.tooltip;
     return { className, tooltip };

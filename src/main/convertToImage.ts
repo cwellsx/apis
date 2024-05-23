@@ -118,11 +118,8 @@ export function convertToImage(
 
   const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isGroupNodeVisible).map(toImageNode);
 
-  const imageNodes: { [nodeId: string]: ImageNode } = {};
-  toImageNodes(nodes).forEach((imageNode) => (imageNodes[imageNode.id] = imageNode));
-
   const imageData: ImageData = {
-    nodes: imageNodes,
+    nodes: toImageNodes(nodes),
     edges: edgeIds.map((edgeId) => {
       const edges = edgeGroups.get(edgeId);
       const labels: string[] = [];
