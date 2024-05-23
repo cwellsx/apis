@@ -15,21 +15,7 @@ export type { CustomError } from "./customError";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodBody, MethodError } from "./methodBody";
 export type { GraphEvent } from "./mouseEvent";
-export {
-  artificialNodeIdFactory,
-  fromEdgeId,
-  groupByNodeId,
-  isMethodNodeId,
-  isNameNodeId,
-  makeEdgeId,
-  metadataNodeId,
-  methodNodeId,
-  nameNodeId,
-  nodeIdToText,
-  textToNodeId,
-  typeNodeId,
-} from "./nodeId";
-export type { GetArtificialNodeId, MetadataNodeId, MethodNodeId, NameTypes, NodeId, TypeNodeId } from "./nodeId";
+export * from "./nodeId";
 export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";
 export { isParent } from "./treeNodes";

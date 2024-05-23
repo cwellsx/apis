@@ -11,7 +11,7 @@ import type {
   TypeNodeId,
   ViewType,
 } from "../shared-types";
-import { defaultAppOptions, methodNodeId, nameNodeId, nodeIdToText, typeNodeId } from "../shared-types";
+import { defaultAppOptions, methodNodeId, nameNodeId, typeNodeId } from "../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "./customJson";
 import type {
   AllTypeInfo,
@@ -275,7 +275,7 @@ export class SqlCustom {
         tags.sort();
         this.viewState.customViewOptions = {
           ...defaultCustomViewOptions,
-          leafVisible: nodeIds.map(nodeIdToText),
+          leafVisible: nodeIds,
           nodeProperties,
           tags: tags.map((tag) => ({ tag, shown: true })),
         };
@@ -709,10 +709,10 @@ export class ViewState {
     this.exes = exes;
     this.referenceViewOptions = {
       ...defaultReferenceViewOptions,
-      leafVisible: assemblyNames.map((assemblyName) => nodeIdToText(nameNodeId("assembly", assemblyName))),
+      leafVisible: assemblyNames.map((assemblyName) => nameNodeId("assembly", assemblyName)),
     };
     this.methodViewOptions = defaultMethodViewOptions;
-    this.apiViewOptions = { ...defaultApiViewOptions, leafVisible: assemblyTypeIds.map(nodeIdToText) };
+    this.apiViewOptions = { ...defaultApiViewOptions, leafVisible: assemblyTypeIds };
   }
 
   // this changes when the SQL schema definition changes

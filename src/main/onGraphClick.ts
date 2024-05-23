@@ -1,5 +1,5 @@
 import type { ReferenceViewOptions } from "../shared-types";
-import { isNameNodeId, nameNodeId, nodeIdToText, textToNodeId } from "../shared-types";
+import { isNameNodeId, nameNodeId } from "../shared-types";
 import type { AssemblyReferences } from "./loaded";
 
 export const showAdjacent = (
@@ -15,10 +15,9 @@ export const showAdjacent = (
     if (assembly === assemblyName) dependencies.forEach((dependency) => adjacent.add(dependency));
     else if (dependencies.includes(assemblyName)) adjacent.add(assembly);
   });
-  leafVisible.forEach((leaf) => {
-    const nodeId = textToNodeId(leaf);
+  leafVisible.forEach((nodeId) => {
     if (!isNameNodeId(nodeId, "assembly")) throw new Error("Expected assembly Id");
     adjacent.add(nodeId.name);
   });
-  viewOptions.leafVisible = [...adjacent].map((assemblyName) => nodeIdToText(nameNodeId("assembly", assemblyName)));
+  viewOptions.leafVisible = [...adjacent].map((assemblyName) => nameNodeId("assembly", assemblyName));
 };

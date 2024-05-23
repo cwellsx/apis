@@ -10,7 +10,15 @@ import type {
   ViewErrors,
   ViewType,
 } from "../shared-types";
-import { isGraphViewOptions, isMethodNodeId, isNameNodeId, textToNodeId } from "../shared-types";
+import {
+  getAssemblyNames,
+  isGraphViewOptions,
+  isMethodNodeId,
+  isNameNodeId,
+  removeNodeId,
+  textToNodeId,
+  toggleNodeId,
+} from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { convertLoadedToMethods } from "./convertLoadedToMethods";
@@ -19,7 +27,7 @@ import { convertLoadedToTypes } from "./convertLoadedToTypeDetails";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
 import { showAdjacent } from "./onGraphClick";
-import { TypeAndMethodDetails, remove } from "./shared-types";
+import { TypeAndMethodDetails } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
@@ -75,7 +83,6 @@ export const createAppWindow = (
     },
     onGraphClick: (graphEvent: GraphEvent): void => {
       const { id, className, viewType, event } = graphEvent;
-
       log(`onGraphClick ${id}`);
       if (!className) return; // edge
       const nodeId = textToNodeId(id);
@@ -83,8 +90,7 @@ export const createAppWindow = (
         case "closed":
         case "expanded": {
           const viewOptions = getGraphViewOptions(viewType);
-          if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
-          else viewOptions.groupExpanded.push(id);
+          toggleNodeId(viewOptions.groupExpanded, nodeId);
           setGraphViewOptions(viewOptions);
           showViewType(viewOptions.viewType);
           return;
@@ -111,8 +117,8 @@ export const createAppWindow = (
                 showReferences();
               } else if (event.ctrlKey) {
                 const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-                const leafVisible = viewOptions.leafVisible ?? Object.keys(assemblyReferences);
-                remove(leafVisible, id);
+                const leafVisible = viewOptions.leafVisible;
+                removeNodeId(leafVisible, nodeId);
                 viewOptions.leafVisible = leafVisible;
                 sqlLoaded.viewState.referenceViewOptions = viewOptions;
                 showReferences();
@@ -178,7 +184,7 @@ export const createAppWindow = (
 
   const showApis = (): void => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
-    const apis = sqlLoaded.readCalls(apiViewOptions.groupExpanded);
+    const apis = sqlLoaded.readCalls(getAssemblyNames(apiViewOptions.groupExpanded));
     const savedTypeInfos = sqlLoaded.readSavedTypeInfos();
     const viewGraph = convertLoadedToApis(apis, apiViewOptions, savedTypeInfos, sqlLoaded.viewState.exes);
     show.showMessage("foo", `${apis.length} records`);

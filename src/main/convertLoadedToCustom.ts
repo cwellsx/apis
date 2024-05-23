@@ -1,5 +1,5 @@
 import type { CustomViewOptions, Leaf, Node, Parent, ViewGraph } from "../shared-types";
-import { groupByNodeId, joinLabel, nameNodeId, nodeIdToText } from "../shared-types";
+import { groupByNodeId, joinLabel, nameNodeId } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
@@ -46,8 +46,8 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
         );
 
         edges.push({
-          clientId: nodeIdToText(nameNodeId("customLeaf", node.id)),
-          serverId: nodeIdToText(nameNodeId("customLeaf", dependency.id)),
+          clientId: nameNodeId("customLeaf", node.id),
+          serverId: nameNodeId("customLeaf", dependency.id),
           label,
         });
       });
@@ -77,6 +77,6 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
     });
   } else groups.push(...Object.values(leafs));
 
-  const image = convertToImage(groups, edges, viewOptions, {}, viewOptions.groupedLabels);
+  const image = convertToImage(groups, edges, viewOptions, undefined, viewOptions.groupedLabels);
   return { groups, image, viewOptions };
 };

@@ -8,10 +8,10 @@ import type {
   ViewErrors,
   ViewType,
 } from "../shared-types";
+import { textToNodeId, toggleNodeId } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import { log } from "./log";
-import { remove } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlCustom } from "./sqlTables";
 
@@ -61,12 +61,13 @@ export const createCustomWindow = (
     onGraphClick: (graphEvent: GraphEvent): void => {
       const { id, className, viewType, event } = graphEvent;
       log(`onGraphClick ${id}`);
+      if (!className) return; // edge
+      const nodeId = textToNodeId(id);
       switch (className) {
         case "closed":
         case "expanded": {
           const viewOptions = getCustomViewOptions(viewType);
-          if (viewOptions.groupExpanded.includes(id)) remove(viewOptions.groupExpanded, id);
-          else viewOptions.groupExpanded.push(id);
+          toggleNodeId(viewOptions.groupExpanded, nodeId);
           setCustomViewOptions(viewOptions);
           showViewType(viewOptions.viewType);
           return;

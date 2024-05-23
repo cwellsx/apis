@@ -1,5 +1,5 @@
 import type { Leaf, NameTypes, Node, Parent } from "../shared-types";
-import { isParent, nameNodeId, nodeIdToText } from "../shared-types";
+import { isParent, nameNodeId } from "../shared-types";
 import type { StringPredicate } from "./shared-types";
 import { distinctor, options, remove, replace } from "./shared-types";
 
@@ -12,7 +12,7 @@ export const convertLoadedToGroups = (
   exes: string[],
   nameType: NameTypes
 ): {
-  nodes: { [id: string]: Node };
+  leafs: { [id: string]: Node };
   groups: Node[];
 } => {
   // sort all names -- these names will become leaf nodes
@@ -20,10 +20,11 @@ export const convertLoadedToGroups = (
   // names many contain duplicate
   const distinctNames = distinctor<string>((lhs, rhs) => lhs === rhs);
 
-  const result: Node[] = [];
+  const groups: Node[] = [];
+  const leafs: { [name: string]: Node } = {};
   for (const name of names.filter(distinctNames)) {
     let partial = "";
-    let nodes = result;
+    let nodes = groups;
 
     let parent: Parent | null = null;
     for (const part of name.split(".")) {
@@ -33,6 +34,7 @@ export const convertLoadedToGroups = (
       if (partial === name) {
         const newLeaf: Leaf = { label: name, nodeId: nameNodeId(nameType, name), parent };
         nodes.push(newLeaf);
+        leafs[name] = newLeaf;
       } else {
         // find or create the parent -- if it already exists then it's the last node, because names are sorted
         const newParent: Parent = { label: partial, nodeId: nameNodeId("group", partial), children: [], parent };
@@ -70,17 +72,17 @@ export const convertLoadedToGroups = (
         }
       });
     };
-    ungroupSingle(result);
+    ungroupSingle(groups);
   }
 
   const regroup = (predicate: StringPredicate, label: string, id: string): void => {
-    const found = result.filter((node) => predicate(node.label));
+    const found = groups.filter((node) => predicate(node.label));
     const parent = { label, nodeId: nameNodeId("group", id), parent: null, children: found };
     found.forEach((child) => {
       child.parent = parent;
-      remove(result, child);
+      remove(groups, child);
     });
-    result.push(parent);
+    groups.push(parent);
   };
 
   const dotNetAssemblies = ["Microsoft", "System", "mscorlib", "netstandard", "WindowsBase", "PresentationFramework"];
@@ -97,22 +99,5 @@ export const convertLoadedToGroups = (
     metaGroupLabels.push("3rd-party");
   }
 
-  // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
-  // also assert that the parent fields are set correctly
-  const unique: { [id: string]: Node } = {};
-  const assertUnique = (node: Node): void => {
-    const id = nodeIdToText(node.nodeId);
-    if (unique[id]) throw new Error(`Duplicate node id: ${id}`);
-    unique[id] = node;
-    if (isParent(node))
-      node.children.forEach((child) => {
-        assertUnique(child);
-        if (child.parent !== node) {
-          throw new Error(`Unexpected parent of:  ${id}`);
-        }
-      });
-  };
-
-  result.forEach(assertUnique);
-  return { groups: result, nodes: unique };
+  return { groups, leafs };
 };

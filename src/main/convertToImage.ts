@@ -1,60 +1,60 @@
-import type { AreaClass, GraphViewOptions, GroupedLabels, Image, Leaf, Node } from "../shared-types";
-import { fromEdgeId, isParent, joinLabel, makeEdgeId, nodeIdToText } from "../shared-types";
-import type { ImageAttributes, ImageData, Node as ImageNode } from "./createImage";
+import type { GraphViewOptions, GroupedLabels, Image, Node, NodeId } from "../shared-types";
+import {
+  NodeIdMap,
+  createLookupNodeId,
+  fromEdgeId,
+  isParent,
+  joinLabel,
+  makeEdgeId,
+  nodeIdToText,
+} from "../shared-types";
+import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
-import type { Edge, StringPredicate } from "./shared-types";
+import type { Edge } from "./shared-types";
 import { options } from "./shared-types";
-
-type Nodes = Node[] | Leaf[];
-
-const createLookup = (array: string[]): StringPredicate => {
-  const temp = new Set(array);
-  return (id: string) => temp.has(id);
-};
 
 export function convertToImage(
   nodes: Node[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
-  imageAttributes?: ImageAttributes,
+  imageAttributes?: NodeIdMap<ImageAttribute>,
   groupedLabels?: GroupedLabels
 ): Image | string {
   const { leafVisible, groupExpanded } = viewOptions;
-  const isLeafVisible = createLookup(leafVisible);
-  const isGroupExpanded = createLookup(groupExpanded);
+  const isLeafVisible = createLookupNodeId(leafVisible);
+  const isGroupExpanded = createLookupNodeId(groupExpanded);
 
   // assert the id are unique -- if they're not then CheckboxTree will throw an exception in the renderer
   // also assert that the parent fields are set correctly
-  const allNodes: { [id: string]: Node } = {};
+  const allNodeIds = new Set<string>();
   // also take this opportunity to initialize
-  const classNames: { [id: string]: AreaClass } = {};
+  const allNodes = new NodeIdMap<Node>();
 
   const assertUnique = (node: Node): void => {
-    const id = nodeIdToText(node.nodeId);
-    if (allNodes[id]) {
-      throw new Error(`Duplicate node id: ${id}`);
+    const stringId = nodeIdToText(node.nodeId);
+    if (allNodeIds.has(stringId)) {
+      throw new Error(`Duplicate node id: ${stringId}`);
     }
-    allNodes[id] = node;
-    let className: AreaClass;
+    allNodeIds.add(stringId);
+    const nodeId = node.nodeId;
+    allNodes.set(nodeId, node);
     if (isParent(node)) {
-      className = viewOptions.groupExpanded.includes(id) ? "expanded" : "closed";
       node.children.forEach((child) => {
         assertUnique(child);
         if (child.parent !== node) {
-          throw new Error(`Unexpected parent of:  ${id}`);
+          throw new Error(`Unexpected parent of: ${nodeId}`);
         }
       });
-    } else className = "leaf";
-    classNames[id] = className;
+    }
   };
   nodes.forEach(assertUnique);
 
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
-  const closed = new Map<string, string>();
+  const closed = new NodeIdMap<NodeId>();
 
-  const findClosed = (node: Node, isClosedByParentId: string | null): void => {
-    const id = nodeIdToText(node.nodeId);
+  const findClosed = (node: Node, isClosedByParentId: NodeId | null): void => {
+    const id = node.nodeId;
     if (isParent(node)) {
       if (!isClosedByParentId && !isGroupExpanded(id)) isClosedByParentId = id;
       node.children.forEach((child) => findClosed(child, isClosedByParentId));
@@ -80,37 +80,49 @@ export function convertToImage(
 
   // whether a group is visible depends on whether it contains visible leafs
   const isGroupNodeVisible = (node: Node): boolean =>
-    isParent(node)
-      ? node.children.some((child) => isGroupNodeVisible(child))
-      : isLeafVisible(nodeIdToText(node.nodeId));
+    isParent(node) ? node.children.some((child) => isGroupNodeVisible(child)) : isLeafVisible(node.nodeId);
 
   const metaGroupLabels = [".NET", "3rd-party"];
+
   const toImageNode = (node: Node): ImageNode => {
-    const id = nodeIdToText(node.nodeId);
-    const textNode = { id, label: node.label };
+    const nodeId = node.nodeId;
+
+    const imageAttribute: ImageAttribute = imageAttributes?.get(nodeId) ?? {};
+
+    const textNode: ImageText = {
+      id: nodeIdToText(nodeId),
+      label: node.label,
+      className: isParent(node) ? (isGroupExpanded(nodeId) ? "expanded" : "closed") : "leaf",
+      ...imageAttribute,
+    };
+
     // implement this option here to affect the label on the image but not in the tree of groups
     if (
       options.shortLeafNames &&
       node.parent &&
       !metaGroupLabels.includes(node.parent.label) &&
-      (!isParent(node) || !isGroupExpanded(id))
+      (!isParent(node) || !isGroupExpanded(nodeId))
     ) {
       if (!node.label.startsWith(node.parent.label)) {
         if (viewOptions.viewType == "references") throw new Error("Unexpected parent node name");
         // else this is a sublayer so do nothing
       } else textNode.label = "*" + node.label.substring(node.parent.label.length);
     }
+
     return !isParent(node)
       ? { type: "node", ...textNode }
-      : !isGroupExpanded(id)
+      : !isGroupExpanded(nodeId)
       ? { type: "group", ...textNode }
       : { type: "subgraph", ...textNode, children: toImageNodes(node.children) };
   };
 
-  const toImageNodes = (nodes: Nodes): ImageNode[] => nodes.filter(isGroupNodeVisible).map(toImageNode);
+  const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isGroupNodeVisible).map(toImageNode);
+
+  const imageNodes: { [nodeId: string]: ImageNode } = {};
+  toImageNodes(nodes).forEach((imageNode) => (imageNodes[imageNode.id] = imageNode));
 
   const imageData: ImageData = {
-    nodes: toImageNodes(nodes),
+    nodes: imageNodes,
     edges: edgeIds.map((edgeId) => {
       const edges = edgeGroups.get(edgeId);
       const labels: string[] = [];
@@ -121,13 +133,16 @@ export function convertToImage(
           ? edge.label
           : !groupedLabels
           ? undefined
-          : joinLabel(groupedLabels.serverLabel, allNodes[edge.serverId].label, groupedLabels.edgeLabel, edge.label);
+          : joinLabel(
+              groupedLabels.serverLabel,
+              allNodes.getOrThrow(edge.serverId).label,
+              groupedLabels.edgeLabel,
+              edge.label
+            );
         if (label) labels.push(label);
       });
       return { edgeId, ...fromEdgeId(edgeId), labels };
     }),
-    imageAttributes: imageAttributes ?? {},
-    classNames,
   };
 
   log("createImage");

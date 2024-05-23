@@ -1,5 +1,5 @@
 import type { ApiViewOptions, Leaf, ViewGraph } from "../shared-types";
-import { Parent, isParent, metadataNodeId, nameNodeId, nodeIdToText } from "../shared-types";
+import { Parent, isParent, metadataNodeId } from "../shared-types";
 import { convertLoadedToGroups } from "./convertLoadedToGroups";
 import { getTypeInfoName } from "./convertLoadedToTypeDetails";
 import { convertToImage } from "./convertToImage";
@@ -13,7 +13,7 @@ export const convertLoadedToApis = (
   savedTypeInfos: SavedTypeInfos,
   exes: string[]
 ): ViewGraph => {
-  log("convertLoadedToReferences");
+  log("convertLoadedToApis");
   const assemblyTypes: { [assemblyName: string]: { [typeId: number]: Leaf } } = {};
   const edges: Edge[] = [];
 
@@ -37,16 +37,16 @@ export const convertLoadedToApis = (
     addLeaf(api.toAssemblyName, api.toTypeId);
 
     edges.push({
-      clientId: nodeIdToText(metadataNodeId("type", api.fromAssemblyName, api.fromTypeId)),
-      serverId: nodeIdToText(metadataNodeId("type", api.toAssemblyName, api.toTypeId)),
+      clientId: metadataNodeId("type", api.fromAssemblyName, api.fromTypeId),
+      serverId: metadataNodeId("type", api.toAssemblyName, api.toTypeId),
     });
   });
 
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const { groups, nodes } = convertLoadedToGroups(Object.keys(assemblyTypes), exes, "assembly");
+  const { groups, leafs } = convertLoadedToGroups(Object.keys(assemblyTypes), exes, "assembly");
 
   Object.entries(assemblyTypes).forEach(([assemblyName, types]) => {
-    const node = nodes[nodeIdToText(nameNodeId("assembly", assemblyName))];
+    const node = leafs[assemblyName];
     if (isParent(node)) throw new Error("Unexpected parent");
     const parent = node as Parent;
     const children: Leaf[] = Object.values(types);

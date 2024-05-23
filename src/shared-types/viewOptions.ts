@@ -1,24 +1,24 @@
-import { MethodNodeId } from "./nodeId";
+import type { MethodNodeId, NodeId } from "./nodeId";
 
-export type ReferenceViewOptions = {
+type ViewOptions = {
+  leafVisible: NodeId[];
+  groupExpanded: NodeId[];
+};
+
+export type ReferenceViewOptions = ViewOptions & {
   showGrouped: boolean;
-  leafVisible: string[];
-  groupExpanded: string[];
   viewType: "references";
 };
 
-export type MethodViewOptions = {
-  leafVisible: string[];
-  groupExpanded: string[];
+export type MethodViewOptions = ViewOptions & {
   topType: "assembly" | "namespace" | "none";
   methodId: MethodNodeId;
   viewType: "methods";
 };
 
-export type ApiViewOptions = {
+export type ApiViewOptions = ViewOptions & {
   showGrouped: boolean;
-  leafVisible: string[];
-  groupExpanded: string[];
+
   viewType: "apis";
 };
 
@@ -27,9 +27,7 @@ export type GroupedLabels = {
   edgeLabel: boolean;
 };
 
-export type CustomViewOptions = {
-  leafVisible: string[];
-  groupExpanded: string[];
+export type CustomViewOptions = ViewOptions & {
   nodeProperties: string[];
   groupedBy: string[];
   tags: { tag: string; shown: boolean }[];

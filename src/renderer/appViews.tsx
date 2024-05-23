@@ -8,6 +8,7 @@ import type {
   ViewErrors,
   ViewGreeting,
 } from "../shared-types";
+import { nodeIdToText, textToNodeId } from "../shared-types";
 import { Details } from "./Details";
 import { ErrorDetails } from "./ErrorDetails";
 import { Graph } from "./Graph";
@@ -16,10 +17,6 @@ import { MethodDetails } from "./MethodDetails";
 import { Options } from "./Options";
 import { Tree } from "./Tree";
 
-// function isViewGraph(view: View): view is ViewGraph {
-//   const viewTypes: ViewType[] = ["references", "methods"];
-//   return viewTypes.includes(view.viewOptions.viewType);
-// }
 export function isGreeting(view: View): view is ViewGreeting {
   return view.viewOptions.viewType === "greeting";
 }
@@ -36,10 +33,10 @@ export const getLeft = (view: View, onViewOptions: (viewOptions: AllViewOptions)
       <Options viewOptions={view.viewOptions} setViewOptions={onViewOptions} />
       <Tree
         nodes={view.groups}
-        leafVisible={viewOptions.leafVisible}
-        groupExpanded={viewOptions.groupExpanded}
-        setLeafVisible={(names) => onViewOptions({ ...viewOptions, leafVisible: names })}
-        setGroupExpanded={(names) => onViewOptions({ ...viewOptions, groupExpanded: names })}
+        leafVisible={viewOptions.leafVisible.map(nodeIdToText)}
+        groupExpanded={viewOptions.groupExpanded.map(nodeIdToText)}
+        setLeafVisible={(names) => onViewOptions({ ...viewOptions, leafVisible: names.map(textToNodeId) })}
+        setGroupExpanded={(names) => onViewOptions({ ...viewOptions, groupExpanded: names.map(textToNodeId) })}
       />
     </>
   );

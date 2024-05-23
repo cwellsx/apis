@@ -12,12 +12,8 @@ import { showErrorBox } from "./showErrorBox";
   This is implemented using Graphviz; this is the only module which uses (and therefore encapsulates) Graphviz.
 */
 
-type Text = {
-  id: string;
-  label: string;
-};
-
 type Shape = "folder" | "rect" | "none";
+
 export type ImageAttribute = {
   // used for leafs and for non-expanded groups
   shape?: Shape;
@@ -28,16 +24,18 @@ export type ImageAttribute = {
   tooltip?: string;
 };
 
-export type ImageAttributes = { [index: string]: ImageAttribute | undefined };
+export type ImageText = ImageAttribute & {
+  id: string;
+  label: string;
+  className: AreaClass;
+};
 
-export type Node = (Text & { type: "node" | "group" }) | Subgraph;
-type Subgraph = Text & { type: "subgraph"; children: Node[] };
+type Subgraph = ImageText & { type: "subgraph"; children: ImageNode[] };
+export type ImageNode = (ImageText & { type: "node" | "group" }) | Subgraph;
 
 export type ImageData = {
-  nodes: Node[];
+  nodes: { [nodeId: string]: ImageNode };
   edges: { clientId: string; serverId: string; edgeId: string; labels: string[] }[];
-  imageAttributes: ImageAttributes;
-  classNames: { [type: string]: AreaClass };
 };
 
 const findDotExe = (): string => {
@@ -50,7 +48,7 @@ const findDotExe = (): string => {
   throw new Error("graphviz not found");
 };
 
-const defaultShape = (node: Node): Shape => {
+const defaultShape = (node: ImageNode): Shape => {
   switch (node.type) {
     case "group":
       return "rect";
@@ -69,13 +67,13 @@ const getDotFormat = (imageData: ImageData): string[] => {
   lines.push("  labeljust=l");
 
   // push the tree of nodes -- use subgraphs for exapanded groups
-  const pushLayer = (layer: Node[], level: number): void => {
+  const pushLayer = (layer: ImageNode[], level: number): void => {
     const prefix = " ".repeat(2 * (level + 1));
     for (const node of layer) {
-      const imageAttribute = imageData.imageAttributes[node.id];
-      const shape = imageAttribute?.shape ?? defaultShape(node);
-      const label = imageAttribute?.shortLabel ?? node.label;
-      if (imageAttribute?.shortLabel && !imageAttribute.tooltip) imageAttribute.tooltip = node.label;
+      //const imageAttribute = imageData.imageAttributes[node.id];
+      const shape = node?.shape ?? defaultShape(node);
+      const label = node?.shortLabel ?? node.label;
+      if (node?.shortLabel && !node.tooltip) node.tooltip = node.label;
       switch (node.type) {
         case "node":
           lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${label}" href=foo];`);
@@ -85,7 +83,7 @@ const getDotFormat = (imageData: ImageData): string[] => {
           break;
         case "subgraph":
           lines.push(`${prefix}subgraph "cluster_${node.id}" {`);
-          if (imageAttribute?.style) lines.push(`${prefix}  style="${imageAttribute.style}"`);
+          if (node?.style) lines.push(`${prefix}  style="${node.style}"`);
           lines.push(`${prefix}  label="${label}"`);
           lines.push(`${prefix}  id="${node.id}"`);
           lines.push(`${prefix}  href=foo`);
@@ -94,7 +92,7 @@ const getDotFormat = (imageData: ImageData): string[] => {
       }
     }
   };
-  pushLayer(imageData.nodes, 0);
+  pushLayer(Object.values(imageData.nodes), 0);
 
   // push the map of grouped edges
   imageData.edges.forEach(({ clientId, serverId, edgeId, labels }) => {
@@ -124,16 +122,17 @@ export function createImage(imageData: ImageData): Image {
 
   const xml = readFileSync(mapFilename);
 
-  const getNodeAttributes = (id: string) => {
-    const imageAttribute: ImageAttribute | undefined = imageData.imageAttributes[id];
-    const className = imageData.classNames[id];
-    const tooltip = imageAttribute?.tooltip;
+  const getAreaAttributes = (id: string) => {
+    // may be undefined because this is also called for edges
+    const node: ImageNode | undefined = imageData.nodes[id];
+    const className = node?.className;
+    const tooltip = node?.tooltip;
     return { className, tooltip };
   };
 
   return {
     imagePath: convertPathToUrl(pngFilename),
-    areas: convertXmlMapToAreas(xml, getNodeAttributes),
+    areas: convertXmlMapToAreas(xml, getAreaAttributes),
     now: Date.now(),
   };
 }
