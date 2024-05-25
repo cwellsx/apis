@@ -1,3 +1,4 @@
+export { Edges } from "./edge";
 export type { Edge } from "./edge";
 export * from "./memberNames";
 export { nestTypes } from "./nestTypes";

@@ -17,7 +17,11 @@ export const convertLoadedToReferences = (
   Object.entries(assemblyReferences).forEach(([assembly, dependencies]) => {
     leafs.push({ nodeId: nameNodeId("assembly", assembly), label: assembly, parent: null });
     dependencies.forEach((dependency) =>
-      edges.push({ clientId: nameNodeId("assembly", assembly), serverId: nameNodeId("assembly", dependency) })
+      edges.push({
+        clientId: nameNodeId("assembly", assembly),
+        serverId: nameNodeId("assembly", dependency),
+        labels: [],
+      })
     );
   });
   // flatten and sort all names -- these names will become leaf nodes

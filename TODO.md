@@ -6,12 +6,9 @@ There is no "Done" section in this document, instead see the history of updates/
 
 ## Refactor and improve
 
-- API view:
-  - Hide compiler-generated types
+- Remove GroupedLabels type
+- Implement toDictionary generic function from an array
 - Click on edge to show APIs as a detail
-- Better naming of nested types
-- Precomputed type and method names
-- Precomputed declaring types
 - Sanitize the Error schema in the Reflected data
 - Add tooltips to edges -- names of methods or types depending on whether the target is expanded
 - Maybe normalize the database, plus materialize various joins at save-time

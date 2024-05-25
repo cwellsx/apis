@@ -127,7 +127,7 @@ export const convertLoadedToMethods = (
   };
 
   const saveEdge = (clientId: MetadataNodeId, serverId: MetadataNodeId): void => {
-    edges.push({ clientId, serverId });
+    edges.push({ clientId, serverId, labels: [] });
   };
 
   const isNewMethodId = !!methodId;

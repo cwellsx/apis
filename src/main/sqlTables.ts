@@ -119,6 +119,12 @@ export type TypeNameColumns = {
   wantedTypeId: number | null;
 };
 
+export type MethodNameColumns = {
+  assemblyName: string;
+  metadataToken: number;
+  name: string;
+};
+
 type ConfigColumns = {
   name: string;
   value: string;
@@ -327,10 +333,11 @@ export class SqlLoaded {
   readErrors: () => ErrorsInfo[];
   readCalls: (assemblyNames: string[]) => CallColumns[];
   readTypeNames: () => TypeNameColumns[];
+  readMethodNames: () => MethodNameColumns[];
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-05-24a";
+    const loadedSchemaVersionExpected = "2024-05-25b";
 
     this.viewState = new ViewState(db);
 
@@ -344,6 +351,7 @@ export class SqlLoaded {
       dropTable(db, "error");
       dropTable(db, "call");
       dropTable(db, "typeName");
+      dropTable(db, "methodName");
       this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
@@ -401,6 +409,17 @@ export class SqlLoaded {
         wantedTypeId: 0,
       }
     );
+    const methodNameTable = new SqlTable<MethodNameColumns>(
+      db,
+      "methodName",
+      ["assemblyName", "metadataToken"],
+      () => false,
+      {
+        assemblyName: "foo",
+        metadataToken: 0,
+        name: "bar",
+      }
+    );
 
     const done = () => {
       const result = db.pragma("wal_checkpoint(TRUNCATE)");
@@ -409,6 +428,7 @@ export class SqlLoaded {
 
     this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
       // delete in reverse order
+      methodNameTable.deleteAll();
       typeNameTable.deleteAll();
       callTable.deleteAll();
       errorTable.deleteAll();
@@ -420,9 +440,8 @@ export class SqlLoaded {
       log("save reflected.assemblies");
 
       // create a dictionary to find typeId from methodId
-      const assemblyMethodTypes: {
-        [assemblyName: string]: { [methodId: number]: number };
-      } = {};
+      const assemblyMethodTypes: { [assemblyName: string]: { [methodId: number]: number } } = {};
+      const assemblyMethodNames: MethodNameColumns[] = [];
 
       const assemblyTypeIds: TypeNodeId[] = [];
 
@@ -437,7 +456,6 @@ export class SqlLoaded {
         const allTypeInfo = validateTypeInfo(assemblyInfo.types);
 
         for (const type of allTypeInfo.good) {
-          const members = type.members;
           const typeInfo = createSavedTypeInfo(type);
 
           // => typeTable
@@ -449,11 +467,16 @@ export class SqlLoaded {
 
           assemblyTypeIds.push(typeNodeId(assemblyName, typeInfo.typeId.metadataToken));
 
-          for (const [memberType, memberInfos] of Object.entries(members)) {
-            const many: MemberColumns[] = memberInfos.map((memberInfo) => {
-              if ((memberType as keyof Members) == "methodMembers")
+          for (const [memberType, memberInfos] of Object.entries(type.members)) {
+            const members: MemberColumns[] = memberInfos.map((memberInfo) => {
+              if ((memberType as keyof Members) == "methodMembers") {
                 methodTypes[memberInfo.metadataToken] = typeInfo.typeId.metadataToken;
-
+                assemblyMethodNames.push({
+                  assemblyName,
+                  name: memberInfo.name,
+                  metadataToken: memberInfo.metadataToken,
+                });
+              }
               return {
                 assemblyName,
                 // memberType is string[] -- https://github.com/microsoft/TypeScript/pull/12253#issuecomment-263132208
@@ -464,7 +487,7 @@ export class SqlLoaded {
               };
             });
             // => memberTable
-            memberTable.insertMany(many);
+            memberTable.insertMany(members);
           }
         }
 
@@ -552,6 +575,9 @@ export class SqlLoaded {
       );
 
       callTable.insertMany(callColumns);
+
+      // => methodNameTable
+      methodNameTable.insertMany(assemblyMethodNames);
 
       // => viewState => _cache => _sqlConfig
       this.viewState.onSave(
@@ -642,6 +668,7 @@ export class SqlLoaded {
     };
 
     this.readTypeNames = (): TypeNameColumns[] => typeNameTable.selectAll();
+    this.readMethodNames = (): MethodNameColumns[] => methodNameTable.selectAll();
 
     this.close = () => {
       done();

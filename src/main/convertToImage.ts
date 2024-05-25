@@ -1,18 +1,10 @@
 import type { GraphViewOptions, GroupedLabels, Image, Node, NodeId } from "../shared-types";
-import {
-  NodeIdMap,
-  createLookupNodeId,
-  fromEdgeId,
-  isParent,
-  joinLabel,
-  makeEdgeId,
-  nodeIdToText,
-} from "../shared-types";
+import { NodeIdMap, createLookupNodeId, isParent, makeEdgeId, nodeIdToText } from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
 import type { Edge } from "./shared-types";
-import { options } from "./shared-types";
+import { Edges, options } from "./shared-types";
 
 export function convertToImage(
   nodes: Node[],
@@ -51,32 +43,30 @@ export function convertToImage(
   nodes.forEach(assertUnique);
 
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
-  const closed = new NodeIdMap<NodeId>();
-
-  const findClosed = (node: Node, isClosedByParentId: NodeId | null): void => {
+  // parent is the displayed but non-expanded parent
+  // child is its immediate child which is the leaf or perhaps the ancestor of the leaf
+  const closedBy = new NodeIdMap<{ parent: NodeId; child: NodeId }>();
+  const findClosed = (node: Node, isClosedBy: { parent: NodeId; child: NodeId } | null): void => {
     const id = node.nodeId;
     if (isParent(node)) {
-      if (!isClosedByParentId && !isGroupExpanded(id)) isClosedByParentId = id;
-      node.children.forEach((child) => findClosed(child, isClosedByParentId));
-    } else if (isClosedByParentId) closed.set(id, isClosedByParentId);
+      const isClosed = !isClosedBy && !isGroupExpanded(id);
+      node.children.forEach((child) =>
+        findClosed(child, isClosedBy ?? (isClosed ? { parent: id, child: child.nodeId } : null))
+      );
+    } else if (isClosedBy) closedBy.set(id, isClosedBy);
   };
   nodes.forEach((node) => findClosed(node, null));
 
   // create groups of visible edges
-  const edgeGroups = new Map<string, Edge[]>();
+  const visibleEdges = new Edges();
   edges
     .filter((edge) => isLeafVisible(edge.clientId) && isLeafVisible(edge.serverId))
     .forEach((edge) => {
-      const clientId = closed.get(edge.clientId) ?? edge.clientId;
-      const serverId = closed.get(edge.serverId) ?? edge.serverId;
-      if (options.noSelfEdges && clientId == serverId) return;
-      const edgeId = makeEdgeId(clientId, serverId);
-      const found = edgeGroups.get(edgeId);
-      if (found) found.push(edge);
-      else edgeGroups.set(edgeId, [edge]);
+      const clientClosedBy = closedBy.get(edge.clientId);
+      const serverClosedBy = closedBy.get(edge.serverId);
+      const labels = !serverClosedBy ? edge.labels : [allNodes.getOrThrow(serverClosedBy.child).label];
+      visibleEdges.add(clientClosedBy?.parent ?? edge.clientId, serverClosedBy?.parent ?? edge.serverId, labels);
     });
-
-  const edgeIds: string[] = [...edgeGroups.keys()];
 
   // whether a group is visible depends on whether it contains visible leafs
   const isGroupNodeVisible = (node: Node): boolean =>
@@ -120,26 +110,12 @@ export function convertToImage(
 
   const imageData: ImageData = {
     nodes: toImageNodes(nodes),
-    edges: edgeIds.map((edgeId) => {
-      const edges = edgeGroups.get(edgeId);
-      const labels: string[] = [];
-      edges?.forEach((edge) => {
-        const isGroupedEdge = edgeId !== makeEdgeId(edge.clientId, edge.serverId);
-        // no need to show the serverLabel unless this is a group of edges
-        const label = !isGroupedEdge
-          ? edge.label
-          : !groupedLabels
-          ? undefined
-          : joinLabel(
-              groupedLabels.serverLabel,
-              allNodes.getOrThrow(edge.serverId).label,
-              groupedLabels.edgeLabel,
-              edge.label
-            );
-        if (label) labels.push(label);
-      });
-      return { edgeId, ...fromEdgeId(edgeId), labels };
-    }),
+    edges: visibleEdges.values().map((edge) => ({
+      clientId: nodeIdToText(edge.clientId),
+      serverId: nodeIdToText(edge.serverId),
+      edgeId: makeEdgeId(edge.clientId, edge.serverId),
+      labels: [...new Set<string>(edge.labels)].sort(),
+    })),
   };
 
   log("createImage");

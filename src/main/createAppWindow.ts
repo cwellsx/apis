@@ -186,7 +186,8 @@ export const createAppWindow = (
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
     const calls = sqlLoaded.readCalls(getAssemblyNames(apiViewOptions.groupExpanded));
     const typeNames = sqlLoaded.readTypeNames();
-    const viewGraph = convertLoadedToApis(calls, apiViewOptions, typeNames, sqlLoaded.viewState.exes);
+    const methodNames = sqlLoaded.readMethodNames();
+    const viewGraph = convertLoadedToApis(calls, apiViewOptions, typeNames, methodNames, sqlLoaded.viewState.exes);
     show.showMessage("foo", `${calls.length} records`);
     log("renderer.showView");
     renderer.showView(viewGraph);

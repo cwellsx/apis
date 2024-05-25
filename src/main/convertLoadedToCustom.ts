@@ -48,7 +48,7 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
         edges.push({
           clientId: nameNodeId("customLeaf", node.id),
           serverId: nameNodeId("customLeaf", dependency.id),
-          label,
+          labels: label ? [label] : [],
         });
       });
   });

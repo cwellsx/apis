@@ -1,7 +1,7 @@
 import { CustomError } from "./customError";
 import { Image } from "./image";
 import { MethodBody } from "./methodBody";
-import { Node } from "./treeNodes";
+import { Node } from "./node";
 import { ErrorsViewOptions, GraphViewOptions, GreetingViewOptions } from "./viewOptions";
 
 export type ViewGraph = {
