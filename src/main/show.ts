@@ -4,7 +4,7 @@ import { getErrorString } from "./error";
 
 export type Show = {
   showException: (error: unknown) => void;
-  showMessage: (title: string, message: string) => void;
+  showMessage: (title: string | undefined, message: string) => void;
 };
 
 export const show = (mainWindow: BrowserWindow): Show => {
@@ -22,8 +22,8 @@ export const show = (mainWindow: BrowserWindow): Show => {
     const message = getErrorString(error);
     showGreeting(message);
   };
-  const showMessage = (title: string, message: string): void => {
-    mainWindow.setTitle(title);
+  const showMessage = (title: string | undefined, message: string): void => {
+    if (title) mainWindow.setTitle(title);
     showGreeting(message);
   };
 

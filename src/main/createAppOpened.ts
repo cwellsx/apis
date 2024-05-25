@@ -72,7 +72,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         sqlLoaded.save(reflected, when, dataSource.hash);
       } else log("!getLoaded");
       const appWindow = createAppWindow(mainWindow, sqlLoaded, sqlConfig, dataSource.path);
-      appWindow.showViewType();
+      appWindow.openViewType();
 
       // initialize ViewMenu before the menu is recreated
       const menuItems: ViewMenuItem[] = [
@@ -84,7 +84,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         menuItems,
         getViewType: () => sqlLoaded?.viewState.viewType,
         showViewType: (viewType?: ViewType): void => {
-          appWindow.showViewType(viewType);
+          appWindow.openViewType(viewType);
           setApplicationMenu();
         },
       };
@@ -98,7 +98,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         sqlCustom.save(nodes, errors, when);
       }
       const customWindow = createCustomWindow(mainWindow, sqlCustom, sqlConfig, dataSource.path);
-      customWindow.showViewType();
+      customWindow.openViewType();
 
       const menuItems: ViewMenuItem[] = [{ label: "Custom JSON", viewType: "custom" }];
       if (sqlCustom.readErrors().length !== 0)
@@ -107,7 +107,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         menuItems,
         getViewType: () => sqlCustom?.viewState.viewType,
         showViewType: (viewType?: ViewType): void => {
-          customWindow.showViewType(viewType);
+          customWindow.openViewType(viewType);
           setApplicationMenu();
         },
       };

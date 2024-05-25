@@ -12,7 +12,7 @@ import { textToNodeId, toggleNodeId } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import { log } from "./log";
-import { renderer as createRenderer, show as createShow } from "./show";
+import { renderer as createRenderer } from "./show";
 import { SqlConfig, SqlCustom } from "./sqlTables";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
@@ -20,11 +20,9 @@ export const createCustomWindow = (
   window: BrowserWindow,
   sqlCustom: SqlCustom,
   sqlConfig: SqlConfig,
-  title: string
+  dataSourcePath: string
 ): AppWindow => {
-  const show = createShow(window);
   const renderer = createRenderer(window);
-  window.setTitle(title);
   renderer.showAppOptions(sqlConfig.appOptions);
 
   const setCustomViewOptions = (viewOptions: AllViewOptions): void => {
@@ -102,23 +100,36 @@ export const createCustomWindow = (
     renderer.showView(viewErrors);
   };
 
-  const showViewType = (viewType?: ViewType): void => {
-    if (viewType) sqlCustom.viewState.viewType = viewType;
-    else viewType = sqlCustom.viewState.viewType;
+  const showViewType = (viewType: ViewType): void => {
     switch (viewType) {
       case "custom":
         showCustom();
         break;
-
       case "errors":
         showErrors();
         break;
-
       default:
         throw new Error("ViewType not implemented");
     }
   };
-  const self = { mainApi, window, showViewType };
+
+  const openViewType = (viewType?: ViewType): void => {
+    if (viewType) sqlCustom.viewState.viewType = viewType;
+    else viewType = sqlCustom.viewState.viewType;
+    switch (viewType) {
+      case "custom":
+        window.setTitle(`${dataSourcePath}`);
+        break;
+      case "errors":
+        window.setTitle(`Errors — ${dataSourcePath}`);
+        break;
+      default:
+        throw new Error("ViewType not implemented");
+    }
+    showViewType(viewType);
+  };
+
+  const self = { mainApi, window, openViewType };
   appWindows.add(self);
   return self;
 };

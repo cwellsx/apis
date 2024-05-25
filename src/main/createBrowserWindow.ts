@@ -42,7 +42,7 @@ export const createSecondWindow = (): Promise<BrowserWindow> => {
 export type AppWindow = {
   mainApi: MainApi;
   window: BrowserWindow;
-  showViewType: (viewType?: ViewType) => void;
+  openViewType: (viewType?: ViewType) => void;
 };
 
 export const appWindows = (() => {

@@ -35,7 +35,7 @@ export const createAppWindow = (
   window: BrowserWindow,
   sqlLoaded: SqlLoaded,
   sqlConfig: SqlConfig,
-  title: string
+  dataSourcePath: string
 ): AppWindow & { showMethods: (methodId?: MethodNodeId) => void } => {
   const show = createShow(window);
   const renderer = createRenderer(window);
@@ -138,7 +138,8 @@ export const createAppWindow = (
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
       createSecondWindow().then((secondWindow) => {
-        const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, "Method");
+        const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, dataSourcePath);
+        secondWindow.setTitle(`Method — ${dataSourcePath}`);
         appWindow.showMethods(nodeId);
       });
     },
@@ -185,17 +186,15 @@ export const createAppWindow = (
   const showApis = (): void => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
     const calls = sqlLoaded.readCalls(getAssemblyNames(apiViewOptions.groupExpanded));
+    show.showMessage(undefined, `${calls.length} records`);
     const typeNames = sqlLoaded.readTypeNames();
     const methodNames = sqlLoaded.readMethodNames();
     const viewGraph = convertLoadedToApis(calls, apiViewOptions, typeNames, methodNames, sqlLoaded.viewState.exes);
-    show.showMessage("foo", `${calls.length} records`);
     log("renderer.showView");
     renderer.showView(viewGraph);
   };
 
-  const showViewType = (viewType?: ViewType): void => {
-    if (viewType) sqlLoaded.viewState.viewType = viewType;
-    else viewType = sqlLoaded.viewState.viewType;
+  const showViewType = (viewType: ViewType): void => {
     switch (viewType) {
       case "references":
         showReferences();
@@ -214,10 +213,30 @@ export const createAppWindow = (
     }
   };
 
-  window.setTitle(title);
+  const openViewType = (viewType?: ViewType): void => {
+    if (viewType) sqlLoaded.viewState.viewType = viewType;
+    else viewType = sqlLoaded.viewState.viewType;
+    switch (viewType) {
+      case "references":
+        window.setTitle(`References — ${dataSourcePath}`);
+        break;
+      case "methods":
+        throw new Error("Expect this to be opened only in a second window");
+      case "errors":
+        window.setTitle(`Errors — ${dataSourcePath}`);
+        break;
+      case "apis":
+        window.setTitle(`APIs — ${dataSourcePath}`);
+        break;
+      default:
+        throw new Error("ViewType not implemented");
+    }
+    showViewType(viewType);
+  };
+
   renderer.showAppOptions(sqlConfig.appOptions);
 
-  const self = { mainApi, window, showViewType, showMethods };
+  const self = { mainApi, window, openViewType, showMethods };
   appWindows.add(self);
   return self;
 };
