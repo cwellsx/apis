@@ -1,6 +1,6 @@
 import type { Leaf, ReferenceViewOptions, ViewGraph } from "../shared-types";
 import { nameNodeId } from "../shared-types";
-import { convertLoadedToGroups } from "./convertLoadedToGroups";
+import { convertNamesToGroups } from "./convertNamesToGroups";
 import { convertToImage } from "./convertToImage";
 import type { AssemblyReferences } from "./loaded";
 import { log } from "./log";
@@ -27,7 +27,7 @@ export const convertLoadedToReferences = (
     names.push(...references);
   }
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const { groups } = convertLoadedToGroups(names, exes, "assembly");
+  const { groups } = convertNamesToGroups(names, exes, "assembly");
   const image = convertToImage(viewOptions.showGrouped ? groups : leafs, edges, viewOptions);
   return { groups, image, viewOptions };
 };

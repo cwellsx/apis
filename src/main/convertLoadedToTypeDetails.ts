@@ -17,22 +17,13 @@ import type {
   Members as LoadedMembers,
   MethodMember,
   NamedTypeInfo,
-  Parameter,
   PropertyMember,
   TypeId,
 } from "./loaded";
 import { Access as LoadedAccess, isPartTypeInfo, namedTypeInfo } from "./loaded";
-import { options } from "./shared-types";
-import { SavedTypeInfo } from "./sqlTables";
+import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "./shared-types";
 
 type Exceptions = Named[];
-
-export const getTypeName = (name: string, generic?: TypeId[]): string => {
-  if (!generic) return name;
-  const index = name.indexOf("`");
-  return (index === -1 ? name : name.substring(0, index)) + `<${generic.map((it) => it.name).join(",")}>`;
-};
-const getTypeIdName = (typeId: TypeId): string => getTypeName(typeId.name, typeId.genericTypeArguments);
 
 const getAttributes = (attributes: string[] | undefined, getArtificialNodeId: GetArtificialNodeId): Named[] => {
   const parseAttribute = (attribute: string): { namespace?: string; name: string; args?: string } => {
@@ -54,7 +45,7 @@ const getAttributes = (attributes: string[] | undefined, getArtificialNodeId: Ge
       try {
         const { namespace, name, args } = parseAttribute(attribute);
         if (
-          !options.compilerAttributes &&
+          !options.showCompilerGeneratedAttributes &&
           (namespace == "System.Runtime.CompilerServices" ||
             name == "AttributeUsageAttribute" ||
             name == "EmbeddedAttribute")
@@ -95,61 +86,6 @@ const getAccess = (access: LoadedAccess): Access => {
     case LoadedAccess.Private:
       return "private";
   }
-};
-
-const getGenericName = (name: string, genericArguments: TypeId[] | undefined): string =>
-  !genericArguments ? name : `${name}<${genericArguments.map(getTypeIdName).join(", ")}>`;
-
-export const getMethodName = (methodMember: MethodMember): string => {
-  const getName = (name: string, parameters: Parameter[] | undefined): string =>
-    !parameters ? name : `${name}(${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")})`;
-  return getName(getGenericName(methodMember.name, methodMember.genericArguments), methodMember.parameters);
-};
-
-const getPropertyName = (propertyMember: PropertyMember): string => {
-  const getName = (name: string, parameters: Parameter[] | undefined): string =>
-    !parameters ? name : `${name}[${parameters.map((parameter) => getTypeIdName(parameter.type)).join(", ")}]`;
-  return getName(propertyMember.name, propertyMember.parameters);
-};
-
-export const getTypeInfoName = (typeInfo: NamedTypeInfo | SavedTypeInfo): string =>
-  getTypeName(typeInfo.typeId.name, typeInfo.genericTypeParameters ?? typeInfo.typeId.genericTypeArguments);
-
-const nestTypes = (
-  allTypes: NamedTypeInfo[]
-): { rootTypes: NamedTypeInfo[]; getChildren: (typeId: TypeId) => NamedTypeInfo[]; unwantedTypes: Set<number> } => {
-  // create Map of every type's children, and an array of all the root types
-  const childTypes = new Map<number, NamedTypeInfo[]>(allTypes.map((typeInfo) => [typeInfo.typeId.metadataToken, []]));
-  const getChildren = (typeId: TypeId): NamedTypeInfo[] => {
-    const found = childTypes.get(typeId.metadataToken);
-    if (!found) throw new Error(`!findElement(${typeId.metadataToken})`);
-    return found;
-  };
-  const rootTypes: NamedTypeInfo[] = [];
-  allTypes.forEach((typeInfo) => {
-    if (typeInfo.typeId.declaringType) getChildren(typeInfo.typeId.declaringType).push(typeInfo);
-    else rootTypes.push(typeInfo);
-  });
-
-  // find unwanted types
-  const unwantedTypes = new Set<number>();
-  if (!options.compilerGenerated) {
-    const addUnwanted = (typeInfo: NamedTypeInfo): void => {
-      unwantedTypes.add(typeInfo.typeId.metadataToken);
-      const children = getChildren(typeInfo.typeId);
-      children.forEach(addUnwanted); // <- recurses
-    };
-
-    const isCompilerGeneratedAttribute = (attribute: string): boolean =>
-      attribute === "[System.Runtime.CompilerServices.CompilerGeneratedAttribute]";
-
-    const isCompilerGeneratedType = (typeInfo: NamedTypeInfo): boolean =>
-      typeInfo.attributes?.some(isCompilerGeneratedAttribute) ?? false;
-
-    allTypes.filter(isCompilerGeneratedType).forEach(addUnwanted);
-  }
-
-  return { rootTypes, getChildren, unwantedTypes };
 };
 
 export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: string): Types => {
@@ -225,7 +161,8 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: str
   const { rootTypes, getChildren, unwantedTypes } = nestTypes(named);
 
   // optionally remove compiler-generated types
-  const isWantedType = (typeInfo: NamedTypeInfo): boolean => !unwantedTypes.has(typeInfo.typeId.metadataToken);
+  const isWantedType = (typeInfo: NamedTypeInfo): boolean =>
+    options.showCompilerGeneratedTypes ? true : unwantedTypes[typeInfo.typeId.metadataToken] === undefined;
 
   // group by namespace
   const grouped = new Map<string, NamedTypeInfo[]>();

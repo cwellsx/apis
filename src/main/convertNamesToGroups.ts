@@ -7,7 +7,7 @@ import { distinctor, options, remove, replace } from "./shared-types";
   This is a depth-first implementation, could if needed change it to be breadth-first.
 */
 
-export const convertLoadedToGroups = (
+export const convertNamesToGroups = (
   names: string[],
   exes: string[],
   nameType: NameTypes

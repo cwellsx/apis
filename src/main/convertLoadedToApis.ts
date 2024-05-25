@@ -1,19 +1,35 @@
 import type { ApiViewOptions, Leaf, ViewGraph } from "../shared-types";
 import { Parent, isParent, metadataNodeId } from "../shared-types";
-import { convertLoadedToGroups } from "./convertLoadedToGroups";
-import { getTypeInfoName } from "./convertLoadedToTypeDetails";
+import { convertNamesToGroups } from "./convertNamesToGroups";
 import { convertToImage } from "./convertToImage";
 import { log } from "./log";
 import { type Edge } from "./shared-types";
-import { ApiColumns, SavedTypeInfos } from "./sqlTables";
+import { CallColumns, TypeNameColumns } from "./sqlTables";
 
 export const convertLoadedToApis = (
-  apis: ApiColumns[],
+  calls: CallColumns[],
   viewOptions: ApiViewOptions,
-  savedTypeInfos: SavedTypeInfos,
+  typeNames: TypeNameColumns[],
   exes: string[]
 ): ViewGraph => {
   log("convertLoadedToApis");
+
+  const assemblyTypeNames: { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
+  typeNames.forEach((typeName) => {
+    let found: { [typeId: number]: TypeNameColumns } = assemblyTypeNames[typeName.assemblyName];
+    if (!found) {
+      found = {};
+      assemblyTypeNames[typeName.assemblyName] = found;
+    }
+    found[typeName.metadataToken] = typeName;
+  });
+  const transform: (assemblyName: string, typeId: number) => number = (assemblyName: string, typeId: number) =>
+    assemblyTypeNames[assemblyName][typeId].wantedTypeId ?? typeId;
+  calls.forEach((call) => {
+    call.fromTypeId = transform(call.fromAssemblyName, call.fromTypeId);
+    call.toTypeId = transform(call.toAssemblyName, call.toTypeId);
+  });
+
   const assemblyTypes: { [assemblyName: string]: { [typeId: number]: Leaf } } = {};
   const edges: Edge[] = [];
 
@@ -24,15 +40,20 @@ export const convertLoadedToApis = (
       assemblyTypes[assemblyName] = types;
     }
     if (types[typeId]) return; // Leaf already created for this type
+
+    const typeName = assemblyTypeNames[assemblyName][typeId];
     const leaf: Leaf = {
       nodeId: metadataNodeId("type", assemblyName, typeId),
-      label: getTypeInfoName(savedTypeInfos[assemblyName][typeId]),
+      label: typeName.decoratedName,
       parent: null,
     };
     types[typeId] = leaf;
   };
 
-  apis.forEach((api) => {
+  calls.forEach((api) => {
+    if (api.fromAssemblyName === api.toAssemblyName && api.fromTypeId === api.toTypeId) return;
+    if (!api.fromTypeId || !api.toTypeId) return;
+
     addLeaf(api.fromAssemblyName, api.fromTypeId);
     addLeaf(api.toAssemblyName, api.toTypeId);
 
@@ -43,7 +64,7 @@ export const convertLoadedToApis = (
   });
 
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const { groups, leafs } = convertLoadedToGroups(Object.keys(assemblyTypes), exes, "assembly");
+  const { groups, leafs } = convertNamesToGroups(Object.keys(assemblyTypes), exes, "assembly");
 
   Object.entries(assemblyTypes).forEach(([assemblyName, types]) => {
     const node = leafs[assemblyName];

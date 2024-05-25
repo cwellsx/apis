@@ -184,10 +184,10 @@ export const createAppWindow = (
 
   const showApis = (): void => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
-    const apis = sqlLoaded.readCalls(getAssemblyNames(apiViewOptions.groupExpanded));
-    const savedTypeInfos = sqlLoaded.readSavedTypeInfos();
-    const viewGraph = convertLoadedToApis(apis, apiViewOptions, savedTypeInfos, sqlLoaded.viewState.exes);
-    show.showMessage("foo", `${apis.length} records`);
+    const calls = sqlLoaded.readCalls(getAssemblyNames(apiViewOptions.groupExpanded));
+    const typeNames = sqlLoaded.readTypeNames();
+    const viewGraph = convertLoadedToApis(calls, apiViewOptions, typeNames, sqlLoaded.viewState.exes);
+    show.showMessage("foo", `${calls.length} records`);
     log("renderer.showView");
     renderer.showView(viewGraph);
   };

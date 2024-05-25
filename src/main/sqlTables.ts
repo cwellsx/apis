@@ -24,13 +24,12 @@ import type {
 } from "./loaded";
 import { badTypeInfo, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
-import { TypeAndMethodDetails, distinctor } from "./shared-types";
+import { TypeAndMethodDetails, distinctor, getTypeInfoName, nestTypes } from "./shared-types";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
 
 export type BadCallInfo = { metadataToken: number };
 export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallInfos: BadCallInfo[] };
-export type ApiColumns = { fromAssemblyName: string; fromTypeId: number; toAssemblyName: string; toTypeId: number };
 
 /*
   This defines all SQLite tables used by the application, include the record format and the methods to access them
@@ -77,7 +76,6 @@ type AssemblyColumns = {
 type TypeColumns = {
   assemblyName: string;
   metadataToken: number; // Id of Type within assembly
-  namespace?: string; // not currently used
   typeInfo: string;
 };
 
@@ -97,22 +95,28 @@ type MethodColumns = {
   methodDetails: string;
 };
 
-type ErrorsColumns = {
+type ErrorColumns = {
   assemblyName: string;
   badTypeInfos: string;
   badCallInfos: string;
 };
 
-type CallsColumns = {
+export type CallColumns = {
   // this could be refactored as one table with three or four columns, plus a join table
   fromAssemblyName: string;
-  fromNamespace: string | undefined;
   fromTypeId: number;
   fromMethodId: number;
   toAssemblyName: string;
-  toNamespace: string | undefined;
   toTypeId: number;
   toMethodId: number;
+};
+
+export type TypeNameColumns = {
+  assemblyName: string;
+  metadataToken: number;
+  namespace: string | null;
+  decoratedName: string;
+  wantedTypeId: number | null;
 };
 
 type ConfigColumns = {
@@ -126,15 +130,13 @@ type RecentColumns = {
   when: number;
 };
 
-export type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
+type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
 const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
   const result: SavedTypeInfo = { ...typeInfo };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   delete (result as any)["members"];
   return result;
 };
-
-export type SavedTypeInfos = { [assemblyName: string]: { [typeId: number]: SavedTypeInfo } };
 
 type GoodTypeDictionary = {
   [key: number]: GoodTypeInfo;
@@ -202,7 +204,7 @@ export class SqlCustom {
   close: () => void;
 
   constructor(db: Database) {
-    const expectedSchemaVersion = "2024-05-12";
+    const customSchemaVersionExpected = "2024-05-12";
 
     // even though the CustomNode elements each have a unique id
     // don't bother to store the data in normalized tables
@@ -236,7 +238,7 @@ export class SqlCustom {
 
       this.viewState.onSave(
         when,
-        expectedSchemaVersion,
+        customSchemaVersionExpected,
         nodes.map((node) => nameNodeId("customLeaf", node.id)),
         [...nodeProperties],
         [...tags]
@@ -246,7 +248,7 @@ export class SqlCustom {
 
     this.shouldReload = (when: string): boolean =>
       !this.viewState.cachedWhen ||
-      expectedSchemaVersion !== this.viewState.customSchemaVersion ||
+      customSchemaVersionExpected !== this.viewState.customSchemaVersion ||
       Date.parse(this.viewState.cachedWhen) < Date.parse(when);
 
     this.readErrors = (): CustomError[] => {
@@ -323,25 +325,26 @@ export class SqlLoaded {
   readTypes: (assemblyName: string) => AllTypeInfo;
   readMethod: (assemblyName: string, methodId: number) => TypeAndMethodDetails;
   readErrors: () => ErrorsInfo[];
-  readCalls: (assemblyNames: string[]) => ApiColumns[];
-  readSavedTypeInfos: () => SavedTypeInfos;
+  readCalls: (assemblyNames: string[]) => CallColumns[];
+  readTypeNames: () => TypeNameColumns[];
   close: () => void;
 
   constructor(db: Database) {
-    const expectedSchemaVersion = "2024-05-09a";
+    const loadedSchemaVersionExpected = "2024-05-24a";
 
     this.viewState = new ViewState(db);
 
     const schema = this.viewState.loadedSchemaVersion;
-    if (schema !== expectedSchemaVersion) {
+    if (schema !== loadedSchemaVersionExpected) {
       // schema has changed
       dropTable(db, "assembly");
       dropTable(db, "type");
       dropTable(db, "member");
       dropTable(db, "method");
-      dropTable(db, "errors");
-      dropTable(db, "calls");
-      this.viewState.loadedSchemaVersion = expectedSchemaVersion;
+      dropTable(db, "error");
+      dropTable(db, "call");
+      dropTable(db, "typeName");
+      this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
 
@@ -349,18 +352,11 @@ export class SqlLoaded {
       assemblyName: "foo",
       references: "bar",
     });
-    const typeTable = new SqlTable<TypeColumns>(
-      db,
-      "type",
-      ["assemblyName", "metadataToken"],
-      (key) => key == "namespace",
-      {
-        assemblyName: "foo",
-        metadataToken: 1,
-        namespace: "baz",
-        typeInfo: "bar",
-      }
-    );
+    const typeTable = new SqlTable<TypeColumns>(db, "type", ["assemblyName", "metadataToken"], () => false, {
+      assemblyName: "foo",
+      metadataToken: 1,
+      typeInfo: "bar",
+    });
     const memberTable = new SqlTable<MemberColumns>(db, "member", ["assemblyName", "metadataToken"], () => false, {
       assemblyName: "foo",
       metadataToken: 1,
@@ -373,25 +369,36 @@ export class SqlLoaded {
       metadataToken: 1,
       methodDetails: "bar",
     });
-    const errorsTable = new SqlTable<ErrorsColumns>(db, "errors", "assemblyName", () => false, {
+    const errorTable = new SqlTable<ErrorColumns>(db, "error", "assemblyName", () => false, {
       assemblyName: "foo",
       badTypeInfos: "bar",
       badCallInfos: "baz",
     });
-    const callsTable = new SqlTable<CallsColumns>(
+    const callTable = new SqlTable<CallColumns>(
       db,
-      "calls",
+      "call",
       ["fromAssemblyName", "fromMethodId", "toAssemblyName", "toMethodId"],
-      (key) => key === "fromNamespace" || key === "toNamespace",
+      () => false,
       {
         fromAssemblyName: "foo",
-        fromNamespace: "foo",
         fromTypeId: 0,
         fromMethodId: 0,
         toAssemblyName: "bar",
-        toNamespace: "bar",
         toTypeId: 0,
         toMethodId: 0,
+      }
+    );
+    const typeNameTable = new SqlTable<TypeNameColumns>(
+      db,
+      "typeName",
+      ["assemblyName", "metadataToken"],
+      (key) => key === "namespace" || key === "wantedTypeId",
+      {
+        assemblyName: "foo",
+        metadataToken: 0,
+        namespace: "bar",
+        decoratedName: "baz",
+        wantedTypeId: 0,
       }
     );
 
@@ -402,8 +409,9 @@ export class SqlLoaded {
 
     this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
       // delete in reverse order
-      callsTable.deleteAll();
-      errorsTable.deleteAll();
+      typeNameTable.deleteAll();
+      callTable.deleteAll();
+      errorTable.deleteAll();
       methodTable.deleteAll();
       memberTable.deleteAll();
       typeTable.deleteAll();
@@ -412,16 +420,16 @@ export class SqlLoaded {
       log("save reflected.assemblies");
 
       // create a dictionary to find typeId from methodId
-      const assemblyTypes: {
-        [assemblyName: string]: { [methodId: number]: { typeId: number; namespace: string | undefined } };
+      const assemblyMethodTypes: {
+        [assemblyName: string]: { [methodId: number]: number };
       } = {};
 
       const assemblyTypeIds: TypeNodeId[] = [];
 
       for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
         // typeIds dictionary
-        const methodTypes: { [methodId: number]: { typeId: number; namespace: string | undefined } } = {};
-        assemblyTypes[assemblyName] = methodTypes;
+        const methodTypes: { [methodId: number]: number } = {};
+        assemblyMethodTypes[assemblyName] = methodTypes;
 
         // => assemblyTable
         assemblyTable.insert({ assemblyName, references: JSON.stringify(assemblyInfo.referencedAssemblies) });
@@ -436,18 +444,15 @@ export class SqlLoaded {
           typeTable.insert({
             assemblyName,
             metadataToken: typeInfo.typeId.metadataToken,
-            namespace: typeInfo.typeId.namespace,
             typeInfo: JSON.stringify(typeInfo),
           });
 
           assemblyTypeIds.push(typeNodeId(assemblyName, typeInfo.typeId.metadataToken));
 
-          const typeIdAndNamespace = { typeId: typeInfo.typeId.metadataToken, namespace: typeInfo.typeId.namespace };
-
           for (const [memberType, memberInfos] of Object.entries(members)) {
             const many: MemberColumns[] = memberInfos.map((memberInfo) => {
               if ((memberType as keyof Members) == "methodMembers")
-                methodTypes[memberInfo.metadataToken] = typeIdAndNamespace;
+                methodTypes[memberInfo.metadataToken] = typeInfo.typeId.metadataToken;
 
               return {
                 assemblyName,
@@ -463,10 +468,21 @@ export class SqlLoaded {
           }
         }
 
+        const { unwantedTypes } = nestTypes(allTypeInfo.good);
+        const typeNameColumns: TypeNameColumns[] = allTypeInfo.good.map((typeInfo) => ({
+          assemblyName,
+          metadataToken: typeInfo.typeId.metadataToken,
+          namespace: typeInfo.typeId.namespace ?? null,
+          decoratedName: getTypeInfoName(typeInfo),
+          wantedTypeId: unwantedTypes[typeInfo.typeId.metadataToken] ?? null,
+        }));
+        // => typeNameTable
+        typeNameTable.insertMany(typeNameColumns);
+
         // => errorsTable
         const bad = badTypeInfo(allTypeInfo);
         if (bad.length) {
-          errorsTable.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallInfos: JSON.stringify([]) });
+          errorTable.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallInfos: JSON.stringify([]) });
         }
       }
 
@@ -502,42 +518,40 @@ export class SqlLoaded {
 
         // => errorsTable
         if (badCallInfos.length) {
-          const found = errorsTable.selectOne({ assemblyName });
-          const columns = {
+          const found = errorTable.selectOne({ assemblyName });
+          const columns: ErrorColumns = {
             assemblyName,
             badTypeInfos: found?.badTypeInfos ?? JSON.stringify([]),
             badCallInfos: JSON.stringify(badCallInfos),
           };
-          if (found) errorsTable.update(columns);
-          else errorsTable.insert(columns);
+          if (found) errorTable.update(columns);
+          else errorTable.insert(columns);
         }
 
         // => methodTable
         methodTable.insertMany(methods);
       }
 
-      const callsColumns: CallsColumns[] = [];
+      const callColumns: CallColumns[] = [];
       Object.entries(assemblyCalls).forEach(([assemblyName, methodCalls]) =>
         Object.keys(methodCalls).forEach((key) => {
           const methodId = +key;
-          const fromType = assemblyTypes[assemblyName][methodId];
+          const fromTypeId = assemblyMethodTypes[assemblyName][methodId];
           methodCalls[methodId].forEach((called) => {
-            const toType = assemblyTypes[called.assemblyName][called.methodId];
-            callsColumns.push({
+            const toTypeId = assemblyMethodTypes[called.assemblyName][called.methodId];
+            callColumns.push({
               fromAssemblyName: assemblyName,
-              fromNamespace: fromType.namespace,
-              fromTypeId: fromType.typeId,
+              fromTypeId,
               fromMethodId: methodId,
               toAssemblyName: called.assemblyName,
-              toNamespace: toType.namespace,
-              toTypeId: toType.typeId,
+              toTypeId,
               toMethodId: called.methodId,
             });
           });
         })
       );
 
-      callsTable.insertMany(callsColumns);
+      callTable.insertMany(callColumns);
 
       // => viewState => _cache => _sqlConfig
       this.viewState.onSave(
@@ -557,7 +571,8 @@ export class SqlLoaded {
     this.shouldReload = (when: string): boolean =>
       !this.viewState.cachedWhen ||
       loadedVersion !== this.viewState.loadedVersion ||
-      Date.parse(this.viewState.cachedWhen) < Date.parse(when);
+      Date.parse(this.viewState.cachedWhen) < Date.parse(when) ||
+      loadedSchemaVersionExpected !== this.viewState.loadedSchemaVersion;
 
     this.readAssemblyReferences = () =>
       assemblyTable.selectAll().reduce<AssemblyReferences>((found, entry) => {
@@ -569,7 +584,7 @@ export class SqlLoaded {
       const where = { assemblyName };
 
       // all the bad types are JSON in a single record
-      const errors = errorsTable.selectWhere(where);
+      const errors = errorTable.selectWhere(where);
       const badTypes: BadTypeInfo[] = errors.length > 0 ? JSON.parse(errors[0].badTypeInfos) : [];
       const allTypeInfo = validateTypeInfo(badTypes);
 
@@ -608,18 +623,17 @@ export class SqlLoaded {
     };
 
     this.readErrors = (): ErrorsInfo[] =>
-      errorsTable.selectAll().map((errorColumns) => ({
+      errorTable.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
         badTypeInfos: JSON.parse(errorColumns.badTypeInfos),
         badCallInfos: JSON.parse(errorColumns.badCallInfos),
       }));
 
-    this.readCalls = (assemblyNames: string[]): ApiColumns[] => {
-      const sample: ApiColumns = { fromAssemblyName: "foo", fromTypeId: 0, toAssemblyName: "bar", toTypeId: 0 };
-      const result = callsTable.selectCustomSpecific(sample, true, "fromAssemblyName != toAssemblyName");
+    this.readCalls = (assemblyNames: string[]): CallColumns[] => {
+      const result = callTable.selectCustom(true, "fromAssemblyName != toAssemblyName");
       assemblyNames.forEach((assemblyName) =>
         result.push(
-          ...callsTable.selectCustom(true, "fromAssemblyName == toAssemblyName AND fromAssemblyName == @assemblyName", {
+          ...callTable.selectCustom(true, "fromAssemblyName == toAssemblyName AND fromAssemblyName == @assemblyName", {
             assemblyName,
           })
         )
@@ -627,20 +641,7 @@ export class SqlLoaded {
       return result;
     };
 
-    this.readSavedTypeInfos = (): SavedTypeInfos => {
-      const types = typeTable.selectAll();
-      const result: SavedTypeInfos = {};
-      types.forEach((type) => {
-        const { assemblyName, metadataToken, typeInfo } = type;
-        let assemblyTypes = result[assemblyName];
-        if (!assemblyTypes) {
-          assemblyTypes = {};
-          result[assemblyName] = assemblyTypes;
-        }
-        assemblyTypes[metadataToken] = JSON.parse(typeInfo);
-      });
-      return result;
-    };
+    this.readTypeNames = (): TypeNameColumns[] => typeNameTable.selectAll();
 
     this.close = () => {
       done();
