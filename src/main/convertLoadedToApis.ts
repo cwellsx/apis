@@ -90,6 +90,6 @@ export const convertLoadedToApis = (
     parent["children"] = children;
   });
 
-  const image = convertToImage(groups, edges.values(), viewOptions);
+  const image = convertToImage(groups, edges.values(), viewOptions, undefined);
   return { groups, image, viewOptions };
 };

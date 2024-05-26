@@ -1,5 +1,13 @@
-import type { GraphViewOptions, GroupedLabels, Image, Node, NodeId } from "../shared-types";
-import { NodeIdMap, createLookupNodeId, isParent, makeEdgeId, nodeIdToText } from "../shared-types";
+import type { GraphViewOptions, Image, Node, NodeId } from "../shared-types";
+import {
+  NodeIdMap,
+  NodeIdSet,
+  createLookupNodeId,
+  getShowEdgeLabels,
+  isParent,
+  makeEdgeId,
+  nodeIdToText,
+} from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
@@ -10,8 +18,7 @@ export function convertToImage(
   nodes: Node[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
-  imageAttributes?: NodeIdMap<ImageAttribute>,
-  groupedLabels?: GroupedLabels
+  imageAttributes?: NodeIdMap<ImageAttribute>
 ): Image | string {
   const { leafVisible, groupExpanded } = viewOptions;
   const isLeafVisible = createLookupNodeId(leafVisible);
@@ -57,20 +64,20 @@ export function convertToImage(
   };
   nodes.forEach((node) => findClosed(node, null));
 
+  const edgeLeafs = new NodeIdSet();
+
   // create groups of visible edges
   const visibleEdges = new Edges();
   edges
     .filter((edge) => isLeafVisible(edge.clientId) && isLeafVisible(edge.serverId))
     .forEach((edge) => {
+      edgeLeafs.add(edge.clientId);
+      edgeLeafs.add(edge.serverId);
       const clientClosedBy = closedBy.get(edge.clientId);
       const serverClosedBy = closedBy.get(edge.serverId);
       const labels = !serverClosedBy ? edge.labels : [allNodes.getOrThrow(serverClosedBy.child).label];
       visibleEdges.add(clientClosedBy?.parent ?? edge.clientId, serverClosedBy?.parent ?? edge.serverId, labels);
     });
-
-  // whether a group is visible depends on whether it contains visible leafs
-  const isGroupNodeVisible = (node: Node): boolean =>
-    isParent(node) ? node.children.some((child) => isGroupNodeVisible(child)) : isLeafVisible(node.nodeId);
 
   const metaGroupLabels = [".NET", "3rd-party"];
 
@@ -106,16 +113,33 @@ export function convertToImage(
       : { type: "subgraph", ...textNode, children: toImageNodes(node.children) };
   };
 
-  const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isGroupNodeVisible).map(toImageNode);
+  // whether a group is visible depends on whether it contains visible leafs
+  const isNodeVisible = (node: Node): boolean =>
+    isParent(node)
+      ? node.children.some((child) => isNodeVisible(child))
+      : isLeafVisible(node.nodeId) && edgeLeafs.has(node.nodeId);
 
+  const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isNodeVisible).map(toImageNode);
+
+  const showEdgeLabels = getShowEdgeLabels(viewOptions);
+  const leafType = viewOptions.leafType;
   const imageData: ImageData = {
     nodes: toImageNodes(nodes),
-    edges: visibleEdges.values().map((edge) => ({
-      clientId: nodeIdToText(edge.clientId),
-      serverId: nodeIdToText(edge.serverId),
-      edgeId: makeEdgeId(edge.clientId, edge.serverId),
-      labels: [...new Set<string>(edge.labels)].sort(),
-    })),
+    edges: visibleEdges.values().map((edge) => {
+      const labels = [...new Set<string>(edge.labels)].sort();
+      const showLabels = !showEdgeLabels
+        ? false
+        : edge.serverId.type === leafType
+        ? showEdgeLabels.leafs
+        : showEdgeLabels.groups;
+      return {
+        clientId: nodeIdToText(edge.clientId),
+        serverId: nodeIdToText(edge.serverId),
+        edgeId: makeEdgeId(edge.clientId, edge.serverId),
+        labels: showLabels ? labels : [],
+        titles: labels,
+      };
+    }),
   };
 
   log("createImage");

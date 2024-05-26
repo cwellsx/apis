@@ -153,6 +153,7 @@ const defaultReferenceViewOptions: ReferenceViewOptions = {
   leafVisible: [],
   groupExpanded: [],
   viewType: "references",
+  leafType: "assembly",
 };
 
 const defaultMethodViewOptions: MethodViewOptions = {
@@ -161,13 +162,19 @@ const defaultMethodViewOptions: MethodViewOptions = {
   topType: "assembly",
   methodId: methodNodeId("?", 0),
   viewType: "methods",
+  leafType: "method",
 };
 
 const defaultApiViewOptions: ApiViewOptions = {
-  showGrouped: true,
   leafVisible: [],
   groupExpanded: [],
   viewType: "apis",
+  leafType: "type",
+  showEdgeLabels: {
+    groups: false,
+    leafs: false,
+  },
+  showIntraAssemblyCalls: false,
 };
 
 const defaultCustomViewOptions: CustomViewOptions = {
@@ -176,15 +183,12 @@ const defaultCustomViewOptions: CustomViewOptions = {
   nodeProperties: [],
   groupedBy: [],
   tags: [],
-  edgeLabels: {
-    label: true,
-    attributes: false,
-  },
-  groupedLabels: {
-    serverLabel: true,
-    edgeLabel: false,
-  },
   viewType: "custom",
+  leafType: "customLeaf",
+  showEdgeLabels: {
+    groups: false,
+    leafs: false,
+  },
 };
 
 export class SqlCustom {
@@ -337,7 +341,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-05-25b";
+    const loadedSchemaVersionExpected = "2024-05-26";
 
     this.viewState = new ViewState(db);
 

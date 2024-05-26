@@ -22,13 +22,13 @@ export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
-export { joinLabel } from "./viewOptions";
+export { getShowEdgeLabels, getShowGrouped, getShowIntraAssemblyCalls } from "./viewOptions";
 export type {
   ApiViewOptions,
   CustomViewOptions,
+  GetSetBoolean,
   GraphViewOptions,
   GraphViewType,
-  GroupedLabels,
   MethodViewOptions,
   ReferenceViewOptions,
 } from "./viewOptions";

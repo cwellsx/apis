@@ -185,7 +185,9 @@ export const createAppWindow = (
 
   const showApis = (): void => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
-    const calls = sqlLoaded.readCalls(getAssemblyNames(apiViewOptions.groupExpanded));
+    const calls = sqlLoaded.readCalls(
+      apiViewOptions.showIntraAssemblyCalls ? getAssemblyNames(apiViewOptions.groupExpanded) : []
+    );
     show.showMessage(undefined, `${calls.length} records`);
     const typeNames = sqlLoaded.readTypeNames();
     const methodNames = sqlLoaded.readMethodNames();

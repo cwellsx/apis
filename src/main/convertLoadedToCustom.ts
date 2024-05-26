@@ -1,5 +1,5 @@
 import type { CustomViewOptions, Leaf, Node, Parent, ViewGraph } from "../shared-types";
-import { groupByNodeId, joinLabel, nameNodeId } from "../shared-types";
+import { groupByNodeId, nameNodeId } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
@@ -36,14 +36,8 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
         Object.entries(dependency).forEach(([key, value]) => {
           if (value === true) booleans.push(key);
         });
-        const attributes = booleans.join(", ");
 
-        const label = joinLabel(
-          viewOptions.edgeLabels.label,
-          dependency.label,
-          viewOptions.edgeLabels.attributes,
-          attributes
-        );
+        const label = dependency.label;
 
         edges.push({
           clientId: nameNodeId("customLeaf", node.id),
@@ -77,6 +71,6 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
     });
   } else groups.push(...Object.values(leafs));
 
-  const image = convertToImage(groups, edges, viewOptions, undefined, viewOptions.groupedLabels);
+  const image = convertToImage(groups, edges, viewOptions, undefined);
   return { groups, image, viewOptions };
 };

@@ -35,7 +35,7 @@ export type ImageNode = (ImageText & { type: "node" | "group" }) | Subgraph;
 
 export type ImageData = {
   nodes: ImageNode[];
-  edges: { clientId: string; serverId: string; edgeId: string; labels: string[] }[];
+  edges: { clientId: string; serverId: string; edgeId: string; labels: string[]; titles: string[] }[];
 };
 
 const findDotExe = (): string => {
@@ -98,9 +98,11 @@ const getDotFormat = (imageData: ImageData): { lines: string[]; nodes: { [nodeId
   pushLayer(Object.values(imageData.nodes), 0);
 
   // push the map of grouped edges
-  imageData.edges.forEach(({ clientId, serverId, edgeId, labels }) => {
-    const label = labels.join("\r\n");
-    const labelAttributes = `, label="${label}", tooltip="${label}"`;
+  imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
+    // use \l instead of \r\n to left-justify
+    // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
+    const join: (strings: string[]) => string = (strings: string[]) => strings.join("\\l") + "\\l";
+    const labelAttributes = `, label="${join(labels)}", tooltip="${join(titles)}"`;
     lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
   });
 

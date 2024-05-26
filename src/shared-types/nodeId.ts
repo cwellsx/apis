@@ -188,6 +188,21 @@ export const createLookupNodeId = (array: NodeId[]): ((nodeId: NodeId) => boolea
   return lookupNodeId;
 };
 
+export class NodeIdSet {
+  private array: NodeId[] = [];
+  private findIndex: (key: NodeId) => number;
+  add: (key: NodeId) => void;
+  has: (key: NodeId) => boolean;
+
+  constructor() {
+    this.findIndex = (key: NodeId): number => this.array.findIndex((found) => nodeIdEquals(found, key));
+    this.add = (key: NodeId): void => {
+      if (!this.has(key)) this.array.push(key);
+    };
+    this.has = (key: NodeId): boolean => this.findIndex(key) !== -1;
+  }
+}
+
 export class NodeIdMap<TValue> {
   private array: { key: NodeId; value: TValue }[] = [];
   private findIndex: (key: NodeId) => number;
