@@ -49,6 +49,13 @@ export function convertToImage(
   };
   nodes.forEach(assertUnique);
 
+  const allEdgeIds = new Set<string>();
+  edges.forEach((edge) => {
+    const edgeId = makeEdgeId(edge.clientId, edge.serverId);
+    if (allEdgeIds.has(edgeId)) throw new Error(`Duplicate edge id: ${edgeId}`);
+    allEdgeIds.add(edgeId);
+  });
+
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   // parent is the displayed but non-expanded parent
   // child is its immediate child which is the leaf or perhaps the ancestor of the leaf

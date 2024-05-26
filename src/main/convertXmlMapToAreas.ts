@@ -1,5 +1,5 @@
 import { ElementCompact, xml2js } from "xml-js";
-import { Area, AreaClass } from "../shared-types";
+import { Area, AreaClass, isEdgeId, makeUniqueEdgeId } from "../shared-types";
 
 /*
 Input is a *.map file, created by Graphviz, which has a format like this:
@@ -69,11 +69,28 @@ export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string
   const root: ElementCompact = xml2js(xml, { compact: true });
   const converted: Attributes[] | Attributes = root["map"]["area"];
   const areas: Attributes[] = Array.isArray(converted) ? converted : [converted];
+
+  // very long edges are split (by GraphViz) into two areas with identical id values
+  const allIds = new Set<string>();
+  const makeUniqueId = (id: string): string => {
+    if (allIds.has(id)) {
+      if (!isEdgeId(id)) throw new Error("Duplicated non-edge id");
+      const original = id;
+      for (let index = 1; ; ++index) {
+        id = makeUniqueEdgeId(original, index);
+        if (!allIds.has(id)) break;
+      }
+    }
+    allIds.add(id);
+    return id;
+  };
+
   return areas.map((el) => {
     const attr = el._attributes;
     const coords = attr.coords.split(",").map((s) => parseInt(s));
     const { className, tooltip } = getNodeAttributes(attr.id);
-    const area = { id: attr.id, shape: attr.shape, coords, className, tooltip: tooltip ?? attr.title };
+
+    const area = { id: makeUniqueId(attr.id), shape: attr.shape, coords, className, tooltip: tooltip ?? attr.title };
     if (!area.id || (area.shape != "poly" && area.shape != "rect") || coords.length == 0 || coords.length % 2 != 0)
       throw new Error("Missing Area property");
     return area;

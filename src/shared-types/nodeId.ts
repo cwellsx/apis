@@ -165,6 +165,8 @@ export const fromEdgeId = (edgeId: string): { clientId: string; serverId: string
   const split = edgeId.split("||");
   return { clientId: split[0], serverId: split[1] };
 };
+export const isEdgeId = (id: string): boolean => id.includes("||");
+export const makeUniqueEdgeId = (edgeId: string, index: number): string => `${edgeId}-${index}`;
 
 // NodeId[]
 
