@@ -61,7 +61,9 @@ const defaultShape = (node: ImageNode): Shape => {
   }
 };
 
-const getDotFormat = (imageData: ImageData): { lines: string[]; nodes: { [nodeId: string]: ImageNode } } => {
+const getDotFormat = (
+  imageData: ImageData
+): { lines: string[]; nodes: { [nodeId: string]: ImageNode }; edgeTitles: { [nodeId: string]: string } } => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   lines.push("  labeljust=l");
@@ -97,22 +99,26 @@ const getDotFormat = (imageData: ImageData): { lines: string[]; nodes: { [nodeId
   };
   pushLayer(Object.values(imageData.nodes), 0);
 
+  const edgeTitles: { [nodeId: string]: string } = {};
+
   // push the map of grouped edges
   imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
     // use \l instead of \r\n to left-justify
     // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
+    const edgeTitle = `${nodes[clientId].label} → ${nodes[serverId].label}`;
+    edgeTitles[edgeId] = edgeTitle;
     const join: (strings: string[]) => string = (strings: string[]) => strings.join("\\l") + "\\l";
-    const labelAttributes = `, label="${join(labels)}", tooltip="${join(titles)}"`;
+    const labelAttributes = `, label="${join(labels)}", tooltip="${join([edgeTitle, ...titles])}"`;
     lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
   });
 
   lines.push("}");
-  return { lines, nodes };
+  return { lines, nodes, edgeTitles };
 };
 
 export function createImage(imageData: ImageData): Image {
   log("createImage");
-  const { lines, nodes } = getDotFormat(imageData);
+  const { lines, nodes, edgeTitles } = getDotFormat(imageData);
 
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");
@@ -128,6 +134,10 @@ export function createImage(imageData: ImageData): Image {
   const xml = readFileSync(mapFilename);
 
   const getAreaAttributes = (id: string) => {
+    if (id.endsWith("-label")) {
+      // this is the label of an edge
+      return { className: undefined, tooltip: edgeTitles[id.substring(0, id.length - 6)] };
+    }
     // may be undefined because this is also called for edges
     const node: ImageNode | undefined = nodes[id];
     const className = node?.className;

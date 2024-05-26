@@ -73,7 +73,7 @@ export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string
     const attr = el._attributes;
     const coords = attr.coords.split(",").map((s) => parseInt(s));
     const { className, tooltip } = getNodeAttributes(attr.id);
-    const area = { id: attr.id, shape: attr.shape, coords, className, tooltip: attr.title ?? tooltip };
+    const area = { id: attr.id, shape: attr.shape, coords, className, tooltip: tooltip ?? attr.title };
     if (!area.id || (area.shape != "poly" && area.shape != "rect") || coords.length == 0 || coords.length % 2 != 0)
       throw new Error("Missing Area property");
     return area;

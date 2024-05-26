@@ -6,12 +6,10 @@ There is no "Done" section in this document, instead see the history of updates/
 
 ## Refactor and improve
 
-- Remove GroupedLabels type
-- Implement toDictionary generic function from an array
 - Click on edge to show APIs as a detail
 - Sanitize the Error schema in the Reflected data
-- Add tooltips to edges -- names of methods or types depending on whether the target is expanded
 - Maybe normalize the database, plus materialize various joins at save-time
+- Implement toDictionary generic function from an array
 
 ## Features
 
