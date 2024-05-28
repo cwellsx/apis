@@ -21,7 +21,7 @@ const convert = (node: TreeNode): CheckboxNode => {
     label: node.label,
     // a parent node may have the same label as its first child, so mangle the id of all parents
     value: nodeIdToText(node.nodeId),
-    children: isParent(node) ? node.children.map(convert) : undefined,
+    children: isParent(node) ? node.children.sort((x, y) => x.label.localeCompare(y.label)).map(convert) : undefined,
   };
 };
 

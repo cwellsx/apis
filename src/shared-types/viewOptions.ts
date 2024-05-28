@@ -8,14 +8,12 @@ type ViewOptions = {
 export type ReferenceViewOptions = ViewOptions & {
   showGrouped: boolean;
   viewType: "references";
-  leafType: "assembly";
 };
 
 export type MethodViewOptions = ViewOptions & {
   topType: "assembly" | "namespace" | "none";
   methodId: MethodNodeId;
   viewType: "methods";
-  leafType: "method";
 };
 
 type ShowEdgeLabels = {
@@ -27,7 +25,6 @@ export type ApiViewOptions = ViewOptions & {
   showEdgeLabels: ShowEdgeLabels;
   showIntraAssemblyCalls: boolean;
   viewType: "apis";
-  leafType: "type";
 };
 
 export type CustomViewOptions = ViewOptions & {
@@ -36,7 +33,6 @@ export type CustomViewOptions = ViewOptions & {
   tags: { tag: string; shown: boolean }[];
   showEdgeLabels: ShowEdgeLabels;
   viewType: "custom";
-  leafType: "customLeaf";
 };
 
 export type ErrorsViewOptions = {
@@ -52,10 +48,10 @@ export type GraphViewType = "references" | "methods" | "apis" | "custom";
 
 export const graphViewTypes = ["references", "methods", "apis"];
 
-type AllGraphViewOptions = Omit<ReferenceViewOptions, "viewType" | "leafType"> &
-  Omit<MethodViewOptions, "viewType" | "leafType"> &
-  Omit<ApiViewOptions, "viewType" | "leafType"> &
-  Omit<CustomViewOptions, "viewType" | "leafType">;
+type AllGraphViewOptions = Omit<ReferenceViewOptions, "viewType"> &
+  Omit<MethodViewOptions, "viewType"> &
+  Omit<ApiViewOptions, "viewType"> &
+  Omit<CustomViewOptions, "viewType">;
 
 export const getShowEdgeLabels = (viewOptions: Partial<AllGraphViewOptions>): ShowEdgeLabels | undefined =>
   viewOptions["showEdgeLabels"];
@@ -72,4 +68,11 @@ export const getShowIntraAssemblyCalls = (viewOptions: Partial<AllGraphViewOptio
   const result = viewOptions["showIntraAssemblyCalls"];
   if (result === undefined) return undefined;
   return [result, (b: boolean) => (viewOptions["showIntraAssemblyCalls"] = b)];
+};
+
+export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"] }> = {
+  references: { leafType: "assembly" },
+  apis: { leafType: "type" },
+  custom: { leafType: "customLeaf" },
+  methods: { leafType: "method" },
 };

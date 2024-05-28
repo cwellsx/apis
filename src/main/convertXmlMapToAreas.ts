@@ -60,12 +60,12 @@ type Attributes = {
   };
 };
 
-type NodeAttributes = {
+export type ExtraAttributes = {
   className: AreaClass;
   tooltip?: string;
 };
 
-export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string) => NodeAttributes): Area[] {
+export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string) => ExtraAttributes): Area[] {
   const root: ElementCompact = xml2js(xml, { compact: true });
   const converted: Attributes[] | Attributes = root["map"]["area"];
   const areas: Attributes[] = Array.isArray(converted) ? converted : [converted];

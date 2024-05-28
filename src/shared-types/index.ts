@@ -22,7 +22,7 @@ export { defaultAppOptions } from "./options";
 export type { AppOptions } from "./options";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown, Types } from "./types";
-export { getShowEdgeLabels, getShowGrouped, getShowIntraAssemblyCalls } from "./viewOptions";
+export { getShowEdgeLabels, getShowGrouped, getShowIntraAssemblyCalls, viewFeatures } from "./viewOptions";
 export type {
   ApiViewOptions,
   CustomViewOptions,

@@ -153,7 +153,6 @@ const defaultReferenceViewOptions: ReferenceViewOptions = {
   leafVisible: [],
   groupExpanded: [],
   viewType: "references",
-  leafType: "assembly",
 };
 
 const defaultMethodViewOptions: MethodViewOptions = {
@@ -162,14 +161,12 @@ const defaultMethodViewOptions: MethodViewOptions = {
   topType: "assembly",
   methodId: methodNodeId("?", 0),
   viewType: "methods",
-  leafType: "method",
 };
 
 const defaultApiViewOptions: ApiViewOptions = {
   leafVisible: [],
   groupExpanded: [],
   viewType: "apis",
-  leafType: "type",
   showEdgeLabels: {
     groups: false,
     leafs: false,
@@ -184,7 +181,6 @@ const defaultCustomViewOptions: CustomViewOptions = {
   groupedBy: [],
   tags: [],
   viewType: "custom",
-  leafType: "customLeaf",
   showEdgeLabels: {
     groups: false,
     leafs: false,

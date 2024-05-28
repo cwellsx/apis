@@ -7,6 +7,7 @@ import {
   isParent,
   makeEdgeId,
   nodeIdToText,
+  viewFeatures,
 } from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
@@ -87,9 +88,12 @@ export function convertToImage(
     });
 
   const metaGroupLabels = [".NET", "3rd-party"];
+  const { leafType } = viewFeatures[viewOptions.viewType];
 
   const toImageNode = (node: Node): ImageNode => {
     const nodeId = node.nodeId;
+
+    if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
 
     const imageAttribute: ImageAttribute = imageAttributes?.get(nodeId) ?? {};
 
@@ -110,7 +114,7 @@ export function convertToImage(
       if (!node.label.startsWith(node.parent.label)) {
         if (viewOptions.viewType == "references") throw new Error("Unexpected parent node name");
         // else this is a sublayer so do nothing
-      } else textNode.label = "*" + node.label.substring(node.parent.label.length);
+      } else textNode.shortLabel = "*" + node.label.substring(node.parent.label.length);
     }
 
     return !isParent(node)
@@ -129,7 +133,6 @@ export function convertToImage(
   const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isNodeVisible).map(toImageNode);
 
   const showEdgeLabels = getShowEdgeLabels(viewOptions);
-  const leafType = viewOptions.leafType;
   const imageData: ImageData = {
     nodes: toImageNodes(nodes),
     edges: visibleEdges.values().map((edge) => {

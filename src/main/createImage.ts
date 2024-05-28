@@ -2,8 +2,9 @@ import child_process from "child_process";
 import os from "os";
 import path from "path";
 import type { AreaClass, Image } from "../shared-types";
+import { isEdgeId } from "../shared-types";
 import { convertPathToUrl } from "./convertPathToUrl";
-import { convertXmlMapToAreas } from "./convertXmlMapToAreas";
+import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { existsSync, getAppFilename, readFileSync, writeFileSync } from "./fs";
 import { log } from "./log";
 import { showErrorBox } from "./showErrorBox";
@@ -99,7 +100,7 @@ const getDotFormat = (
   };
   pushLayer(Object.values(imageData.nodes), 0);
 
-  const edgeTitles: { [nodeId: string]: string } = {};
+  const edgeTitles: { [edgeId: string]: string } = {};
 
   // push the map of grouped edges
   imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
@@ -133,16 +134,18 @@ export function createImage(imageData: ImageData): Image {
 
   const xml = readFileSync(mapFilename);
 
-  const getAreaAttributes = (id: string) => {
-    if (id.endsWith("-label")) {
-      // this is the label of an edge
-      return { className: undefined, tooltip: edgeTitles[id.substring(0, id.length - 6)] };
+  const getAreaAttributes = (id: string): ExtraAttributes => {
+    if (isEdgeId(id)) {
+      // this is the label of an edge, not the edge itself
+      if (id.endsWith("-label")) id = id.substring(0, id.length - 6);
+      const tooltip = edgeTitles[id];
+      if (!tooltip) throw new Error("Edge not found");
+      return { className: "edge", tooltip };
+    } else {
+      const node = nodes[id];
+      if (!node) throw new Error("Node not found");
+      return { className: node.className, tooltip: node.tooltip };
     }
-    // may be undefined because this is also called for edges
-    const node: ImageNode | undefined = nodes[id];
-    const className = node?.className;
-    const tooltip = node?.tooltip;
-    return { className, tooltip };
   };
 
   return {

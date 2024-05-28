@@ -3,7 +3,7 @@ import { groupByNodeId, nameNodeId } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
-import { Edge } from "./shared-types";
+import { Edges } from "./shared-types";
 
 export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomViewOptions): ViewGraph => {
   log("convertLoadedToView");
@@ -26,7 +26,7 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
   });
 
   // next do the Edge[]
-  const edges: Edge[] = [];
+  const edges = new Edges();
   nodes.forEach((node) => {
     node.dependencies
       .filter((dependency) => !hiddenNodeIds.has(dependency.id))
@@ -39,11 +39,7 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
 
         const label = dependency.label;
 
-        edges.push({
-          clientId: nameNodeId("customLeaf", node.id),
-          serverId: nameNodeId("customLeaf", dependency.id),
-          labels: label ? [label] : [],
-        });
+        edges.add(nameNodeId("customLeaf", node.id), nameNodeId("customLeaf", dependency.id), label);
       });
   });
 
@@ -71,6 +67,8 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
     });
   } else groups.push(...Object.values(leafs));
 
-  const image = convertToImage(groups, edges, viewOptions, undefined);
+  groups.sort((x, y) => x.label.localeCompare(y.label));
+
+  const image = convertToImage(groups, edges.values(), viewOptions, undefined);
   return { groups, image, viewOptions };
 };
