@@ -1,11 +1,11 @@
 import type { Leaf, MetadataNodeId, MethodNodeId, MethodViewOptions, NodeId, Parent, ViewGraph } from "../shared-types";
-import { NodeIdMap, metadataNodeId, methodNodeId, nameNodeId } from "../shared-types";
+import { metadataNodeId, methodNodeId, nameNodeId } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
 import { CallDetails, GoodTypeInfo, MethodIdNamed } from "./loaded";
 import { log } from "./log";
 import type { TypeAndMethodDetails } from "./shared-types";
-import { Edges, getMethodName, getTypeInfoName } from "./shared-types";
+import { Edges, NodeIdMap, getMethodName, getTypeInfoName } from "./shared-types";
 
 type TypeMethods = {
   type: GoodTypeInfo;

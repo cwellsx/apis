@@ -1,6 +1,7 @@
 import type { ReferenceViewOptions } from "../shared-types";
-import { isNameNodeId, nameNodeId } from "../shared-types";
+import { nameNodeId } from "../shared-types";
 import type { AssemblyReferences } from "./loaded";
+import { isNameNodeId } from "./shared-types";
 
 export const showAdjacent = (
   assemblyReferences: AssemblyReferences,

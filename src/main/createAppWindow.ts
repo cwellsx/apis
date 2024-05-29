@@ -11,16 +11,7 @@ import type {
   ViewOptions,
   ViewType,
 } from "../shared-types";
-import {
-  getAssemblyNames,
-  isEdgeId,
-  isGraphViewOptions,
-  isMethodNodeId,
-  isNameNodeId,
-  removeNodeId,
-  toggleNodeId,
-  viewFeatures,
-} from "../shared-types";
+import { viewFeatures } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
 import { convertLoadedToMethods } from "./convertLoadedToMethods";
@@ -29,7 +20,15 @@ import { convertLoadedToTypes } from "./convertLoadedToTypeDetails";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
 import { showAdjacent } from "./onGraphClick";
-import { TypeAndMethodDetails } from "./shared-types";
+import {
+  TypeAndMethodDetails,
+  getAssemblyNames,
+  isEdgeId,
+  isMethodNodeId,
+  isNameNodeId,
+  removeNodeId,
+  toggleNodeId,
+} from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
@@ -42,7 +41,7 @@ export const createAppWindow = (
   const show = createShow(window);
   const renderer = createRenderer(window);
 
-  const setGraphViewOptions = (viewOptions: GraphViewOptions): void => {
+  const setViewOptions = (viewOptions: ViewOptions): void => {
     switch (viewOptions.viewType) {
       case "references":
         sqlLoaded.viewState.referenceViewOptions = viewOptions;
@@ -73,9 +72,7 @@ export const createAppWindow = (
   const mainApi: MainApi = {
     onViewOptions: (viewOptions: ViewOptions): void => {
       log("setGroupExpanded");
-      if (isGraphViewOptions(viewOptions)) {
-        setGraphViewOptions(viewOptions);
-      }
+      setViewOptions(viewOptions);
       showViewType(viewOptions.viewType);
     },
     onAppOptions: (appOptions: AppOptions): void => {
@@ -97,7 +94,7 @@ export const createAppWindow = (
         // this is a group
         const viewOptions = getGraphViewOptions(viewType);
         toggleNodeId(viewOptions.groupExpanded, nodeId);
-        setGraphViewOptions(viewOptions);
+        setViewOptions(viewOptions);
         showViewType(viewOptions.viewType);
         return;
       }

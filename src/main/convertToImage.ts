@@ -1,19 +1,10 @@
 import type { GraphViewOptions, Image, Node, NodeId } from "../shared-types";
-import {
-  NodeIdMap,
-  NodeIdSet,
-  createLookupNodeId,
-  edgeIdToText,
-  getShowEdgeLabels,
-  isParent,
-  nodeIdToText,
-  viewFeatures,
-} from "../shared-types";
+import { edgeIdToText, getShowEdgeLabels, isParent, nodeIdToText, viewFeatures } from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
 import type { Edge } from "./shared-types";
-import { Edges, options } from "./shared-types";
+import { Edges, NodeIdMap, NodeIdSet, createLookupNodeId, options } from "./shared-types";
 
 export function convertToImage(
   nodes: Node[],

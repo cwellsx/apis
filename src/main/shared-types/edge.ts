@@ -1,4 +1,5 @@
-import { EdgeId, NodeId, NodeIdMap } from "../../shared-types";
+import { EdgeId, NodeId } from "../../shared-types";
+import { NodeIdMap } from "./nodeIdUtils";
 
 // this defines the nodes and edges displayed on a graph
 // this is an abstraction and this application's native data format
