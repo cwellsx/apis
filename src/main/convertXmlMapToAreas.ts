@@ -1,5 +1,5 @@
 import { ElementCompact, xml2js } from "xml-js";
-import { Area, AreaClass, isEdgeId, makeUniqueEdgeId } from "../shared-types";
+import { Area, AreaClass, makeUniqueEdgeId, textIsEdgeId } from "../shared-types";
 
 /*
 Input is a *.map file, created by Graphviz, which has a format like this:
@@ -74,7 +74,7 @@ export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string
   const allIds = new Set<string>();
   const makeUniqueId = (id: string): string => {
     if (allIds.has(id)) {
-      if (!isEdgeId(id)) throw new Error("Duplicated non-edge id");
+      if (!textIsEdgeId(id)) throw new Error("Duplicated non-edge id");
       const original = id;
       for (let index = 1; ; ++index) {
         id = makeUniqueEdgeId(original, index);

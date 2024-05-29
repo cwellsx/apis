@@ -2,7 +2,7 @@ area {
   cursor: default;
 }
 
-area.leaf {
+area.leaf-details, area.edge-details {
   cursor: help;
 }
 area.closed {

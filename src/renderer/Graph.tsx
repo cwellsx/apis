@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { AreaClass, GraphViewType, Area as MyArea, OnGraphClick } from "../shared-types";
+import { textToNodeOrEdgeId, type GraphViewType, type Area as MyArea, type OnGraphClick } from "../shared-types";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 import "./Graph.css";
 import { log } from "./log";
@@ -59,7 +59,7 @@ const initialState = (props: GraphProps): State => {
           shape: area.shape,
           coords: area.coords,
           _id: area.id,
-          strokeColor: area.className === "leaf" ? "green" : "red",
+          strokeColor: area.className === "leaf-details" || area.className === "edge-details" ? "green" : "red",
           className: area.className,
           tooltip: area.tooltip,
         };
@@ -157,8 +157,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     console.log(`Clicked area ${area._id} ${area.className}`);
     if (area._id)
       props.onGraphClick({
-        id: area._id,
-        className: area.className as AreaClass,
+        id: textToNodeOrEdgeId(area._id),
         viewType: props.viewType,
         event: {
           altKey: event.altKey,

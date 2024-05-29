@@ -4,8 +4,8 @@ import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
 import { CallDetails, GoodTypeInfo, MethodIdNamed } from "./loaded";
 import { log } from "./log";
-import type { Edge, TypeAndMethodDetails } from "./shared-types";
-import { getMethodName, getTypeInfoName } from "./shared-types";
+import type { TypeAndMethodDetails } from "./shared-types";
+import { Edges, getMethodName, getTypeInfoName } from "./shared-types";
 
 type TypeMethods = {
   type: GoodTypeInfo;
@@ -111,7 +111,7 @@ export const convertLoadedToMethods = (
   type LeafDictionary = NodeIdMap<TypeAndMethodDetails>;
   const called = new NodeIdMap<TypeAndMethodDetails>();
   const caller = new NodeIdMap<TypeAndMethodDetails>();
-  const edges: Edge[] = [];
+  const edges = new Edges();
 
   const saveMethod = (methodId: MetadataNodeId, result: TypeAndMethodDetails, leafs: LeafDictionary): void => {
     if (leafs.has(methodId)) throw new Error("Duplicate leaf id");
@@ -127,7 +127,7 @@ export const convertLoadedToMethods = (
   };
 
   const saveEdge = (clientId: MetadataNodeId, serverId: MetadataNodeId): void => {
-    edges.push({ clientId, serverId, labels: [] });
+    edges.add(clientId, serverId, []);
   };
 
   const isNewMethodId = !!methodId;
@@ -203,7 +203,7 @@ export const convertLoadedToMethods = (
 
   // convert to Image
   log("convertToImage");
-  const image = convertToImage(groups, edges, viewOptions, imageAttributes);
+  const image = convertToImage(groups, edges.values(), viewOptions, imageAttributes);
 
   return { image, viewOptions, groups };
 };

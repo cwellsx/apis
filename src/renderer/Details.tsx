@@ -179,7 +179,7 @@ export const Details: React.FunctionComponent<DetailsProps> = (props: DetailsPro
 
   const onClick = (node: OnCheckNode): void => {
     // caution -- this will return a click event even if the node is not a method
-    props.onDetailClick(textToNodeId(node.value));
+    props.onDetailClick({ id: textToNodeId(node.value), viewType: "types" });
   };
 
   return (

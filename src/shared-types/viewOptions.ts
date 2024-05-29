@@ -1,16 +1,16 @@
 import type { MethodNodeId, NodeId } from "./nodeId";
 
-type ViewOptions = {
+type TreeViewOptions = {
   leafVisible: NodeId[];
   groupExpanded: NodeId[];
 };
 
-export type ReferenceViewOptions = ViewOptions & {
+export type ReferenceViewOptions = TreeViewOptions & {
   showGrouped: boolean;
   viewType: "references";
 };
 
-export type MethodViewOptions = ViewOptions & {
+export type MethodViewOptions = TreeViewOptions & {
   topType: "assembly" | "namespace" | "none";
   methodId: MethodNodeId;
   viewType: "methods";
@@ -21,13 +21,13 @@ type ShowEdgeLabels = {
   leafs: boolean;
 };
 
-export type ApiViewOptions = ViewOptions & {
+export type ApiViewOptions = TreeViewOptions & {
   showEdgeLabels: ShowEdgeLabels;
   showIntraAssemblyCalls: boolean;
   viewType: "apis";
 };
 
-export type CustomViewOptions = ViewOptions & {
+export type CustomViewOptions = TreeViewOptions & {
   nodeProperties: string[];
   groupedBy: string[];
   tags: { tag: string; shown: boolean }[];
@@ -45,8 +45,6 @@ export type GreetingViewOptions = {
 
 export type GraphViewOptions = ReferenceViewOptions | MethodViewOptions | ApiViewOptions | CustomViewOptions;
 export type GraphViewType = "references" | "methods" | "apis" | "custom";
-
-export const graphViewTypes = ["references", "methods", "apis"];
 
 type AllGraphViewOptions = Omit<ReferenceViewOptions, "viewType"> &
   Omit<MethodViewOptions, "viewType"> &
@@ -70,9 +68,24 @@ export const getShowIntraAssemblyCalls = (viewOptions: Partial<AllGraphViewOptio
   return [result, (b: boolean) => (viewOptions["showIntraAssemblyCalls"] = b)];
 };
 
-export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"] }> = {
-  references: { leafType: "assembly" },
-  apis: { leafType: "type" },
-  custom: { leafType: "customLeaf" },
-  methods: { leafType: "method" },
+export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"]; details: ("leaf" | "edge")[] }> = {
+  references: { leafType: "assembly", details: ["leaf"] },
+  apis: { leafType: "type", details: ["edge"] },
+  custom: { leafType: "customLeaf", details: [] },
+  methods: { leafType: "method", details: ["leaf"] },
 };
+
+export type ViewOptions =
+  | ReferenceViewOptions
+  | MethodViewOptions
+  | ErrorsViewOptions
+  | GreetingViewOptions
+  | CustomViewOptions
+  | ApiViewOptions;
+
+const graphViewTypes = ["references", "methods", "apis"];
+export function isGraphViewOptions(viewOptions: ViewOptions): viewOptions is GraphViewOptions {
+  return graphViewTypes.includes(viewOptions.viewType);
+}
+
+export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom";

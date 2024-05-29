@@ -1,8 +1,12 @@
 import { CustomError } from "./customError";
 import { Image } from "./image";
-import { MethodBody } from "./methodBody";
 import { Node } from "./node";
+import { MethodBody } from "./viewDetails";
 import { ErrorsViewOptions, GraphViewOptions, GreetingViewOptions } from "./viewOptions";
+
+/*
+  The types of View are distinguished by the viewType which is an element of every viewOptions
+*/
 
 export type ViewGraph = {
   // string is a message if there isn't an Image
@@ -25,4 +29,13 @@ export type ViewErrors = {
   customErrors?: CustomError[];
   methods?: MethodBody[];
   viewOptions: ErrorsViewOptions;
+};
+
+export type View = ViewGraph | ViewGreeting | ViewErrors;
+
+export const defaultView: ViewGreeting = {
+  greeting: "No data",
+  viewOptions: {
+    viewType: "greeting",
+  },
 };

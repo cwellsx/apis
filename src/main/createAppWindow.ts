@@ -1,23 +1,25 @@
 import { BrowserWindow } from "electron";
 import type {
-  AllViewOptions,
   AppOptions,
+  DetailEvent,
   GraphEvent,
   GraphViewOptions,
   GraphViewType,
   MainApi,
   MethodNodeId,
   ViewErrors,
+  ViewOptions,
   ViewType,
 } from "../shared-types";
 import {
   getAssemblyNames,
+  isEdgeId,
   isGraphViewOptions,
   isMethodNodeId,
   isNameNodeId,
   removeNodeId,
-  textToNodeId,
   toggleNodeId,
+  viewFeatures,
 } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
@@ -69,7 +71,7 @@ export const createAppWindow = (
 
   // implement the MainApi which will be bound to ipcMain
   const mainApi: MainApi = {
-    onViewOptions: (viewOptions: AllViewOptions): void => {
+    onViewOptions: (viewOptions: ViewOptions): void => {
       log("setGroupExpanded");
       if (isGraphViewOptions(viewOptions)) {
         setGraphViewOptions(viewOptions);
@@ -82,59 +84,63 @@ export const createAppWindow = (
       renderer.showAppOptions(appOptions);
     },
     onGraphClick: (graphEvent: GraphEvent): void => {
-      const { id, className, viewType, event } = graphEvent;
+      const { id, viewType, event } = graphEvent;
+      const { leafType, details } = viewFeatures[viewType];
       log(`onGraphClick ${id}`);
-      if (!className) return; // edge
-      const nodeId = textToNodeId(id);
-      switch (className) {
-        case "closed":
-        case "expanded": {
-          const viewOptions = getGraphViewOptions(viewType);
-          toggleNodeId(viewOptions.groupExpanded, nodeId);
-          setGraphViewOptions(viewOptions);
-          showViewType(viewOptions.viewType);
+      if (isEdgeId(id)) {
+        if (!details.includes("edge")) return;
+        throw new Error("Edge details not yet implemented");
+        return;
+      }
+      const nodeId = id;
+      if (leafType !== nodeId.type) {
+        // this is a group
+        const viewOptions = getGraphViewOptions(viewType);
+        toggleNodeId(viewOptions.groupExpanded, nodeId);
+        setGraphViewOptions(viewOptions);
+        showViewType(viewOptions.viewType);
+        return;
+      }
+      // else this is a leaf
+      switch (viewType) {
+        case "methods": {
+          if (!isMethodNodeId(nodeId)) throw new Error("Expected method id");
+          const { assemblyName, metadataToken } = nodeId;
+          const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
+          const methodBody = convertLoadedToMethodBody(typeAndMethod);
+          log("renderer.showDetails");
+          renderer.showDetails(methodBody);
           return;
         }
-        case "leaf":
-          switch (viewType) {
-            case "methods": {
-              if (!isMethodNodeId(nodeId)) throw new Error("Expected method id");
-              const { assemblyName, metadataToken } = nodeId;
-              const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
-              const methodBody = convertLoadedToMethodBody(typeAndMethod);
-              log("renderer.showDetails");
-              renderer.showDetails(methodBody);
-              return;
-            }
-            case "references": {
-              if (!isNameNodeId(nodeId, "assembly")) throw new Error("Expected assembly id");
-              const { name: assemblyName } = nodeId;
-              const assemblyReferences = sqlLoaded.readAssemblyReferences();
-              if (event.shiftKey) {
-                const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-                showAdjacent(assemblyReferences, viewOptions, assemblyName);
-                sqlLoaded.viewState.referenceViewOptions = viewOptions;
-                showReferences();
-              } else if (event.ctrlKey) {
-                const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-                const leafVisible = viewOptions.leafVisible;
-                removeNodeId(leafVisible, nodeId);
-                viewOptions.leafVisible = leafVisible;
-                sqlLoaded.viewState.referenceViewOptions = viewOptions;
-                showReferences();
-              } else {
-                const allTypeInfo = sqlLoaded.readTypes(assemblyName);
-                const types = convertLoadedToTypes(allTypeInfo, assemblyName);
-                log("renderer.showDetails");
-                renderer.showDetails(types);
-              }
-              return;
-            }
+        case "references": {
+          if (!isNameNodeId(nodeId, "assembly")) throw new Error("Expected assembly id");
+          const { name: assemblyName } = nodeId;
+          const assemblyReferences = sqlLoaded.readAssemblyReferences();
+          if (event.shiftKey) {
+            const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+            showAdjacent(assemblyReferences, viewOptions, assemblyName);
+            sqlLoaded.viewState.referenceViewOptions = viewOptions;
+            showReferences();
+          } else if (event.ctrlKey) {
+            const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+            const leafVisible = viewOptions.leafVisible;
+            removeNodeId(leafVisible, nodeId);
+            viewOptions.leafVisible = leafVisible;
+            sqlLoaded.viewState.referenceViewOptions = viewOptions;
+            showReferences();
+          } else {
+            const allTypeInfo = sqlLoaded.readTypes(assemblyName);
+            const types = convertLoadedToTypes(allTypeInfo, assemblyName);
+            log("renderer.showDetails");
+            renderer.showDetails(types);
           }
+          return;
+        }
       }
     },
-    onDetailClick: (nodeId): void => {
+    onDetailClick: (detailEvent: DetailEvent): void => {
       log("onDetailClick");
+      const { id: nodeId, viewType } = detailEvent;
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
       createSecondWindow().then((secondWindow) => {
@@ -197,6 +203,7 @@ export const createAppWindow = (
   };
 
   const showViewType = (viewType: ViewType): void => {
+    log(`showViewType(${viewType})`);
     switch (viewType) {
       case "references":
         showReferences();

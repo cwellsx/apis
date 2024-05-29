@@ -1,4 +1,5 @@
-import { AreaClass } from "./image";
+import { EdgeId, NodeId } from "./nodeId";
+import { DetailType } from "./viewDetails";
 import { GraphViewType } from "./viewOptions";
 
 // import OnGraphClick into the renderer-side code, but avoid importing MouseEvent
@@ -12,4 +13,6 @@ type MouseEvent = {
   shiftKey: boolean;
 };
 
-export type GraphEvent = { id: string; className: AreaClass; viewType: GraphViewType; event: MouseEvent };
+export type GraphEvent = { id: NodeId | EdgeId; viewType: GraphViewType; event: MouseEvent };
+
+export type DetailEvent = { id: NodeId; viewType: DetailType };

@@ -10,6 +10,8 @@ There is no "Done" section in this document, instead see the history of updates/
 - Sanitize the Error schema in the Reflected data
 - Maybe normalize the database, plus materialize various joins at save-time
 - Implement toDictionary generic function from an array
+- On the APIs view a closed group e.g. Core isn't displayed
+- Display progress messages when loading from Core.exe
 
 ## Features
 

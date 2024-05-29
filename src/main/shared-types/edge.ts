@@ -1,17 +1,13 @@
-import { NodeId, NodeIdMap } from "../../shared-types";
+import { EdgeId, NodeId, NodeIdMap } from "../../shared-types";
 
 // this defines the nodes and edges displayed on a graph
 // this is an abstraction and this application's native data format
 // various input data types for variuous sources are converted to this format for display
 
-// unlike Node and NodeId which are shared with the render, this is only used within the main process
+// unlike Node which is shared with the render, this is only used within the main process
 // therefore extra data (decorations) e.g. labels are stored within this type, instead of in an ImageAttribute lookup
 
-export type Edge = {
-  clientId: NodeId;
-  serverId: NodeId;
-  labels: string[];
-};
+export type Edge = EdgeId & { labels: string[] };
 
 export class Edges {
   private map = new NodeIdMap<NodeIdMap<Edge>>();

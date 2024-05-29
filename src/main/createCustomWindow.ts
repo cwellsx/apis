@@ -1,14 +1,14 @@
 import { BrowserWindow } from "electron";
 import type {
-  AllViewOptions,
   AppOptions,
   CustomViewOptions,
   GraphEvent,
   MainApi,
   ViewErrors,
+  ViewOptions,
   ViewType,
 } from "../shared-types";
-import { textToNodeId, toggleNodeId } from "../shared-types";
+import { isEdgeId, toggleNodeId, viewFeatures } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import { log } from "./log";
@@ -25,7 +25,7 @@ export const createCustomWindow = (
   const renderer = createRenderer(window);
   renderer.showAppOptions(sqlConfig.appOptions);
 
-  const setCustomViewOptions = (viewOptions: AllViewOptions): void => {
+  const setCustomViewOptions = (viewOptions: ViewOptions): void => {
     switch (viewOptions.viewType) {
       case "custom":
         sqlCustom.viewState.customViewOptions = viewOptions;
@@ -46,7 +46,7 @@ export const createCustomWindow = (
 
   // implement the MainApi which will be bound to ipcMain
   const mainApi: MainApi = {
-    onViewOptions: (viewOptions: AllViewOptions): void => {
+    onViewOptions: (viewOptions: ViewOptions): void => {
       log("setGroupExpanded");
       setCustomViewOptions(viewOptions);
       showViewType(viewOptions.viewType);
@@ -57,25 +57,24 @@ export const createCustomWindow = (
       renderer.showAppOptions(appOptions);
     },
     onGraphClick: (graphEvent: GraphEvent): void => {
-      const { id, className, viewType, event } = graphEvent;
+      const { id, viewType, event } = graphEvent;
+      const { leafType, details } = viewFeatures[viewType];
       log(`onGraphClick ${id}`);
-      if (!className) return; // edge
-      const nodeId = textToNodeId(id);
-      switch (className) {
-        case "closed":
-        case "expanded": {
-          const viewOptions = getCustomViewOptions(viewType);
-          toggleNodeId(viewOptions.groupExpanded, nodeId);
-          setCustomViewOptions(viewOptions);
-          showViewType(viewOptions.viewType);
-          return;
-        }
-        case "leaf":
-          // nothing to do
-          return;
+      if (isEdgeId(id)) return;
+      const nodeId = id;
+      if (leafType !== nodeId.type) {
+        // this is a group
+        const viewOptions = getCustomViewOptions(viewType);
+        toggleNodeId(viewOptions.groupExpanded, nodeId);
+        setCustomViewOptions(viewOptions);
+        showViewType(viewOptions.viewType);
+        return;
       }
+      // else this is a leaf
+      // nothing to do
+      return;
     },
-    onDetailClick: (nodeId): void => {
+    onDetailClick: (detailEvent): void => {
       // unexpected
     },
   };

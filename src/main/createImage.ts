@@ -2,7 +2,7 @@ import child_process from "child_process";
 import os from "os";
 import path from "path";
 import type { AreaClass, Image } from "../shared-types";
-import { isEdgeId } from "../shared-types";
+import { textIsEdgeId } from "../shared-types";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { existsSync, getAppFilename, readFileSync, writeFileSync } from "./fs";
@@ -37,6 +37,7 @@ export type ImageNode = (ImageText & { type: "node" | "group" }) | Subgraph;
 export type ImageData = {
   nodes: ImageNode[];
   edges: { clientId: string; serverId: string; edgeId: string; labels: string[]; titles: string[] }[];
+  edgeDetails: boolean;
 };
 
 const findDotExe = (): string => {
@@ -135,12 +136,12 @@ export function createImage(imageData: ImageData): Image {
   const xml = readFileSync(mapFilename);
 
   const getAreaAttributes = (id: string): ExtraAttributes => {
-    if (isEdgeId(id)) {
+    if (textIsEdgeId(id)) {
       // this is the label of an edge, not the edge itself
       if (id.endsWith("-label")) id = id.substring(0, id.length - 6);
       const tooltip = edgeTitles[id];
       if (!tooltip) throw new Error("Edge not found");
-      return { className: "edge", tooltip };
+      return { className: imageData.edgeDetails ? "edge-details" : "edge-none", tooltip };
     } else {
       const node = nodes[id];
       if (!node) throw new Error("Node not found");

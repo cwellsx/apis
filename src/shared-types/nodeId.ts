@@ -75,9 +75,28 @@ export const groupByNodeId = (groupBy: string, groupLabel: string): NodeId => {
   };
 };
 
+// edge id
+
+export type EdgeId = {
+  clientId: NodeId;
+  serverId: NodeId;
+};
+
 // round-trip text
 
 const nodeIdSeparator = "|";
+const edgeIdSeparator = "||";
+
+export const edgeIdToText = (clientId: NodeId, serverId: NodeId): string =>
+  `${nodeIdToText(clientId)}${edgeIdSeparator}${nodeIdToText(serverId)}`;
+
+export const textToEdgeId = (edgeId: string): EdgeId => {
+  const split = edgeId.split(edgeIdSeparator);
+  return { clientId: textToNodeId(split[0]), serverId: textToNodeId(split[1]) };
+};
+
+export const textIsEdgeId = (id: string): boolean => id.includes(edgeIdSeparator);
+export const makeUniqueEdgeId = (edgeId: string, index: number): string => `${edgeId}-${index}`;
 
 export const nodeIdToText = (nodeId: NodeId): string => {
   switch (nodeId.type) {
@@ -101,6 +120,7 @@ export const nodeIdToText = (nodeId: NodeId): string => {
 };
 
 export const textToNodeId = (text: string): NodeId => {
+  if (textIsEdgeId(text)) throw new Error("Text is edge Id");
   const split = text.split(nodeIdSeparator);
   const type = split[0];
   switch (type) {
@@ -124,6 +144,11 @@ export const textToNodeId = (text: string): NodeId => {
       throw new Error(`textToNodeId unhandled nodeId type "${type}"`);
   }
 };
+
+export const textToNodeOrEdgeId = (text: string): NodeId | EdgeId =>
+  textIsEdgeId(text) ? textToEdgeId(text) : textToNodeId(text);
+
+export const isEdgeId = (id: NodeId | EdgeId): id is EdgeId => (id as EdgeId).clientId !== undefined;
 
 // equality
 
@@ -156,17 +181,6 @@ const nodeIdEquals = (lhs: NodeId, rhs: NodeId): boolean => {
       throw new Error(`nodeIdEquals unhandled nodeId type "${lhs.type}"`);
   }
 };
-
-// edges
-
-export const makeEdgeId = (clientId: NodeId, serverId: NodeId): string =>
-  `${nodeIdToText(clientId)}||${nodeIdToText(serverId)}`;
-export const fromEdgeId = (edgeId: string): { clientId: string; serverId: string } => {
-  const split = edgeId.split("||");
-  return { clientId: split[0], serverId: split[1] };
-};
-export const isEdgeId = (id: string): boolean => id.includes("||");
-export const makeUniqueEdgeId = (edgeId: string, index: number): string => `${edgeId}-${index}`;
 
 // NodeId[]
 

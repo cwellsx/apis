@@ -3,9 +3,9 @@ import {
   NodeIdMap,
   NodeIdSet,
   createLookupNodeId,
+  edgeIdToText,
   getShowEdgeLabels,
   isParent,
-  makeEdgeId,
   nodeIdToText,
   viewFeatures,
 } from "../shared-types";
@@ -21,6 +21,8 @@ export function convertToImage(
   viewOptions: GraphViewOptions,
   imageAttributes?: NodeIdMap<ImageAttribute>
 ): Image | string {
+  log("convertToImage");
+
   const { leafVisible, groupExpanded } = viewOptions;
   const isLeafVisible = createLookupNodeId(leafVisible);
   const isGroupExpanded = createLookupNodeId(groupExpanded);
@@ -52,7 +54,7 @@ export function convertToImage(
 
   const allEdgeIds = new Set<string>();
   edges.forEach((edge) => {
-    const edgeId = makeEdgeId(edge.clientId, edge.serverId);
+    const edgeId = edgeIdToText(edge.clientId, edge.serverId);
     if (allEdgeIds.has(edgeId)) throw new Error(`Duplicate edge id: ${edgeId}`);
     allEdgeIds.add(edgeId);
   });
@@ -88,7 +90,7 @@ export function convertToImage(
     });
 
   const metaGroupLabels = [".NET", "3rd-party"];
-  const { leafType } = viewFeatures[viewOptions.viewType];
+  const { leafType, details } = viewFeatures[viewOptions.viewType];
 
   const toImageNode = (node: Node): ImageNode => {
     const nodeId = node.nodeId;
@@ -100,7 +102,13 @@ export function convertToImage(
     const textNode: ImageText = {
       id: nodeIdToText(nodeId),
       label: node.label,
-      className: isParent(node) ? (isGroupExpanded(nodeId) ? "expanded" : "closed") : "leaf",
+      className: isParent(node)
+        ? isGroupExpanded(nodeId)
+          ? "expanded"
+          : "closed"
+        : details.includes("leaf")
+        ? "leaf-details"
+        : "leaf-none",
       ...imageAttribute,
     };
 
@@ -145,13 +153,13 @@ export function convertToImage(
       return {
         clientId: nodeIdToText(edge.clientId),
         serverId: nodeIdToText(edge.serverId),
-        edgeId: makeEdgeId(edge.clientId, edge.serverId),
+        edgeId: edgeIdToText(edge.clientId, edge.serverId),
         labels: showLabels ? labels : [],
         titles: labels,
       };
     }),
+    edgeDetails: details.includes("edge"),
   };
 
-  log("createImage");
   return imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";
 }

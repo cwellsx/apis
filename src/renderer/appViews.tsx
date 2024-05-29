@@ -1,12 +1,12 @@
 import * as React from "react";
 import type {
-  AllViewOptions,
   OnDetailClick,
   OnGraphClick,
   View,
   ViewDetails,
   ViewErrors,
   ViewGreeting,
+  ViewOptions,
 } from "../shared-types";
 import { nodeIdToText, textToNodeId } from "../shared-types";
 import { Details } from "./Details";
@@ -24,7 +24,7 @@ export function isErrors(view: View): view is ViewErrors {
   return view.viewOptions.viewType === "errors";
 }
 
-export const getLeft = (view: View, onViewOptions: (viewOptions: AllViewOptions) => void): JSX.Element => {
+export const getLeft = (view: View, onViewOptions: (viewOptions: ViewOptions) => void): JSX.Element => {
   if (isGreeting(view) || isErrors(view)) return <></>;
 
   const viewOptions = view.viewOptions;

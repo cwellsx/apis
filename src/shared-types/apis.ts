@@ -1,7 +1,8 @@
-import type { AllViewOptions, View, ViewDetails } from "./all";
-import type { GraphEvent } from "./mouseEvent";
-import type { NodeId } from "./nodeId";
-import type { AppOptions } from "./options";
+import type { AppOptions } from "./appOptions";
+import type { DetailEvent, GraphEvent } from "./events";
+import type { ViewDetails } from "./viewDetails";
+import type { ViewOptions } from "./viewOptions";
+import type { View } from "./views";
 
 /*
   The underlying APIs, which the application-specific classes wrap, are:
@@ -12,10 +13,10 @@ import type { AppOptions } from "./options";
   - https://www.electronjs.org/docs/latest/tutorial/ipc
 */
 
-export type OnViewOptions = (viewOptions: AllViewOptions) => void;
+export type OnViewOptions = (viewOptions: ViewOptions) => void;
 export type OnAppOptions = (appOptions: AppOptions) => void;
 export type OnGraphClick = (graphEvent: GraphEvent) => void;
-export type OnDetailClick = (nodeId: NodeId) => void;
+export type OnDetailClick = (detailEvent: DetailEvent) => void;
 
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {
