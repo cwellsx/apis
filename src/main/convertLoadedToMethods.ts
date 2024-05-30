@@ -203,7 +203,7 @@ export const convertLoadedToMethods = (
 
   // convert to Image
   log("convertToImage");
-  const image = convertToImage(groups, edges.values(), viewOptions, imageAttributes);
+  const image = convertToImage(groups, edges.values(), viewOptions, false, imageAttributes);
 
   return { image, viewOptions, groups };
 };

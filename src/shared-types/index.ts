@@ -22,7 +22,6 @@ export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException
 export type { DetailType, MethodBody, MethodError, Types, ViewDetails } from "./viewDetails";
 export { getShowEdgeLabels, getShowGrouped, getShowIntraAssemblyCalls, viewFeatures } from "./viewOptions";
 export type {
-  AnyGraphViewOptions,
   ApiViewOptions,
   CustomViewOptions,
   GetSetBoolean,
@@ -30,7 +29,6 @@ export type {
   GraphViewType,
   MethodViewOptions,
   ReferenceViewOptions,
-  ShowEdgeLabels,
   ViewOptions,
   ViewType,
 } from "./viewOptions";

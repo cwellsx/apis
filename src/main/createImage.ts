@@ -23,6 +23,7 @@ export type ImageAttribute = {
   // if this is defined then this is the label and label is the tooltip
   shortLabel?: string;
   tooltip?: string;
+  className?: AreaClass;
 };
 
 export type ImageText = ImageAttribute & {
@@ -107,7 +108,7 @@ const getDotFormat = (
   imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
     // use \l instead of \r\n to left-justify
     // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
-    const edgeTitle = `${nodes[clientId].label} → ${nodes[serverId].label}`;
+    const edgeTitle = `${nodes[clientId].label} → ${nodes[serverId]?.label ?? "?"}`;
     edgeTitles[edgeId] = edgeTitle;
     const join: (strings: string[]) => string = (strings: string[]) => strings.join("\\l") + "\\l";
     const labelAttributes = `, label="${join(labels)}", tooltip="${join([edgeTitle, ...titles])}"`;

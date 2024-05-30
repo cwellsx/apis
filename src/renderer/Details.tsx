@@ -106,15 +106,24 @@ const convertType = (type: Type): CheckboxNode => {
   ): CheckboxNode =>
     makeNode(memberInfo, getIcon(memberInfo.access), className, memberInfo.attributes.map(convertAttribute));
 
+  const makeMemberNodes = (
+    members: MemberInfo[],
+    getIcon: (access: Access) => JSX.Element,
+    className: ClassName
+  ): CheckboxNode[] =>
+    members
+      .sort((x, y) => x.name.localeCompare(y.name))
+      .map((memberInfo) => makeMemberNode(memberInfo, getIcon, className));
+
   return isTypeException(type)
     ? makeNode(type, <Icon.SvgExclamationPoint />, "type")
     : makeNode(type, getTypeIcon(type.access), "type", [
         ...type.attributes.map(convertAttribute),
         ...convertTypes(type.subtypes),
-        ...type.members.fieldMembers.map((memberInfo) => makeMemberNode(memberInfo, getFieldIcon, "field")),
-        ...type.members.propertyMembers.map((memberInfo) => makeMemberNode(memberInfo, getPropertyIcon, "property")),
-        ...type.members.methodMembers.map((memberInfo) => makeMemberNode(memberInfo, getMethodIcon, "method")),
-        ...type.members.eventMembers.map((memberInfo) => makeMemberNode(memberInfo, getEventIcon, "event")),
+        ...makeMemberNodes(type.members.fieldMembers, getFieldIcon, "field"),
+        ...makeMemberNodes(type.members.propertyMembers, getPropertyIcon, "property"),
+        ...makeMemberNodes(type.members.methodMembers, getMethodIcon, "method"),
+        ...makeMemberNodes(type.members.eventMembers, getEventIcon, "event"),
       ]);
 };
 

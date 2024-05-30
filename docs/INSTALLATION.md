@@ -1,6 +1,8 @@
 # Installation
 
 - [Source code](#source-code)
+- [Build your own executable](#build-your-own-executable)
+- [Prebuilt executables](#prebuilt-executables)
 - [Local certificate error](#local-certificate-error)
 
 ## Source code
@@ -13,33 +15,27 @@ cd apis
 npm install
 ```
 
+## Build your own executable
+
+After you install source code, run `npm run make` to build an executable which you can deploy.
+
+I edited `forge.config.ts` so this builds a ZIP file.
+
+The default was to create a `Setup.exe` using `Squirrel.Windows` -- see https://www.electronforge.io/config/makers
+
+## Prebuilt executables
+
+I could, but have not yet, posted prebuilt executables to GitHub.
+
 ## Local certificate error
 
-Electron includes binaries as well as an npm package.
+When you run `npm install` you may see an error message related to a local certificate.
 
-The binaries are hosted and installed from GitHub, for example a page like this:
+Google's search results for this error message suggests it may be caused by a corporate firewall
+doing a man-in-the-middle.
 
-- https://github.com/electron/electron/releases/tag/v28.2.0
+To resolve this:
 
-When you run `npm install` you may see an error message related to a local certificate:
-
-```
-RequestError: unable to get local issuer certificate
-```
-
-There are many questions and answers about this online --
-I fixed it as follows (but please tell if these instructions can be improved):
-
-- Use Chrome to export the certificate for GitHub's root authority:
-
-  ![Alt text](./screenshots.tiny/Screenshot%202024-01-28%20072503.png)
-
-  - Navigate to the page using Chrome
-  - Open Developer Tools
-  - Go to Security/View Certificate/Details
-  - Click on the root of the tree i.e. `DigiCert Global Root CA`
-  - Click "Export..."
-  - Save the file on your machine, using the "Base-64 encoded ASCII" format
-
-- Run `npm config get cafile` to verify that this value is currently `null` before you change it
-- Set the `cafile` value to the path of the new `*.crt` file, which you saved on your machine
+- Fix or work-around the problem with your (corporate) environment
+- Use a private/personal machine instead
+- Get or make a prebuilt executable, instead of using `npm` to install and build from source code.

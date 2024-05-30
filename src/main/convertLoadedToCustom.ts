@@ -69,6 +69,6 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
 
   groups.sort((x, y) => x.label.localeCompare(y.label));
 
-  const image = convertToImage(groups, edges.values(), viewOptions, undefined);
+  const image = convertToImage(groups, edges.values(), viewOptions, false, undefined);
   return { groups, image, viewOptions };
 };

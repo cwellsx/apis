@@ -1,10 +1,11 @@
-import type { Leaf, ReferenceViewOptions, ViewGraph } from "../shared-types";
+import type { ReferenceViewOptions, ViewGraph } from "../shared-types";
 import { nameNodeId } from "../shared-types";
 import { convertNamesToGroups } from "./convertNamesToGroups";
 import { convertToImage } from "./convertToImage";
+import { ImageAttribute } from "./createImage";
 import type { AssemblyReferences } from "./loaded";
 import { log } from "./log";
-import { type Edge } from "./shared-types";
+import { NodeIdMap, type Edge } from "./shared-types";
 
 export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,
@@ -12,10 +13,10 @@ export const convertLoadedToReferences = (
   exes: string[]
 ): ViewGraph => {
   log("convertLoadedToView");
-  const leafs: Leaf[] = [];
+  // const known: Leaf[] = [];
   const edges: Edge[] = [];
   Object.entries(assemblyReferences).forEach(([assembly, dependencies]) => {
-    leafs.push({ nodeId: nameNodeId("assembly", assembly), label: assembly, parent: null });
+    // known.push({ nodeId: nameNodeId("assembly", assembly), label: assembly, parent: null });
     dependencies.forEach((dependency) =>
       edges.push({
         clientId: nameNodeId("assembly", assembly),
@@ -31,7 +32,20 @@ export const convertLoadedToReferences = (
     names.push(...references);
   }
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const { groups } = convertNamesToGroups(names, exes, "assembly");
-  const image = convertToImage(viewOptions.showGrouped ? groups : leafs, edges, viewOptions);
+  const { groups, leafs } = convertNamesToGroups(names, exes, "assembly");
+  // if they're not grouped on the image then pass them all, including .NET assemblies
+  // but we don't disassemble .NET so assign them a non-default ImageAttribute
+  const imageAttributes = new NodeIdMap<ImageAttribute>();
+  const known = Object.keys(assemblyReferences);
+  Object.entries(leafs).forEach(([key, node]) => {
+    if (!known.includes(key)) imageAttributes.set(node.nodeId, { shape: "none", className: "leaf-none" });
+  });
+  const image = convertToImage(
+    viewOptions.showGrouped ? groups : Object.values(leafs),
+    edges,
+    viewOptions,
+    viewOptions.showGrouped,
+    imageAttributes
+  );
   return { groups, image, viewOptions };
 };

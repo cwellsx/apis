@@ -10,6 +10,7 @@ export function convertToImage(
   nodes: Node[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
+  shortLeafNames: boolean,
   imageAttributes?: NodeIdMap<ImageAttribute>
 ): Image | string {
   log("convertToImage");
@@ -93,18 +94,20 @@ export function convertToImage(
     const textNode: ImageText = {
       id: nodeIdToText(nodeId),
       label: node.label,
-      className: isParent(node)
-        ? isGroupExpanded(nodeId)
-          ? "expanded"
-          : "closed"
-        : details.includes("leaf")
-        ? "leaf-details"
-        : "leaf-none",
+      className:
+        imageAttribute.className ?? isParent(node)
+          ? isGroupExpanded(nodeId)
+            ? "expanded"
+            : "closed"
+          : details.includes("leaf")
+          ? "leaf-details"
+          : "leaf-none",
       ...imageAttribute,
     };
 
     // implement this option here to affect the label on the image but not in the tree of groups
     if (
+      shortLeafNames &&
       options.shortLeafNames &&
       node.parent &&
       !metaGroupLabels.includes(node.parent.label) &&
