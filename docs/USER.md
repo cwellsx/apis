@@ -279,7 +279,7 @@ Leaf nodes:
 
   - Make this work on the APIs view not only on the References view
   - Fix the cursor not changing when the `[Ctrl]` key is pressed
-  - Implement blue instead of red for leafs without detail (i.e. which are not green)
+  - Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
 
 ## `.NET` and `3rd-party` groups
 
@@ -379,7 +379,7 @@ TO DO:
 
 - Reduce the tab size
 - Implement some line wrap, to avoid too-long lines
-- Review the decompiler options re. generated source code
+- Review the decompilation options re. generated source code
 - Try some highlighting, maybe using a simple "find whole word", to identify the line-of-code or method-name on the stack
 - Maybe consider how to integrate with source code, on the local machine or a remote repository
 
