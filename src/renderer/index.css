@@ -15,3 +15,11 @@ html, body, #renderer {
 .fixed {
   font-family: Consolas;
 }
+
+p:first-child, legend + p {
+  margin-top: 0;
+}
+
+p:last-child {
+  margin-bottom: 0;
+}

@@ -1,10 +1,14 @@
-import type { GraphViewOptions, Image, Node, NodeId } from "../shared-types";
-import { edgeIdToText, getShowEdgeLabels, isParent, nodeIdToText, viewFeatures } from "../shared-types";
+import type { AnyGraphViewOptions, GraphViewOptions, Image, Node, NodeId } from "../shared-types";
+import { edgeIdToText, isParent, nodeIdToText, viewFeatures } from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
 import type { Edge } from "./shared-types";
 import { Edges, NodeIdMap, NodeIdSet, createLookupNodeId, options } from "./shared-types";
+import { uniqueStrings } from "./shared-types/remove";
+
+const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] =>
+  viewOptions["showEdgeLabels"] ?? { groups: false, leafs: false };
 
 export function convertToImage(
   nodes: Node[],
@@ -138,7 +142,7 @@ export function convertToImage(
   const imageData: ImageData = {
     nodes: toImageNodes(nodes),
     edges: visibleEdges.values().map((edge) => {
-      const labels = [...new Set<string>(edge.labels)].sort();
+      const labels = uniqueStrings(edge.labels).sort();
       const showLabels = !showEdgeLabels
         ? false
         : edge.serverId.type === leafType

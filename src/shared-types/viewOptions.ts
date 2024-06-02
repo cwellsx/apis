@@ -1,13 +1,25 @@
 import type { MethodNodeId, NodeId } from "./nodeId";
 
+type ShowClustered = {
+  clusterBy: "assembly" | "namespace";
+  nestedClusters: boolean;
+};
+
+type ShowEdgeLabels = {
+  groups: boolean;
+  leafs: boolean;
+};
+
 type TreeViewOptions = {
   leafVisible: NodeId[];
   groupExpanded: NodeId[];
+  showClustered: ShowClustered;
+  showEdgeLabels: ShowEdgeLabels;
 };
 
-export type ReferenceViewOptions = TreeViewOptions & {
-  showGrouped: boolean;
+export type ReferenceViewOptions = Omit<TreeViewOptions, "showEdgeLabels" | "showClustered"> & {
   viewType: "references";
+  nestedClusters: boolean; // one element from ShowClustered
 };
 
 export type MethodViewOptions = TreeViewOptions & {
@@ -16,22 +28,15 @@ export type MethodViewOptions = TreeViewOptions & {
   viewType: "methods";
 };
 
-type ShowEdgeLabels = {
-  groups: boolean;
-  leafs: boolean;
-};
-
 export type ApiViewOptions = TreeViewOptions & {
-  showEdgeLabels: ShowEdgeLabels;
   showIntraAssemblyCalls: boolean;
   viewType: "apis";
 };
 
-export type CustomViewOptions = TreeViewOptions & {
+export type CustomViewOptions = Omit<TreeViewOptions, "showClustered"> & {
   nodeProperties: string[];
-  groupedBy: string[];
+  clusterBy: string[]; // one element from ShowClustered
   tags: { tag: string; shown: boolean }[];
-  showEdgeLabels: ShowEdgeLabels;
   viewType: "custom";
 };
 
@@ -63,28 +68,9 @@ export type ViewOptions =
 
 export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom";
 
-// type predicates
-
-type AnyGraphViewOptions = Partial<
+export type AnyGraphViewOptions = Partial<
   Omit<ReferenceViewOptions, "viewType"> &
     Omit<MethodViewOptions, "viewType"> &
     Omit<ApiViewOptions, "viewType"> &
     Omit<CustomViewOptions, "viewType">
 >;
-
-export const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): ShowEdgeLabels | undefined =>
-  viewOptions["showEdgeLabels"];
-
-export type GetSetBoolean = [boolean, (b: boolean) => void];
-
-export const getShowGrouped = (viewOptions: AnyGraphViewOptions): GetSetBoolean | undefined => {
-  const result = viewOptions["showGrouped"];
-  if (result === undefined) return undefined;
-  return [result, (b: boolean) => (viewOptions["showGrouped"] = b)];
-};
-
-export const getShowIntraAssemblyCalls = (viewOptions: AnyGraphViewOptions): GetSetBoolean | undefined => {
-  const result = viewOptions["showIntraAssemblyCalls"];
-  if (result === undefined) return undefined;
-  return [result, (b: boolean) => (viewOptions["showIntraAssemblyCalls"] = b)];
-};

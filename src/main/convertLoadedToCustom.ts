@@ -44,7 +44,7 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
   });
 
   // next do the group
-  const groupedBy = viewOptions.groupedBy.length ? viewOptions.groupedBy[0] : undefined;
+  const groupedBy = viewOptions.clusterBy.length ? viewOptions.clusterBy[0] : undefined;
   const groups: Node[] = [];
   if (groupedBy) {
     const parents: { [id: string]: Parent } = {};

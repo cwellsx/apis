@@ -20,3 +20,5 @@ export function distinctor<T>(equals: (lhs: T, rhs: T) => boolean) {
   };
   return distinct;
 }
+
+export const uniqueStrings = (strings: string[]): string[] => [...new Set<string>(strings)];

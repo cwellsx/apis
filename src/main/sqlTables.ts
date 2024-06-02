@@ -25,6 +25,7 @@ import type {
 import { badTypeInfo, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
 import { TypeAndMethodDetails, distinctor, getTypeInfoName, nestTypes } from "./shared-types";
+import { uniqueStrings } from "./shared-types/remove";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
 
@@ -149,7 +150,7 @@ type GoodTypeDictionary = {
 };
 
 const defaultReferenceViewOptions: ReferenceViewOptions = {
-  showGrouped: true,
+  nestedClusters: true,
   leafVisible: [],
   groupExpanded: [],
   viewType: "references",
@@ -161,6 +162,14 @@ const defaultMethodViewOptions: MethodViewOptions = {
   topType: "assembly",
   methodId: methodNodeId("?", 0),
   viewType: "methods",
+  showClustered: {
+    clusterBy: "assembly",
+    nestedClusters: true,
+  },
+  showEdgeLabels: {
+    groups: false,
+    leafs: false,
+  },
 };
 
 const defaultApiViewOptions: ApiViewOptions = {
@@ -172,13 +181,17 @@ const defaultApiViewOptions: ApiViewOptions = {
     leafs: false,
   },
   showIntraAssemblyCalls: false,
+  showClustered: {
+    clusterBy: "assembly",
+    nestedClusters: true,
+  },
 };
 
 const defaultCustomViewOptions: CustomViewOptions = {
   leafVisible: [],
   groupExpanded: [],
   nodeProperties: [],
-  groupedBy: [],
+  clusterBy: [],
   tags: [],
   viewType: "custom",
   showEdgeLabels: {
@@ -210,7 +223,7 @@ export class SqlCustom {
   close: () => void;
 
   constructor(db: Database) {
-    const customSchemaVersionExpected = "2024-05-12";
+    const customSchemaVersionExpected = "2024-06-01";
 
     // even though the CustomNode elements each have a unique id
     // don't bother to store the data in normalized tables
@@ -337,7 +350,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-05-26";
+    const loadedSchemaVersionExpected = "2024-06-01";
 
     this.viewState = new ViewState(db);
 
@@ -451,7 +464,11 @@ export class SqlLoaded {
         assemblyMethodTypes[assemblyName] = methodTypes;
 
         // => assemblyTable
-        assemblyTable.insert({ assemblyName, references: JSON.stringify(assemblyInfo.referencedAssemblies) });
+        assemblyTable.insert({
+          assemblyName,
+          // uniqueStrings because I've unusually seen an assembly return two references to the same assembly name
+          references: JSON.stringify(uniqueStrings(assemblyInfo.referencedAssemblies)),
+        });
 
         const allTypeInfo = validateTypeInfo(assemblyInfo.types);
 

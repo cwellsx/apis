@@ -41,10 +41,10 @@ export const convertLoadedToReferences = (
     if (!known.includes(key)) imageAttributes.set(node.nodeId, { shape: "none", className: "leaf-none" });
   });
   const image = convertToImage(
-    viewOptions.showGrouped ? groups : Object.values(leafs),
+    viewOptions.nestedClusters ? groups : Object.values(leafs),
     edges,
     viewOptions,
-    viewOptions.showGrouped,
+    viewOptions.nestedClusters,
     imageAttributes
   );
   return { groups, image, viewOptions };

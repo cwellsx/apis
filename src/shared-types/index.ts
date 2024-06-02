@@ -20,11 +20,11 @@ export * from "./nodeId";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown } from "./types";
 export type { DetailType, MethodBody, MethodError, Types, ViewDetails } from "./viewDetails";
-export { getShowEdgeLabels, getShowGrouped, getShowIntraAssemblyCalls, viewFeatures } from "./viewOptions";
+export { viewFeatures } from "./viewOptions";
 export type {
+  AnyGraphViewOptions,
   ApiViewOptions,
   CustomViewOptions,
-  GetSetBoolean,
   GraphViewOptions,
   GraphViewType,
   MethodViewOptions,
