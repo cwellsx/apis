@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using Core.Output.Internal;
+using Core.Output.Public;
+using System.Collections.Generic;
 using System.Linq;
 
-namespace Core
+namespace Core.Extensions
 {
     static class StringExtensions
     {

@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Core.Output.Internal;
+using Core.Output.Public;
+using System;
 using System.Linq;
 
-namespace Core
+namespace Core.Extensions
 {
     // these methods transform the Core.IL.Output types to the Core types in Output.cs
     // the transformations are mostly one-to-one i.e. different record types with the same property names

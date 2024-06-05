@@ -1,10 +1,9 @@
-﻿using System;
+﻿using Core.Extensions;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Core
+namespace Core.Output.Public
 {
     class Invariants
     {

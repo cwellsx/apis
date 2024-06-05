@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Core
+namespace Core.Extensions
 {
     // this JSON serializes like an array but implements value-equality semantics
     public class Values<T> : IEnumerable<T> where T : notnull

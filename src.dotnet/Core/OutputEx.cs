@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Core.Extensions;
+using Core.Output.Public;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Core
+namespace Core.Output.Internal
 {
     /// <summary>
     /// Same as TypeId except that AssemblyName is nullable if isMicrosoftAssemblyName

@@ -1,8 +1,10 @@
-﻿using System;
+﻿using Core.Extensions;
+using Core.Output.Internal;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Core
+namespace Core.Output.Public
 {
     // the Type instances extracted via reflection become invalid when the MetadataLoadContext is destroyed
     // therefore Type properties must be extracted into plain-old-data classes like these, before then.

@@ -1,11 +1,14 @@
-﻿using System;
+﻿using Core.Extensions;
+using Core.Output.Internal;
+using Core.Output.Public;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace Core
 {
     using AssemblyMethods = Dictionary<string, Dictionary<int, MethodDetails>>;
-    using MethodDictionary = Dictionary<int, MethodDetails>;
+     using MethodDictionary = Dictionary<int, MethodDetails>;
 
     class MethodFinder
     {
