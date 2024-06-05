@@ -1,7 +1,7 @@
-import type { MethodNodeId, NodeId } from "./nodeId";
+import type { ClusterBy, MethodNodeId, NodeId } from "./nodeId";
 
 type ShowClustered = {
-  clusterBy: "assembly" | "namespace";
+  clusterBy: ClusterBy;
   nestedClusters: boolean;
 };
 
@@ -10,32 +10,29 @@ type ShowEdgeLabels = {
   leafs: boolean;
 };
 
-type TreeViewOptions = {
-  leafVisible: NodeId[];
-  groupExpanded: NodeId[];
-  showClustered: ShowClustered;
-  showEdgeLabels: ShowEdgeLabels;
-};
-
-export type ReferenceViewOptions = Omit<TreeViewOptions, "showEdgeLabels" | "showClustered"> & {
+export type ReferenceViewOptions = {
   viewType: "references";
   nestedClusters: boolean; // one element from ShowClustered
 };
 
-export type MethodViewOptions = TreeViewOptions & {
-  topType: "assembly" | "namespace" | "none";
-  methodId: MethodNodeId;
+export type MethodViewOptions = {
   viewType: "methods";
+  showClustered: ShowClustered;
+  showEdgeLabels: ShowEdgeLabels;
+  methodId: MethodNodeId;
 };
 
-export type ApiViewOptions = TreeViewOptions & {
-  showIntraAssemblyCalls: boolean;
+export type ApiViewOptions = {
   viewType: "apis";
+  showClustered: ShowClustered;
+  showEdgeLabels: ShowEdgeLabels;
+  showInternalCalls: boolean;
 };
 
-export type CustomViewOptions = Omit<TreeViewOptions, "showClustered"> & {
+export type CustomViewOptions = {
   nodeProperties: string[];
   clusterBy: string[]; // one element from ShowClustered
+  showEdgeLabels: ShowEdgeLabels;
   tags: { tag: string; shown: boolean }[];
   viewType: "custom";
 };
@@ -50,6 +47,12 @@ export type GreetingViewOptions = {
 
 export type GraphViewOptions = ReferenceViewOptions | MethodViewOptions | ApiViewOptions | CustomViewOptions;
 export type GraphViewType = "references" | "methods" | "apis" | "custom";
+export type CommonGraphViewType = Exclude<GraphViewType, "custom">;
+
+export type GraphFilter = {
+  leafVisible: NodeId[];
+  groupExpanded: NodeId[];
+};
 
 export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"]; details: ("leaf" | "edge")[] }> = {
   references: { leafType: "assembly", details: ["leaf"] },

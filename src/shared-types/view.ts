@@ -2,7 +2,7 @@ import { CustomError } from "./customError";
 import { Image } from "./image";
 import { Node } from "./node";
 import { MethodBody } from "./viewDetails";
-import { ErrorsViewOptions, GraphViewOptions, GreetingViewOptions } from "./viewOptions";
+import { ErrorsViewOptions, GraphFilter, GraphViewOptions, GreetingViewOptions } from "./viewOptions";
 
 /*
   The types of View are distinguished by the viewType which is an element of every viewOptions
@@ -16,6 +16,8 @@ export type ViewGraph = {
   // but that would require useState and useEffect in the render
   // https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state
   groups: Node[];
+
+  graphFilter: GraphFilter;
 
   viewOptions: GraphViewOptions;
 };

@@ -19,11 +19,11 @@ const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOption
 const getShowClustered = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showClustered"] | undefined =>
   viewOptions["showClustered"];
 
-const getShowIntraAssemblyCalls = (viewOptions: AnyGraphViewOptions): BooleanState | undefined => {
-  const value = viewOptions["showIntraAssemblyCalls"];
+const getShowInternalCalls = (viewOptions: AnyGraphViewOptions): BooleanState | undefined => {
+  const value = viewOptions["showInternalCalls"];
   if (value === undefined) return undefined;
   const setValue = (newValue: boolean): void => {
-    viewOptions["showIntraAssemblyCalls"] = newValue;
+    viewOptions["showInternalCalls"] = newValue;
   };
   return [value, setValue];
 };
@@ -150,7 +150,7 @@ const Radios: React.FunctionComponent<RadiosProps> = (props: RadiosProps) => {
 
 const ShowIntraAssemblyCalls: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
   const { viewOptions, setViewOptions } = props;
-  const booleanState = getShowIntraAssemblyCalls(viewOptions);
+  const booleanState = getShowInternalCalls(viewOptions);
   if (!booleanState) return <></>;
   const [value, setValue] = booleanState;
   return (

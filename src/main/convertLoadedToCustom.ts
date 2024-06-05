@@ -1,11 +1,15 @@
-import type { CustomViewOptions, Leaf, Node, Parent, ViewGraph } from "../shared-types";
+import type { CustomViewOptions, GraphFilter, Leaf, Node, Parent, ViewGraph } from "../shared-types";
 import { groupByNodeId, nameNodeId } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
 import { Edges } from "./shared-types";
 
-export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomViewOptions): ViewGraph => {
+export const convertLoadedToCustom = (
+  nodes: CustomNode[],
+  viewOptions: CustomViewOptions,
+  graphFilter: GraphFilter
+): ViewGraph => {
   log("convertLoadedToView");
   const leafs: { [id: string]: Leaf } = {};
 
@@ -69,6 +73,6 @@ export const convertLoadedToCustom = (nodes: CustomNode[], viewOptions: CustomVi
 
   groups.sort((x, y) => x.label.localeCompare(y.label));
 
-  const image = convertToImage(groups, edges.values(), viewOptions, false, undefined);
-  return { groups, image, viewOptions };
+  const image = convertToImage(groups, edges.values(), viewOptions, graphFilter, false, undefined);
+  return { groups, image, viewOptions, graphFilter };
 };

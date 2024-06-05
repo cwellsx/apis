@@ -1,5 +1,6 @@
 import * as React from "react";
 import type {
+  FilterEvent,
   OnDetailClick,
   OnGraphClick,
   View,
@@ -24,19 +25,28 @@ export function isErrors(view: View): view is ViewErrors {
   return view.viewOptions.viewType === "errors";
 }
 
-export const getLeft = (view: View, onViewOptions: (viewOptions: ViewOptions) => void): JSX.Element => {
+export const getLeft = (
+  view: View,
+  onViewOptions: (viewOptions: ViewOptions) => void,
+  onGraphFilter: (filterEvent: FilterEvent) => void
+): JSX.Element => {
   if (isGreeting(view) || isErrors(view)) return <></>;
 
   const viewOptions = view.viewOptions;
+  const { leafVisible, groupExpanded } = view.graphFilter;
   return (
     <>
       <Options viewOptions={view.viewOptions} setViewOptions={onViewOptions} />
       <Tree
         nodes={view.groups}
-        leafVisible={viewOptions.leafVisible.map(nodeIdToText)}
-        groupExpanded={viewOptions.groupExpanded.map(nodeIdToText)}
-        setLeafVisible={(names) => onViewOptions({ ...viewOptions, leafVisible: names.map(textToNodeId) })}
-        setGroupExpanded={(names) => onViewOptions({ ...viewOptions, groupExpanded: names.map(textToNodeId) })}
+        leafVisible={leafVisible.map(nodeIdToText)}
+        groupExpanded={groupExpanded.map(nodeIdToText)}
+        setLeafVisible={(names) =>
+          onGraphFilter({ viewOptions, graphFilter: { leafVisible: names.map(textToNodeId), groupExpanded } })
+        }
+        setGroupExpanded={(names) =>
+          onGraphFilter({ viewOptions, graphFilter: { leafVisible, groupExpanded: names.map(textToNodeId) } })
+        }
       />
     </>
   );

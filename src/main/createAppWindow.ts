@@ -1,10 +1,12 @@
 import { BrowserWindow } from "electron";
 import type {
   AppOptions,
+  ClusterBy,
+  CommonGraphViewType,
   DetailEvent,
+  FilterEvent,
   GraphEvent,
   GraphViewOptions,
-  GraphViewType,
   MainApi,
   MethodNodeId,
   ViewErrors,
@@ -55,14 +57,33 @@ export const createAppWindow = (
     }
   };
 
-  const getGraphViewOptions = (viewType: GraphViewType): GraphViewOptions => {
+  const getGraphViewOptions = (
+    viewType: CommonGraphViewType
+  ): { viewOptions: GraphViewOptions; clusterBy: ClusterBy } => {
     switch (viewType) {
+      case "references": {
+        const viewOptions = sqlLoaded.viewState.referenceViewOptions;
+        return { viewOptions, clusterBy: "assembly" };
+      }
+      case "methods": {
+        const viewOptions = sqlLoaded.viewState.methodViewOptions;
+        return { viewOptions, clusterBy: viewOptions.showClustered.clusterBy };
+      }
+      case "apis": {
+        const viewOptions = sqlLoaded.viewState.apiViewOptions;
+        return { viewOptions, clusterBy: viewOptions.showClustered.clusterBy };
+      }
+    }
+  };
+
+  const getClusterBy = (viewOptions: GraphViewOptions): ClusterBy => {
+    switch (viewOptions.viewType) {
       case "references":
-        return sqlLoaded.viewState.referenceViewOptions;
+        return "assembly";
+
       case "methods":
-        return sqlLoaded.viewState.methodViewOptions;
       case "apis":
-        return sqlLoaded.viewState.apiViewOptions;
+        return viewOptions.showClustered.clusterBy;
       case "custom":
         throw new Error("Unexpected viewType");
     }
@@ -82,6 +103,7 @@ export const createAppWindow = (
     },
     onGraphClick: (graphEvent: GraphEvent): void => {
       const { id, viewType, event } = graphEvent;
+      if (viewType === "custom") throw new Error("Unexpected viewType");
       const { leafType, details } = viewFeatures[viewType];
       log(`onGraphClick ${id}`);
       if (isEdgeId(id)) {
@@ -92,9 +114,10 @@ export const createAppWindow = (
       const nodeId = id;
       if (leafType !== nodeId.type) {
         // this is a group
-        const viewOptions = getGraphViewOptions(viewType);
-        toggleNodeId(viewOptions.groupExpanded, nodeId);
-        setViewOptions(viewOptions);
+        const { viewOptions, clusterBy } = getGraphViewOptions(viewType);
+        const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
+        toggleNodeId(graphFilter.groupExpanded, nodeId);
+        sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
         showViewType(viewOptions.viewType);
         return;
       }
@@ -114,16 +137,16 @@ export const createAppWindow = (
           const { name: assemblyName } = nodeId;
           const assemblyReferences = sqlLoaded.readAssemblyReferences();
           if (event.shiftKey) {
-            const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-            showAdjacent(assemblyReferences, viewOptions, assemblyName);
-            sqlLoaded.viewState.referenceViewOptions = viewOptions;
+            const { clusterBy } = getGraphViewOptions(viewType);
+            const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
+            showAdjacent(assemblyReferences, graphFilter, assemblyName);
+            sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
             showReferences();
           } else if (event.ctrlKey) {
-            const viewOptions = sqlLoaded.viewState.referenceViewOptions;
-            const leafVisible = viewOptions.leafVisible;
-            removeNodeId(leafVisible, nodeId);
-            viewOptions.leafVisible = leafVisible;
-            sqlLoaded.viewState.referenceViewOptions = viewOptions;
+            const { clusterBy } = getGraphViewOptions(viewType);
+            const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
+            removeNodeId(graphFilter.leafVisible, nodeId);
+            sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
             showReferences();
           } else {
             const allTypeInfo = sqlLoaded.readTypes(assemblyName);
@@ -134,6 +157,14 @@ export const createAppWindow = (
           return;
         }
       }
+    },
+    onGraphFilter: (filterEvent: FilterEvent): void => {
+      const { viewOptions, graphFilter } = filterEvent;
+      const viewType = viewOptions.viewType;
+      if (viewType === "custom") throw new Error("Unexpected viewType");
+      const clusterBy = getClusterBy(viewOptions);
+      sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
+      showViewType(viewType);
     },
     onDetailClick: (detailEvent: DetailEvent): void => {
       log("onDetailClick");
@@ -152,8 +183,20 @@ export const createAppWindow = (
     try {
       const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const viewGraph = convertLoadedToMethods(readMethod, methodViewOptions, methodId);
-      if (methodId) sqlLoaded.viewState.methodViewOptions = methodViewOptions;
+      const viewGraph = convertLoadedToMethods(
+        readMethod,
+        methodViewOptions,
+        methodId ?? sqlLoaded.readGraphFilter("apis", methodViewOptions.showClustered.clusterBy)
+      );
+      if (methodId) {
+        sqlLoaded.writeGraphFilter(
+          methodViewOptions.viewType,
+          methodViewOptions.showClustered.clusterBy,
+          viewGraph.graphFilter
+        );
+        methodViewOptions.methodId = methodId;
+        sqlLoaded.viewState.methodViewOptions = methodViewOptions;
+      }
       log("renderer.showView");
       renderer.showView(viewGraph);
     } catch (error) {
@@ -165,6 +208,7 @@ export const createAppWindow = (
     const viewGraph = convertLoadedToReferences(
       sqlLoaded.readAssemblyReferences(),
       sqlLoaded.viewState.referenceViewOptions,
+      sqlLoaded.readGraphFilter("references", "assembly"),
       sqlLoaded.viewState.exes
     );
     log("renderer.showView");
@@ -188,13 +232,21 @@ export const createAppWindow = (
 
   const showApis = (): void => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
+    const graphFilter = sqlLoaded.readGraphFilter("apis", apiViewOptions.showClustered.clusterBy);
     const calls = sqlLoaded.readCalls(
-      apiViewOptions.showIntraAssemblyCalls ? getAssemblyNames(apiViewOptions.groupExpanded) : []
+      apiViewOptions.showInternalCalls ? getAssemblyNames(graphFilter.groupExpanded) : []
     );
     show.showMessage(undefined, `${calls.length} records`);
     const typeNames = sqlLoaded.readTypeNames();
     const methodNames = sqlLoaded.readMethodNames();
-    const viewGraph = convertLoadedToApis(calls, apiViewOptions, typeNames, methodNames, sqlLoaded.viewState.exes);
+    const viewGraph = convertLoadedToApis(
+      calls,
+      apiViewOptions,
+      graphFilter,
+      typeNames,
+      methodNames,
+      sqlLoaded.viewState.exes
+    );
     log("renderer.showView");
     renderer.showView(viewGraph);
   };

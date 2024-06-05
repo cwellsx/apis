@@ -2,8 +2,11 @@ import { Database } from "better-sqlite3";
 import type {
   ApiViewOptions,
   AppOptions,
+  ClusterBy,
+  CommonGraphViewType,
   CustomError,
   CustomViewOptions,
+  GraphFilter,
   Members,
   MethodViewOptions,
   NodeId,
@@ -137,6 +140,12 @@ type RecentColumns = {
   when: number;
 };
 
+type GraphFilterColumns = {
+  viewType: CommonGraphViewType;
+  clusterBy: ClusterBy | "leafVisible";
+  value: string;
+};
+
 type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
 const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
   const result: SavedTypeInfo = { ...typeInfo };
@@ -151,15 +160,10 @@ type GoodTypeDictionary = {
 
 const defaultReferenceViewOptions: ReferenceViewOptions = {
   nestedClusters: true,
-  leafVisible: [],
-  groupExpanded: [],
   viewType: "references",
 };
 
 const defaultMethodViewOptions: MethodViewOptions = {
-  leafVisible: [],
-  groupExpanded: [],
-  topType: "assembly",
   methodId: methodNodeId("?", 0),
   viewType: "methods",
   showClustered: {
@@ -173,14 +177,12 @@ const defaultMethodViewOptions: MethodViewOptions = {
 };
 
 const defaultApiViewOptions: ApiViewOptions = {
-  leafVisible: [],
-  groupExpanded: [],
   viewType: "apis",
   showEdgeLabels: {
     groups: false,
     leafs: false,
   },
-  showIntraAssemblyCalls: false,
+  showInternalCalls: false,
   showClustered: {
     clusterBy: "assembly",
     nestedClusters: true,
@@ -188,8 +190,6 @@ const defaultApiViewOptions: ApiViewOptions = {
 };
 
 const defaultCustomViewOptions: CustomViewOptions = {
-  leafVisible: [],
-  groupExpanded: [],
   nodeProperties: [],
   clusterBy: [],
   tags: [],
@@ -221,9 +221,15 @@ export class SqlCustom {
   readErrors: () => CustomError[];
   readAll: () => CustomNode[];
   close: () => void;
+  private readLeafVisible: () => NodeId[];
+  private readGroupExpanded: (clusterBy: string[]) => NodeId[];
+  private writeLeafVisible: (leafVisible: NodeId[]) => void;
+  private writeGroupExpanded: (clusterBy: string[], groupExpanded: NodeId[]) => void;
+  readGraphFilter: (clusterBy: string[]) => GraphFilter;
+  writeGraphFilter: (clusterBy: string[], graphFilter: GraphFilter) => void;
 
   constructor(db: Database) {
-    const customSchemaVersionExpected = "2024-06-01";
+    const customSchemaVersionExpected = "2024-06-05";
 
     // even though the CustomNode elements each have a unique id
     // don't bother to store the data in normalized tables
@@ -282,6 +288,33 @@ export class SqlCustom {
       return JSON.parse(o.value) as CustomNode[];
     };
 
+    const keyGroupExpended = (clusterBy: string[]): string =>
+      "clusterBy" + [clusterBy.length] ? "-" + clusterBy.join("-") : "";
+    this.readLeafVisible = (): NodeId[] => {
+      const found = configTable.selectOne({ name: "leafVisible" });
+      if (!found) throw new Error("readLeafVisible nodes not found");
+      return JSON.parse(found.value);
+    };
+    this.readGroupExpanded = (clusterBy: string[]): NodeId[] => {
+      const found = configTable.selectOne({ name: keyGroupExpended(clusterBy) });
+      if (!found) return []; // not predefined so initially all closed
+      return JSON.parse(found.value);
+    };
+    this.writeLeafVisible = (leafVisible: NodeId[]): void => {
+      configTable.upsert({ name: "leafVisible", value: JSON.stringify(leafVisible) });
+    };
+    this.writeGroupExpanded = (clusterBy: string[], groupExpanded: NodeId[]): void => {
+      configTable.upsert({ name: keyGroupExpended(clusterBy), value: JSON.stringify(groupExpanded) });
+    };
+    this.readGraphFilter = (clusterBy: string[]): GraphFilter => ({
+      leafVisible: this.readLeafVisible(),
+      groupExpanded: this.readGroupExpanded(clusterBy),
+    });
+    this.writeGraphFilter = (clusterBy: string[], graphFilter: GraphFilter): void => {
+      this.writeLeafVisible(graphFilter.leafVisible);
+      this.writeGroupExpanded(clusterBy, graphFilter.groupExpanded);
+    };
+
     this.viewState = {
       onSave: (
         when: string,
@@ -292,14 +325,14 @@ export class SqlCustom {
       ): void => {
         configTable.upsert({ name: "when", value: when });
         configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
-        nodeProperties.sort();
-        tags.sort();
+
         this.viewState.customViewOptions = {
           ...defaultCustomViewOptions,
-          leafVisible: nodeIds,
-          nodeProperties,
-          tags: tags.map((tag) => ({ tag, shown: true })),
+          nodeProperties: nodeProperties.sort(),
+          tags: tags.sort().map((tag) => ({ tag, shown: true })),
         };
+
+        this.writeLeafVisible(nodeIds);
       },
       set customViewOptions(viewOptions: CustomViewOptions) {
         configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });
@@ -347,10 +380,18 @@ export class SqlLoaded {
   readCalls: (assemblyNames: string[]) => CallColumns[];
   readTypeNames: () => TypeNameColumns[];
   readMethodNames: () => MethodNameColumns[];
+
+  private readLeafVisible: (viewType: CommonGraphViewType) => NodeId[];
+  private readGroupExpanded: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => NodeId[];
+  private writeLeafVisible: (viewType: CommonGraphViewType, leafVisible: NodeId[]) => void;
+  private writeGroupExpanded: (viewType: CommonGraphViewType, clusterBy: ClusterBy, groupExpanded: NodeId[]) => void;
+  readGraphFilter: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => GraphFilter;
+  writeGraphFilter: (viewType: CommonGraphViewType, clusterBy: ClusterBy, graphFilter: GraphFilter) => void;
+
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-01";
+    const loadedSchemaVersionExpected = "2024-06-05";
 
     this.viewState = new ViewState(db);
 
@@ -365,6 +406,7 @@ export class SqlLoaded {
       dropTable(db, "call");
       dropTable(db, "typeName");
       dropTable(db, "methodName");
+      dropTable(db, "graphFilter");
       this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
@@ -433,6 +475,17 @@ export class SqlLoaded {
         name: "bar",
       }
     );
+    const graphFilterTable = new SqlTable<GraphFilterColumns>(
+      db,
+      "graphFilter",
+      ["viewType", "clusterBy"],
+      () => false,
+      {
+        viewType: "references",
+        clusterBy: "assembly",
+        value: "baz",
+      }
+    );
 
     const done = () => {
       const result = db.pragma("wal_checkpoint(TRUNCATE)");
@@ -441,6 +494,7 @@ export class SqlLoaded {
 
     this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
       // delete in reverse order
+      graphFilterTable.deleteAll();
       methodNameTable.deleteAll();
       typeNameTable.deleteAll();
       callTable.deleteAll();
@@ -597,14 +651,13 @@ export class SqlLoaded {
       methodNameTable.insertMany(assemblyMethodNames);
 
       // => viewState => _cache => _sqlConfig
-      this.viewState.onSave(
-        when,
-        hashDataSource,
-        reflected.version,
-        reflected.exes,
-        Object.keys(reflected.assemblies),
-        assemblyTypeIds
+      this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes);
+
+      this.writeLeafVisible(
+        "references",
+        Object.keys(reflected.assemblies).map((assemblyName) => nameNodeId("assembly", assemblyName))
       );
+      this.writeLeafVisible("apis", assemblyTypeIds);
 
       log("save complete");
       done();
@@ -687,6 +740,30 @@ export class SqlLoaded {
     this.readTypeNames = (): TypeNameColumns[] => typeNameTable.selectAll();
     this.readMethodNames = (): MethodNameColumns[] => methodNameTable.selectAll();
 
+    this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {
+      const found = graphFilterTable.selectOne({ viewType, clusterBy: "leafVisible" });
+      if (!found) throw new Error("readLeafVisible nodes not found");
+      return JSON.parse(found.value);
+    };
+    this.readGroupExpanded = (viewType: CommonGraphViewType, clusterBy: ClusterBy): NodeId[] => {
+      const found = graphFilterTable.selectOne({ viewType, clusterBy });
+      return !found ? [] : JSON.parse(found.value);
+    };
+    this.writeLeafVisible = (viewType: CommonGraphViewType, leafVisible: NodeId[]): void => {
+      graphFilterTable.upsert({ viewType, clusterBy: "leafVisible", value: JSON.stringify(leafVisible) });
+    };
+    this.writeGroupExpanded = (viewType: CommonGraphViewType, clusterBy: ClusterBy, groupExpanded: NodeId[]): void => {
+      graphFilterTable.upsert({ viewType, clusterBy, value: JSON.stringify(groupExpanded) });
+    };
+    this.readGraphFilter = (viewType: CommonGraphViewType, clusterBy: ClusterBy): GraphFilter => ({
+      leafVisible: this.readLeafVisible(viewType),
+      groupExpanded: this.readGroupExpanded(viewType, clusterBy),
+    });
+    this.writeGraphFilter = (viewType: CommonGraphViewType, clusterBy: ClusterBy, graphFilter: GraphFilter): void => {
+      this.writeLeafVisible(viewType, graphFilter.leafVisible);
+      this.writeGroupExpanded(viewType, clusterBy, graphFilter.groupExpanded);
+    };
+
     this.close = () => {
       done();
       db.close();
@@ -740,24 +817,14 @@ export class ViewState {
     this._cache = new ConfigCache(db);
   }
 
-  onSave(
-    when: string,
-    hashDataSource: string,
-    version: string,
-    exes: string[],
-    assemblyNames: string[],
-    assemblyTypeIds: TypeNodeId[]
-  ) {
+  onSave(when: string, hashDataSource: string, version: string, exes: string[]) {
     this.cachedWhen = when;
     this.hashDataSource = hashDataSource;
     this.loadedVersion = version;
     this.exes = exes;
-    this.referenceViewOptions = {
-      ...defaultReferenceViewOptions,
-      leafVisible: assemblyNames.map((assemblyName) => nameNodeId("assembly", assemblyName)),
-    };
+    this.referenceViewOptions = defaultReferenceViewOptions;
     this.methodViewOptions = defaultMethodViewOptions;
-    this.apiViewOptions = { ...defaultApiViewOptions, leafVisible: assemblyTypeIds };
+    this.apiViewOptions = defaultApiViewOptions;
   }
 
   // this changes when the SQL schema definition changes

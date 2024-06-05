@@ -4,6 +4,7 @@ import type {
   OnAppOptions,
   OnDetailClick,
   OnGraphClick,
+  OnGraphFilter,
   OnViewOptions,
   PreloadApis,
   View,
@@ -61,13 +62,14 @@ const App: React.FunctionComponent = () => {
 
   const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
   const onAppOptions: OnAppOptions = (appOptions) => mainApi.onAppOptions(appOptions);
-  const onDetailClick: OnDetailClick = (nodeId) => mainApi.onDetailClick(nodeId);
   const onGraphClick: OnGraphClick = (graphEvent) => mainApi.onGraphClick(graphEvent);
+  const onGraphFilter: OnGraphFilter = (filterEvent) => mainApi.onGraphFilter(filterEvent);
+  const onDetailClick: OnDetailClick = (nodeId) => mainApi.onDetailClick(nodeId);
 
   return (
     <React.StrictMode>
       <Panes
-        left={getLeft(view, onViewOptions)}
+        left={getLeft(view, onViewOptions, onGraphFilter)}
         center={getCenter(view, onGraphClick, zoomPercent)}
         right={getRight(details, onDetailClick)}
         fontSize={fontSize}

@@ -1,28 +1,33 @@
 import type { Leaf, NameTypes, Node, Parent } from "../shared-types";
 import { isParent, nameNodeId } from "../shared-types";
 import type { StringPredicate } from "./shared-types";
-import { distinctor, options, remove, replace } from "./shared-types";
+import { options, remove, replace } from "./shared-types";
+import { uniqueStrings } from "./shared-types/remove";
 
-/*
-  This is a depth-first implementation, could if needed change it to be breadth-first.
-*/
-
-export const convertNamesToGroups = (
-  names: string[],
-  exes: string[],
-  nameType: NameTypes
-): {
+type Result = {
   leafs: { [id: string]: Node };
   groups: Node[];
-} => {
-  // sort all names -- these names will become leaf nodes
-  names.sort();
-  // names many contain duplicate
-  const distinctNames = distinctor<string>((lhs, rhs) => lhs === rhs);
+};
 
+const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
   const groups: Node[] = [];
   const leafs: { [name: string]: Node } = {};
-  for (const name of names.filter(distinctNames)) {
+
+  for (const name of names) {
+    const newLeaf: Leaf = { label: name, nodeId: nameNodeId(nameType, name), parent: null };
+    groups.push(newLeaf);
+    leafs[name] = newLeaf;
+  }
+
+  return { groups, leafs };
+};
+
+const createNestedClusters = (names: string[], nameType: NameTypes): Result => {
+  const groups: Node[] = [];
+  const leafs: { [name: string]: Node } = {};
+
+  // This is a depth-first implementation, could if needed change it to be breadth-first.
+  for (const name of names) {
     let partial = "";
     let nodes = groups;
 
@@ -75,6 +80,23 @@ export const convertNamesToGroups = (
     ungroupSingle(groups);
   }
 
+  return { groups, leafs };
+};
+
+export const convertNamesToNodes = (
+  names: string[],
+  exes: string[],
+  nameType: NameTypes,
+  nestedClusters: boolean
+): Result => {
+  // sort all names -- these names will become leaf nodes -- names many contain duplicate
+  names = uniqueStrings(names).sort();
+
+  const { leafs, groups } = nestedClusters
+    ? createNestedClusters(names, nameType)
+    : createFlatClusters(names, nameType);
+
+  // create a new root group and move into all subtrees whose label matches the predicate
   const regroup = (predicate: StringPredicate, label: string, id: string): void => {
     const found = groups.filter((node) => predicate(node.label));
     const parent = { label, nodeId: nameNodeId("group", id), parent: null, children: found };

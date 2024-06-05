@@ -4,6 +4,8 @@ export type NameTypes = "namespace" | "assembly" | "group" | "customLeaf";
 type MetadataTypes = "method" | "type" | "field" | "event" | "property";
 type ArtificialTypes = "attribute" | "exception";
 
+export type ClusterBy = "namespace" | "assembly";
+
 export type NameNodeId = { type: NameTypes; name: string };
 export type MetadataNodeId = { type: MetadataTypes; assemblyName: string; metadataToken: number };
 export type MethodNodeId = { type: "method"; assemblyName: string; metadataToken: number };

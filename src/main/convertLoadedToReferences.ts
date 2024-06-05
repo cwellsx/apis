@@ -1,6 +1,6 @@
-import type { ReferenceViewOptions, ViewGraph } from "../shared-types";
+import type { GraphFilter, ReferenceViewOptions, ViewGraph } from "../shared-types";
 import { nameNodeId } from "../shared-types";
-import { convertNamesToGroups } from "./convertNamesToGroups";
+import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import { ImageAttribute } from "./createImage";
 import type { AssemblyReferences } from "./loaded";
@@ -10,13 +10,13 @@ import { NodeIdMap, type Edge } from "./shared-types";
 export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,
   viewOptions: ReferenceViewOptions,
+  graphFilter: GraphFilter,
   exes: string[]
 ): ViewGraph => {
   log("convertLoadedToView");
-  // const known: Leaf[] = [];
+
   const edges: Edge[] = [];
   Object.entries(assemblyReferences).forEach(([assembly, dependencies]) => {
-    // known.push({ nodeId: nameNodeId("assembly", assembly), label: assembly, parent: null });
     dependencies.forEach((dependency) =>
       edges.push({
         clientId: nameNodeId("assembly", assembly),
@@ -32,7 +32,8 @@ export const convertLoadedToReferences = (
     names.push(...references);
   }
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const { groups, leafs } = convertNamesToGroups(names, exes, "assembly");
+  const nestedClusters = viewOptions.nestedClusters;
+  const { groups, leafs } = convertNamesToNodes(names, exes, "assembly", nestedClusters);
   // if they're not grouped on the image then pass them all, including .NET assemblies
   // but we don't disassemble .NET so assign them a non-default ImageAttribute
   const imageAttributes = new NodeIdMap<ImageAttribute>();
@@ -41,11 +42,12 @@ export const convertLoadedToReferences = (
     if (!known.includes(key)) imageAttributes.set(node.nodeId, { shape: "none", className: "leaf-none" });
   });
   const image = convertToImage(
-    viewOptions.nestedClusters ? groups : Object.values(leafs),
+    nestedClusters ? groups : Object.values(leafs),
     edges,
     viewOptions,
-    viewOptions.nestedClusters,
+    graphFilter,
+    nestedClusters,
     imageAttributes
   );
-  return { groups, image, viewOptions };
+  return { groups, image, viewOptions, graphFilter };
 };

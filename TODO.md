@@ -18,8 +18,9 @@ The process is:
 Generally:
 
 - The backlog exists before the current sprint
-- The current sprint is defined to address one or more items in the backlog
+- The sprint is defined to address one or more items in the backlog
 - When tasks are completed, list items are deleted from the sprint and from the backlog
+- There may be a sequence of Git commits per task
 
 ## What's being done now/next
 
@@ -44,9 +45,12 @@ Generally:
 
 ## Fix anything broken
 
+- Modify `sqlLoaded.readCalls` to support `clusterBy: namespace` instead of only `assembly`
 - `Core.exe` generates a warning, if not an error, when decompiling some assemblies
+- Display edge labels as tooltips
 - Fix the cursor not changing when the `[Ctrl]` key is pressed
 - Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
+- MethodViewOptions.topType should be obsolete, replace with showClustered: ShowClustered
 
 ## Improve what exists already
 
@@ -67,6 +71,7 @@ Generally:
 - Display progress messages when loading from `Core.exe`
 - `[Ctrl]`-click to hide should work with all nodes on all view types
 - Hide compiler-generated backing field
+- Improve the CSS e.g. for paragraph spacing -- using CSS reset etc.
 - Method view
   - Hide compiler-generated types, like they're already removed from the APIs view
   - Define view options for this view, e.g. to show the labels on the graph instead of only as tooltips
@@ -77,17 +82,18 @@ Generally:
 - Source code view
   - Reduce the tab size
   - Implement some line wrap, to avoid too-long lines
-  - Review the decompilation options re. generated source code
+  - Review the `DecompilerSettings` re. generated source code
   - Try some highlighting, maybe using a simple "find whole word", to identify the line-of-code or method-name on the stack
 
 ### Not now
 
 ## Start new features
 
+- Use base types and interfaces to find the concrete subclasses used in a code-base which does dependency injection
 - Read assemblies from multiple subdirectories and group by subdirectory
 - Find and show inter-process connections e.g. WCF and gRPC
 - Read and show target framework (from assembly or project)
-- Support a TypeScript source directory as another type of data source -- simply parse `import` and `export` statements
+- Support TypeScript source as another type of data source -- simply parse the `import` and `export` statements
 - Cancel button to cancel running `Core.exe` and/or ability to run it asynchronously in the background
 - Maybe consider how to integrate with source code, on the local machine or a remote repository
 

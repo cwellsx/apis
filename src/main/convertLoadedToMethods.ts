@@ -1,4 +1,13 @@
-import type { Leaf, MetadataNodeId, MethodNodeId, MethodViewOptions, NodeId, Parent, ViewGraph } from "../shared-types";
+import type {
+  GraphFilter,
+  Leaf,
+  MetadataNodeId,
+  MethodNodeId,
+  MethodViewOptions,
+  NodeId,
+  Parent,
+  ViewGraph,
+} from "../shared-types";
 import { metadataNodeId, methodNodeId, nameNodeId } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
@@ -62,11 +71,7 @@ const groupsFromTypeDictionary = (
     return self;
   };
 
-  const topType = viewOptions.topType;
-  if (topType === "none") {
-    const groups = types.entries().map(([typeId, typeMethods]) => parentFromTypeMethods(typeId, typeMethods, null));
-    return { groups, leafs };
-  }
+  const clusterBy = viewOptions.showClustered.clusterBy;
 
   type TopDictionary = {
     [id: string]: [NodeId, TypeMethods][];
@@ -76,7 +81,7 @@ const groupsFromTypeDictionary = (
   const tops: TopDictionary = {};
   for (const entry of types.entries()) {
     const typeId = entry[1].type.typeId;
-    const topId = topType === "assembly" ? typeId.assemblyName : typeId.namespace ?? "(none)";
+    const topId = clusterBy === "assembly" ? typeId.assemblyName : typeId.namespace ?? "(none)";
     let entries = tops[topId];
     if (!entries) {
       entries = [];
@@ -87,7 +92,7 @@ const groupsFromTypeDictionary = (
   const entryToGroupNode = (entry: [string, [NodeId, TypeMethods][]]): Parent => {
     const [topId, values] = entry;
     const self: Parent = {
-      nodeId: nameNodeId(topType, topId),
+      nodeId: nameNodeId(clusterBy, topId),
       label: topId,
       parent: null,
       children: [],
@@ -106,7 +111,7 @@ const groupsFromTypeDictionary = (
 export const convertLoadedToMethods = (
   readMethod: ReadMethod,
   viewOptions: MethodViewOptions,
-  methodId?: MethodNodeId
+  methodIdOrGraphFilter: MethodNodeId | GraphFilter
 ): ViewGraph => {
   type LeafDictionary = NodeIdMap<TypeAndMethodDetails>;
   const called = new NodeIdMap<TypeAndMethodDetails>();
@@ -130,8 +135,12 @@ export const convertLoadedToMethods = (
     edges.add(clientId, serverId, []);
   };
 
-  const isNewMethodId = !!methodId;
-  methodId ??= viewOptions.methodId;
+  const isGraphFilter = (filter: MethodNodeId | GraphFilter): filter is GraphFilter => {
+    const graphFilter = filter as GraphFilter;
+    return graphFilter.groupExpanded !== undefined && graphFilter.leafVisible !== undefined;
+  };
+
+  const methodId = !isGraphFilter(methodIdOrGraphFilter) ? methodIdOrGraphFilter : viewOptions.methodId;
 
   const firstLeaf = selectMethod(methodId, undefined);
   saveMethod(methodId, firstLeaf, called);
@@ -195,15 +204,19 @@ export const convertLoadedToMethods = (
   log("groupsFromTypeDictionary");
   const { groups, leafs } = groupsFromTypeDictionary(types, viewOptions);
 
+  const graphFilter = isGraphFilter(methodIdOrGraphFilter)
+    ? methodIdOrGraphFilter
+    : { leafVisible: leafs.map((leaf) => leaf.nodeId), groupExpanded: groups.map((parent) => parent.nodeId) };
+
   // a Group is visible iff its leafs are visible
-  if (isNewMethodId) {
-    viewOptions.leafVisible = leafs.map((leaf) => leaf.nodeId);
-    viewOptions.methodId = methodId;
-  }
+  // if (isNewMethodId) {
+  //   viewOptions.leafVisible = leafs.map((leaf) => leaf.nodeId);
+  //   viewOptions.methodId = methodId;
+  // }
 
   // convert to Image
   log("convertToImage");
-  const image = convertToImage(groups, edges.values(), viewOptions, false, imageAttributes);
+  const image = convertToImage(groups, edges.values(), viewOptions, graphFilter, false, imageAttributes);
 
-  return { image, viewOptions, groups };
+  return { image, viewOptions, graphFilter, groups };
 };

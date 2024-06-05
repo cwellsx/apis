@@ -2,6 +2,7 @@ import { BrowserWindow } from "electron";
 import type {
   AppOptions,
   CustomViewOptions,
+  FilterEvent,
   GraphEvent,
   MainApi,
   ViewErrors,
@@ -66,7 +67,9 @@ export const createCustomWindow = (
       if (leafType !== nodeId.type) {
         // this is a group
         const viewOptions = getCustomViewOptions(viewType);
-        toggleNodeId(viewOptions.groupExpanded, nodeId);
+        const graphFilter = sqlCustom.readGraphFilter(viewOptions.clusterBy);
+        toggleNodeId(graphFilter.groupExpanded, nodeId);
+        sqlCustom.writeGraphFilter(viewOptions.clusterBy, graphFilter);
         setCustomViewOptions(viewOptions);
         showViewType(viewOptions.viewType);
         return;
@@ -75,6 +78,14 @@ export const createCustomWindow = (
       // nothing to do
       return;
     },
+    onGraphFilter: (filterEvent: FilterEvent): void => {
+      const { viewOptions, graphFilter } = filterEvent;
+      const isCustomViewOptions = (viewOptions: ViewOptions): viewOptions is CustomViewOptions =>
+        viewOptions.viewType === "custom";
+      if (!isCustomViewOptions(viewOptions)) throw new Error("Unexpected viewType");
+      sqlCustom.writeGraphFilter(viewOptions.clusterBy, graphFilter);
+      showCustom();
+    },
     onDetailClick: (detailEvent): void => {
       // unexpected
     },
@@ -82,7 +93,9 @@ export const createCustomWindow = (
 
   const showCustom = (): void => {
     const nodes = sqlCustom.readAll();
-    const viewGraph = convertLoadedToCustom(nodes, sqlCustom.viewState.customViewOptions);
+    const viewOptions = sqlCustom.viewState.customViewOptions;
+    const graphFilter = sqlCustom.readGraphFilter(viewOptions.clusterBy);
+    const viewGraph = convertLoadedToCustom(nodes, viewOptions, graphFilter);
     log("renderer.showView");
     renderer.showView(viewGraph);
   };

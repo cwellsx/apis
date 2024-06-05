@@ -1,14 +1,15 @@
-import type { ApiViewOptions, Leaf, TypeNodeId, ViewGraph } from "../shared-types";
+import type { ApiViewOptions, GraphFilter, Leaf, TypeNodeId, ViewGraph } from "../shared-types";
 import { Parent, isParent, typeNodeId } from "../shared-types";
-import { convertNamesToGroups } from "./convertNamesToGroups";
+import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import { log } from "./log";
-import { Edges } from "./shared-types";
+import { Edges, NodeIdMap } from "./shared-types";
 import { CallColumns, MethodNameColumns, TypeNameColumns } from "./sqlTables";
 
 export const convertLoadedToApis = (
   calls: CallColumns[],
   viewOptions: ApiViewOptions,
+  graphFilter: GraphFilter,
   typeNames: TypeNameColumns[],
   methodNames: MethodNameColumns[],
   exes: string[]
@@ -16,6 +17,9 @@ export const convertLoadedToApis = (
   log("convertLoadedToApis");
 
   const assemblyTypeNames: { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
+  const assemblyMethodNames: { [assemblyName: string]: { [methodId: number]: MethodNameColumns } } = {};
+
+  // initialize lookup dictionaries
   typeNames.forEach((nameColumns) => {
     let found: { [typeId: number]: TypeNameColumns } = assemblyTypeNames[nameColumns.assemblyName];
     if (!found) {
@@ -24,8 +28,6 @@ export const convertLoadedToApis = (
     }
     found[nameColumns.metadataToken] = nameColumns;
   });
-
-  const assemblyMethodNames: { [assemblyName: string]: { [methodId: number]: MethodNameColumns } } = {};
   methodNames.forEach((nameColumns) => {
     let found: { [typeId: number]: MethodNameColumns } = assemblyMethodNames[nameColumns.assemblyName];
     if (!found) {
@@ -35,32 +37,46 @@ export const convertLoadedToApis = (
     found[nameColumns.metadataToken] = nameColumns;
   });
 
-  const transform: (assemblyName: string, typeId: number) => number = (assemblyName: string, typeId: number) =>
+  // the wantedTypeId is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
+  const wantedTypeId = (assemblyName: string, typeId: number) =>
     assemblyTypeNames[assemblyName][typeId].wantedTypeId ?? typeId;
   calls.forEach((call) => {
-    call.fromTypeId = transform(call.fromAssemblyName, call.fromTypeId);
-    call.toTypeId = transform(call.toAssemblyName, call.toTypeId);
+    call.fromTypeId = wantedTypeId(call.fromAssemblyName, call.fromTypeId);
+    call.toTypeId = wantedTypeId(call.toAssemblyName, call.toTypeId);
   });
 
-  const assemblyTypes: { [assemblyName: string]: { [typeId: number]: Leaf } } = {};
+  // type instances i.e. TypeNodeId are grouped by assemblyName or namespace
+  const groupedTypes: { [name: string]: NodeIdMap<Leaf> } = {};
   const edges = new Edges();
 
-  const addLeaf = (typeNodeId: TypeNodeId): void => {
-    const { assemblyName, metadataToken: typeId } = typeNodeId;
-    let types = assemblyTypes[assemblyName];
-    if (!types) {
-      types = {};
-      assemblyTypes[assemblyName] = types;
+  const getGroupName: (typeNodeId: TypeNodeId) => string = (typeNodeId) => {
+    switch (viewOptions.showClustered.clusterBy) {
+      case "assembly":
+        return typeNodeId.assemblyName;
+      case "namespace":
+        return assemblyTypeNames[typeNodeId.assemblyName][typeNodeId.metadataToken].namespace ?? "(no namespace)";
     }
-    if (types[typeId]) return; // Leaf already created for this type
+  };
 
-    const typeName = assemblyTypeNames[assemblyName][typeId];
+  const addLeaf = (typeNodeId: TypeNodeId): void => {
+    if (typeNodeId.metadataToken === 33554434) {
+      log("found");
+    }
+    const groupName = getGroupName(typeNodeId);
+    let types = groupedTypes[groupName];
+    if (!types) {
+      types = new NodeIdMap<Leaf>();
+      groupedTypes[groupName] = types;
+    }
+    if (types.has(typeNodeId)) return; // Leaf already created for this type
+
+    const typeName = assemblyTypeNames[typeNodeId.assemblyName][typeNodeId.metadataToken];
     const leaf: Leaf = {
       nodeId: typeNodeId,
       label: typeName.decoratedName,
       parent: null,
     };
-    types[typeId] = leaf;
+    types.set(typeNodeId, leaf);
   };
 
   calls.forEach((api) => {
@@ -79,17 +95,23 @@ export const convertLoadedToApis = (
   });
 
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const { groups, leafs } = convertNamesToGroups(Object.keys(assemblyTypes), exes, "assembly");
+  const nestedClusters = viewOptions.showClustered.nestedClusters;
+  const { groups, leafs } = convertNamesToNodes(
+    Object.keys(groupedTypes),
+    exes,
+    viewOptions.showClustered.clusterBy,
+    nestedClusters
+  );
 
-  Object.entries(assemblyTypes).forEach(([assemblyName, types]) => {
-    const node = leafs[assemblyName];
+  Object.entries(groupedTypes).forEach(([name, types]) => {
+    const node = leafs[name];
     if (isParent(node)) throw new Error("Unexpected parent");
     const parent = node as Parent;
-    const children: Leaf[] = Object.values(types);
+    const children: Leaf[] = types.values();
     children.forEach((child) => (child.parent = parent));
     parent["children"] = children;
   });
 
-  const image = convertToImage(groups, edges.values(), viewOptions, false, undefined);
-  return { groups, image, viewOptions };
+  const image = convertToImage(groups, edges.values(), viewOptions, graphFilter, false, undefined);
+  return { groups, image, viewOptions, graphFilter };
 };

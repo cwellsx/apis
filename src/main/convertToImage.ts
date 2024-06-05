@@ -1,4 +1,4 @@
-import type { AnyGraphViewOptions, GraphViewOptions, Image, Node, NodeId } from "../shared-types";
+import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Image, Node, NodeId } from "../shared-types";
 import { edgeIdToText, isParent, nodeIdToText, viewFeatures } from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
@@ -14,12 +14,13 @@ export function convertToImage(
   nodes: Node[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
+  graphFilter: GraphFilter,
   shortLeafNames: boolean,
   imageAttributes?: NodeIdMap<ImageAttribute>
 ): Image | string {
   log("convertToImage");
 
-  const { leafVisible, groupExpanded } = viewOptions;
+  const { leafVisible, groupExpanded } = graphFilter;
   const isLeafVisible = createLookupNodeId(leafVisible);
   const isGroupExpanded = createLookupNodeId(groupExpanded);
 
