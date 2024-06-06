@@ -134,12 +134,19 @@ namespace Core.Output.Public
         public const string CtorName = ".ctor"; // matches the name returned from Core.IL
     }
 
+    public record MemberException(
+        string Name,
+        int MetadataToken,
+        string Exception
+        );
+
     public record Members(
         FieldMember[]? FieldMembers,
         EventMember[]? EventMembers,
         PropertyMember[]? PropertyMembers,
         TypeId[]? TypeMembers,
-        MethodMember[]? MethodMembers
+        MethodMember[]? MethodMembers,
+        MemberException[]? Exceptions
         );
 
     public record Method(
@@ -206,4 +213,6 @@ namespace Core.Output.Public
         internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType, new List<CallDetails>(), new List<Method>(), null) { }
         internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType, new List<CallDetails>(), new List<Method>(), exception.ToString()) { }
     }
+
+    public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodDetails>> AssemblyMethods);
 }

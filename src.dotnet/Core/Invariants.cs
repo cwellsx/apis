@@ -5,16 +5,40 @@ using System.Linq;
 
 namespace Core.Output.Public
 {
-    class Invariants
+    static class Invariants
     {
-        record Id(string AssemblyName, int MetadataToken);
         record Pair(TypeId TypeId, object member);
-        Dictionary<Id, object> _metadataTokens = new Dictionary<Id, object>();
-        Dictionary<object, Id> _objectsWithIds = new Dictionary<object, Id>();
 
-        internal void Verify(string assemblyName, TypeInfo[] types)
+        internal static void Verify(TypeInfo[] types)
         {
-            Verify(types);
+            VerifyTypes(types);
+            VerifyMetadataTokens(types);
+        }
+
+        static void VerifyMetadataTokens(TypeInfo[] types)
+        {
+            Dictionary<int, object> metadataTokens = new Dictionary<int, object>();
+            Dictionary<object, int> objectsWithIds = new Dictionary<object, int>();
+
+            void assertMetadataToken(int metadataToken, object o, object o2)
+            {
+                if (!metadataTokens.TryGetValue(metadataToken, out var value))
+                {
+                    metadataTokens.Add(metadataToken, o);
+                    objectsWithIds.Add(o2, metadataToken);
+                }
+                else
+                {
+                    if (o != value)
+                    {
+                        throw new Exception("MetadataToken in not unique");
+                    }
+                    if (metadataToken != objectsWithIds[o2])
+                    {
+                        throw new Exception("MetadataToken in not consistent");
+                    }
+                }
+            }
 
             foreach (var typeInfo in types)
             {
@@ -23,31 +47,31 @@ namespace Core.Output.Public
                     continue;
                 }
 
-                assertMetadataToken(assemblyName, typeInfo.TypeId.MetadataToken, typeInfo.TypeId, typeInfo.TypeId with { MetadataToken = 0 });
+                assertMetadataToken(typeInfo.TypeId.MetadataToken, typeInfo.TypeId, typeInfo.TypeId with { MetadataToken = 0 });
                 foreach (var fieldMember in typeInfo.Members?.FieldMembers ?? Array.Empty<FieldMember>())
                 {
-                    assertMetadataToken(assemblyName, fieldMember.MetadataToken, fieldMember, new Pair(
+                    assertMetadataToken(fieldMember.MetadataToken, fieldMember, new Pair(
                         typeInfo.TypeId with { MetadataToken = 0 },
                         fieldMember with { MetadataToken = 0 }
                         ));
                 }
                 foreach (var eventMember in typeInfo.Members?.EventMembers ?? Array.Empty<EventMember>())
                 {
-                    assertMetadataToken(assemblyName, eventMember.MetadataToken, eventMember, new Pair(
+                    assertMetadataToken(eventMember.MetadataToken, eventMember, new Pair(
                         typeInfo.TypeId with { MetadataToken = 0 },
                         eventMember with { MetadataToken = 0 }
                         ));
                 }
                 foreach (var propertyMember in typeInfo.Members?.PropertyMembers ?? Array.Empty<PropertyMember>())
                 {
-                    assertMetadataToken(assemblyName, propertyMember.MetadataToken, propertyMember, new Pair(
+                    assertMetadataToken(propertyMember.MetadataToken, propertyMember, new Pair(
                         typeInfo.TypeId with { MetadataToken = 0 },
                         propertyMember with { MetadataToken = 0 }
                         ));
                 }
                 foreach (var methodMember in typeInfo.Members?.MethodMembers ?? Array.Empty<MethodMember>())
                 {
-                    assertMetadataToken(assemblyName, methodMember.MetadataToken, methodMember, new Pair(
+                    assertMetadataToken(methodMember.MetadataToken, methodMember, new Pair(
                         typeInfo.TypeId with { MetadataToken = 0 },
                         methodMember with { MetadataToken = 0 }
                         ));
@@ -55,28 +79,7 @@ namespace Core.Output.Public
             }
         }
 
-        void assertMetadataToken(string assemblyName, int metadataToken, object o, object o2)
-        {
-            var id = new Id(assemblyName, metadataToken);
-            if (!_metadataTokens.TryGetValue(id, out var value))
-            {
-                _metadataTokens.Add(id, o);
-                _objectsWithIds.Add(o2, id);
-            }
-            else
-            {
-                if (o != value)
-                {
-                    throw new Exception("MetadataToken in not unique");
-                }
-                if (id != _objectsWithIds[o2])
-                {
-                    throw new Exception("MetadataToken in not consistent");
-                }
-            }
-        }
-
-        static void Verify(TypeInfo[] types)
+        static void VerifyTypes(TypeInfo[] types)
         {
             foreach (var typeInfo in types)
             {

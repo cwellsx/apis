@@ -8,16 +8,17 @@ using System.Linq;
 namespace Core
 {
     using AssemblyMethods = Dictionary<string, Dictionary<int, MethodDetails>>;
-     using MethodDictionary = Dictionary<int, MethodDetails>;
+    using MethodDictionary = Dictionary<int, MethodDetails>;
+    using AssemblyDecompiled = Dictionary<TypeIdEx, TypeDecompiled>;
 
     class MethodFinder
     {
-        public AssemblyMethods Dictionary = new AssemblyMethods();
-
-        internal void Finish(MethodReader methodReader)
+        internal static AssemblyMethods GetAssemblyMethods(Dictionary<string, AssemblyDecompiled> assembliesDecompiled)
         {
+            AssemblyMethods Dictionary = new AssemblyMethods();
+
             // create the targets first
-            foreach (var (assembly, types) in methodReader.Dictionary)
+            foreach (var (assembly, types) in assembliesDecompiled)
             {
                 var methodDictionary = new MethodDictionary();
                 Dictionary.Add(assembly, methodDictionary);
@@ -31,7 +32,7 @@ namespace Core
             }
 
             // iterate again to resolve the method calls
-            foreach (var (assembly, types) in methodReader.Dictionary)
+            foreach (var (assembly, types) in assembliesDecompiled)
             {
                 var methodDictionary = Dictionary[assembly];
                 foreach (var (typeId, typeMethods) in types)
@@ -46,7 +47,7 @@ namespace Core
                             {
                                 continue;
                             }
-                            var callDetails = Find(call, methodReader);
+                            var callDetails = Find(call, assembliesDecompiled);
                             if (callDetails.Error == null || callDetails.IsWarning == true)
                             {
                                 var called = callDetails.Called;
@@ -58,11 +59,12 @@ namespace Core
                     }
                 }
             }
+
+            return Dictionary;
         }
 
-        private static CallDetails Find(MethodId call, MethodReader methodReader)
+        private static CallDetails Find(MethodId call, Dictionary<string, AssemblyDecompiled> assembliesTypesDictionary)
         {
-            var assemblyDictionary = methodReader.Dictionary;
 
             CallDetails Error(string message, params object[] more)
             {
@@ -80,7 +82,7 @@ namespace Core
             {
                 return Error("Missing AssemblyName");
             }
-            if (!assemblyDictionary.TryGetValue(call.declaringType.AssemblyName, out var typesDictionary))
+            if (!assembliesTypesDictionary.TryGetValue(call.declaringType.AssemblyName, out var typesDictionary))
             {
                 return Error("Unknown AssemblyName");
             }

@@ -25,8 +25,6 @@ Generally:
 ## What's being done now/next
 
 - `*.cs`
-  - Investigate and/or prevent duplicated assembly reference
-  - Add namespaces: `Output`, `Internal`, `Extensions`
   - Improve the content of the Errors record
 - `*.ts`
   - Implement a view option to group by namespace instead of by assembly name
@@ -45,12 +43,10 @@ Generally:
 
 ## Fix anything broken
 
-- Modify `sqlLoaded.readCalls` to support `clusterBy: namespace` instead of only `assembly`
 - `Core.exe` generates a warning, if not an error, when decompiling some assemblies
 - Display edge labels as tooltips
 - Fix the cursor not changing when the `[Ctrl]` key is pressed
 - Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
-- MethodViewOptions.topType should be obsolete, replace with showClustered: ShowClustered
 
 ## Improve what exists already
 

@@ -1,5 +1,7 @@
-﻿using ElectronCgi.DotNet;
+﻿using Core.Output.Public;
+using ElectronCgi.DotNet;
 using System;
+using System.IO;
 
 namespace Core
 {
@@ -15,8 +17,8 @@ namespace Core
                 }
                 try
                 {
-                    var assemblyReader = AssemblyLoader.LoadAssemblies(args[0]);
-                    assemblyReader.WriteJsonToFiles();
+                    var result = AssemblyLoader.LoadAssemblies(args[0]);
+                    WriteJsonToFiles(result);
                 }
                 catch (Exception e)
                 {
@@ -40,12 +42,20 @@ namespace Core
 
             connection.On<string, string>("json", directory =>
             {
-                var assemblyReader = AssemblyLoader.LoadAssemblies(directory);
+                var result = AssemblyLoader.LoadAssemblies(directory);
                 Logger.Log("returning json");
-                return assemblyReader.ToJson(false);
+                return result.ToJson(false);
             });
 
             connection.Listen();
+        }
+
+        static void WriteJsonToFiles(All all)
+        {
+            File.WriteAllText("Core.json", all.Assemblies.ToJson(true));
+            File.WriteAllText("Found.json", all.AssemblyMethods.ToJson(true));
+            File.WriteAllText("All.json", all.ToJson(true));
+            File.WriteAllText("All2.json", all.ToJson(false));
         }
     }
 }

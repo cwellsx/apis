@@ -163,4 +163,6 @@ namespace Core.Output.Internal
         MethodMemberEx MethodMember,
         Values<TypeId>? GenericArguments
         );
+
+    internal record TypeDecompiled(TypeId[]? GenericTypeParameters, List<Decompiled> ListDecompiled);
 }

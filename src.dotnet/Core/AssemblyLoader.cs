@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Core.Extensions;
+using Core.Output.Internal;
+using Core.Output.Public;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -6,9 +9,13 @@ using System.Reflection;
 
 namespace Core
 {
+    using AssemblyDecompiled = Dictionary<TypeIdEx, TypeDecompiled>;
+
     static class AssemblyLoader
     {
-        internal static AssemblyReader LoadAssemblies(string directory)
+        const string version = "2024-05-01"; // see also src\main\shared-types\loaded\loadedVersion.ts
+
+        internal static All LoadAssemblies(string directory)
         {
             if (!Directory.Exists(directory))
             {
@@ -20,7 +27,11 @@ namespace Core
             Func<string, bool> isMicrosoftAssemblyName = (string name) =>
                 IsMicrosoftAssembly(name) || dotNetPaths.Any(path => Path.GetFileNameWithoutExtension(path) == name);
 
-            var assemblyReader = new AssemblyReader(exes, isMicrosoftAssemblyName, targetFramework);
+            //var assemblyReader = new AssemblyReader(exes, isMicrosoftAssemblyName, targetFramework);
+            var assemblies = new Dictionary<string, AssemblyInfo>();
+            var exceptions = new List<string>();
+            var assembliesDecompiled = new Dictionary<string, AssemblyDecompiled>();
+
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
                 foreach (var path in GetFiles(directory))
@@ -29,16 +40,38 @@ namespace Core
                     {
                         Logger.Log(path);
                         var assembly = metaDataLoadContext.LoadFromAssemblyPath(path);
-                        assemblyReader.Add(assembly, path);
+                        var assemblyName = GetAssemblyName(assembly);
+
+                        // load the type and member metadata
+                        var assemblyInfo = new AssemblyInfo(
+                            ReferencedAssemblies: assembly.GetReferencedAssemblies().Select(GetAssemblyName).ToArray(),
+                            Types: assembly.GetTypes().Select(type => TypeReader.GetTypeInfo(type)).ToArray()
+                            );
+                        Invariants.Verify(assemblyInfo.Types);
+                        assemblies.Add(assemblyName, assemblyInfo);
+
+                        // decompile the method calls for each type
+                        var assemblyDecompiled = MethodReader.GetAssemblyDecompiled(
+                            path,
+                            assemblyInfo,
+                            isMicrosoftAssemblyName,
+                            targetFramework
+                            );
+                        assembliesDecompiled.Add(assemblyName, assemblyDecompiled);
                     }
                     catch (BadImageFormatException)
                     {
                         // the executable is not a .NET assembly
                     }
+                    catch (Exception e)
+                    {
+                        exceptions.Add($"{path} -- {e.Message}");
+                    }
                 }
             }
-            assemblyReader.Finish();
-            return assemblyReader;
+            var assemblyMethods = MethodFinder.GetAssemblyMethods(assembliesDecompiled);
+            var result = new All(assemblies, exceptions, version, exes, assemblyMethods);
+            return result;
         }
 
         internal static string GetDateModified(string directory)
@@ -82,8 +115,12 @@ namespace Core
             assemblyName.StartsWith("Microsoft.") ||
             // also don't try to reflect ICSharpCode.Decompiler
             // bcause it throws an "assembly already loaded" on System.Reflection.Metadata
-            assemblyName == "ICSharpCode.Decompiler" ||
-            // ditto Core.IL which uses (and encapsulates) ICSharpCode.Decompiler types
-            assemblyName == "Core.IL";
+            assemblyName == "ICSharpCode.Decompiler"
+            // Core.IL uses (and encapsulates) ICSharpCode.Decompiler types but mostly decompiles with just a couple of errors
+            // assemblyName == "Core.IL"
+            ;
+
+        static string GetAssemblyName(AssemblyName assemblyName) => assemblyName.Name.NotNull();
+        static string GetAssemblyName(Assembly assembly) => GetAssemblyName(assembly.GetName());
     }
 }

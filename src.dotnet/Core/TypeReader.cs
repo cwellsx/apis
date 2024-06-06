@@ -167,33 +167,41 @@ namespace Core
             var eventMembers = new List<EventMember>();
             var propertyMembers = new List<PropertyMember>();
             var typeMembers = new List<TypeId>();
-             var methodMembers = new List<MethodMember>();
+            var methodMembers = new List<MethodMember>();
+            var exceptions = new List<MemberException>();
 
             foreach (var memberInfo in _type.GetMembers(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static | BindingFlags.DeclaredOnly))
             {
-                if (memberInfo is FieldInfo)
+                try
                 {
-                    fieldMembers.Add(GetField((FieldInfo)memberInfo));
+                    if (memberInfo is FieldInfo)
+                    {
+                        fieldMembers.Add(GetField((FieldInfo)memberInfo));
+                    }
+                    if (memberInfo is EventInfo)
+                    {
+                        eventMembers.Add(GetEvent((EventInfo)memberInfo));
+                    }
+                    if (memberInfo is PropertyInfo)
+                    {
+                        propertyMembers.Add(GetProperty((PropertyInfo)memberInfo));
+                    }
+                    if (memberInfo is System.Reflection.TypeInfo)
+                    {
+                        typeMembers.Add(GetTypeId((System.Reflection.TypeInfo)memberInfo));
+                    }
+                    if (memberInfo is ConstructorInfo)
+                    {
+                        methodMembers.Add(GetConstructor((ConstructorInfo)memberInfo));
+                    }
+                    if (memberInfo is MethodInfo)
+                    {
+                        methodMembers.Add(GetMethod((MethodInfo)memberInfo));
+                    }
                 }
-                if (memberInfo is EventInfo)
+                catch (Exception e)
                 {
-                    eventMembers.Add(GetEvent((EventInfo)memberInfo));
-                }
-                if (memberInfo is PropertyInfo)
-                {
-                    propertyMembers.Add(GetProperty((PropertyInfo)memberInfo));
-                }
-                if (memberInfo is System.Reflection.TypeInfo)
-                {
-                    typeMembers.Add(GetTypeId((System.Reflection.TypeInfo)memberInfo));
-                }
-                if (memberInfo is ConstructorInfo)
-                {
-                    methodMembers.Add(GetConstructor((ConstructorInfo)memberInfo));
-                }
-                if (memberInfo is MethodInfo)
-                {
-                    methodMembers.Add(GetMethod((MethodInfo)memberInfo));
+                    exceptions.Add(new MemberException(memberInfo.Name, memberInfo.MetadataToken, e.ToString()));
                 }
             }
             return new Members(
@@ -201,8 +209,8 @@ namespace Core
                 eventMembers.Count != 0 ? eventMembers.ToArray() : null,
                 propertyMembers.Count != 0 ? propertyMembers.ToArray() : null,
                 typeMembers.Count != 0 ? typeMembers.ToArray() : null,
-                //constructorMembers.Count != 0 ? constructorMembers.ToArray() : null,
-                methodMembers.Count != 0 ? methodMembers.ToArray() : null
+                methodMembers.Count != 0 ? methodMembers.ToArray() : null,
+                exceptions.Count != 0 ? exceptions.ToArray() : null
                 );
         }
 
@@ -260,7 +268,7 @@ namespace Core
             bool? isStatic = memberInfo.IsStatic ? true : null;
             bool? isConstructor = memberInfo.IsConstructor ? true : null;
             var returnType = typeof(void);
-            return new MethodMember(MethodMember.CtorName, access,  parameters, isStatic, isConstructor, null, GetTypeId(returnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
+            return new MethodMember(MethodMember.CtorName, access, parameters, isStatic, isConstructor, null, GetTypeId(returnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
         }
         MethodMember GetMethod(MethodInfo memberInfo)
         {
@@ -272,20 +280,7 @@ namespace Core
             return new MethodMember(memberInfo.Name, access, parameters, isStatic, isConstructor, genericArguments, GetTypeId(memberInfo.ReturnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
         }
         Parameter[]? GetParameters(PropertyInfo memberInfo) => GetParameters(memberInfo.GetIndexParameters());
-        Parameter[]? GetParameters(MethodBase memberInfo)
-        {
-            try
-            {
-                var parameterInfos = memberInfo.GetParameters();
-                return GetParameters(parameterInfos);
-
-            }
-            catch (Exception ex)
-            {
-                Logger.Log(ex);
-                return null;
-            }
-        }
+        Parameter[]? GetParameters(MethodBase memberInfo) => GetParameters(memberInfo.GetParameters());
         Parameter[]? GetParameters(ParameterInfo[] parameterInfos)
         {
             var parameters = parameterInfos.Select(parameterInfo => new Parameter(parameterInfo.Name.ToStringOrNull(), GetTypeId(parameterInfo.ParameterType))).ToArray();
