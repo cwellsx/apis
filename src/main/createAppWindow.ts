@@ -24,7 +24,7 @@ import { log } from "./log";
 import { showAdjacent } from "./onGraphClick";
 import {
   TypeAndMethodDetails,
-  getAssemblyNames,
+  getClusterNames,
   isEdgeId,
   isMethodNodeId,
   isNameNodeId,
@@ -232,9 +232,11 @@ export const createAppWindow = (
 
   const showApis = (): void => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
-    const graphFilter = sqlLoaded.readGraphFilter("apis", apiViewOptions.showClustered.clusterBy);
+    const clusterBy = apiViewOptions.showClustered.clusterBy;
+    const graphFilter = sqlLoaded.readGraphFilter("apis", clusterBy);
     const calls = sqlLoaded.readCalls(
-      apiViewOptions.showInternalCalls ? getAssemblyNames(graphFilter.groupExpanded) : []
+      clusterBy,
+      apiViewOptions.showInternalCalls ? getClusterNames(graphFilter.groupExpanded, clusterBy) : []
     );
     show.showMessage(undefined, `${calls.length} records`);
     const typeNames = sqlLoaded.readTypeNames();

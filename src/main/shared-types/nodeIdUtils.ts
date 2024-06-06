@@ -1,4 +1,5 @@
 import type {
+  ClusterBy,
   EdgeId,
   GroupByNodeId,
   MetadataNodeId,
@@ -60,8 +61,8 @@ export const removeNodeId = (array: NodeId[], element: NodeId): void => {
   else array.splice(index, 1);
 };
 
-export const getAssemblyNames = (array: NodeId[]): string[] =>
-  array.filter((nodeId) => isNameNodeId(nodeId, "assembly")).map((nodeId) => (nodeId as NameNodeId).name);
+export const getClusterNames = (array: NodeId[], clusterBy: ClusterBy): string[] =>
+  array.filter((nodeId) => isNameNodeId(nodeId, clusterBy)).map((nodeId) => (nodeId as NameNodeId).name);
 
 export const createLookupNodeId = (array: NodeId[]): ((nodeId: NodeId) => boolean) => {
   const lookupNodeId = (nodeId: NodeId): boolean => array.some((found) => nodeIdEquals(found, nodeId));

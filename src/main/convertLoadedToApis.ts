@@ -37,32 +37,15 @@ export const convertLoadedToApis = (
     found[nameColumns.metadataToken] = nameColumns;
   });
 
-  // the wantedTypeId is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
-  const wantedTypeId = (assemblyName: string, typeId: number) =>
-    assemblyTypeNames[assemblyName][typeId].wantedTypeId ?? typeId;
-  calls.forEach((call) => {
-    call.fromTypeId = wantedTypeId(call.fromAssemblyName, call.fromTypeId);
-    call.toTypeId = wantedTypeId(call.toAssemblyName, call.toTypeId);
-  });
-
   // type instances i.e. TypeNodeId are grouped by assemblyName or namespace
   const groupedTypes: { [name: string]: NodeIdMap<Leaf> } = {};
   const edges = new Edges();
 
-  const getGroupName: (typeNodeId: TypeNodeId) => string = (typeNodeId) => {
-    switch (viewOptions.showClustered.clusterBy) {
-      case "assembly":
-        return typeNodeId.assemblyName;
-      case "namespace":
-        return assemblyTypeNames[typeNodeId.assemblyName][typeNodeId.metadataToken].namespace ?? "(no namespace)";
-    }
-  };
-
-  const addLeaf = (typeNodeId: TypeNodeId): void => {
+  const addLeaf = (typeNodeId: TypeNodeId, groupName: string): void => {
     if (typeNodeId.metadataToken === 33554434) {
       log("found");
     }
-    const groupName = getGroupName(typeNodeId);
+
     let types = groupedTypes[groupName];
     if (!types) {
       types = new NodeIdMap<Leaf>();
@@ -79,15 +62,25 @@ export const convertLoadedToApis = (
     types.set(typeNodeId, leaf);
   };
 
+  const getGroupNames: (api: CallColumns) => { fromGroupName: string; toGroupName: string } = (api) => {
+    switch (viewOptions.showClustered.clusterBy) {
+      case "assembly":
+        return { fromGroupName: api.fromAssemblyName, toGroupName: api.toAssemblyName };
+      case "namespace":
+        return { fromGroupName: api.fromNamespace, toGroupName: api.toNamespace };
+    }
+  };
+
   calls.forEach((api) => {
     if (api.fromAssemblyName === api.toAssemblyName && api.fromTypeId === api.toTypeId) return;
     if (!api.fromTypeId || !api.toTypeId) return;
 
     const fromType = typeNodeId(api.fromAssemblyName, api.fromTypeId);
     const toType = typeNodeId(api.toAssemblyName, api.toTypeId);
+    const { fromGroupName, toGroupName } = getGroupNames(api);
 
-    addLeaf(fromType);
-    addLeaf(toType);
+    addLeaf(fromType, fromGroupName);
+    addLeaf(toType, toGroupName);
 
     const methodName = assemblyMethodNames[api.toAssemblyName][api.toMethodId].name;
 

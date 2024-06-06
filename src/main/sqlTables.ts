@@ -108,9 +108,11 @@ type ErrorColumns = {
 export type CallColumns = {
   // this could be refactored as one table with three or four columns, plus a join table
   fromAssemblyName: string;
+  fromNamespace: string;
   fromTypeId: number;
   fromMethodId: number;
   toAssemblyName: string;
+  toNamespace: string;
   toTypeId: number;
   toMethodId: number;
 };
@@ -377,7 +379,7 @@ export class SqlLoaded {
   readTypes: (assemblyName: string) => AllTypeInfo;
   readMethod: (assemblyName: string, methodId: number) => TypeAndMethodDetails;
   readErrors: () => ErrorsInfo[];
-  readCalls: (assemblyNames: string[]) => CallColumns[];
+  readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => CallColumns[];
   readTypeNames: () => TypeNameColumns[];
   readMethodNames: () => MethodNameColumns[];
 
@@ -391,7 +393,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-05";
+    const loadedSchemaVersionExpected = "2024-06-05a";
 
     this.viewState = new ViewState(db);
 
@@ -444,9 +446,11 @@ export class SqlLoaded {
       () => false,
       {
         fromAssemblyName: "foo",
+        fromNamespace: "bar",
         fromTypeId: 0,
         fromMethodId: 0,
-        toAssemblyName: "bar",
+        toAssemblyName: "baz",
+        toNamespace: "bat",
         toTypeId: 0,
         toMethodId: 0,
       }
@@ -511,6 +515,7 @@ export class SqlLoaded {
       const assemblyMethodNames: MethodNameColumns[] = [];
 
       const assemblyTypeIds: TypeNodeId[] = [];
+      const assemblyTypeNames: { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
 
       for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
         // typeIds dictionary
@@ -568,10 +573,15 @@ export class SqlLoaded {
           metadataToken: typeInfo.typeId.metadataToken,
           namespace: typeInfo.typeId.namespace ?? null,
           decoratedName: getTypeInfoName(typeInfo),
+          // the wantedTypeId is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
           wantedTypeId: unwantedTypes[typeInfo.typeId.metadataToken] ?? null,
         }));
         // => typeNameTable
         typeNameTable.insertMany(typeNameColumns);
+
+        const typeNames: { [typeId: number]: TypeNameColumns } = {};
+        typeNameColumns.forEach((nameColumns) => (typeNames[nameColumns.metadataToken] = nameColumns));
+        assemblyTypeNames[assemblyName] = typeNames;
 
         // => errorsTable
         const bad = badTypeInfo(allTypeInfo);
@@ -626,18 +636,31 @@ export class SqlLoaded {
         methodTable.insertMany(methods);
       }
 
+      const getWanted = (assemblyName: string, methodId: number): { namespace: string; wantedTypeId: number } => {
+        // get typeId from methodId
+        const typeId = assemblyMethodTypes[assemblyName][methodId];
+        // get namespace and wantedTypeId from typeId
+        const found = assemblyTypeNames[assemblyName][typeId];
+        return {
+          namespace: found.namespace ?? "(no namespace)",
+          wantedTypeId: found.wantedTypeId ?? found.metadataToken,
+        };
+      };
+
       const callColumns: CallColumns[] = [];
       Object.entries(assemblyCalls).forEach(([assemblyName, methodCalls]) =>
         Object.keys(methodCalls).forEach((key) => {
           const methodId = +key;
-          const fromTypeId = assemblyMethodTypes[assemblyName][methodId];
+          const { namespace: fromNamespace, wantedTypeId: fromTypeId } = getWanted(assemblyName, methodId);
           methodCalls[methodId].forEach((called) => {
-            const toTypeId = assemblyMethodTypes[called.assemblyName][called.methodId];
+            const { namespace: toNamespace, wantedTypeId: toTypeId } = getWanted(called.assemblyName, called.methodId);
             callColumns.push({
               fromAssemblyName: assemblyName,
+              fromNamespace,
               fromTypeId,
               fromMethodId: methodId,
               toAssemblyName: called.assemblyName,
+              toNamespace,
               toTypeId,
               toMethodId: called.methodId,
             });
@@ -725,12 +748,22 @@ export class SqlLoaded {
         badCallInfos: JSON.parse(errorColumns.badCallInfos),
       }));
 
-    this.readCalls = (assemblyNames: string[]): CallColumns[] => {
-      const result = callTable.selectCustom(true, "fromAssemblyName != toAssemblyName");
-      assemblyNames.forEach((assemblyName) =>
+    const getFromAndToNames = (clusterBy: ClusterBy): { fromName: keyof CallColumns; toName: keyof CallColumns } => {
+      switch (clusterBy) {
+        case "assembly":
+          return { fromName: "fromAssemblyName", toName: "toAssemblyName" };
+        case "namespace":
+          return { fromName: "fromNamespace", toName: "toNamespace" };
+      }
+    };
+
+    this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): CallColumns[] => {
+      const { fromName, toName } = getFromAndToNames(clusterBy);
+      const result = callTable.selectCustom(true, `${fromName} != ${toName}`);
+      expandedClusterNames.forEach((clusterName) =>
         result.push(
-          ...callTable.selectCustom(true, "fromAssemblyName == toAssemblyName AND fromAssemblyName == @assemblyName", {
-            assemblyName,
+          ...callTable.selectCustom(true, `${fromName} == ${toName} AND ${fromName} == @clusterName`, {
+            clusterName,
           })
         )
       );

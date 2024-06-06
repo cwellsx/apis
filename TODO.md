@@ -60,6 +60,11 @@ Generally:
 
 ### Unsorted
 
+- Simplify schema:
+  - Remove `MethodColumns` table
+  - Remove `TypeNameColumns` table
+  - Rename `MethodNameColumns` to `MemberNameColumns` and use it for type names also
+- Include `Core.IL` as much as possible
 - Improve the `USER.md`
   - The `USER.md` should be improved with `<details>` and `<summary>` tags
   - Remove the "TO DO" messages from the current `USER.md`
