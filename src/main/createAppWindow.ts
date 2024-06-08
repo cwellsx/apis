@@ -15,22 +15,14 @@ import type {
 } from "../shared-types";
 import { viewFeatures } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
-import { convertLoadedToMethodBody } from "./convertLoadedToMethodBody";
+import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
+import { convertLoadedToDetailedMethod } from "./convertLoadedToDetailedMethod";
 import { convertLoadedToMethods } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
-import { convertLoadedToTypes } from "./convertLoadedToTypeDetails";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
 import { showAdjacent } from "./onGraphClick";
-import {
-  TypeAndMethodDetails,
-  getClusterNames,
-  isEdgeId,
-  isMethodNodeId,
-  isNameNodeId,
-  removeNodeId,
-  toggleNodeId,
-} from "./shared-types";
+import { getClusterNames, isEdgeId, isMethodNodeId, isNameNodeId, removeNodeId, toggleNodeId } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sqlTables";
 
@@ -127,7 +119,7 @@ export const createAppWindow = (
           if (!isMethodNodeId(nodeId)) throw new Error("Expected method id");
           const { assemblyName, metadataToken } = nodeId;
           const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
-          const methodBody = convertLoadedToMethodBody(typeAndMethod);
+          const methodBody = convertLoadedToDetailedMethod(typeAndMethod);
           log("renderer.showDetails");
           renderer.showDetails(methodBody);
           return;
@@ -150,7 +142,7 @@ export const createAppWindow = (
             showReferences();
           } else {
             const allTypeInfo = sqlLoaded.readTypes(assemblyName);
-            const types = convertLoadedToTypes(allTypeInfo, assemblyName);
+            const types = convertLoadedToDetailedAssembly(allTypeInfo, assemblyName);
             log("renderer.showDetails");
             renderer.showDetails(types);
           }
@@ -217,11 +209,9 @@ export const createAppWindow = (
 
   const showErrors = (): void => {
     const errors = sqlLoaded.readErrors();
-    const methods = errors.flatMap<TypeAndMethodDetails>((error) =>
-      error.badCallInfos.map((badCallInfo) => sqlLoaded.readMethod(error.assemblyName, badCallInfo.metadataToken))
-    );
+
     const viewErrors: ViewErrors = {
-      methods: methods.map((typeAndMethod) => convertLoadedToMethodBody(typeAndMethod)),
+      errors,
       viewOptions: {
         viewType: "errors",
       },

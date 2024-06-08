@@ -6,6 +6,7 @@ import type {
   CommonGraphViewType,
   CustomError,
   CustomViewOptions,
+  ErrorsInfo,
   GraphFilter,
   Members,
   MethodViewOptions,
@@ -19,21 +20,21 @@ import { isAnyOtherCustomField, type CustomNode } from "./customJson";
 import type {
   AllTypeInfo,
   AssemblyReferences,
+  BadCallDetails,
   BadTypeInfo,
   GoodTypeInfo,
   MethodDetails,
   MethodMember,
   Reflected,
 } from "./loaded";
-import { badTypeInfo, loadedVersion, validateTypeInfo } from "./loaded";
+import { badTypeInfo, isBadCallDetails, isGoodCallDetails, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
 import { TypeAndMethodDetails, distinctor, getTypeInfoName, nestTypes } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
 
-export type BadCallInfo = { metadataToken: number };
-export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallInfos: BadCallInfo[] };
+//export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallDetails: BadCallDetails[] };
 
 /*
   This defines all SQLite tables used by the application, include the record format and the methods to access them
@@ -102,7 +103,7 @@ type MethodColumns = {
 type ErrorColumns = {
   assemblyName: string;
   badTypeInfos: string;
-  badCallInfos: string;
+  badCallDetails: string;
 };
 
 export type CallColumns = {
@@ -393,7 +394,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-05a";
+    const loadedSchemaVersionExpected = "2024-06-07";
 
     this.viewState = new ViewState(db);
 
@@ -437,7 +438,7 @@ export class SqlLoaded {
     const errorTable = new SqlTable<ErrorColumns>(db, "error", "assemblyName", () => false, {
       assemblyName: "foo",
       badTypeInfos: "bar",
-      badCallInfos: "baz",
+      badCallDetails: "baz",
     });
     const callTable = new SqlTable<CallColumns>(
       db,
@@ -586,7 +587,7 @@ export class SqlLoaded {
         // => errorsTable
         const bad = badTypeInfo(allTypeInfo);
         if (bad.length) {
-          errorTable.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallInfos: JSON.stringify([]) });
+          errorTable.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallDetails: JSON.stringify([]) });
         }
       }
 
@@ -601,32 +602,38 @@ export class SqlLoaded {
       );
 
       for (const [assemblyName, methodsDictionary] of Object.entries(reflected.assemblyMethods)) {
-        const badCallInfos: BadCallInfo[] = [];
+        const badCallDetails: BadCallDetails[] = [];
 
         const methodCalls: { [methodId: number]: { assemblyName: string; methodId: number }[] } = {};
         assemblyCalls[assemblyName] = methodCalls;
 
         const methods: MethodColumns[] = Object.entries(methodsDictionary).map(([key, methodDetails]) => {
+          const metadataToken = +key;
+
           // remember any which are bad
-          if (methodDetails.calls.some((callDetails) => callDetails.error)) badCallInfos.push({ metadataToken: +key });
+          badCallDetails.push(...methodDetails.calls.filter(isBadCallDetails));
+
           // remember all to be copied into CallsColumns
-          methodCalls[+key] = methodDetails.calls
-            .filter((callDetails) => !callDetails.error || callDetails.isWarning)
+          methodCalls[metadataToken] = methodDetails.calls
+            .filter(isGoodCallDetails)
             .map((callDetails) => ({
-              assemblyName: callDetails.called.assemblyName,
-              methodId: callDetails.called.metadataToken,
+              assemblyName: callDetails.assemblyName,
+              methodId: callDetails.metadataToken,
             }))
             .filter(distinctCalls);
-          return { assemblyName, metadataToken: +key, methodDetails: JSON.stringify(methodDetails) };
+
+          // return MethodColumns
+          return { assemblyName, metadataToken, methodDetails: JSON.stringify(methodDetails) };
         });
 
         // => errorsTable
-        if (badCallInfos.length) {
+
+        if (badCallDetails.length) {
           const found = errorTable.selectOne({ assemblyName });
           const columns: ErrorColumns = {
             assemblyName,
             badTypeInfos: found?.badTypeInfos ?? JSON.stringify([]),
-            badCallInfos: JSON.stringify(badCallInfos),
+            badCallDetails: JSON.stringify(badCallDetails),
           };
           if (found) errorTable.update(columns);
           else errorTable.insert(columns);
@@ -745,7 +752,7 @@ export class SqlLoaded {
       errorTable.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
         badTypeInfos: JSON.parse(errorColumns.badTypeInfos),
-        badCallInfos: JSON.parse(errorColumns.badCallInfos),
+        badCallDetails: JSON.parse(errorColumns.badCallDetails),
       }));
 
     const getFromAndToNames = (clusterBy: ClusterBy): { fromName: keyof CallColumns; toName: keyof CallColumns } => {

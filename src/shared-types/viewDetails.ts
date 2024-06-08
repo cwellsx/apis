@@ -1,27 +1,18 @@
+import type { BadCallDetails, MethodNameStrings } from "./loaded";
 import { Named, Namespace } from "./types";
 
 /*
   The types of ViewDetails are distinguished by the detailType
 */
 
-export type MethodError = {
-  heading: "Error" | "Warning";
-  message: string;
-  objects: object[];
-};
-
-export type MethodBody = {
-  title: {
-    assemblyName: string;
-    typeName: string;
-    methodName: string;
-  };
+export type DetailedMethod = {
+  title: MethodNameStrings;
   asText: string;
-  errors?: MethodError[];
-  detailType: "methodBody";
+  errors?: BadCallDetails[];
+  detailType: "methodDetails";
 };
 
-export type Types = {
+export type DetailedAssembly = {
   // assemblyId is needed because metadataToken is only unique within a given assembly
   // so if in future you want to return types from multiple assemblies:
   // - generate IDs that that globally unique, to replace metadataToken
@@ -29,9 +20,9 @@ export type Types = {
   // - or return multiple Types instances
   namespaces: Namespace[];
   exceptions: Named[];
-  detailType: "types";
+  detailType: "assemblyDetails";
 };
 
-export type DetailType = "methodBody" | "types";
+export type DetailType = "methodDetails" | "assemblyDetails";
 
-export type ViewDetails = MethodBody | Types;
+export type ViewDetails = DetailedMethod | DetailedAssembly;

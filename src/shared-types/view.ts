@@ -1,7 +1,7 @@
 import { CustomError } from "./customError";
+import { ErrorsInfo } from "./errors";
 import { Image } from "./image";
 import { Node } from "./node";
-import { MethodBody } from "./viewDetails";
 import { ErrorsViewOptions, GraphFilter, GraphViewOptions, GreetingViewOptions } from "./viewOptions";
 
 /*
@@ -29,7 +29,7 @@ export type ViewGreeting = {
 
 export type ViewErrors = {
   customErrors?: CustomError[];
-  methods?: MethodBody[];
+  errors?: ErrorsInfo[];
   viewOptions: ErrorsViewOptions;
 };
 

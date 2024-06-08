@@ -1,5 +1,4 @@
 ﻿using Core.Extensions;
-using Core.Output.Internal;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -149,69 +148,67 @@ namespace Core.Output.Public
         MemberException[]? Exceptions
         );
 
-    public record Method(
+    public record Error(
+        // this is the error message
+        string ErrorMessage,
+        // these are from the MethodId call
+        Internal.TypeIdEx WantType,
+        Internal.MethodMemberEx WantMethod,
+        Internal.TypeIdEx[]? GenericTypeArguments,
+        Internal.TypeIdEx[]? GenericMethodArguments,
+        // these are the candidates found
+        Internal.MethodMemberEx[]? FoundMethods,
+        // these are their generic transformation
+        Internal.MethodMemberEx[]? TransformedMethods
+        )
+    {
+        internal Error(string errorMessage, Internal.MethodId call) : this(errorMessage, call, null) { }
+        internal Error(string errorMessage, Internal.MethodId call, Internal.MethodMemberEx[]? foundMethods) : this(errorMessage, call, foundMethods, null) { }
+        internal Error(string errorMessage, Internal.MethodId call, Internal.MethodMemberEx[]? foundMethods, Internal.MethodMemberEx[]? transformedMethods) : this(
+            errorMessage,
+            call.DeclaringType,
+            call.MethodMember,
+            call.GenericTypeArguments?.Array,
+            call.GenericMethodArguments?.Array,
+            foundMethods,
+            transformedMethods
+            )
+        { }
+    }
+
+    public record CallDetails(
+        // these are TMI but we get them from the decompiler
         string MethodMember,
         string DeclaringType,
         string AssemblyName,
-        int MetadataToken
+        // this is determined by MethodFinder, or not if there's an error
+        int? MetadataToken,
+        Error? Error
         )
     {
-        internal Method(MethodId methodId, int metadataToken)
-            : this(
-                  methodId.MethodMember.AsString(methodId.GenericMethodArguments, false),
-                  methodId.declaringType.AsString(false),
-                  methodId.declaringType.AssemblyName.NotNull(),
-                  metadataToken
-                  )
+        internal CallDetails(Internal.TypeIdEx declaringType, Internal.Decompiled decompiled) : this(
+            decompiled.MethodMember.AsString(decompiled.GenericArguments, false),
+            declaringType.AsString(false),
+            declaringType.AssemblyName.NotNull(),
+            decompiled.MetadataToken,
+            null
+            )
         { }
 
-        internal Method(TypeIdEx declaringType, MethodMemberEx methodMember, Values<TypeId>? genericParameters, int metadataToken)
-            : this(
-                  methodMember.AsString(genericParameters, false),
-                  declaringType.AsString(false),
-                  declaringType.AssemblyName.NotNull(),
-                  metadataToken
-                  )
-        { }
-    }
-
-    public class Error
-    {
-        public string Message { get; }
-        public object[] Objects { get; }
-        public string[] Strings { get; }
-
-        internal Error(string message, object extra, object[] more)
-        {
-            var objects = new List<object>() { extra };
-            objects.AddRange(more);
-            Message = $"{message}: {extra}";
-            Objects = objects.ToArray();
-            Strings = objects.Select(o => o.ToString()).ToArray()!;
-        }
-    }
-
-    public record CallDetails(Method Called, Error? Error, bool? IsWarning)
-    {
-        private const int IgnoredMetadataToken = 0;
-
-        internal CallDetails(MethodId called, Error error)
-            : this(new Method(called, IgnoredMetadataToken), error, null)
-        { }
-
-        internal CallDetails(MethodId called, int metadataToken)
-            : this(new Method(called, metadataToken), null, null)
-        { }
-
-        internal CallDetails(MethodId called, int metadataToken, Error error)
-            : this(new Method(called, metadataToken), error, true)
+        internal CallDetails(Internal.MethodId call, int? metadataToken, Error? error) : this(
+            call.MethodMember.AsString(call.GenericMethodArguments, false),
+            call.DeclaringType.AsString(false),
+            call.DeclaringType.AssemblyName.NotNull(),
+            metadataToken,
+            error
+            )
         { }
     }
 
-    public record MethodDetails(string AsText, string MethodMember, string DeclaringType, List<CallDetails> Calls, List<Method> CalledBy, string? Exception)
+    public record MethodDetails(string AsText, string MethodMember, string DeclaringType, List<CallDetails> Calls, List<CallDetails> CalledBy, string? Exception)
     {
-        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType, new List<CallDetails>(), new List<Method>(), null) { }
-        internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType, new List<CallDetails>(), new List<Method>(), exception.ToString()) { }
+        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType, new List<CallDetails>(), new List<CallDetails>(), null) { }
+        internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType, new List<CallDetails>(), new List<CallDetails>(), exception.ToString()) { }
     }
 
     public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodDetails>> AssemblyMethods);

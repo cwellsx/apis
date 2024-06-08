@@ -9,7 +9,7 @@ namespace Core.Output.Internal
     /// <summary>
     /// Same as TypeId except that AssemblyName is nullable if isMicrosoftAssemblyName
     /// </summary>
-    internal record TypeIdEx(
+    public record TypeIdEx(
         string? AssemblyName,
         string? Namespace,
         string Name,
@@ -75,7 +75,7 @@ namespace Core.Output.Internal
     /// <summary>
     /// Same as Parameter except with TypeIdEx
     /// </summary>
-    internal record ParameterEx(
+    public record ParameterEx(
         string? Name,
         TypeIdEx Type
         )
@@ -106,7 +106,7 @@ namespace Core.Output.Internal
     /// <summary>
     /// Same as MethodMember except without Attributes, without GenericArguments, with TypeIdEx, and with ParameterEx
     /// </summary>
-    internal record MethodMemberEx(
+    public record MethodMemberEx(
         string Name,
         Access Access,
         Values<ParameterEx>? Parameters,
@@ -145,7 +145,7 @@ namespace Core.Output.Internal
         }
     }
 
-    internal record MethodId(MethodMemberEx MethodMember, TypeIdEx declaringType, Values<TypeIdEx>? GenericTypeArguments, Values<TypeIdEx>? GenericMethodArguments)
+    internal record MethodId(MethodMemberEx MethodMember, TypeIdEx DeclaringType, Values<TypeIdEx>? GenericTypeArguments, Values<TypeIdEx>? GenericMethodArguments)
     {
         internal MethodId(MethodMember methodMember, TypeId declaringType, Func<string, bool> isMicrosoftAssemblyName) : this(
             new MethodMemberEx(methodMember, isMicrosoftAssemblyName),

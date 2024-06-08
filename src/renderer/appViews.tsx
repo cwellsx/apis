@@ -10,11 +10,10 @@ import type {
   ViewOptions,
 } from "../shared-types";
 import { nodeIdToText, textToNodeId } from "../shared-types";
-import { Details } from "./Details";
-import { ErrorDetails } from "./ErrorDetails";
+import { AssemblyDetails } from "./AssemblyDetails";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
-import { MethodDetails } from "./MethodDetails";
+import { BadCallDetails, MethodDetails } from "./MethodDetails";
 import { Options } from "./Options";
 import { Tree } from "./Tree";
 
@@ -58,12 +57,18 @@ export const getCenter = (view: View, onGraphClick: OnGraphClick, zoomPercent: n
   if (isErrors(view))
     return (
       <>
+        <h2>Errors</h2>
         {view.customErrors?.map((customError, index) => (
-          <ErrorDetails error={customError} key={index} />
+          <section className="errorDetails" key={index}>
+            <header>{customError.messages.join("\r\n")}</header>
+            <pre>{customError.elementJson}</pre>
+          </section>
         ))}
-        {view.methods?.map((methodBody, index) => (
-          <MethodDetails methodBody={methodBody} key={index} />
-        ))}
+        {view.errors?.map((errorsInfo) =>
+          errorsInfo.badCallDetails.map((badCall, index) => (
+            <BadCallDetails badCall={badCall} key={errorsInfo.assemblyName + index} />
+          ))
+        )}
       </>
     );
 
@@ -85,6 +90,10 @@ export const getCenter = (view: View, onGraphClick: OnGraphClick, zoomPercent: n
 
 export const getRight = (details: ViewDetails | undefined, onDetailClick: OnDetailClick): JSX.Element => {
   if (!details) return <></>;
-  if (details.detailType === "types") return <Details types={details} onDetailClick={onDetailClick} />;
-  return <MethodDetails methodBody={details} />;
+  switch (details.detailType) {
+    case "assemblyDetails":
+      return <AssemblyDetails types={details} onDetailClick={onDetailClick} />;
+    case "methodDetails":
+      return <MethodDetails methodBody={details} />;
+  }
 };

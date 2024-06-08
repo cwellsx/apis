@@ -40,18 +40,17 @@ namespace Core
                     foreach (var decompiled in typeMethods.ListDecompiled)
                     {
                         var methodDetails = methodDictionary[decompiled.MetadataToken];
-                        var caller = new Method(typeId, decompiled.MethodMember, decompiled.GenericArguments, decompiled.MetadataToken);
+                        var caller = new CallDetails(typeId, decompiled);
                         foreach (var call in decompiled.Calls)
                         {
-                            if (call.declaringType.AssemblyName == null)
+                            if (call.DeclaringType.AssemblyName == null)
                             {
                                 continue;
                             }
                             var callDetails = Find(call, assembliesDecompiled);
-                            if (callDetails.Error == null || callDetails.IsWarning == true)
+                            if (callDetails.MetadataToken.HasValue)
                             {
-                                var called = callDetails.Called;
-                                var found = Dictionary[called.AssemblyName][called.MetadataToken];
+                                var found = Dictionary[callDetails.AssemblyName][callDetails.MetadataToken.Value];
                                 found.CalledBy.Add(caller);
                             }
                             methodDetails.Calls.Add(callDetails);
@@ -65,28 +64,43 @@ namespace Core
 
         private static CallDetails Find(MethodId call, Dictionary<string, AssemblyDecompiled> assembliesTypesDictionary)
         {
-
-            CallDetails Error(string message, params object[] more)
+            CallDetails Error(string message)
             {
-                var error = new Error(message, call, more);
-                return new CallDetails(call, error);
+                var error = new Error(message, call);
+                return new CallDetails(call, null, error);
             }
 
-            CallDetails Warning(int metadataToken, string message, params object[] more)
+            CallDetails ErrorSome(string message, MethodMemberEx[] foundMethods)
             {
-                var error = new Error(message, call, more);
+                var error = new Error(message, call, foundMethods);
+                return new CallDetails(call, null, error);
+            }
+            CallDetails WarningSome(int metadataToken, string message, MethodMemberEx[] foundMethods)
+            {
+                var error = new Error(message, call, foundMethods);
                 return new CallDetails(call, metadataToken, error);
             }
 
-            if (call.declaringType.AssemblyName == null)
+            CallDetails ErrorGeneric(string message, MethodMemberEx[] foundMethods, MethodMemberEx[] transformedMethods)
+            {
+                var error = new Error(message, call, foundMethods, transformedMethods);
+                return new CallDetails(call, null, error);
+            }
+            CallDetails WarningGeneric(int metadataToken, string message, MethodMemberEx[] foundMethods, MethodMemberEx[] transformedMethods)
+            {
+                var error = new Error(message, call, foundMethods, transformedMethods);
+                return new CallDetails(call, metadataToken, error);
+            }
+
+            if (call.DeclaringType.AssemblyName == null)
             {
                 return Error("Missing AssemblyName");
             }
-            if (!assembliesTypesDictionary.TryGetValue(call.declaringType.AssemblyName, out var typesDictionary))
+            if (!assembliesTypesDictionary.TryGetValue(call.DeclaringType.AssemblyName, out var typesDictionary))
             {
                 return Error("Unknown AssemblyName");
             }
-            if (!typesDictionary.TryGetValue(call.declaringType.WithoutArguments(), out var typeMethods))
+            if (!typesDictionary.TryGetValue(call.DeclaringType.WithoutArguments(), out var typeMethods))
             {
                 return Error("Call unknown TypeId");
             }
@@ -109,7 +123,7 @@ namespace Core
 #pragma warning restore CS0252 // Possible unintended reference comparison; left hand side needs cast
                 if (decompiled != null)
                 {
-                    return new CallDetails(call, decompiled.MetadataToken);
+                    return new CallDetails(call, decompiled.MetadataToken, null);
                 }
 
                 var found = listDecompiled.Where(d => (
@@ -117,15 +131,16 @@ namespace Core
                     d.MethodMember.Access == call.MethodMember.Access &&
                     d.MethodMember.Parameters?.Length == call.MethodMember.Parameters?.Length
                 )).ToArray();
+                var foundMethods = found.Select(decompiled => decompiled.MethodMember).ToArray();
                 switch (found.Length)
                 {
                     case 0:
                         return Error("Unknown MethodMember");
                     case 1:
                         decompiled = found[0];
-                        return Warning(decompiled.MetadataToken, "Approximate MethodMember", decompiled.MethodMember);
+                        return WarningSome(decompiled.MetadataToken, "Approximate MethodMember", foundMethods);
                     default:
-                        return Error("Call overloaded MethodMember", found.Select(decompiled => decompiled.MethodMember).ToArray());
+                        return ErrorSome("Call overloaded MethodMember", foundMethods);
                 }
             }
             else
@@ -140,7 +155,7 @@ namespace Core
 
                 // define how to transform
                 Func<Decompiled, MethodMemberEx> transform = (decompiled) =>
-               {
+                {
                    var transformation = GetTransformation(
                        decompiled.GenericArguments,
                        call.GenericMethodArguments,
@@ -148,13 +163,13 @@ namespace Core
                        call.GenericTypeArguments
                        );
                    return decompiled.MethodMember.Transform(transformation);
-               };
+                };
 
                 // find one single whose transformation is an exact match
                 var decompiled = candidates.SingleOrDefault(decompiled => transform(decompiled) == call.MethodMember);
                 if (decompiled != null)
                 {
-                    return new CallDetails(call, decompiled.MetadataToken);
+                    return new CallDetails(call, decompiled.MetadataToken, null);
                 }
 
                 // there's a slight (which I have tried to explain) cause of failure which would otherwise result in an "Approximate generic member" warning
@@ -165,8 +180,10 @@ namespace Core
                 var approximate = candidates.Where(decompiled => transform(decompiled).WithoutGenericParameters() == call.MethodMember.WithoutGenericParameters()).ToArray();
                 if (approximate.Length == 1)
                 {
-                    return new CallDetails(call, approximate[0].MetadataToken);
+                    return new CallDetails(call, approximate[0].MetadataToken, null);
                 }
+                var foundMethods = candidates.Select(decompiled => decompiled.MethodMember).ToArray();
+                var transformedMethods = candidates.Select(transform).ToArray();
 
                 switch (candidates.Length)
                 {
@@ -174,9 +191,9 @@ namespace Core
                         return Error("Unknown generic member");
                     case 1:
                         decompiled = candidates[0];
-                        return Warning(decompiled.MetadataToken, "Approximate generic member", decompiled.MethodMember, transform(decompiled));
+                        return WarningGeneric(decompiled.MetadataToken, "Approximate generic member", foundMethods, transformedMethods);
                     default:
-                        return Error("Overloaded generic member", candidates.Select(decompiled => decompiled.MethodMember).ToArray());
+                        return ErrorGeneric("Overloaded generic member", foundMethods, transformedMethods);
                 }
             }
         }

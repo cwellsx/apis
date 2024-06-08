@@ -17,6 +17,7 @@ export type Members = {
   eventMembers: MemberInfo[];
   propertyMembers: MemberInfo[];
   methodMembers: MemberInfo[];
+  exceptions: MemberInfo[];
 };
 
 export type TypeKnown = Named & {

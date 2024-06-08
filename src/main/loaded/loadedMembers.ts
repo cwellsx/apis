@@ -46,9 +46,16 @@ export type MethodMember = {
   metadataToken: number;
 };
 
+export type MemberException = {
+  name: string;
+  metadataToken: number;
+  exception: string;
+};
+
 export type Members = {
   fieldMembers?: FieldMember[];
   eventMembers?: EventMember[];
   propertyMembers?: PropertyMember[];
   methodMembers?: MethodMember[];
+  exceptions?: MemberException[];
 };

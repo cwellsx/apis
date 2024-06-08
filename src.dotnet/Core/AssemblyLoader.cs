@@ -13,7 +13,7 @@ namespace Core
 
     static class AssemblyLoader
     {
-        const string version = "2024-05-01"; // see also src\main\shared-types\loaded\loadedVersion.ts
+        const string version = "2024-05-07"; // see also src\main\shared-types\loaded\loadedVersion.ts
 
         internal static All LoadAssemblies(string directory)
         {

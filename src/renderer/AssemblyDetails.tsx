@@ -1,6 +1,6 @@
 import * as React from "react";
 import CheckboxTree, { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
-import type { Access, MemberInfo, Named, Namespace, OnDetailClick, Type, Types } from "../shared-types";
+import type { Access, DetailedAssembly, MemberInfo, Named, Namespace, OnDetailClick, Type } from "../shared-types";
 import { isTypeException, nodeIdToText, textToNodeId } from "../shared-types";
 import * as Icon from "./Icons.Microsoft";
 import { icons } from "./checkboxTreeIcons";
@@ -124,31 +124,27 @@ const convertType = (type: Type): CheckboxNode => {
         ...makeMemberNodes(type.members.propertyMembers, getPropertyIcon, "property"),
         ...makeMemberNodes(type.members.methodMembers, getMethodIcon, "method"),
         ...makeMemberNodes(type.members.eventMembers, getEventIcon, "event"),
+        ...makeMemberNodes(type.members.exceptions, () => <Icon.SvgExclamationPoint />, "exception"),
       ]);
 };
 
 const convertNamespace = (namespace: Namespace): CheckboxNode =>
   makeNode(namespace, <Icon.SvgNamespace />, "namespace", namespace.types.map(convertType));
 
-const getNodes = (types: Types): CheckboxNode[] => [
+const getNodes = (types: DetailedAssembly): CheckboxNode[] => [
   ...types.exceptions.map(convertException),
   ...types.namespaces.map(convertNamespace),
 ];
 
-type DetailsProps = {
-  types: Types;
-  onDetailClick: OnDetailClick;
-};
-
 type State = {
-  types: Types;
+  types: DetailedAssembly;
   nodes: CheckboxNode[];
   expanded: string[];
 };
 
 interface ActionNewNodes {
   type: "NewNodes";
-  types: Types;
+  types: DetailedAssembly;
 }
 
 interface ActionSetExpanded {
@@ -158,7 +154,7 @@ interface ActionSetExpanded {
 
 type Action = ActionNewNodes | ActionSetExpanded;
 
-const initialState = (types: Types): State => {
+const initialState = (types: DetailedAssembly): State => {
   const nodes = getNodes(types);
   const expanded = nodes.map((node) => node.value);
   return { types, nodes, expanded };
@@ -177,7 +173,11 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-export const Details: React.FunctionComponent<DetailsProps> = (props: DetailsProps) => {
+type DetailsProps = {
+  types: DetailedAssembly;
+  onDetailClick: OnDetailClick;
+};
+export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: DetailsProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState(props.types));
   const { nodes, expanded } = state;
   const setExpanded = (expanded: string[]): void => dispatch({ type: "SetExpanded", expanded });
@@ -188,19 +188,22 @@ export const Details: React.FunctionComponent<DetailsProps> = (props: DetailsPro
 
   const onClick = (node: OnCheckNode): void => {
     // caution -- this will return a click event even if the node is not a method
-    props.onDetailClick({ id: textToNodeId(node.value), viewType: "types" });
+    props.onDetailClick({ id: textToNodeId(node.value), viewType: "assemblyDetails" });
   };
 
   return (
-    <CheckboxTree
-      nodes={nodes}
-      expanded={expanded}
-      onExpand={setExpanded}
-      icons={icons}
-      showNodeIcon={true}
-      id="treeid"
-      showExpandAll={false}
-      onClick={onClick}
-    />
+    <>
+      <h2>Assembly</h2>
+      <CheckboxTree
+        nodes={nodes}
+        expanded={expanded}
+        onExpand={setExpanded}
+        icons={icons}
+        showNodeIcon={true}
+        id="treeid"
+        showExpandAll={false}
+        onClick={onClick}
+      />
+    </>
   );
 };

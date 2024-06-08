@@ -11,7 +11,7 @@ import type {
 import { metadataNodeId, methodNodeId, nameNodeId } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
-import { CallDetails, GoodTypeInfo, MethodIdNamed } from "./loaded";
+import { CallDetails, GoodCallDetails, GoodTypeInfo } from "./loaded";
 import { log } from "./log";
 import type { TypeAndMethodDetails } from "./shared-types";
 import { Edges, NodeIdMap, getMethodName, getTypeInfoName } from "./shared-types";
@@ -29,9 +29,6 @@ type ReadMethod = (assemblyName: string, methodId: number) => TypeAndMethodDetai
 
 const getTypeAndMethodId: (leaf: TypeAndMethodDetails) => MethodNodeId = (leaf: TypeAndMethodDetails) =>
   methodNodeId(leaf.type.typeId.assemblyName, leaf.method.metadataToken);
-
-const getMethodId: (leaf: MethodIdNamed) => MethodNodeId = (method: MethodIdNamed) =>
-  methodNodeId(method.assemblyName, method.metadataToken);
 
 const getTypeId: (type: GoodTypeInfo) => MetadataNodeId = (type: GoodTypeInfo) =>
   metadataNodeId("type", type.typeId.assemblyName, type.typeId.metadataToken);
@@ -146,9 +143,9 @@ export const convertLoadedToMethods = (
   saveMethod(methodId, firstLeaf, called);
   saveMethod(methodId, firstLeaf, caller);
 
-  const findCalledBy = (called: MethodNodeId, calledBy: MethodIdNamed[]): void => {
-    for (const method of calledBy) {
-      const calledById: MethodNodeId = getMethodId(method);
+  const findCalledBy = (called: MethodNodeId, calledBy: GoodCallDetails[]): void => {
+    for (const callDetails of calledBy) {
+      const calledById: MethodNodeId = methodNodeId(callDetails.assemblyName, callDetails.metadataToken);
       saveEdge(calledById, called);
       if (caller.has(calledById)) continue; // avoid infinite loop if there's recursion or cyclic dependency
       const calledByMethod = selectMethod(calledById, caller);
@@ -159,10 +156,9 @@ export const convertLoadedToMethods = (
   findCalledBy(methodId, firstLeaf.methodDetails.calledBy);
 
   const findCalled = (caller: MethodNodeId, calls: CallDetails[]): void => {
-    for (const call of calls) {
-      if (call.error && !call.isWarning) continue; //the metadataToken is invalid because the method was not found
-      const method = call.called;
-      const calledId: MethodNodeId = getMethodId(method);
+    for (const callDetails of calls) {
+      if (!callDetails.metadataToken) continue; //the metadataToken is invalid because the method was not found
+      const calledId: MethodNodeId = methodNodeId(callDetails.assemblyName, callDetails.metadataToken);
       saveEdge(caller, calledId);
       if (called.has(calledId)) continue; // avoid infinite loop if there's recursion or cyclic dependency
       const calledMethod = selectMethod(calledId, called);
@@ -207,12 +203,6 @@ export const convertLoadedToMethods = (
   const graphFilter = isGraphFilter(methodIdOrGraphFilter)
     ? methodIdOrGraphFilter
     : { leafVisible: leafs.map((leaf) => leaf.nodeId), groupExpanded: groups.map((parent) => parent.nodeId) };
-
-  // a Group is visible iff its leafs are visible
-  // if (isNewMethodId) {
-  //   viewOptions.leafVisible = leafs.map((leaf) => leaf.nodeId);
-  //   viewOptions.methodId = methodId;
-  // }
 
   // convert to Image
   log("convertToImage");

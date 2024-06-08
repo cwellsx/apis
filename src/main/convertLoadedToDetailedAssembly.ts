@@ -1,5 +1,6 @@
 import type {
   Access,
+  DetailedAssembly,
   GetArtificialNodeId,
   MemberInfo,
   Members,
@@ -7,7 +8,6 @@ import type {
   Namespace,
   NodeId,
   Type,
-  Types,
 } from "../shared-types";
 import { artificialNodeIdFactory, metadataNodeId } from "../shared-types";
 import type {
@@ -21,6 +21,7 @@ import type {
   TypeId,
 } from "./loaded";
 import { Access as LoadedAccess, isPartTypeInfo, namedTypeInfo } from "./loaded";
+import { MemberException } from "./loaded/loadedMembers";
 import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "./shared-types";
 
 type Exceptions = Named[];
@@ -88,7 +89,7 @@ const getAccess = (access: LoadedAccess): Access => {
   }
 };
 
-export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: string): Types => {
+export const convertLoadedToDetailedAssembly = (allTypeInfo: AllTypeInfo, assemblyName: string): DetailedAssembly => {
   const getArtificialNodeId = artificialNodeIdFactory();
 
   const getMembers = (members: LoadedMembers): Members => {
@@ -140,12 +141,21 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: str
         methodMember.returnType,
         methodMember.access
       );
+    const getException = (exception: MemberException): MemberInfo =>
+      getFromName(
+        metadataNodeId("memberException", assemblyName, exception.metadataToken),
+        exception.name,
+        [],
+        undefined,
+        LoadedAccess.Private // not ideal but ignored by the UI
+      );
 
     return {
       fieldMembers: members.fieldMembers?.map(getFieldMember) ?? [],
       eventMembers: members.eventMembers?.map(getEventMember) ?? [],
       propertyMembers: members.propertyMembers?.map(getPropertyMember) ?? [],
       methodMembers: members.methodMembers?.map(getMethodMember) ?? [],
+      exceptions: members.exceptions?.map(getException) ?? [],
     };
   };
 
@@ -206,5 +216,5 @@ export const convertLoadedToTypes = (allTypeInfo: AllTypeInfo, assemblyName: str
     })
     .sort((x, y) => x.name.localeCompare(y.name));
 
-  return { namespaces, exceptions, detailType: "types" };
+  return { namespaces, exceptions, detailType: "assemblyDetails" };
 };

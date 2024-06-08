@@ -11,3 +11,40 @@ pre.methodBody {
 .methodDetails caption {
   caption-side: top;
 }
+
+/* CSS reset for tables */
+
+table, caption, tbody, tfoot, thead, tr, th, td {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  vertical-align: baseline;
+}
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* alignment and cell padding */
+
+td, th  {
+  vertical-align: top;
+  text-align: left;
+  padding: 0.5em;
+}
+
+/* less padding between rows of nested table */
+
+table table td, table table th  {
+  padding: 0.25em 0.5em;
+}
+
+/* don't left-pad first column nor top-pad first row of any table */
+
+table th:first-child {
+  padding-left: 0;
+}
+
+table > *:first-child > tr > * {
+  padding-top: 0;
+}

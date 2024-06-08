@@ -47,6 +47,7 @@ Generally:
 - Display edge labels as tooltips
 - Fix the cursor not changing when the `[Ctrl]` key is pressed
 - Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
+- As well as method errors, also show any assembly, type, and member exceptions
 
 ## Improve what exists already
 

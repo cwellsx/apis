@@ -13,8 +13,10 @@ export type { AppOptions } from "./appOptions";
 export type { AsText, CallStack } from "./callStack";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
+export type { ErrorsInfo } from "./errors";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export type { Area, AreaClass, Image } from "./image";
+export type { BadCallDetails, BadTypeInfo, MethodNameStrings } from "./loaded";
 export { isParent } from "./node";
 export type { Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
@@ -22,7 +24,7 @@ export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown } from "./types";
 export { defaultView } from "./view";
 export type { View, ViewErrors, ViewGraph, ViewGreeting } from "./view";
-export type { DetailType, MethodBody, MethodError, Types, ViewDetails } from "./viewDetails";
+export type { DetailType, DetailedAssembly, DetailedMethod, ViewDetails } from "./viewDetails";
 export { viewFeatures } from "./viewOptions";
 export type {
   AnyGraphViewOptions,
