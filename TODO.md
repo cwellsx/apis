@@ -24,27 +24,22 @@ Generally:
 
 ## What's being done now/next
 
-- `*.cs`
-  - Improve the content of the Errors record
-- `*.ts`
-  - Implement a view option to group by namespace instead of by assembly name
+Improve the software first, then the documentation
+
+- `*.tsx`
+
+  - Make the source code view usable
+  - Add source code details to the api and callstack views
+
 - `*.md`
   - Use the new view to improve the screenshot of `Core.exe` internals
   - Make a section to document this as an example of round-tripping
   - Also improve the format of all screenshots (scale and blockquote)
-- `*.ts` and `*.tsx`
-  - Improve the Errors view to use the improved Errors record
-- `*.cs`
-  - Use the improved Errors view to diagnose and fix disassembly warnings/errors
-- `*.ts`
-  - Remove compiler-generated types, and backing fields
-- `*.md`
   - Review whether the screenshots are A-OK
 
 ## Fix anything broken
 
 - `Core.exe` generates a warning, if not an error, when decompiling some assemblies
-- Display edge labels as tooltips
 - Fix the cursor not changing when the `[Ctrl]` key is pressed
 - Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
 - As well as method errors, also show any assembly, type, and member exceptions
@@ -53,15 +48,10 @@ Generally:
 
 ### Urgent
 
-- The `Errors` view isn't fit for purpose
+-
 
 ### Unsorted
 
-- Simplify schema:
-  - Remove `MethodColumns` table
-  - Remove `TypeNameColumns` table
-  - Rename `MethodNameColumns` to `MemberNameColumns` and use it for type names also
-- Include `Core.IL` as much as possible
 - Improve the `USER.md`
   - The `USER.md` should be improved with `<details>` and `<summary>` tags
   - Remove the "TO DO" messages from the current `USER.md`
@@ -72,8 +62,6 @@ Generally:
   - Add [Alerts](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts)
 - Display progress messages when loading from `Core.exe`
 - `[Ctrl]`-click to hide should work with all nodes on all view types
-- Hide compiler-generated backing field
-- Improve the CSS e.g. for paragraph spacing -- using CSS reset etc.
 - Method view
   - Hide compiler-generated types, like they're already removed from the APIs view
   - Define view options for this view, e.g. to show the labels on the graph instead of only as tooltips
@@ -86,8 +74,11 @@ Generally:
   - Implement some line wrap, to avoid too-long lines
   - Review the `DecompilerSettings` re. generated source code
   - Try some highlighting, maybe using a simple "find whole word", to identify the line-of-code or method-name on the stack
+- Slightly indent (e.g. 0.5em) the nested/compound view options
 
 ### Not now
+
+-
 
 ## Start new features
 

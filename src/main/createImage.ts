@@ -66,7 +66,7 @@ const defaultShape = (node: ImageNode): Shape => {
 
 const getDotFormat = (
   imageData: ImageData
-): { lines: string[]; nodes: { [nodeId: string]: ImageNode }; edgeTitles: { [nodeId: string]: string } } => {
+): { lines: string[]; nodes: { [nodeId: string]: ImageNode }; edgeTooltips: { [edgeId: string]: string } } => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   lines.push("  labeljust=l");
@@ -102,51 +102,60 @@ const getDotFormat = (
   };
   pushLayer(Object.values(imageData.nodes), 0);
 
-  const edgeTitles: { [edgeId: string]: string } = {};
+  // used to override the title assigned to edge labels
+  const edgeTooltips: { [edgeId: string]: string } = {};
 
   // push the map of grouped edges
   imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
-    // use \l instead of \r\n to left-justify
+    // use \l instead of \r\n to left-justify labels
     // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
+    const edgeLabel = labels.map((s) => s + "\\l").join();
+    // use \r\b in tooltips, that's OK in the XML
     const edgeTitle = `${nodes[clientId].label} → ${nodes[serverId]?.label ?? "?"}`;
-    edgeTitles[edgeId] = edgeTitle;
-    const join: (strings: string[]) => string = (strings: string[]) => strings.join("\\l") + "\\l";
-    const labelAttributes = `, label="${join(labels)}", tooltip="${join([edgeTitle, ...titles])}"`;
+    const edgeTooltip = [edgeTitle, ...titles].join("\r\n");
+
+    const labelAttributes = `, label="${edgeLabel}", tooltip="${edgeTooltip}"`;
     lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
+
+    edgeTooltips[edgeId] = edgeTooltip;
   });
 
   lines.push("}");
-  return { lines, nodes, edgeTitles };
+  return { lines, nodes, edgeTooltips };
 };
 
 export function createImage(imageData: ImageData): Image {
   log("createImage");
-  const { lines, nodes, edgeTitles } = getDotFormat(imageData);
 
+  // convert to *.dot file format lines
+  const { lines, nodes, edgeTooltips } = getDotFormat(imageData);
+
+  // specify all the path ames
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");
   const mapFilename = getAppFilename("assemblies.map");
+  // create the *.dot file
   writeFileSync(dotFilename, lines.join(os.EOL));
 
+  // launch GraphViz
   const dotExe = findDotExe();
   const args = [dotFilename, "-Tpng", `-o${pngFilename}`, "-Tcmapx", `-o${mapFilename}`, `-Nfontname="Segoe UI"`];
-
   const spawned = child_process.spawnSync(dotExe, args);
   if (spawned.status !== 0) showErrorBox("dot.exe failed", "" + spawned.error);
 
+  // read the image *.map file
   const xml = readFileSync(mapFilename);
 
   const getAreaAttributes = (id: string): ExtraAttributes => {
     if (textIsEdgeId(id)) {
       // this is the label of an edge, not the edge itself
-      if (id.endsWith("-label")) id = id.substring(0, id.length - 6);
-      const tooltip = edgeTitles[id];
-      if (!tooltip) throw new Error("Edge not found");
-      return { className: imageData.edgeDetails ? "edge-details" : "edge-none", tooltip };
+      const edgeLabelTooltip = id.endsWith("-label") ? edgeTooltips[id.substring(0, id.length - 6)] : undefined;
+
+      return { className: imageData.edgeDetails ? "edge-details" : "edge-none", edgeLabelTooltip };
     } else {
       const node = nodes[id];
       if (!node) throw new Error("Node not found");
-      return { className: node.className, tooltip: node.tooltip };
+      return { className: node.className };
     }
   };
 

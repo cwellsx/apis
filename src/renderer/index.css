@@ -16,10 +16,20 @@ html, body, #renderer {
   font-family: Consolas;
 }
 
+p {
+  /* line-height is 1.5 em */
+  margin: 0.75em 0;
+}
+
 p:first-child, legend + p {
   margin-top: 0;
 }
 
 p:last-child {
   margin-bottom: 0;
+}
+
+input {
+  vertical-align: middle;
+  margin-right: 0.5em;
 }
