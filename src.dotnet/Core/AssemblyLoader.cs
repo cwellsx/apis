@@ -13,7 +13,7 @@ namespace Core
 
     static class AssemblyLoader
     {
-        const string version = "2024-05-07"; // see also src\main\shared-types\loaded\loadedVersion.ts
+        const string version = "2024-05-09"; // see also src\main\shared-types\loaded\loadedVersion.ts
 
         internal static All LoadAssemblies(string directory)
         {
@@ -27,7 +27,6 @@ namespace Core
             Func<string, bool> isMicrosoftAssemblyName = (string name) =>
                 IsMicrosoftAssembly(name) || dotNetPaths.Any(path => Path.GetFileNameWithoutExtension(path) == name);
 
-            //var assemblyReader = new AssemblyReader(exes, isMicrosoftAssemblyName, targetFramework);
             var assemblies = new Dictionary<string, AssemblyInfo>();
             var exceptions = new List<string>();
             var assembliesDecompiled = new Dictionary<string, AssemblyDecompiled>();

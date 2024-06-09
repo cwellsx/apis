@@ -61,12 +61,35 @@ namespace Core
 
         static void SelfTest()
         {
-            var directory = Directory.GetCurrentDirectory();
-            var result = AssemblyLoader.LoadAssemblies(directory);
-            var allMethodDetails = result.AssemblyMethods.Values.SelectMany(dictionary => dictionary.Values);
-            var allCallDetails = allMethodDetails.SelectMany(methodDetails => methodDetails.Calls);
-            var allErrors = allCallDetails.Where(callDetails => callDetails.Error != null).ToArray();
+            CallDetails[] GetAllErrors(string directory)
+            {
+                var result = AssemblyLoader.LoadAssemblies(directory);
+                var allMethodDetails = result.AssemblyMethods.Values.SelectMany(dictionary => dictionary.Values);
+                var allCallDetails = allMethodDetails.SelectMany(methodDetails => methodDetails.Calls);
+                return allCallDetails.Where(callDetails => callDetails.Error != null).ToArray();
+            }
+
+            var allErrors = GetAllErrors(Directory.GetCurrentDirectory());
             if (allErrors.Length > 1)
+            {
+                throw new Exception("New errors found");
+            }
+
+            var coreTestDirectory =
+#if DEBUG
+            @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
+#else
+            @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
+#endif
+            allErrors = GetAllErrors(coreTestDirectory);
+            if (allErrors.Length > 0)
+            {
+                throw new Exception("New errors found");
+            }
+
+            var modeltextDirectory = @"C:\Users\Christopher\Source\Repos\modeltext\ModelTextHtml\ModelEditControl\bin\Debug";
+            allErrors = GetAllErrors(modeltextDirectory);
+            if (allErrors.Length > 0)
             {
                 throw new Exception("New errors found");
             }
@@ -80,15 +103,17 @@ namespace Core
             }
             var directory = args[0];
 
-            if (directory == "--selftest" || true)
+            if (directory == "--selftest"
+                //|| true
+                )
             {
                 SelfTest();
                 Logger.Log("SelfTest OK");
                 return;
             }
 
-            directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Debug\net5.0";
-            directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
+            //directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Debug\net5.0";
+            //directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
 
             var result = AssemblyLoader.LoadAssemblies(directory);
             WriteJsonToFiles(result);

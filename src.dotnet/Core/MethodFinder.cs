@@ -162,7 +162,7 @@ namespace Core
                        genericTypeParameters,
                        call.GenericTypeArguments
                        );
-                   return decompiled.MethodMember.Substitute(substitutions);
+                   return decompiled.MethodMember.Substitute(substitutions, assembliesTypesDictionary);
                 };
 
                 // find one single whose transformation is an exact match
