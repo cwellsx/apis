@@ -32,44 +32,6 @@ namespace Core.Output.Internal
 
         internal static TypeIdEx? Copy(TypeId? typeId, Func<string, bool> isMicrosoftAssemblyName) =>
             typeId == null ? null : new TypeIdEx(typeId, isMicrosoftAssemblyName);
-
-        internal TypeIdEx Transform(Dictionary<string, TypeIdEx> transformation)
-        {
-            if (transformation.TryGetValue(Name, out var transformed))
-            {
-                return transformed;
-            }
-
-            var elementType = ElementType?.Transform(transformation);
-            var isElementTypeChanged = elementType != ElementType;
-            return this with
-            {
-                DeclaringType = DeclaringType?.Transform(transformation),
-                ElementType = elementType,
-                Name = elementType == null ? Name : elementType.Name + Kind.NameSuffix(),
-                GenericTypeArguments = GenericTypeArguments?.Select(typeId => typeId.Transform(transformation)).ToArray(),
-                Namespace = isElementTypeChanged ? elementType!.Namespace : Namespace,
-                AssemblyName = isElementTypeChanged ? elementType!.AssemblyName : AssemblyName
-            };
-        }
-
-        internal TypeIdEx WithoutArguments() => this with
-        {
-            GenericTypeArguments = null,
-            Kind = Kind == TypeKind.GenericParameter ? null : Kind,
-            DeclaringType = DeclaringType?.WithoutArguments()
-        };
-
-        internal TypeIdEx WithoutGenericParameters(bool isDeclaringType = false)
-        {
-            bool isGenericParameters = GenericTypeArguments?.All(typeId => typeId.Kind == TypeKind.GenericParameter) ?? false;
-            return this with
-            {
-                DeclaringType = DeclaringType?.WithoutGenericParameters(true),
-                ElementType = ElementType?.WithoutGenericParameters(),
-                GenericTypeArguments = isDeclaringType && isGenericParameters ? null : GenericTypeArguments
-            };
-        }
     }
 
     /// <summary>
@@ -85,22 +47,6 @@ namespace Core.Output.Internal
             new TypeIdEx(parameter.Type, isMicrosoftAssemblyName)
             )
         { }
-
-        internal ParameterEx Transform(Dictionary<string, TypeIdEx> transformation)
-        {
-            return this with
-            {
-                Type = Type.Transform(transformation)
-            };
-        }
-
-        internal ParameterEx WithoutGenericParameters()
-        {
-            return this with
-            {
-                Type = Type.WithoutGenericParameters()
-            };
-        }
     }
 
     /// <summary>
@@ -125,24 +71,6 @@ namespace Core.Output.Internal
             new TypeIdEx(methodMember.ReturnType, isMicrosoftAssemblyName)
             )
         { }
-
-        internal MethodMemberEx Transform(Dictionary<string, TypeIdEx> transformation)
-        {
-            return this with
-            {
-                Parameters = Parameters?.Select(parameter => parameter.Transform(transformation)).ToArray(),
-                ReturnType = ReturnType.Transform(transformation)
-            };
-        }
-
-        internal MethodMemberEx WithoutGenericParameters()
-        {
-            return this with
-            {
-                Parameters = Parameters?.Select(parameter => parameter.WithoutGenericParameters()).ToArray(),
-                ReturnType = ReturnType.WithoutGenericParameters()
-            };
-        }
     }
 
     internal record MethodId(MethodMemberEx MethodMember, TypeIdEx DeclaringType, Values<TypeIdEx>? GenericTypeArguments, Values<TypeIdEx>? GenericMethodArguments)

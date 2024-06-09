@@ -156,13 +156,13 @@ namespace Core
                 // define how to transform
                 Func<Decompiled, MethodMemberEx> transform = (decompiled) =>
                 {
-                   var transformation = GetTransformation(
+                   var substitutions = GetSubstitutions(
                        decompiled.GenericArguments,
                        call.GenericMethodArguments,
                        genericTypeParameters,
                        call.GenericTypeArguments
                        );
-                   return decompiled.MethodMember.Transform(transformation);
+                   return decompiled.MethodMember.Substitute(substitutions);
                 };
 
                 // find one single whose transformation is an exact match
@@ -198,7 +198,7 @@ namespace Core
             }
         }
 
-        static Dictionary<string, TypeIdEx> GetTransformation(
+        static Dictionary<string, TypeIdEx> GetSubstitutions(
             Values<TypeId>? genericMethodParameters,
             Values<TypeIdEx>? genericMethodArguments,
             Values<TypeId>? genericTypeParameters,
@@ -207,7 +207,7 @@ namespace Core
         {
             // use just the Name as the key of the dictionary
             // the Name is a string like "T"
-            // because the full TypeId of the argument also hhas a non-null DeclaringType
+            // because the full TypeId of the argument also has a non-null DeclaringType
             // except not when the argument is a type like "T[]"
             IEnumerable<KeyValuePair<string, TypeIdEx>> GetKvps(Values<TypeId>? parameters, Values<TypeIdEx>? arguments) =>
                 Enumerable.Range(0, arguments?.Length ?? 0)
