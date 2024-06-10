@@ -42,10 +42,6 @@ export const convertLoadedToApis = (
   const edges = new Edges();
 
   const addLeaf = (typeNodeId: TypeNodeId, groupName: string): void => {
-    if (typeNodeId.metadataToken === 33554434) {
-      log("found");
-    }
-
     let types = groupedTypes[groupName];
     if (!types) {
       types = new NodeIdMap<Leaf>();

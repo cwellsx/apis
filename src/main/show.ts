@@ -1,7 +1,7 @@
 import type { BrowserWindow } from "electron";
 import type { AppOptions, RendererApi, View, ViewDetails, ViewGreeting } from "../shared-types";
 import { getErrorString } from "./error";
-import { logApi } from "./log";
+import { log, logApi } from "./log";
 
 export type Show = {
   showException: (error: unknown) => void;
@@ -16,7 +16,7 @@ export const show = (mainWindow: BrowserWindow): Show => {
       greeting,
       viewOptions: { viewType: "greeting" },
     };
-    logApi("send", "showView", view);
+    log(`showGreeting(${greeting})`);
     webContents.send("showView", view);
   };
 

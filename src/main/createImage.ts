@@ -138,12 +138,14 @@ export function createImage(imageData: ImageData): Image {
   writeFileSync(dotFilename, lines.join(os.EOL));
 
   // launch GraphViz
+  log("launch GraphViz");
   const dotExe = findDotExe();
   const args = [dotFilename, "-Tpng", `-o${pngFilename}`, "-Tcmapx", `-o${mapFilename}`, `-Nfontname="Segoe UI"`];
   const spawned = child_process.spawnSync(dotExe, args);
   if (spawned.status !== 0) showErrorBox("dot.exe failed", "" + spawned.error);
 
   // read the image *.map file
+  log("convertXmlMapToAreas");
   const xml = readFileSync(mapFilename);
 
   const getAreaAttributes = (id: string): ExtraAttributes => {

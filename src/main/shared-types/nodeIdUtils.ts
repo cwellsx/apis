@@ -94,6 +94,7 @@ export class NodeIdMap<TValue> {
   combine: (other: NodeIdMap<TValue>) => NodeIdMap<TValue>;
   entries: () => [NodeId, TValue][];
   values: () => TValue[];
+  length: () => number;
 
   constructor() {
     this.findIndex = (key: NodeId): number => this.array.findIndex((pair) => nodeIdEquals(pair.key, key));
@@ -121,5 +122,6 @@ export class NodeIdMap<TValue> {
     };
     this.entries = (): [NodeId, TValue][] => this.array.map((pair) => [pair.key, pair.value]);
     this.values = (): TValue[] => this.array.map((pair) => pair.value);
+    this.length = (): number => this.array.length;
   }
 }

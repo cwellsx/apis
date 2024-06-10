@@ -25,6 +25,7 @@ export function logError(message: string) {
 }
 
 export const logApi = (event: "on" | "send", channel: string, o: object): void => {
+  log(`${event}.${channel}(...)`);
   if (!options.logApi) return;
   const now = new Date();
   const pad2 = (n: number) => n.toString().padStart(2, "0");

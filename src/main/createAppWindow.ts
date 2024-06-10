@@ -84,12 +84,10 @@ export const createAppWindow = (
   // implement the MainApi which will be bound to ipcMain
   const mainApi: MainApi = {
     onViewOptions: (viewOptions: ViewOptions): void => {
-      log("setGroupExpanded");
       setViewOptions(viewOptions);
       showViewType(viewOptions.viewType);
     },
     onAppOptions: (appOptions: AppOptions): void => {
-      log("onAppOptions");
       sqlConfig.appOptions = appOptions;
       renderer.showAppOptions(appOptions);
     },
@@ -97,7 +95,6 @@ export const createAppWindow = (
       const { id, viewType, event } = graphEvent;
       if (viewType === "custom") throw new Error("Unexpected viewType");
       const { leafType, details } = viewFeatures[viewType];
-      log(`onGraphClick ${id}`);
       if (isEdgeId(id)) {
         if (!details.includes("edge")) return;
         throw new Error("Edge details not yet implemented");
@@ -120,7 +117,6 @@ export const createAppWindow = (
           const { assemblyName, metadataToken } = nodeId;
           const typeAndMethod = sqlLoaded.readMethod(assemblyName, metadataToken);
           const methodBody = convertLoadedToDetailedMethod(typeAndMethod);
-          log("renderer.showDetails");
           renderer.showDetails(methodBody);
           return;
         }
@@ -143,7 +139,6 @@ export const createAppWindow = (
           } else {
             const allTypeInfo = sqlLoaded.readTypes(assemblyName);
             const types = convertLoadedToDetailedAssembly(allTypeInfo, assemblyName);
-            log("renderer.showDetails");
             renderer.showDetails(types);
           }
           return;
@@ -159,7 +154,6 @@ export const createAppWindow = (
       showViewType(viewType);
     },
     onDetailClick: (detailEvent: DetailEvent): void => {
-      log("onDetailClick");
       const { id: nodeId, viewType } = detailEvent;
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
@@ -173,12 +167,14 @@ export const createAppWindow = (
 
   const showMethods = (methodId?: MethodNodeId): void => {
     try {
+      log(`showMethods(${methodId ?? ""})`);
       const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
       const viewGraph = convertLoadedToMethods(
         readMethod,
         methodViewOptions,
-        methodId ?? sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy)
+        methodId ?? sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy),
+        show
       );
       if (methodId) {
         sqlLoaded.writeGraphFilter(
@@ -189,7 +185,6 @@ export const createAppWindow = (
         methodViewOptions.methodId = methodId;
         sqlLoaded.viewState.methodViewOptions = methodViewOptions;
       }
-      log("renderer.showView");
       renderer.showView(viewGraph);
     } catch (error) {
       show.showException(error);
@@ -203,7 +198,6 @@ export const createAppWindow = (
       sqlLoaded.readGraphFilter("references", "assembly"),
       sqlLoaded.viewState.exes
     );
-    log("renderer.showView");
     renderer.showView(viewGraph);
   };
 
@@ -216,7 +210,6 @@ export const createAppWindow = (
         viewType: "errors",
       },
     };
-    log("renderer.showView");
     renderer.showView(viewErrors);
   };
 
@@ -239,7 +232,6 @@ export const createAppWindow = (
       methodNames,
       sqlLoaded.viewState.exes
     );
-    log("renderer.showView");
     renderer.showView(viewGraph);
   };
 

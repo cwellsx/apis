@@ -15,6 +15,7 @@ import { CallDetails, GoodCallDetails, GoodTypeInfo } from "./loaded";
 import { log } from "./log";
 import type { TypeAndMethodDetails } from "./shared-types";
 import { Edges, NodeIdMap, getMethodName, getTypeInfoName } from "./shared-types";
+import { Show } from "./show";
 
 type TypeMethods = {
   type: GoodTypeInfo;
@@ -108,7 +109,8 @@ const groupsFromTypeDictionary = (
 export const convertLoadedToMethods = (
   readMethod: ReadMethod,
   viewOptions: MethodViewOptions,
-  methodIdOrGraphFilter: MethodNodeId | GraphFilter
+  methodIdOrGraphFilter: MethodNodeId | GraphFilter,
+  show: Show
 ): ViewGraph => {
   type LeafDictionary = NodeIdMap<TypeAndMethodDetails>;
   const called = new NodeIdMap<TypeAndMethodDetails>();
@@ -167,6 +169,8 @@ export const convertLoadedToMethods = (
   };
 
   findCalled(methodId, firstLeaf.methodDetails.calls);
+
+  show.showMessage(undefined, `${called.length()} called, ${caller.length()} caller`);
 
   // begin to convert to image input format
   const imageAttributes = new NodeIdMap<ImageAttribute>();

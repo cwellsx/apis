@@ -12,7 +12,6 @@ import type {
 import { viewFeatures } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
-import { log } from "./log";
 import { isEdgeId, toggleNodeId } from "./shared-types";
 import { renderer as createRenderer } from "./show";
 import { SqlConfig, SqlCustom } from "./sqlTables";
@@ -49,19 +48,16 @@ export const createCustomWindow = (
   // implement the MainApi which will be bound to ipcMain
   const mainApi: MainApi = {
     onViewOptions: (viewOptions: ViewOptions): void => {
-      log("setGroupExpanded");
       setCustomViewOptions(viewOptions);
       showViewType(viewOptions.viewType);
     },
     onAppOptions: (appOptions: AppOptions): void => {
-      log("onAppOptions");
       sqlConfig.appOptions = appOptions;
       renderer.showAppOptions(appOptions);
     },
     onGraphClick: (graphEvent: GraphEvent): void => {
       const { id, viewType, event } = graphEvent;
       const { leafType, details } = viewFeatures[viewType];
-      log(`onGraphClick ${id}`);
       if (isEdgeId(id)) return;
       const nodeId = id;
       if (leafType !== nodeId.type) {
@@ -96,7 +92,6 @@ export const createCustomWindow = (
     const viewOptions = sqlCustom.viewState.customViewOptions;
     const graphFilter = sqlCustom.readGraphFilter(viewOptions.clusterBy);
     const viewGraph = convertLoadedToCustom(nodes, viewOptions, graphFilter);
-    log("renderer.showView");
     renderer.showView(viewGraph);
   };
 
@@ -109,7 +104,6 @@ export const createCustomWindow = (
         viewType: "errors",
       },
     };
-    log("renderer.showView");
     renderer.showView(viewErrors);
   };
 
