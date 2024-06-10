@@ -4,7 +4,7 @@ import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
 import { appWindows } from "./createBrowserWindow";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
-import { log } from "./log";
+import { log, logApi } from "./log";
 
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
@@ -25,11 +25,26 @@ export function createApplication(mainWindow: BrowserWindow): void {
 
   const on = (event: IpcMainEvent): MainApi | undefined => appWindows.find(event)?.mainApi;
 
-  ipcMain.on("onViewOptions", (event, viewOptions) => on(event)?.onViewOptions(viewOptions));
-  ipcMain.on("onAppOptions", (event, appOptions) => on(event)?.onAppOptions(appOptions));
-  ipcMain.on("onGraphClick", (event, graphEvent) => on(event)?.onGraphClick(graphEvent));
-  ipcMain.on("onGraphFilter", (event, filterEvent) => on(event)?.onGraphFilter(filterEvent));
-  ipcMain.on("onDetailClick", (event, nodeId) => on(event)?.onDetailClick(nodeId));
+  ipcMain.on("onViewOptions", (event, viewOptions) => {
+    logApi("on", "onViewOptions", viewOptions);
+    on(event)?.onViewOptions(viewOptions);
+  });
+  ipcMain.on("onAppOptions", (event, appOptions) => {
+    logApi("on", "onAppOptions", appOptions);
+    on(event)?.onAppOptions(appOptions);
+  });
+  ipcMain.on("onGraphClick", (event, graphEvent) => {
+    logApi("on", "onGraphClick", graphEvent);
+    on(event)?.onGraphClick(graphEvent);
+  });
+  ipcMain.on("onGraphFilter", (event, filterEvent) => {
+    logApi("on", "onGraphFilter", filterEvent);
+    on(event)?.onGraphFilter(filterEvent);
+  });
+  ipcMain.on("onDetailClick", (event, nodeId) => {
+    logApi("on", "onDetailClick", nodeId);
+    on(event)?.onDetailClick(nodeId);
+  });
 
   // these mutate sqlLoaded so they're declared inline
   // perhaps these and sqlLoaded could be migrated together to another module

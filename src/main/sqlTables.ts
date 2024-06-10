@@ -909,7 +909,7 @@ export class ViewState {
   }
   get methodViewOptions(): MethodViewOptions {
     const value = this._cache.getValue("methodViewOptions");
-    return value ? { defaultMethodViewOptions, ...JSON.parse(value) } : defaultMethodViewOptions;
+    return value ? { ...defaultMethodViewOptions, ...JSON.parse(value) } : defaultMethodViewOptions;
   }
 
   set apiViewOptions(viewOptions: ApiViewOptions) {

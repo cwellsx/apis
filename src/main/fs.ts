@@ -13,6 +13,14 @@ export const getAppFilename = (filename: string): string => {
   return path.join(dir, filename);
 };
 
+export const getLogFilename = (filename: string): string => {
+  // beware https://www.electronjs.org/docs/latest/api/app#appgetpathname
+  // says that, "it is not recommended to write large files here"
+  const dir = path.join(app.getPath("userData"), "app_data", "log");
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return path.join(dir, filename);
+};
+
 export const appendFileSync = (path: string, data: string): void => fs.appendFileSync(path, data);
 
 export const existsSync = (path: string): boolean => fs.existsSync(path);

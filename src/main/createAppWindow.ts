@@ -178,7 +178,7 @@ export const createAppWindow = (
       const viewGraph = convertLoadedToMethods(
         readMethod,
         methodViewOptions,
-        methodId ?? sqlLoaded.readGraphFilter("apis", methodViewOptions.showClustered.clusterBy)
+        methodId ?? sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy)
       );
       if (methodId) {
         sqlLoaded.writeGraphFilter(

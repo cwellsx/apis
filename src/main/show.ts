@@ -1,6 +1,7 @@
 import type { BrowserWindow } from "electron";
 import type { AppOptions, RendererApi, View, ViewDetails, ViewGreeting } from "../shared-types";
 import { getErrorString } from "./error";
+import { logApi } from "./log";
 
 export type Show = {
   showException: (error: unknown) => void;
@@ -15,13 +16,16 @@ export const show = (mainWindow: BrowserWindow): Show => {
       greeting,
       viewOptions: { viewType: "greeting" },
     };
+    logApi("send", "showView", view);
     webContents.send("showView", view);
   };
+
   const showException = (error: unknown): void => {
     mainWindow.setTitle("Error");
     const message = getErrorString(error);
     showGreeting(message);
   };
+
   const showMessage = (title: string | undefined, message: string): void => {
     if (title) mainWindow.setTitle(title);
     showGreeting(message);
@@ -33,9 +37,20 @@ export const show = (mainWindow: BrowserWindow): Show => {
 export const renderer = (mainWindow: BrowserWindow): RendererApi => {
   const webContents = mainWindow.webContents;
 
-  const showView = (view: View): void => webContents.send("showView", view);
-  const showDetails = (details: ViewDetails): void => webContents.send("showDetails", details);
-  const showAppOptions = (appOptions: AppOptions): void => webContents.send("showAppOptions", appOptions);
+  const showView = (view: View): void => {
+    logApi("send", "showView", view);
+    webContents.send("showView", view);
+  };
+
+  const showDetails = (details: ViewDetails): void => {
+    logApi("send", "showDetails", details);
+    webContents.send("showDetails", details);
+  };
+
+  const showAppOptions = (appOptions: AppOptions): void => {
+    logApi("send", "showAppOptions", appOptions);
+    webContents.send("showAppOptions", appOptions);
+  };
 
   return { showView, showDetails, showAppOptions };
 };

@@ -9,4 +9,5 @@ export const options = {
   alwaysReload: false,
   showCompilerGeneratedAttributes: false,
   showCompilerGeneratedTypes: false,
+  logApi: false,
 };
