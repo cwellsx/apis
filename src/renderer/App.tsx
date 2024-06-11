@@ -66,6 +66,17 @@ const App: React.FunctionComponent = () => {
   const onGraphFilter: OnGraphFilter = (filterEvent) => mainApi.onGraphFilter(filterEvent);
   const onDetailClick: OnDetailClick = (nodeId) => mainApi.onDetailClick(nodeId);
 
+  const rightWidthMaxContent = (() => {
+    switch (details?.detailType) {
+      case undefined:
+        return false;
+      case "assemblyDetails":
+        return true;
+      case "methodDetails":
+        return false;
+    }
+  })();
+
   return (
     <React.StrictMode>
       <Panes
@@ -75,6 +86,7 @@ const App: React.FunctionComponent = () => {
         fontSize={fontSize}
         onWheelZoomPercent={onWheelZoomPercent}
         onWheelFontSize={onWheelFontSize}
+        rightWidthMaxContent={rightWidthMaxContent}
       />
     </React.StrictMode>
   );

@@ -88,8 +88,8 @@ export const getCenter = (view: View, onGraphClick: OnGraphClick, zoomPercent: n
   );
 };
 
-export const getRight = (details: ViewDetails | undefined, onDetailClick: OnDetailClick): JSX.Element => {
-  if (!details) return <></>;
+export const getRight = (details: ViewDetails | undefined, onDetailClick: OnDetailClick): JSX.Element | undefined => {
+  if (!details) return undefined;
   switch (details.detailType) {
     case "assemblyDetails":
       return <AssemblyDetails types={details} onDetailClick={onDetailClick} />;

@@ -34,6 +34,7 @@ function isPair(input: Input): input is Pair {
 
 type DefaultSizes = DefaultSize[];
 type SetActualSizes = (newSizes: number[]) => void;
+type ResetSizes = (newSizes: DefaultSize[]) => void;
 
 const scrollbarWidth = getScrollbarWidth();
 const getWidth = (element: Element, padding: number): number => {
@@ -44,7 +45,7 @@ const getWidth = (element: Element, padding: number): number => {
   return clientWidth + (hasScrollbar ? scrollbarWidth : 0) + padding;
 };
 
-export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, SetActualSizes] => {
+export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, SetActualSizes, ResetSizes] => {
   // extract and memoize the input
   const defaultSizes = React.useMemo(() => inputs.map((input) => (isPair(input) ? input[0] : input)), [inputs]);
   const refs = React.useMemo(() => inputs.map((input) => (isPair(input) ? input[1] : undefined)), [inputs]);
@@ -57,6 +58,7 @@ export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, S
 
   const wrapSetSize = (sizes: DefaultSizes, who: string): void => {
     // log whether setSize is called internally and/or from the onChange event of the SplitPane component
+    // log(who, sizes);
     setSizes(sizes);
     refSizes.current = sizes;
   };
@@ -111,5 +113,6 @@ export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, S
   }, [defaultSizes, refs, padding]);
 
   const setNumericSizes: SetActualSizes = (newSizes: number[]) => wrapSetSize(newSizes, "setNumericSizes");
-  return [sizes, setNumericSizes];
+  const resetSizes: ResetSizes = (newSizes: DefaultSize[]) => wrapSetSize(newSizes, "resetSizes");
+  return [sizes, setNumericSizes, resetSizes];
 };

@@ -76,6 +76,15 @@ Improve the software first, then the documentation
   - Try some highlighting, maybe using a simple "find whole word", to identify the line-of-code or method-name on the stack
 - Slightly indent (e.g. 0.5em) the nested/compound view options
 
+Improve performance:
+
+- The "view apis" with much data but not many visible nodes:
+  - 60 msec to get data from SQL
+  - 100 msec for the greeting and/or getting type and name data?
+  - 200 msec for convertLoadedToApis
+  - 750 msec for convertToImage
+    So try to improve performance of convertToImage, maybe by removing the array from the implementation of NodeIdMap
+
 ### Not now
 
 -

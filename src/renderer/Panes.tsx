@@ -15,19 +15,22 @@ type PanesProps = {
   fontSize: number;
   onWheelZoomPercent: OnWheel;
   onWheelFontSize: OnWheel;
+  rightWidthMaxContent: boolean;
 };
 
 export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) => {
-  const { left, center, right, fontSize, onWheelZoomPercent, onWheelFontSize } = props;
+  const { left, center, right, fontSize, onWheelZoomPercent, onWheelFontSize, rightWidthMaxContent } = props;
   const leftRef = React.useRef<HTMLDivElement>(null);
   const rightRef = React.useRef<HTMLDivElement>(null);
 
   // https://react.dev/reference/react/memo#troubleshooting says at the end,
   // "To avoid this, simplify props or memoize props in the parent component."
   const initialSize = React.useMemo<Input[]>(() => [[0, leftRef], "*", [0, rightRef]], []);
-  const [sizes, setSizes] = usePaneSizes(initialSize, 16);
+  const [sizes, setSizes, resetSizes] = usePaneSizes(initialSize, 16);
 
   const style = { fontSize: fontSize };
+
+  if (!rightWidthMaxContent && right && !sizes[2]) resetSizes([sizes[0], "*", 400]);
 
   return (
     <SplitPane
@@ -56,7 +59,7 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
         {center}
       </div>
       <div id="types" onWheel={onWheelFontSize} style={style}>
-        <div ref={rightRef} className="pane-resizes">
+        <div ref={rightRef} className={rightWidthMaxContent ? "pane-resizes" : undefined}>
           {right}
         </div>
       </div>
