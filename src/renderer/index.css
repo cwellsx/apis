@@ -16,9 +16,24 @@ html, body, #renderer {
   font-family: Consolas;
 }
 
-p {
+p, details, h2, h3, table {
   /* line-height is 1.5 em */
-  margin: 0.75em 0;
+  margin-bottom: 0.75em;
+}
+
+details[open] {
+  border-left: 1px black solid;
+  border-right: 1px black solid;
+  border-bottom: 1px black solid;
+  padding: 0 0.5em 0.5em 0.5em;
+}
+
+summary {
+  margin-bottom: 0.25em;
+}
+
+summary::marker {
+  color: green;
 }
 
 p:first-child, legend + p {

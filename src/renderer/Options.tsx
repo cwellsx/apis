@@ -275,12 +275,12 @@ const ShowClustered: React.FunctionComponent<OptionsProps> = (props: OptionsProp
 
 export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
   return (
-    <fieldset id="options">
-      <legend>Options</legend>
+    <details open>
+      <summary>Options</summary>
       {ShowClustered(props)}
       {ShowCustom(props)}
       {ShowEdgeLabels(props)}
       {ShowIntraAssemblyCalls(props)}
-    </fieldset>
+    </details>
   );
 };
