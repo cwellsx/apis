@@ -80,7 +80,7 @@ const App: React.FunctionComponent = () => {
   return (
     <React.StrictMode>
       <Panes
-        left={getLeft(view, onViewOptions, onGraphFilter)}
+        left={getLeft(view, onViewOptions, onGraphFilter, appOptions, onAppOptions)}
         center={getCenter(view, onGraphClick, zoomPercent)}
         right={getRight(details, onDetailClick)}
         fontSize={fontSize}

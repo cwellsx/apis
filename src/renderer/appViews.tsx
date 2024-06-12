@@ -1,5 +1,6 @@
 import * as React from "react";
 import type {
+  AppOptions,
   FilterEvent,
   OnDetailClick,
   OnGraphClick,
@@ -27,7 +28,9 @@ export function isErrors(view: View): view is ViewErrors {
 export const getLeft = (
   view: View,
   onViewOptions: (viewOptions: ViewOptions) => void,
-  onGraphFilter: (filterEvent: FilterEvent) => void
+  onGraphFilter: (filterEvent: FilterEvent) => void,
+  appOptions: AppOptions,
+  setAppOptions: (appOptions: AppOptions) => void
 ): JSX.Element => {
   if (isGreeting(view) || isErrors(view)) return <></>;
 
@@ -35,7 +38,12 @@ export const getLeft = (
   const { leafVisible, groupExpanded } = view.graphFilter;
   return (
     <>
-      <Options viewOptions={view.viewOptions} setViewOptions={onViewOptions} />
+      <Options
+        viewOptions={view.viewOptions}
+        setViewOptions={onViewOptions}
+        appOptions={appOptions}
+        setAppOptions={setAppOptions}
+      />
       <Tree
         nodes={view.groups}
         leafVisible={leafVisible.map(nodeIdToText)}

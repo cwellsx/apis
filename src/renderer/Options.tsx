@@ -1,12 +1,21 @@
 import * as React from "react";
-import type { AnyGraphViewOptions, CustomViewOptions, GraphViewOptions, ReferenceViewOptions } from "../shared-types";
+import type {
+  AnyGraphViewOptions,
+  AppOptions,
+  CustomViewOptions,
+  GraphViewOptions,
+  ReferenceViewOptions,
+} from "../shared-types";
 import "./Options.css";
+import { log } from "./log";
 
 // types
 
 type OptionsProps = {
   viewOptions: GraphViewOptions;
   setViewOptions: (viewOptions: GraphViewOptions) => void;
+  appOptions: AppOptions;
+  setAppOptions: (appOptions: AppOptions) => void;
 };
 
 type BooleanState = [value: boolean, setValue: (newValue: boolean) => void];
@@ -274,8 +283,27 @@ const ShowClustered: React.FunctionComponent<OptionsProps> = (props: OptionsProp
 };
 
 export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
+  const { viewOptions, appOptions, setAppOptions } = props;
+
+  const viewType = viewOptions.viewType;
+  const isClosed = appOptions.detailsClosed?.includes(viewOptions.viewType) ?? false;
+
+  const onToggle = (element: HTMLDetailsElement) => {
+    log(`open=${element.open}`);
+    const isOpen = element.open;
+    const detailsClosed = appOptions.detailsClosed;
+    if (!detailsClosed) {
+      if (!isOpen) appOptions.detailsClosed = [viewType];
+    } else if (isOpen && detailsClosed.includes(viewType)) {
+      detailsClosed.splice(detailsClosed.indexOf(viewType), 1);
+    } else if (!isOpen && !detailsClosed.includes(viewType)) {
+      detailsClosed.push(viewType);
+    }
+    setAppOptions(appOptions);
+  };
+
   return (
-    <details open>
+    <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
       <summary>Options</summary>
       {ShowClustered(props)}
       {ShowCustom(props)}
