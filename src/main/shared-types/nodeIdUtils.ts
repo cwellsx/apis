@@ -71,57 +71,58 @@ export const createLookupNodeId = (array: NodeId[]): ((nodeId: NodeId) => boolea
 
 export class NodeIdSet {
   private array: NodeId[] = [];
-  private findIndex: (key: NodeId) => number;
   add: (key: NodeId) => void;
   has: (key: NodeId) => boolean;
 
   constructor() {
-    this.findIndex = (key: NodeId): number => this.array.findIndex((found) => nodeIdEquals(found, key));
+    const findIndex = (key: NodeId): number => this.array.findIndex((found) => nodeIdEquals(found, key));
+
     this.add = (key: NodeId): void => {
       if (!this.has(key)) this.array.push(key);
     };
-    this.has = (key: NodeId): boolean => this.findIndex(key) !== -1;
+    this.has = (key: NodeId): boolean => findIndex(key) !== -1;
   }
 }
 
-export class NodeIdMap<TValue> {
-  private array: { key: NodeId; value: TValue }[] = [];
-  private findIndex: (key: NodeId) => number;
-  set: (key: NodeId, value: TValue) => void;
-  get: (key: NodeId) => TValue | undefined;
-  getOrThrow: (key: NodeId) => TValue;
-  has: (key: NodeId) => boolean;
-  combine: (other: NodeIdMap<TValue>) => NodeIdMap<TValue>;
-  entries: () => [NodeId, TValue][];
+export class NodeIdMap<TValue, TKey extends NodeId = NodeId> {
+  private array: { key: TKey; value: TValue }[] = [];
+  set: (key: TKey, value: TValue) => void;
+  get: (key: TKey) => TValue | undefined;
+  getOrThrow: (key: TKey) => TValue;
+  has: (key: TKey) => boolean;
+  combine: (other: NodeIdMap<TValue, TKey>) => NodeIdMap<TValue, TKey>;
+  keys: () => TKey[];
+  entries: () => [TKey, TValue][];
   values: () => TValue[];
   length: () => number;
 
   constructor() {
-    this.findIndex = (key: NodeId): number => this.array.findIndex((pair) => nodeIdEquals(pair.key, key));
+    const findIndex = (key: TKey): number => this.array.findIndex((pair) => nodeIdEquals(pair.key, key));
 
-    this.set = (key: NodeId, value: TValue): void => {
-      const index = this.findIndex(key);
+    this.set = (key: TKey, value: TValue): void => {
+      const index = findIndex(key);
       if (index !== -1) this.array[index].value = value;
       else this.array.push({ key, value });
     };
-    this.get = (key: NodeId): TValue | undefined => {
-      const index = this.findIndex(key);
+    this.get = (key: TKey): TValue | undefined => {
+      const index = findIndex(key);
       return index !== -1 ? this.array[index].value : undefined;
     };
-    this.getOrThrow = (key: NodeId): TValue => {
+    this.getOrThrow = (key: TKey): TValue => {
       const value = this.get(key);
       if (value) return value;
       throw new Error(`NodeIdMap not found ${key}`);
     };
-    this.has = (key: NodeId): boolean => this.findIndex(key) !== -1;
-    this.combine = (other: NodeIdMap<TValue>): NodeIdMap<TValue> => {
-      const result = new NodeIdMap<TValue>();
+    this.has = (key: TKey): boolean => findIndex(key) !== -1;
+    this.combine = (other: NodeIdMap<TValue, TKey>): NodeIdMap<TValue, TKey> => {
+      const result = new NodeIdMap<TValue, TKey>();
       result.array.push(...this.array);
       other.array.forEach(({ key, value }) => result.set(key, value));
       return result;
     };
-    this.entries = (): [NodeId, TValue][] => this.array.map((pair) => [pair.key, pair.value]);
-    this.values = (): TValue[] => this.array.map((pair) => pair.value);
+    this.keys = (): TKey[] => this.array.map((entry) => entry.key);
+    this.entries = (): [TKey, TValue][] => this.array.map((entry) => [entry.key, entry.value]);
+    this.values = (): TValue[] => this.array.map((entry) => entry.value);
     this.length = (): number => this.array.length;
   }
 }

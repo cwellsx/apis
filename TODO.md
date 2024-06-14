@@ -26,10 +26,22 @@ Generally:
 
 Improve the software first, then the documentation
 
+- `*.cs`
+
+  - Fix the use case where the generic declaringType is in a Microsoft assembly
+
 - `*.tsx`
 
-  - Make the source code view usable
+  - Make the line-wrapping of source code optional
+
+- `*.ts`
+
+  - Remove compiler-types from the list of types
+  - Rename the "method" view to "callstack"
+  - Use the CallColumns in the convertLoadedToMethods implementation
+  - Support typeNodeId as well as methodNodeId in in the convertLoadedToMethods implementation
   - Add source code details to the api and callstack views
+  - Show subclasses nested inside their superclasses and interfaces
 
 - `*.md`
   - Use the new view to improve the screenshot of `Core.exe` internals

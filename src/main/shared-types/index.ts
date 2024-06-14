@@ -1,3 +1,4 @@
+export type { Direction } from "./direction";
 export { Edges } from "./edge";
 export type { Edge } from "./edge";
 export * from "./memberNames";
@@ -7,3 +8,6 @@ export { options } from "./options";
 export type { StringPredicate } from "./predicate";
 export { distinctor, remove, replace } from "./remove";
 export type { TypeAndMethodDetails } from "./typeAndMethodDetails";
+export type { TypeAndMethodId } from "./typeAndMethodId";
+export { getTypeAndMethodNames } from "./typeAndMethodNames";
+export type { GetTypeOrMethodName } from "./typeAndMethodNames";

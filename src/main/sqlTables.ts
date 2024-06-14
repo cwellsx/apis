@@ -9,6 +9,7 @@ import type {
   ErrorsInfo,
   GraphFilter,
   Members,
+  MethodNodeId,
   MethodViewOptions,
   NodeId,
   ReferenceViewOptions,
@@ -29,7 +30,8 @@ import type {
 } from "./loaded";
 import { badTypeInfo, isBadCallDetails, isGoodCallDetails, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
-import { TypeAndMethodDetails, distinctor, getTypeInfoName, nestTypes } from "./shared-types";
+import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
+import { TypeAndMethodDetails, distinctor, getTypeAndMethodNames, getTypeInfoName, nestTypes } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
@@ -381,6 +383,9 @@ export class SqlLoaded {
   readMethod: (assemblyName: string, methodId: number) => TypeAndMethodDetails;
   readErrors: () => ErrorsInfo[];
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => CallColumns[];
+  readCallStack: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
+  readMethods: (nodeId: MethodNodeId) => TypeAndMethodId[];
+  readNames: () => GetTypeOrMethodName;
   readTypeNames: () => TypeNameColumns[];
   readMethodNames: () => MethodNameColumns[];
 
@@ -755,17 +760,16 @@ export class SqlLoaded {
         badCallDetails: JSON.parse(errorColumns.badCallDetails),
       }));
 
-    const getFromAndToNames = (clusterBy: ClusterBy): { fromName: keyof CallColumns; toName: keyof CallColumns } => {
-      switch (clusterBy) {
-        case "assembly":
-          return { fromName: "fromAssemblyName", toName: "toAssemblyName" };
-        case "namespace":
-          return { fromName: "fromNamespace", toName: "toNamespace" };
-      }
-    };
-
     this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): CallColumns[] => {
-      const { fromName, toName } = getFromAndToNames(clusterBy);
+      const { fromName, toName } = (() => {
+        switch (clusterBy) {
+          case "assembly":
+            return { fromName: "fromAssemblyName", toName: "toAssemblyName" };
+          case "namespace":
+            return { fromName: "fromNamespace", toName: "toNamespace" };
+        }
+      })();
+
       const result = callTable.selectCustom(true, `${fromName} != ${toName}`);
       expandedClusterNames.forEach((clusterName) =>
         result.push(
@@ -775,6 +779,95 @@ export class SqlLoaded {
         )
       );
       return result;
+    };
+
+    this.readCallStack = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
+      const { assemblyNameField, methodIdField } = ((): {
+        assemblyNameField: keyof CallColumns;
+        methodIdField: keyof CallColumns;
+      } => {
+        switch (direction) {
+          case "upwards":
+            return { assemblyNameField: "toAssemblyName", methodIdField: "toMethodId" };
+          case "downwards":
+            return { assemblyNameField: "fromAssemblyName", methodIdField: "fromMethodId" };
+        }
+      })();
+
+      const where: { [key in keyof Partial<CallColumns>]: string | number } = {};
+      where[assemblyNameField] = assemblyName;
+      where[methodIdField] = methodId;
+
+      const rows = callTable.selectCustom(
+        true,
+        `${assemblyNameField} == @${assemblyNameField} AND ${methodIdField} == @${methodIdField}`,
+        where
+      );
+
+      return rows.map((row) => {
+        switch (direction) {
+          case "upwards":
+            return {
+              assemblyName: row.fromAssemblyName,
+              namespace: row.fromNamespace,
+              typeId: row.fromTypeId,
+              methodId: row.fromMethodId,
+            };
+          case "downwards":
+            return {
+              assemblyName: row.toAssemblyName,
+              namespace: row.toNamespace,
+              typeId: row.toTypeId,
+              methodId: row.toMethodId,
+            };
+        }
+      });
+    };
+
+    this.readMethods = (nodeId: MethodNodeId): TypeAndMethodId[] => {
+      // use MemberColumns to get type Id
+      const { assemblyName, metadataToken } = nodeId;
+      const memberKey: Partial<MemberColumns> = { assemblyName, metadataToken };
+      const member = memberTable.selectOne(memberKey);
+      if (!member) throw new Error(`Member not found ${JSON.stringify(memberKey)}`);
+
+      const getTypeName = (typeMetadataToken: number): TypeNameColumns => {
+        const typeNamekey: Partial<TypeNameColumns> = { assemblyName, metadataToken: typeMetadataToken };
+        const typeName = typeNameTable.selectOne(typeNamekey);
+        if (!typeName) throw new Error(`Type not found ${JSON.stringify(typeNamekey)}`);
+        return typeName;
+      };
+
+      let typeName = getTypeName(member.typeMetadataToken);
+      // if we want a different type then get it again to get the right namespace
+      if (typeName.wantedTypeId) typeName = getTypeName(typeName.wantedTypeId);
+      if (typeName.wantedTypeId) throw new Error(`Wanted type defines a wantedTypeId of its own`);
+
+      return [
+        {
+          assemblyName,
+          namespace: typeName.namespace ?? "(no namespace)",
+          methodId: metadataToken,
+          typeId: typeName.metadataToken,
+        },
+      ];
+    };
+
+    this.readNames = (): GetTypeOrMethodName => {
+      const typeNames = typeNameTable.selectAll();
+      const methodNames = methodNameTable.selectAll();
+      return getTypeAndMethodNames(
+        typeNames.map((typeNameColumns) => ({
+          assemblyName: typeNameColumns.assemblyName,
+          metadataToken: typeNameColumns.metadataToken,
+          name: typeNameColumns.decoratedName,
+        })),
+        methodNames.map((methodNameColumns) => ({
+          assemblyName: methodNameColumns.assemblyName,
+          metadataToken: methodNameColumns.metadataToken,
+          name: methodNameColumns.name,
+        }))
+      );
     };
 
     this.readTypeNames = (): TypeNameColumns[] => typeNameTable.selectAll();

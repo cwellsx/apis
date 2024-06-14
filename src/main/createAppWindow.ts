@@ -6,6 +6,7 @@ import type {
   DetailEvent,
   FilterEvent,
   GraphEvent,
+  GraphFilter,
   GraphViewOptions,
   MainApi,
   MethodNodeId,
@@ -17,7 +18,7 @@ import { viewFeatures } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
 import { convertLoadedToDetailedMethod } from "./convertLoadedToDetailedMethod";
-import { convertLoadedToMethods } from "./convertLoadedToMethods";
+import { convertCallstackToImage, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
@@ -168,14 +169,23 @@ export const createAppWindow = (
   const showMethods = (methodId?: MethodNodeId): void => {
     try {
       log(`showMethods(${methodId ?? ""})`);
-      const readMethod = sqlLoaded.readMethod.bind(sqlLoaded);
+
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const viewGraph = convertLoadedToMethods(
-        readMethod,
-        methodViewOptions,
-        methodId ?? sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy),
-        show
-      );
+      const firstLeaf = sqlLoaded.readMethods(methodId ?? methodViewOptions.methodId);
+
+      const readCallStack = sqlLoaded.readCallStack.bind(sqlLoaded);
+      const callstack = convertLoadedToCallstack(readCallStack, firstLeaf);
+
+      show.showMessage(undefined, `${callstack.leafs.length()} records`);
+
+      const graphFilter: GraphFilter | undefined = methodId
+        ? undefined
+        : sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy);
+
+      const typeOrMethodName = sqlLoaded.readNames();
+
+      const viewGraph = convertCallstackToImage(callstack, typeOrMethodName, methodViewOptions, graphFilter);
+
       if (methodId) {
         sqlLoaded.writeGraphFilter(
           methodViewOptions.viewType,
@@ -185,6 +195,7 @@ export const createAppWindow = (
         methodViewOptions.methodId = methodId;
         sqlLoaded.viewState.methodViewOptions = methodViewOptions;
       }
+
       renderer.showView(viewGraph);
     } catch (error) {
       show.showException(error);

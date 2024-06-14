@@ -1,212 +1,185 @@
 import type {
   GraphFilter,
   Leaf,
-  MetadataNodeId,
   MethodNodeId,
   MethodViewOptions,
+  NameNodeId,
   NodeId,
   Parent,
+  TypeNodeId,
   ViewGraph,
 } from "../shared-types";
-import { metadataNodeId, methodNodeId, nameNodeId } from "../shared-types";
+import {
+  methodNodeId as getMethodNodeId,
+  nameNodeId as getNameNodeId,
+  typeNodeId as getTypeNodeId,
+} from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
-import { CallDetails, GoodCallDetails, GoodTypeInfo } from "./loaded";
 import { log } from "./log";
-import type { TypeAndMethodDetails } from "./shared-types";
-import { Edges, NodeIdMap, getMethodName, getTypeInfoName } from "./shared-types";
-import { Show } from "./show";
-
-type TypeMethods = {
-  type: GoodTypeInfo;
-  methods: TypeAndMethodDetails[];
-};
-
-type ReadMethod = (assemblyName: string, methodId: number) => TypeAndMethodDetails;
-
-/*
-  functions to create Ids
-*/
-
-const getTypeAndMethodId: (leaf: TypeAndMethodDetails) => MethodNodeId = (leaf: TypeAndMethodDetails) =>
-  methodNodeId(leaf.type.typeId.assemblyName, leaf.method.metadataToken);
-
-const getTypeId: (type: GoodTypeInfo) => MetadataNodeId = (type: GoodTypeInfo) =>
-  metadataNodeId("type", type.typeId.assemblyName, type.typeId.metadataToken);
-
-const assertTypeAndMethodId = (lhs: MetadataNodeId, leaf: TypeAndMethodDetails): void => {
-  const rhs = getTypeAndMethodId(leaf);
-  if (lhs.assemblyName !== rhs.assemblyName || lhs.metadataToken !== rhs.metadataToken)
-    throw new Error("Unexpected leaf id");
-};
-
-/*
-  functions to create group nodes
-*/
-
-const groupsFromTypeDictionary = (
-  types: NodeIdMap<TypeMethods>,
-  viewOptions: MethodViewOptions
-): { groups: Parent[]; leafs: Leaf[] } => {
-  const leafs: Leaf[] = [];
-
-  const leafFromTypeAndMethod = (typeAndMethod: TypeAndMethodDetails, parent: Parent | null): Leaf => ({
-    parent,
-    nodeId: getTypeAndMethodId(typeAndMethod),
-    label: getMethodName(typeAndMethod.method),
-  });
-
-  const parentFromTypeMethods = (typeId: NodeId, typeMethods: TypeMethods, parent: Parent | null): Parent => {
-    const self: Parent = {
-      parent,
-      nodeId: typeId,
-      label: getTypeInfoName(typeMethods.type),
-      children: [],
-    };
-    const children = typeMethods.methods.map((method) => leafFromTypeAndMethod(method, self));
-    leafs.push(...children);
-    self.children = children;
-    return self;
-  };
-
-  const clusterBy = viewOptions.showClustered.clusterBy;
-
-  type TopDictionary = {
-    [id: string]: [NodeId, TypeMethods][];
-  };
-
-  // key is assemblyName or namespace, values are the types within each
-  const tops: TopDictionary = {};
-  for (const entry of types.entries()) {
-    const typeId = entry[1].type.typeId;
-    const topId = clusterBy === "assembly" ? typeId.assemblyName : typeId.namespace ?? "(none)";
-    let entries = tops[topId];
-    if (!entries) {
-      entries = [];
-      tops[topId] = entries;
-    }
-    entries.push(entry);
-  }
-  const entryToGroupNode = (entry: [string, [NodeId, TypeMethods][]]): Parent => {
-    const [topId, values] = entry;
-    const self: Parent = {
-      nodeId: nameNodeId(clusterBy, topId),
-      label: topId,
-      parent: null,
-      children: [],
-    };
-    self.children = values.map(([typeId, typeMethods]) => parentFromTypeMethods(typeId, typeMethods, self));
-    return self;
-  };
-  const groups = Object.entries(tops).map(entryToGroupNode);
-  return { groups, leafs };
-};
+import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
+import { Edges, NodeIdMap } from "./shared-types";
 
 /*
   exported
 */
 
-export const convertLoadedToMethods = (
-  readMethod: ReadMethod,
-  viewOptions: MethodViewOptions,
-  methodIdOrGraphFilter: MethodNodeId | GraphFilter,
-  show: Show
-): ViewGraph => {
-  type LeafDictionary = NodeIdMap<TypeAndMethodDetails>;
-  const called = new NodeIdMap<TypeAndMethodDetails>();
-  const caller = new NodeIdMap<TypeAndMethodDetails>();
+type LeafDictionary = NodeIdMap<TypeAndMethodId, MethodNodeId>;
+type ReadCallStack = (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
+
+type CallstackElements = {
+  leafs: LeafDictionary;
+  edges: Edges;
+};
+
+export const convertLoadedToCallstack = (
+  readCallStack: ReadCallStack,
+  firstLeaf: TypeAndMethodId[]
+): CallstackElements => {
+  const called = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
+  const caller = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
   const edges = new Edges();
 
-  const saveMethod = (methodId: MetadataNodeId, result: TypeAndMethodDetails, leafs: LeafDictionary): void => {
-    if (leafs.has(methodId)) throw new Error("Duplicate leaf id");
-    leafs.set(methodId, result);
-  };
+  const methodNodeId = (method: TypeAndMethodId): MethodNodeId => getMethodNodeId(method.assemblyName, method.methodId);
 
-  const selectMethod = (methodId: MetadataNodeId, leafs: LeafDictionary | undefined): TypeAndMethodDetails => {
-    const result = readMethod(methodId.assemblyName, methodId.metadataToken);
-    assertTypeAndMethodId(methodId, result);
-    if (leafs) saveMethod(methodId, result, leafs);
-
-    return result;
-  };
-
-  const saveEdge = (clientId: MetadataNodeId, serverId: MetadataNodeId): void => {
-    edges.add(clientId, serverId, []);
-  };
-
-  const isGraphFilter = (filter: MethodNodeId | GraphFilter): filter is GraphFilter => {
-    const graphFilter = filter as GraphFilter;
-    return graphFilter.groupExpanded !== undefined && graphFilter.leafVisible !== undefined;
-  };
-
-  const methodId = !isGraphFilter(methodIdOrGraphFilter) ? methodIdOrGraphFilter : viewOptions.methodId;
-
-  const firstLeaf = selectMethod(methodId, undefined);
-  saveMethod(methodId, firstLeaf, called);
-  saveMethod(methodId, firstLeaf, caller);
-
-  const findCalledBy = (called: MethodNodeId, calledBy: GoodCallDetails[]): void => {
-    for (const callDetails of calledBy) {
-      const calledById: MethodNodeId = methodNodeId(callDetails.assemblyName, callDetails.metadataToken);
-      saveEdge(calledById, called);
-      if (caller.has(calledById)) continue; // avoid infinite loop if there's recursion or cyclic dependency
-      const calledByMethod = selectMethod(calledById, caller);
-      findCalledBy(calledById, calledByMethod.methodDetails.calledBy); // recurse
+  const getEdge = (
+    leafId: MethodNodeId,
+    foundId: MethodNodeId,
+    direction: Direction
+  ): { clientId: NodeId; serverId: NodeId } => {
+    switch (direction) {
+      case "upwards":
+        return { clientId: foundId, serverId: leafId };
+      case "downwards":
+        return { clientId: leafId, serverId: foundId };
     }
   };
 
-  findCalledBy(methodId, firstLeaf.methodDetails.calledBy);
+  const findNextLayer = (leaf: TypeAndMethodId, direction: Direction, leafDictionary: LeafDictionary): void => {
+    const leafId = methodNodeId(leaf);
+    leafDictionary.set(leafId, leaf);
 
-  const findCalled = (caller: MethodNodeId, calls: CallDetails[]): void => {
-    for (const callDetails of calls) {
-      if (!callDetails.metadataToken) continue; //the metadataToken is invalid because the method was not found
-      const calledId: MethodNodeId = methodNodeId(callDetails.assemblyName, callDetails.metadataToken);
-      saveEdge(caller, calledId);
-      if (called.has(calledId)) continue; // avoid infinite loop if there's recursion or cyclic dependency
-      const calledMethod = selectMethod(calledId, called);
-      findCalled(calledId, calledMethod.methodDetails.calls); // recurse
+    const allFound = readCallStack(leaf.assemblyName, leaf.methodId, direction);
+
+    for (const found of allFound) {
+      const foundId = methodNodeId(found);
+      const { clientId, serverId } = getEdge(leafId, foundId, direction);
+      edges.add(clientId, serverId, []);
+
+      if (leafDictionary.has(foundId)) continue; // avoid infinite loop if there's recursion or cyclic dependency
+      findCalledBy(found); // recurse
     }
   };
 
-  findCalled(methodId, firstLeaf.methodDetails.calls);
+  const findCalledBy = (called: TypeAndMethodId): void => findNextLayer(called, "upwards", caller);
+  const findCalled = (calledBy: TypeAndMethodId): void => findNextLayer(calledBy, "downwards", called);
+  firstLeaf.forEach((leaf) => findCalledBy(leaf));
+  firstLeaf.forEach((leaf) => findCalled(leaf));
 
-  show.showMessage(undefined, `${called.length()} called, ${caller.length()} caller`);
+  const combined = called.combine(caller);
+
+  return { leafs: combined, edges };
+};
+
+export const convertCallstackToImage = (
+  callstackElements: CallstackElements,
+  typeOrMethodName: GetTypeOrMethodName,
+  viewOptions: MethodViewOptions,
+  graphFilter: GraphFilter | undefined
+): ViewGraph => {
+  const { leafs, edges } = callstackElements;
+  const { getTypeName, getMethodName } = typeOrMethodName;
 
   // begin to convert to image input format
   const imageAttributes = new NodeIdMap<ImageAttribute>();
-
-  // combine the two LeafDictionary
-  const leafDictionary: LeafDictionary = called.combine(caller);
   const methodAttributes: ImageAttribute = { shape: "none" };
-  leafDictionary
-    .entries()
-    .forEach(([nodeId, typeAndMethod]) =>
-      imageAttributes.set(nodeId, { ...methodAttributes, shortLabel: typeAndMethod.method.name })
-    );
-
-  // sort by type
-  const types = new NodeIdMap<TypeMethods>();
   const typeAttributes: ImageAttribute = { shape: "folder", style: "rounded" };
 
-  for (const typeAndMethod of leafDictionary.values()) {
-    const type = typeAndMethod.type;
-    const typeId = getTypeId(type);
-    let typeNode = types.get(typeId);
-    if (!typeNode) {
-      typeNode = { type, methods: [] };
-      types.set(typeId, typeNode);
-      imageAttributes.set(typeId, typeAttributes);
+  leafs
+    .keys()
+    .forEach((methodNodeId) =>
+      imageAttributes.set(methodNodeId, { ...methodAttributes, shortLabel: getMethodName(methodNodeId) })
+    );
+
+  // create nodes now, create image nodes later
+  type TypesAndMethods = NodeIdMap<MethodNodeId[], TypeNodeId>;
+  const topNodes = new NodeIdMap<TypesAndMethods, NameNodeId>();
+
+  const clusterBy = viewOptions.showClustered.clusterBy;
+  const getName = (typeAndMethodId: TypeAndMethodId): string => {
+    switch (clusterBy) {
+      case "assembly":
+        return typeAndMethodId.assemblyName;
+      case "namespace":
+        return typeAndMethodId.namespace;
     }
-    typeNode.methods.push(typeAndMethod);
-  }
+  };
+  const getOrAddTopNode = (key: NameNodeId): TypesAndMethods => {
+    let value = topNodes.get(key);
+    if (!value) {
+      value = new NodeIdMap<MethodNodeId[], TypeNodeId>();
+      topNodes.set(key, value);
+    }
+    return value;
+  };
+  const getOrAddTypeNode = (key: TypeNodeId, typeNodes: TypesAndMethods): MethodNodeId[] => {
+    let value = typeNodes.get(key);
+    if (!value) {
+      value = [];
+      typeNodes.set(key, value);
+    }
+    return value;
+  };
+  leafs.entries().forEach(([methodNodeId, typeAndMethodId]) => {
+    // make the NodeId instances
+    const nameNodeId = getNameNodeId(clusterBy, getName(typeAndMethodId));
+    const typeNodeId = getTypeNodeId(typeAndMethodId.assemblyName, typeAndMethodId.typeId);
 
-  // convert to Groups
-  log("groupsFromTypeDictionary");
-  const { groups, leafs } = groupsFromTypeDictionary(types, viewOptions);
+    // add to the topNodes collection
+    const typeNodes = getOrAddTopNode(nameNodeId);
+    const methodNodes = getOrAddTypeNode(typeNodeId, typeNodes);
+    methodNodes.push(methodNodeId);
 
-  const graphFilter = isGraphFilter(methodIdOrGraphFilter)
-    ? methodIdOrGraphFilter
-    : { leafVisible: leafs.map((leaf) => leaf.nodeId), groupExpanded: groups.map((parent) => parent.nodeId) };
+    // update the imageAttributes
+    imageAttributes.set(typeNodeId, typeAttributes);
+    imageAttributes.set(methodNodeId, { ...methodAttributes, shortLabel: getMethodName(methodNodeId) });
+  });
+
+  // create image nodes from nodes
+  const groups: Parent[] = [];
+  topNodes.entries().forEach(([nameNodeId, typeAndMethods]) => {
+    const topParent: Parent = {
+      parent: null,
+      label: nameNodeId.name,
+      nodeId: nameNodeId,
+      children: [],
+    };
+    groups.push(topParent);
+
+    typeAndMethods.entries().forEach(([typeNodeId, methodNodeIds]) => {
+      const typeParent: Parent = {
+        parent: topParent,
+        label: getTypeName(typeNodeId),
+        nodeId: typeNodeId,
+        children: [],
+      };
+      topParent.children.push(typeParent);
+
+      methodNodeIds.forEach((methodNodeId) => {
+        const methodLeaf: Leaf = {
+          parent: typeParent,
+          label: getMethodName(methodNodeId),
+          nodeId: methodNodeId,
+        };
+        typeParent.children.push(methodLeaf);
+      });
+    });
+  });
+
+  graphFilter ??= {
+    leafVisible: leafs.keys(),
+    groupExpanded: groups.map((parent) => parent.nodeId),
+  };
 
   // convert to Image
   log("convertToImage");

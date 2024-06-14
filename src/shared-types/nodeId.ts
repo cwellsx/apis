@@ -30,7 +30,7 @@ export const artificialNodeIdFactory = (): GetArtificialNodeId => {
   return getNodeId;
 };
 
-export const nameNodeId = (type: NameTypes, name: string): NodeId => {
+export const nameNodeId = (type: NameTypes, name: string): NameNodeId => {
   validate(type, name);
   return { type, name };
 };
