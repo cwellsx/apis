@@ -30,10 +30,6 @@ Improve the software first, then the documentation
 
   - Fix the use case where the generic declaringType is in a Microsoft assembly
 
-- `*.tsx`
-
-  - Make the line-wrapping of source code optional
-
 - `*.ts`
 
   - Remove compiler-types from the list of types
@@ -42,6 +38,10 @@ Improve the software first, then the documentation
   - Support typeNodeId as well as methodNodeId in in the convertLoadedToMethods implementation
   - Add source code details to the api and callstack views
   - Show subclasses nested inside their superclasses and interfaces
+
+- `*.tsx`
+
+  - Make the line-wrapping of source code optional
 
 - `*.md`
   - Use the new view to improve the screenshot of `Core.exe` internals

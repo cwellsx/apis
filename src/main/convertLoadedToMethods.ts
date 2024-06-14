@@ -67,14 +67,12 @@ export const convertLoadedToCallstack = (
       edges.add(clientId, serverId, []);
 
       if (leafDictionary.has(foundId)) continue; // avoid infinite loop if there's recursion or cyclic dependency
-      findCalledBy(found); // recurse
+      findNextLayer(found, direction, leafDictionary); // recurse
     }
   };
 
-  const findCalledBy = (called: TypeAndMethodId): void => findNextLayer(called, "upwards", caller);
-  const findCalled = (calledBy: TypeAndMethodId): void => findNextLayer(calledBy, "downwards", called);
-  firstLeaf.forEach((leaf) => findCalledBy(leaf));
-  firstLeaf.forEach((leaf) => findCalled(leaf));
+  firstLeaf.forEach((called) => findNextLayer(called, "upwards", caller));
+  firstLeaf.forEach((calledBy) => findNextLayer(calledBy, "downwards", called));
 
   const combined = called.combine(caller);
 
@@ -94,12 +92,6 @@ export const convertCallstackToImage = (
   const imageAttributes = new NodeIdMap<ImageAttribute>();
   const methodAttributes: ImageAttribute = { shape: "none" };
   const typeAttributes: ImageAttribute = { shape: "folder", style: "rounded" };
-
-  leafs
-    .keys()
-    .forEach((methodNodeId) =>
-      imageAttributes.set(methodNodeId, { ...methodAttributes, shortLabel: getMethodName(methodNodeId) })
-    );
 
   // create nodes now, create image nodes later
   type TypesAndMethods = NodeIdMap<MethodNodeId[], TypeNodeId>;

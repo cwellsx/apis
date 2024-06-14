@@ -7,7 +7,6 @@ export * from "./nodeIdUtils";
 export { options } from "./options";
 export type { StringPredicate } from "./predicate";
 export { distinctor, remove, replace } from "./remove";
-export type { TypeAndMethodDetails } from "./typeAndMethodDetails";
 export type { TypeAndMethodId } from "./typeAndMethodId";
 export { getTypeAndMethodNames } from "./typeAndMethodNames";
 export type { GetTypeOrMethodName } from "./typeAndMethodNames";

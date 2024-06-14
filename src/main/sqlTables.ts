@@ -25,13 +25,12 @@ import type {
   BadTypeInfo,
   GoodTypeInfo,
   MethodDetails,
-  MethodMember,
   Reflected,
 } from "./loaded";
 import { badTypeInfo, isBadCallDetails, isGoodCallDetails, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
 import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
-import { TypeAndMethodDetails, distinctor, getTypeAndMethodNames, getTypeInfoName, nestTypes } from "./shared-types";
+import { distinctor, getTypeAndMethodNames, getTypeInfoName, nestTypes } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlTable, dropTable } from "./sqlTable";
@@ -380,11 +379,12 @@ export class SqlLoaded {
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
   readTypes: (assemblyName: string) => AllTypeInfo;
-  readMethod: (assemblyName: string, methodId: number) => TypeAndMethodDetails;
   readErrors: () => ErrorsInfo[];
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => CallColumns[];
   readCallStack: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
   readMethods: (nodeId: MethodNodeId) => TypeAndMethodId[];
+  readMethodDetails: (nodeId: MethodNodeId) => MethodDetails;
+  readMethodName: (nodeId: MethodNodeId) => { methodName: string; typeName: string };
   readNames: () => GetTypeOrMethodName;
   readTypeNames: () => TypeNameColumns[];
   readMethodNames: () => MethodNameColumns[];
@@ -737,22 +737,6 @@ export class SqlLoaded {
       return allTypeInfo;
     };
 
-    this.readMethod = (assemblyName: string, methodId: number): TypeAndMethodDetails => {
-      const methodKey = { assemblyName, metadataToken: methodId };
-      const member = memberTable.selectOne(methodKey);
-      if (!member) throw new Error(`Member not found ${JSON.stringify(methodKey)}`);
-      const typeKey = { assemblyName, metadataToken: member.typeMetadataToken };
-      const type = typeTable.selectOne(typeKey);
-      if (!type) throw new Error(`Type not found ${JSON.stringify(typeKey)}`);
-      const method = methodTable.selectOne(methodKey);
-      if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
-      return {
-        type: { ...(JSON.parse(type.typeInfo) as SavedTypeInfo), members: {} },
-        method: { ...(JSON.parse(member.memberInfo) as MethodMember) },
-        methodDetails: { ...(JSON.parse(method.methodDetails) as MethodDetails) },
-      };
-    };
-
     this.readErrors = (): ErrorsInfo[] =>
       errorTable.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
@@ -851,6 +835,31 @@ export class SqlLoaded {
           typeId: typeName.metadataToken,
         },
       ];
+    };
+
+    this.readMethodDetails = (nodeId: MethodNodeId): MethodDetails => {
+      const { assemblyName, metadataToken } = nodeId;
+      const methodKey: Partial<MethodColumns> = { assemblyName, metadataToken };
+      const method = methodTable.selectOne(methodKey);
+      if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
+      return JSON.parse(method.methodDetails) as MethodDetails;
+    };
+
+    this.readMethodName = (nodeId: MethodNodeId): { methodName: string; typeName: string } => {
+      const typeAndMethodId = this.readMethods(nodeId)[0];
+      const typeKey: Partial<TypeNameColumns> = {
+        assemblyName: typeAndMethodId.assemblyName,
+        metadataToken: typeAndMethodId.typeId,
+      };
+      const typeName = typeNameTable.selectOne(typeKey);
+      const methodKey: Partial<MethodNameColumns> = {
+        assemblyName: typeAndMethodId.assemblyName,
+        metadataToken: typeAndMethodId.methodId,
+      };
+      const methodName = methodNameTable.selectOne(methodKey);
+      if (!typeName) throw new Error(`Type name not found ${JSON.stringify(typeAndMethodId)}`);
+      if (!methodName) throw new Error(`Method name not found ${JSON.stringify(typeAndMethodId)}`);
+      return { methodName: methodName.name, typeName: typeName.decoratedName };
     };
 
     this.readNames = (): GetTypeOrMethodName => {
