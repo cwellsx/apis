@@ -29,7 +29,7 @@ import type {
 } from "./loaded";
 import { badTypeInfo, isBadCallDetails, isGoodCallDetails, loadedVersion, validateTypeInfo } from "./loaded";
 import { log } from "./log";
-import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
+import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
 import { distinctor, getTypeAndMethodNames, getTypeInfoName, nestTypes } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 import { createSqlDatabase } from "./sqlDatabase";
@@ -107,7 +107,7 @@ type ErrorColumns = {
   badCallDetails: string;
 };
 
-export type CallColumns = {
+type CallColumns = {
   // this could be refactored as one table with three or four columns, plus a join table
   fromAssemblyName: string;
   fromNamespace: string;
@@ -119,7 +119,7 @@ export type CallColumns = {
   toMethodId: number;
 };
 
-export type TypeNameColumns = {
+type TypeNameColumns = {
   assemblyName: string;
   metadataToken: number;
   namespace: string | null;
@@ -127,7 +127,7 @@ export type TypeNameColumns = {
   wantedTypeId: number | null;
 };
 
-export type MethodNameColumns = {
+type MethodNameColumns = {
   assemblyName: string;
   metadataToken: number;
   name: string;
@@ -380,14 +380,12 @@ export class SqlLoaded {
   readAssemblyReferences: () => AssemblyReferences;
   readTypes: (assemblyName: string) => AllTypeInfo;
   readErrors: () => ErrorsInfo[];
-  readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => CallColumns[];
+  readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => Call[];
   readCallStack: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
   readMethods: (nodeId: MethodNodeId) => TypeAndMethodId[];
   readMethodDetails: (nodeId: MethodNodeId) => MethodDetails;
   readMethodName: (nodeId: MethodNodeId) => { methodName: string; typeName: string };
   readNames: () => GetTypeOrMethodName;
-  readTypeNames: () => TypeNameColumns[];
-  readMethodNames: () => MethodNameColumns[];
 
   private readLeafVisible: (viewType: CommonGraphViewType) => NodeId[];
   private readGroupExpanded: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => NodeId[];
@@ -659,6 +657,51 @@ export class SqlLoaded {
         };
       };
 
+      const getTypeFromMethod = (assemblyName: string, methodId: number): TypeNameColumns => {
+        // get typeId from methodId
+        const typeId = assemblyMethodTypes[assemblyName][methodId];
+        // get namespace and wantedTypeId from typeId
+        return assemblyTypeNames[assemblyName][typeId];
+      };
+
+      type GetOwnerMethod = (assemblyName: string, nestedType: number) => number | undefined;
+      const nestMethods = () => {
+        // a "nested type" is a compiler-generated type which implements anonymous delegates
+        // they have methods and are defined outside the method which calls the delegate
+        // guess that each is called from only one method
+        const ownedTypes: { [assemblyName: string]: { [nestedType: number]: number } } = {};
+
+        Object.entries(assemblyCalls).forEach(([assemblyName, methodCalls]) =>
+          Object.entries(methodCalls).forEach(([caller, allCalled]) => {
+            const callerId = +caller;
+            // which types is this method calling?
+            allCalled.forEach((calledMethod) => {
+              const calledType = getTypeFromMethod(calledMethod.assemblyName, calledMethod.methodId);
+              if (!calledType.wantedTypeId) return;
+              // sanity check
+              if (
+                calledMethod.assemblyName !== assemblyName ||
+                assemblyMethodTypes[assemblyName][callerId] !== calledType.wantedTypeId
+              )
+                throw new Error("Expect nested type to be called by method within its wanted type");
+              // get or set this type's owner method
+              const ownerMethod = ownedTypes[assemblyName][calledType.metadataToken];
+              if (!ownerMethod) ownedTypes[assemblyName][calledType.metadataToken] == callerId;
+              else if (ownerMethod !== callerId) {
+                throw new Error("Nested type has more than one owner method");
+              }
+            });
+          })
+        );
+
+        const getOwnerMethod: GetOwnerMethod = (assemblyName: string, nestedType: number) =>
+          ownedTypes[assemblyName][nestedType];
+
+        return getOwnerMethod;
+      };
+
+      const getOwnerMethod = nestMethods();
+
       const callColumns: CallColumns[] = [];
       Object.entries(assemblyCalls).forEach(([assemblyName, methodCalls]) =>
         Object.keys(methodCalls).forEach((key) => {
@@ -744,7 +787,7 @@ export class SqlLoaded {
         badCallDetails: JSON.parse(errorColumns.badCallDetails),
       }));
 
-    this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): CallColumns[] => {
+    this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): Call[] => {
       const { fromName, toName } = (() => {
         switch (clusterBy) {
           case "assembly":
@@ -762,7 +805,20 @@ export class SqlLoaded {
           })
         )
       );
-      return result;
+      return result.map((callColumns) => ({
+        from: {
+          assemblyName: callColumns.fromAssemblyName,
+          namespace: callColumns.fromNamespace,
+          typeId: callColumns.fromTypeId,
+          methodId: callColumns.fromMethodId,
+        },
+        to: {
+          assemblyName: callColumns.toAssemblyName,
+          namespace: callColumns.toNamespace,
+          typeId: callColumns.toTypeId,
+          methodId: callColumns.toMethodId,
+        },
+      }));
     };
 
     this.readCallStack = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
@@ -878,9 +934,6 @@ export class SqlLoaded {
         }))
       );
     };
-
-    this.readTypeNames = (): TypeNameColumns[] => typeNameTable.selectAll();
-    this.readMethodNames = (): MethodNameColumns[] => methodNameTable.selectAll();
 
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {
       const found = graphFilterTable.selectOne({ viewType, clusterBy: "leafVisible" });

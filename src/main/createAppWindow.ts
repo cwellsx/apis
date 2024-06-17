@@ -182,9 +182,7 @@ export const createAppWindow = (
         ? undefined
         : sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy);
 
-      const typeOrMethodName = sqlLoaded.readNames();
-
-      const viewGraph = convertCallstackToImage(callstack, typeOrMethodName, methodViewOptions, graphFilter);
+      const viewGraph = convertCallstackToImage(callstack, sqlLoaded.readNames(), methodViewOptions, graphFilter);
 
       if (methodId) {
         sqlLoaded.writeGraphFilter(
@@ -233,14 +231,11 @@ export const createAppWindow = (
       apiViewOptions.showInternalCalls ? getClusterNames(graphFilter.groupExpanded, clusterBy) : []
     );
     show.showMessage(undefined, `${calls.length} records`);
-    const typeNames = sqlLoaded.readTypeNames();
-    const methodNames = sqlLoaded.readMethodNames();
     const viewGraph = convertLoadedToApis(
       calls,
+      sqlLoaded.readNames(),
       apiViewOptions,
       graphFilter,
-      typeNames,
-      methodNames,
       sqlLoaded.viewState.exes
     );
     renderer.showView(viewGraph);

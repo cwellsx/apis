@@ -4,3 +4,8 @@ export type TypeAndMethodId = {
   typeId: number;
   methodId: number;
 };
+
+export type Call = {
+  from: TypeAndMethodId;
+  to: TypeAndMethodId;
+};

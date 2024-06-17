@@ -36,8 +36,6 @@ export const dropTable = (db: Database, tableName: string): void => {
   db.prepare(source).run();
 };
 
-const isArrayEqual = (x: string[], y: string[]) => x.length == y.length && x.every((value, index) => value == y[index]);
-
 export class SqlTable<T extends object> {
   // we need to list of keys in T to create corresponding SQL columns
   // but type info is only available at compile-time, it doesn't exist at run-time

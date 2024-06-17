@@ -34,7 +34,6 @@ Improve the software first, then the documentation
 
   - Remove compiler-types from the list of types
   - Rename the "method" view to "callstack"
-  - Use the CallColumns in the convertLoadedToMethods implementation
   - Support typeNodeId as well as methodNodeId in in the convertLoadedToMethods implementation
   - Add source code details to the api and callstack views
   - Show subclasses nested inside their superclasses and interfaces
@@ -87,6 +86,12 @@ Improve the software first, then the documentation
   - Review the `DecompilerSettings` re. generated source code
   - Try some highlighting, maybe using a simple "find whole word", to identify the line-of-code or method-name on the stack
 - Slightly indent (e.g. 0.5em) the nested/compound view options
+- Refactor
+  - Remove nestTypes and loaded from convertLoadedToDetailedAssembly and do it instead using clean sqlTable APIs
+  - Ideally, loaded should only be imported by sqlTables
+  - sqlTables should be split into several files
+  - nestTypes and nestMethods are private utilities in this folder
+  - package sql implementation into a new src/main/sql folder and limit what it exports in its index.ts
 
 Improve performance:
 
