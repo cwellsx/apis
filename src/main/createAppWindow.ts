@@ -25,7 +25,7 @@ import { log } from "./log";
 import { showAdjacent } from "./onGraphClick";
 import { getClusterNames, isEdgeId, isMethodNodeId, isNameNodeId, removeNodeId, toggleNodeId } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
-import { SqlConfig, SqlLoaded } from "./sqlTables";
+import { SqlConfig, SqlLoaded } from "./sql";
 
 export const createAppWindow = (
   window: BrowserWindow,

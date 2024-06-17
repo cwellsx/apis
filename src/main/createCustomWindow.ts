@@ -14,7 +14,7 @@ import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import { isEdgeId, toggleNodeId } from "./shared-types";
 import { renderer as createRenderer } from "./show";
-import { SqlConfig, SqlCustom } from "./sqlTables";
+import { SqlConfig, SqlCustom } from "./sql";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = (

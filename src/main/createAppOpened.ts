@@ -14,7 +14,7 @@ import { log } from "./log";
 import { ViewMenu, ViewMenuItem, createMenu } from "./menu";
 import { options } from "./shared-types";
 import { show } from "./show";
-import { SqlCustom, SqlLoaded, createSqlConfig, createSqlCustom, createSqlLoaded, type DataSource } from "./sqlTables";
+import { SqlCustom, SqlLoaded, createSqlConfig, createSqlCustom, createSqlLoaded, type DataSource } from "./sql";
 
 declare const CORE_EXE: string;
 

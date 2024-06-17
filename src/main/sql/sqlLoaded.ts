@@ -1,23 +1,15 @@
 import { Database } from "better-sqlite3";
 import type {
-  ApiViewOptions,
-  AppOptions,
   ClusterBy,
   CommonGraphViewType,
-  CustomError,
-  CustomViewOptions,
   ErrorsInfo,
   GraphFilter,
   Members,
   MethodNodeId,
-  MethodViewOptions,
   NodeId,
-  ReferenceViewOptions,
   TypeNodeId,
-  ViewType,
-} from "../shared-types";
-import { defaultAppOptions, methodNodeId, nameNodeId, typeNodeId } from "../shared-types";
-import { isAnyOtherCustomField, type CustomNode } from "./customJson";
+} from "../../shared-types";
+import { nameNodeId, typeNodeId } from "../../shared-types";
 import type {
   AllTypeInfo,
   AssemblyReferences,
@@ -26,14 +18,14 @@ import type {
   GoodTypeInfo,
   MethodDetails,
   Reflected,
-} from "./loaded";
-import { badTypeInfo, isBadCallDetails, isGoodCallDetails, loadedVersion, validateTypeInfo } from "./loaded";
-import { log } from "./log";
-import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
-import { distinctor, getTypeAndMethodNames, getTypeInfoName, nestTypes } from "./shared-types";
-import { uniqueStrings } from "./shared-types/remove";
-import { createSqlDatabase } from "./sqlDatabase";
+} from "../loaded";
+import { badTypeInfo, isBadCallDetails, isGoodCallDetails, loadedVersion, validateTypeInfo } from "../loaded";
+import { log } from "../log";
+import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../shared-types";
+import { distinctor, getTypeAndMethodNames, getTypeInfoName, nestTypes } from "../shared-types";
+import { uniqueStrings } from "../shared-types/remove";
 import { SqlTable, dropTable } from "./sqlTable";
+import { ViewState } from "./viewState";
 
 //export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallDetails: BadCallDetails[] };
 
@@ -133,17 +125,6 @@ type MethodNameColumns = {
   name: string;
 };
 
-type ConfigColumns = {
-  name: string;
-  value: string;
-};
-
-type RecentColumns = {
-  path: string;
-  type: DataSourceType;
-  when: number;
-};
-
 type GraphFilterColumns = {
   viewType: CommonGraphViewType;
   clusterBy: ClusterBy | "leafVisible";
@@ -161,217 +142,6 @@ const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
 type GoodTypeDictionary = {
   [key: number]: GoodTypeInfo;
 };
-
-const defaultReferenceViewOptions: ReferenceViewOptions = {
-  nestedClusters: true,
-  viewType: "references",
-};
-
-const defaultMethodViewOptions: MethodViewOptions = {
-  methodId: methodNodeId("?", 0),
-  viewType: "methods",
-  showClustered: {
-    clusterBy: "assembly",
-    nestedClusters: true,
-  },
-  showEdgeLabels: {
-    groups: false,
-    leafs: false,
-  },
-};
-
-const defaultApiViewOptions: ApiViewOptions = {
-  viewType: "apis",
-  showEdgeLabels: {
-    groups: false,
-    leafs: false,
-  },
-  showInternalCalls: false,
-  showClustered: {
-    clusterBy: "assembly",
-    nestedClusters: true,
-  },
-};
-
-const defaultCustomViewOptions: CustomViewOptions = {
-  nodeProperties: [],
-  clusterBy: [],
-  tags: [],
-  viewType: "custom",
-  showEdgeLabels: {
-    groups: false,
-    leafs: false,
-  },
-};
-
-export class SqlCustom {
-  save: (nodes: CustomNode[], errors: CustomError[], when: string) => void;
-  shouldReload: (when: string) => boolean;
-  viewState: {
-    onSave: (
-      when: string,
-      customSchemaVersion: string,
-      nodeIds: NodeId[],
-      nodeProperties: string[],
-      tags: string[]
-    ) => void;
-    set customViewOptions(viewOptions: CustomViewOptions);
-    get customViewOptions(): CustomViewOptions;
-    get viewType(): ViewType;
-    set viewType(value: ViewType);
-    get cachedWhen(): string;
-    get customSchemaVersion(): string;
-  };
-  readErrors: () => CustomError[];
-  readAll: () => CustomNode[];
-  close: () => void;
-  private readLeafVisible: () => NodeId[];
-  private readGroupExpanded: (clusterBy: string[]) => NodeId[];
-  private writeLeafVisible: (leafVisible: NodeId[]) => void;
-  private writeGroupExpanded: (clusterBy: string[], groupExpanded: NodeId[]) => void;
-  readGraphFilter: (clusterBy: string[]) => GraphFilter;
-  writeGraphFilter: (clusterBy: string[], graphFilter: GraphFilter) => void;
-
-  constructor(db: Database) {
-    const customSchemaVersionExpected = "2024-06-05";
-
-    // even though the CustomNode elements each have a unique id
-    // don't bother to store the data in normalized tables
-    // because there isn't much of the data (it's hand-written)
-    // also a schema mismatch doesn't drop and recreate the table
-    const configTable = new SqlTable<ConfigColumns>(db, "configCustom", "name", () => false, {
-      name: "foo",
-      value: "bar",
-    });
-
-    configTable.deleteAll();
-
-    const done = () => {
-      const result = db.pragma("wal_checkpoint(TRUNCATE)");
-      log(`wal_checkpoint: ${JSON.stringify(result)}`);
-    };
-
-    this.save = (nodes: CustomNode[], errors: CustomError[], when: string): void => {
-      configTable.insert({ name: "nodes", value: JSON.stringify(nodes) });
-      configTable.insert({ name: "errors", value: JSON.stringify(errors) });
-
-      const nodeProperties = new Set<string>();
-      nodes.forEach((node) =>
-        Object.keys(node)
-          .filter(isAnyOtherCustomField)
-          .forEach((key) => nodeProperties.add(key))
-      );
-
-      const tags = new Set<string>();
-      nodes.forEach((node) => node.tags?.forEach((tag) => tags.add(tag)));
-
-      this.viewState.onSave(
-        when,
-        customSchemaVersionExpected,
-        nodes.map((node) => nameNodeId("customLeaf", node.id)),
-        [...nodeProperties],
-        [...tags]
-      );
-      done();
-    };
-
-    this.shouldReload = (when: string): boolean =>
-      !this.viewState.cachedWhen ||
-      customSchemaVersionExpected !== this.viewState.customSchemaVersion ||
-      Date.parse(this.viewState.cachedWhen) < Date.parse(when);
-
-    this.readErrors = (): CustomError[] => {
-      const o = configTable.selectOne({ name: "errors" });
-      if (!o) throw new Error("Errors not initialized");
-      return JSON.parse(o.value) as CustomError[];
-    };
-
-    this.readAll = (): CustomNode[] => {
-      const o = configTable.selectOne({ name: "nodes" });
-      if (!o) throw new Error("Nodes not initialized");
-      return JSON.parse(o.value) as CustomNode[];
-    };
-
-    const keyGroupExpended = (clusterBy: string[]): string =>
-      "clusterBy" + [clusterBy.length] ? "-" + clusterBy.join("-") : "";
-    this.readLeafVisible = (): NodeId[] => {
-      const found = configTable.selectOne({ name: "leafVisible" });
-      if (!found) throw new Error("readLeafVisible nodes not found");
-      return JSON.parse(found.value);
-    };
-    this.readGroupExpanded = (clusterBy: string[]): NodeId[] => {
-      const found = configTable.selectOne({ name: keyGroupExpended(clusterBy) });
-      if (!found) return []; // not predefined so initially all closed
-      return JSON.parse(found.value);
-    };
-    this.writeLeafVisible = (leafVisible: NodeId[]): void => {
-      configTable.upsert({ name: "leafVisible", value: JSON.stringify(leafVisible) });
-    };
-    this.writeGroupExpanded = (clusterBy: string[], groupExpanded: NodeId[]): void => {
-      configTable.upsert({ name: keyGroupExpended(clusterBy), value: JSON.stringify(groupExpanded) });
-    };
-    this.readGraphFilter = (clusterBy: string[]): GraphFilter => ({
-      leafVisible: this.readLeafVisible(),
-      groupExpanded: this.readGroupExpanded(clusterBy),
-    });
-    this.writeGraphFilter = (clusterBy: string[], graphFilter: GraphFilter): void => {
-      this.writeLeafVisible(graphFilter.leafVisible);
-      this.writeGroupExpanded(clusterBy, graphFilter.groupExpanded);
-    };
-
-    this.viewState = {
-      onSave: (
-        when: string,
-        customSchemaVersion: string,
-        nodeIds: NodeId[],
-        nodeProperties: string[],
-        tags: string[]
-      ): void => {
-        configTable.upsert({ name: "when", value: when });
-        configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
-
-        this.viewState.customViewOptions = {
-          ...defaultCustomViewOptions,
-          nodeProperties: nodeProperties.sort(),
-          tags: tags.sort().map((tag) => ({ tag, shown: true })),
-        };
-
-        this.writeLeafVisible(nodeIds);
-      },
-      set customViewOptions(viewOptions: CustomViewOptions) {
-        configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });
-      },
-      get customViewOptions(): CustomViewOptions {
-        const o = configTable.selectOne({ name: "viewOptions" });
-        if (!o) throw new Error("viewOptions not initialized");
-        return JSON.parse(o.value) as CustomViewOptions;
-      },
-      get viewType(): ViewType {
-        const o = configTable.selectOne({ name: "viewType" });
-        if (!o) return "custom";
-        return o.value as ViewType;
-      },
-      set viewType(value: ViewType) {
-        configTable.upsert({ name: "viewType", value });
-      },
-      get cachedWhen(): string {
-        const o = configTable.selectOne({ name: "when" });
-        if (!o) return "";
-        return o.value;
-      },
-      get customSchemaVersion(): string {
-        const o = configTable.selectOne({ name: "customSchemaVersion" });
-        if (!o) return "";
-        return o.value;
-      },
-    };
-
-    this.close = () => {
-      done();
-      db.close();
-    };
-  }
-}
 
 export class SqlLoaded {
   save: (reflected: Reflected, when: string, hashDataSource: string) => void;
@@ -964,197 +734,4 @@ export class SqlLoaded {
       db.close();
     };
   }
-}
-
-class SqlConfigTable {
-  getConfig: () => ConfigColumns[];
-  setConfig: (config: ConfigColumns) => void;
-
-  constructor(db: Database) {
-    const configTable = new SqlTable<ConfigColumns>(db, "config", "name", () => false, {
-      name: "dataSource",
-      value: "bar",
-    });
-
-    this.getConfig = () => configTable.selectAll();
-    this.setConfig = (config: ConfigColumns) => configTable.upsert(config);
-  }
-}
-
-type IValues = {
-  [key: string]: string | undefined;
-};
-
-class ConfigCache {
-  private _sqlConfig: SqlConfigTable;
-  private _values: IValues = {};
-
-  constructor(db: Database) {
-    this._sqlConfig = new SqlConfigTable(db);
-    const pairs = this._sqlConfig.getConfig();
-    for (const pair of pairs) this._values[pair.name] = pair.value;
-  }
-
-  setValue(name: string, value: string | undefined) {
-    value = value ?? "";
-    this._sqlConfig.setConfig({ name, value });
-    this._values[name] = value;
-  }
-  getValue(name: string): string | undefined {
-    return this._values[name];
-  }
-}
-
-export class ViewState {
-  private _cache: ConfigCache;
-
-  constructor(db: Database) {
-    this._cache = new ConfigCache(db);
-  }
-
-  onSave(when: string, hashDataSource: string, version: string, exes: string[]) {
-    this.cachedWhen = when;
-    this.hashDataSource = hashDataSource;
-    this.loadedVersion = version;
-    this.exes = exes;
-    this.referenceViewOptions = defaultReferenceViewOptions;
-    this.methodViewOptions = defaultMethodViewOptions;
-    this.apiViewOptions = defaultApiViewOptions;
-  }
-
-  // this changes when the SQL schema definition changes
-  get loadedSchemaVersion(): string | undefined {
-    return this._cache.getValue("loadedSchemaVersion");
-  }
-  set loadedSchemaVersion(value: string | undefined) {
-    this._cache.setValue("loadedSchemaVersion", value);
-  }
-  // this changes when the format of Reflected data changes
-  get loadedVersion(): string {
-    return this._cache.getValue("loadedVersion") ?? "";
-  }
-  set loadedVersion(value: string) {
-    this._cache.setValue("loadedVersion", value);
-  }
-  // this changes when the data source (e.g. the assemblies being inspected) changes
-  get cachedWhen(): string {
-    return this._cache.getValue("cachedWhen") ?? "";
-  }
-  set cachedWhen(value: string) {
-    this._cache.setValue("cachedWhen", value);
-  }
-  // this identifies the DataSource
-  get hashDataSource(): string {
-    return this._cache.getValue("hashDataSource") ?? "";
-  }
-  set hashDataSource(value: string) {
-    this._cache.setValue("hashDataSource", value);
-  }
-
-  set referenceViewOptions(viewOptions: ReferenceViewOptions) {
-    this._cache.setValue("referenceViewOptions", JSON.stringify(viewOptions));
-  }
-  get referenceViewOptions(): ReferenceViewOptions {
-    const value = this._cache.getValue("referenceViewOptions");
-    return value ? { defaultReferenceViewOptions, ...JSON.parse(value) } : defaultReferenceViewOptions;
-  }
-
-  set methodViewOptions(viewOptions: MethodViewOptions) {
-    this._cache.setValue("methodViewOptions", JSON.stringify(viewOptions));
-  }
-  get methodViewOptions(): MethodViewOptions {
-    const value = this._cache.getValue("methodViewOptions");
-    return value ? { ...defaultMethodViewOptions, ...JSON.parse(value) } : defaultMethodViewOptions;
-  }
-
-  set apiViewOptions(viewOptions: ApiViewOptions) {
-    this._cache.setValue("apiViewOptions", JSON.stringify(viewOptions));
-  }
-  get apiViewOptions(): ApiViewOptions {
-    const value = this._cache.getValue("apiViewOptions");
-    return value ? { defaultApiViewOptions, ...JSON.parse(value) } : defaultApiViewOptions;
-  }
-
-  set exes(names: string[]) {
-    this._cache.setValue("exes", JSON.stringify(names));
-  }
-  get exes(): string[] {
-    const value = this._cache.getValue("exes");
-    return value ? JSON.parse(value) : [];
-  }
-
-  get viewType(): ViewType {
-    return (this._cache.getValue("viewType") as ViewType) ?? "references";
-  }
-  set viewType(value: ViewType) {
-    this._cache.setValue("viewType", value);
-  }
-}
-
-export type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";
-
-export type DataSource = {
-  path: string;
-  type: DataSourceType;
-  hash: string;
-};
-
-export class SqlConfig {
-  private _cache: ConfigCache;
-  private _db: Database;
-  recent: () => RecentColumns[];
-  private upsertRecent: (recentColumns: RecentColumns) => void;
-
-  constructor(db: Database) {
-    this._cache = new ConfigCache(db);
-    this._db = db;
-
-    const recentTable = new SqlTable<RecentColumns>(db, "recent", "path", () => false, {
-      path: "foo",
-      type: "loadedAssemblies",
-      when: 0,
-    });
-
-    this.recent = () => recentTable.selectAll();
-    this.upsertRecent = (recentColumns: RecentColumns) => recentTable.upsert(recentColumns);
-  }
-
-  get dataSource(): DataSource | undefined {
-    const value = this._cache.getValue("dataSource");
-    return value ? JSON.parse(value) : undefined;
-  }
-
-  set dataSource(value: DataSource | undefined) {
-    this._cache.setValue("dataSource", JSON.stringify(value));
-    if (value) this.upsertRecent({ path: value.path, type: value.type, when: Date.now() });
-  }
-
-  set appOptions(appOptions: AppOptions) {
-    this._cache.setValue("appOptions", JSON.stringify(appOptions));
-  }
-  get appOptions(): AppOptions {
-    const value = this._cache.getValue("appOptions");
-    return value ? { defaultAppOptions, ...JSON.parse(value) } : defaultAppOptions;
-  }
-
-  close() {
-    const result = this._db.pragma("wal_checkpoint(TRUNCATE)");
-    log(`wal_checkpoint: ${JSON.stringify(result)}`);
-    this._db.close();
-  }
-}
-
-export function createSqlLoaded(filename: string): SqlLoaded {
-  log("createSqlLoaded");
-  return new SqlLoaded(createSqlDatabase(filename));
-}
-
-export function createSqlCustom(filename: string): SqlCustom {
-  log("createSqlCustom");
-  return new SqlCustom(createSqlDatabase(filename));
-}
-
-export function createSqlConfig(filename: string): SqlConfig {
-  log("createSqlConfig");
-  return new SqlConfig(createSqlDatabase(filename));
 }
