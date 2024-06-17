@@ -20,8 +20,9 @@ import type {
   PropertyMember,
   TypeId,
 } from "./loaded";
-import { Access as LoadedAccess, isPartTypeInfo, namedTypeInfo } from "./loaded";
+import { Access as LoadedAccess, isPartTypeInfo } from "./loaded";
 import { MemberException } from "./loaded/loadedMembers";
+import { namedTypeInfo } from "./loaded/loadedTypeInfo";
 import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "./shared-types";
 
 type Exceptions = Named[];

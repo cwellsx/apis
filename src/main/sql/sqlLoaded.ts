@@ -4,27 +4,28 @@ import type {
   CommonGraphViewType,
   ErrorsInfo,
   GraphFilter,
-  Members,
   MethodNodeId,
   NodeId,
   TypeNodeId,
 } from "../../shared-types";
-import { nameNodeId, typeNodeId } from "../../shared-types";
-import type {
-  AllTypeInfo,
-  AssemblyReferences,
-  BadCallDetails,
-  BadTypeInfo,
-  GoodTypeInfo,
-  MethodDetails,
-  Reflected,
-} from "../loaded";
-import { badTypeInfo, isBadCallDetails, isGoodCallDetails, loadedVersion, validateTypeInfo } from "../loaded";
+import { nameNodeId } from "../../shared-types";
+import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodDetails, Reflected } from "../loaded";
+import { loadedVersion, validateTypeInfo } from "../loaded";
+import { badTypeInfo } from "../loaded/loadedTypeInfo";
 import { log } from "../log";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../shared-types";
-import { distinctor, getTypeAndMethodNames, getTypeInfoName, nestTypes } from "../shared-types";
+import { getTypeAndMethodNames } from "../shared-types";
 import { uniqueStrings } from "../shared-types/remove";
-import { SqlTable, dropTable } from "./sqlTable";
+import type {
+  CallColumns,
+  ErrorColumns,
+  MemberColumns,
+  MethodColumns,
+  MethodNameColumns,
+  SavedTypeInfo,
+  TypeNameColumns,
+} from "./sqlLoadedImpl";
+import { saveGoodTypeInfo, saveMethodDictionary, tables } from "./sqlLoadedImpl";
 import { ViewState } from "./viewState";
 
 //export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallDetails: BadCallDetails[] };
@@ -65,80 +66,6 @@ import { ViewState } from "./viewState";
   says to do it when the rows are less than 50 bytes in size, however these tables contain serialized JSON columns.
 */
 
-type AssemblyColumns = {
-  assemblyName: string;
-  // JSON-encoded array of names of referenced assemblies
-  references: string;
-};
-
-type TypeColumns = {
-  assemblyName: string;
-  metadataToken: number; // Id of Type within assembly
-  typeInfo: string;
-};
-
-type MemberColumns = {
-  // each record contains MethodDetails for a single method, application reads several methods at a time
-  assemblyName: string;
-  metadataToken: number;
-  typeMetadataToken: number;
-  memberType: keyof Members;
-  memberInfo: string;
-};
-
-type MethodColumns = {
-  // each record contains MethodDetails for a single method, application reads several methods at a time
-  assemblyName: string;
-  metadataToken: number;
-  methodDetails: string;
-};
-
-type ErrorColumns = {
-  assemblyName: string;
-  badTypeInfos: string;
-  badCallDetails: string;
-};
-
-type CallColumns = {
-  // this could be refactored as one table with three or four columns, plus a join table
-  fromAssemblyName: string;
-  fromNamespace: string;
-  fromTypeId: number;
-  fromMethodId: number;
-  toAssemblyName: string;
-  toNamespace: string;
-  toTypeId: number;
-  toMethodId: number;
-};
-
-type TypeNameColumns = {
-  assemblyName: string;
-  metadataToken: number;
-  namespace: string | null;
-  decoratedName: string;
-  wantedTypeId: number | null;
-};
-
-type MethodNameColumns = {
-  assemblyName: string;
-  metadataToken: number;
-  name: string;
-};
-
-type GraphFilterColumns = {
-  viewType: CommonGraphViewType;
-  clusterBy: ClusterBy | "leafVisible";
-  value: string;
-};
-
-type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
-const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
-  const result: SavedTypeInfo = { ...typeInfo };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  delete (result as any)["members"];
-  return result;
-};
-
 type GoodTypeDictionary = {
   [key: number]: GoodTypeInfo;
 };
@@ -172,99 +99,27 @@ export class SqlLoaded {
     this.viewState = new ViewState(db);
 
     const schema = this.viewState.loadedSchemaVersion;
+
+    const {
+      dropTables,
+      deleteTables,
+      assemblyTable,
+      typeTable,
+      memberTable,
+      methodTable,
+      errorTable,
+      callTable,
+      typeNameTable,
+      methodNameTable,
+      graphFilterTable,
+    } = tables(db);
+
     if (schema !== loadedSchemaVersionExpected) {
       // schema has changed
-      dropTable(db, "assembly");
-      dropTable(db, "type");
-      dropTable(db, "member");
-      dropTable(db, "method");
-      dropTable(db, "error");
-      dropTable(db, "call");
-      dropTable(db, "typeName");
-      dropTable(db, "methodName");
-      dropTable(db, "graphFilter");
+      dropTables();
       this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
-
-    const assemblyTable = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
-      assemblyName: "foo",
-      references: "bar",
-    });
-    const typeTable = new SqlTable<TypeColumns>(db, "type", ["assemblyName", "metadataToken"], () => false, {
-      assemblyName: "foo",
-      metadataToken: 1,
-      typeInfo: "bar",
-    });
-    const memberTable = new SqlTable<MemberColumns>(db, "member", ["assemblyName", "metadataToken"], () => false, {
-      assemblyName: "foo",
-      metadataToken: 1,
-      typeMetadataToken: 1,
-      memberType: "methodMembers",
-      memberInfo: "bat",
-    });
-    const methodTable = new SqlTable<MethodColumns>(db, "method", ["assemblyName", "metadataToken"], () => false, {
-      assemblyName: "foo",
-      metadataToken: 1,
-      methodDetails: "bar",
-    });
-    const errorTable = new SqlTable<ErrorColumns>(db, "error", "assemblyName", () => false, {
-      assemblyName: "foo",
-      badTypeInfos: "bar",
-      badCallDetails: "baz",
-    });
-    const callTable = new SqlTable<CallColumns>(
-      db,
-      "call",
-      ["fromAssemblyName", "fromMethodId", "toAssemblyName", "toMethodId"],
-      () => false,
-      {
-        fromAssemblyName: "foo",
-        fromNamespace: "bar",
-        fromTypeId: 0,
-        fromMethodId: 0,
-        toAssemblyName: "baz",
-        toNamespace: "bat",
-        toTypeId: 0,
-        toMethodId: 0,
-      }
-    );
-    const typeNameTable = new SqlTable<TypeNameColumns>(
-      db,
-      "typeName",
-      ["assemblyName", "metadataToken"],
-      (key) => key === "namespace" || key === "wantedTypeId",
-      {
-        assemblyName: "foo",
-        metadataToken: 0,
-        namespace: "bar",
-        decoratedName: "baz",
-        wantedTypeId: 0,
-      }
-    );
-    const methodNameTable = new SqlTable<MethodNameColumns>(
-      db,
-      "methodName",
-      ["assemblyName", "metadataToken"],
-      () => false,
-      {
-        assemblyName: "foo",
-        metadataToken: 0,
-        name: "bar",
-      }
-    );
-    const graphFilterTable = new SqlTable<GraphFilterColumns>(
-      db,
-      "graphFilter",
-      ["viewType", "clusterBy"],
-      () => false,
-      {
-        viewType: "references",
-        clusterBy: "assembly",
-        value: "baz",
-      }
-    );
-
     const done = () => {
       const result = db.pragma("wal_checkpoint(TRUNCATE)");
       log(`wal_checkpoint: ${JSON.stringify(result)}`);
@@ -272,29 +127,49 @@ export class SqlLoaded {
 
     this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
       // delete in reverse order
-      graphFilterTable.deleteAll();
-      methodNameTable.deleteAll();
-      typeNameTable.deleteAll();
-      callTable.deleteAll();
-      errorTable.deleteAll();
-      methodTable.deleteAll();
-      memberTable.deleteAll();
-      typeTable.deleteAll();
-      assemblyTable.deleteAll();
+      deleteTables();
 
       log("save reflected.assemblies");
 
-      // create a dictionary to find typeId from methodId
-      const assemblyMethodTypes: { [assemblyName: string]: { [methodId: number]: number } } = {};
-      const assemblyMethodNames: MethodNameColumns[] = [];
+      // map methodId to typeId
+      // { [assemblyName: string]: { [methodId: number]: number } } = {};
+      const assemblyMethodTypes = new Map<string, Map<number, number>>();
 
+      // map typeId to TypeNameColumns
+      // { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
+      const assemblyTypeNames = new Map<string, Map<number, TypeNameColumns>>();
+
+      const assemblyMethodNames: MethodNameColumns[] = [];
       const assemblyTypeIds: TypeNodeId[] = [];
-      const assemblyTypeNames: { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
 
       for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
-        // typeIds dictionary
-        const methodTypes: { [methodId: number]: number } = {};
-        assemblyMethodTypes[assemblyName] = methodTypes;
+        const allTypeInfo = validateTypeInfo(assemblyInfo.types);
+
+        // BadTypeInfo[]
+        const bad = badTypeInfo(allTypeInfo);
+        if (bad.length) {
+          errorTable.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallDetails: JSON.stringify([]) });
+        }
+
+        // GoodTypeInfo[]
+        const { typeColumns, typeNodeIds, members, methodNameColumns, typeNameColumns } = saveGoodTypeInfo(
+          assemblyName,
+          allTypeInfo.good
+        );
+
+        // update the two Maps
+
+        const methodTypes = new Map<number, number>(
+          members
+            .filter((member) => member.memberType === "methodMembers")
+            .map((member) => [member.metadataToken, member.typeMetadataToken])
+        );
+        assemblyMethodTypes.set(assemblyName, methodTypes);
+
+        const typeNames = new Map<number, TypeNameColumns>(typeNameColumns.map((it) => [it.metadataToken, it]));
+        assemblyTypeNames.set(assemblyName, typeNames);
+
+        // update the tables
 
         // => assemblyTable
         assemblyTable.insert({
@@ -302,105 +177,58 @@ export class SqlLoaded {
           // uniqueStrings because I've unusually seen an assembly return two references to the same assembly name
           references: JSON.stringify(uniqueStrings(assemblyInfo.referencedAssemblies)),
         });
-
-        const allTypeInfo = validateTypeInfo(assemblyInfo.types);
-
-        for (const type of allTypeInfo.good) {
-          const typeInfo = createSavedTypeInfo(type);
-
-          // => typeTable
-          typeTable.insert({
-            assemblyName,
-            metadataToken: typeInfo.typeId.metadataToken,
-            typeInfo: JSON.stringify(typeInfo),
-          });
-
-          assemblyTypeIds.push(typeNodeId(assemblyName, typeInfo.typeId.metadataToken));
-
-          for (const [memberType, memberInfos] of Object.entries(type.members)) {
-            const members: MemberColumns[] = memberInfos.map((memberInfo) => {
-              if ((memberType as keyof Members) == "methodMembers") {
-                methodTypes[memberInfo.metadataToken] = typeInfo.typeId.metadataToken;
-                assemblyMethodNames.push({
-                  assemblyName,
-                  name: memberInfo.name,
-                  metadataToken: memberInfo.metadataToken,
-                });
-              }
-              return {
-                assemblyName,
-                // memberType is string[] -- https://github.com/microsoft/TypeScript/pull/12253#issuecomment-263132208
-                memberType: memberType as keyof Members,
-                typeMetadataToken: typeInfo.typeId.metadataToken,
-                metadataToken: memberInfo.metadataToken,
-                memberInfo: JSON.stringify(memberInfo),
-              };
-            });
-            // => memberTable
-            memberTable.insertMany(members);
-          }
-        }
-
-        const { unwantedTypes } = nestTypes(allTypeInfo.good);
-        const typeNameColumns: TypeNameColumns[] = allTypeInfo.good.map((typeInfo) => ({
-          assemblyName,
-          metadataToken: typeInfo.typeId.metadataToken,
-          namespace: typeInfo.typeId.namespace ?? null,
-          decoratedName: getTypeInfoName(typeInfo),
-          // the wantedTypeId is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
-          wantedTypeId: unwantedTypes[typeInfo.typeId.metadataToken] ?? null,
-        }));
         // => typeNameTable
         typeNameTable.insertMany(typeNameColumns);
+        // => typeTable
+        typeTable.insertMany(typeColumns);
+        // => memberTable
+        memberTable.insertMany(members);
 
-        const typeNames: { [typeId: number]: TypeNameColumns } = {};
-        typeNameColumns.forEach((nameColumns) => (typeNames[nameColumns.metadataToken] = nameColumns));
-        assemblyTypeNames[assemblyName] = typeNames;
-
-        // => errorsTable
-        const bad = badTypeInfo(allTypeInfo);
-        if (bad.length) {
-          errorTable.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallDetails: JSON.stringify([]) });
-        }
+        assemblyMethodNames.push(...methodNameColumns);
+        assemblyTypeIds.push(...typeNodeIds);
       }
 
       log("save reflected.assemblyMethods");
 
-      const assemblyCalls: {
-        [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
-      } = {};
+      // const assemblyCalls: {
+      //   [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
+      // } = {};
 
-      const distinctCalls = distinctor<{ assemblyName: string; methodId: number }>(
-        (lhs, rhs) => lhs.assemblyName == rhs.assemblyName && lhs.methodId == rhs.methodId
-      );
+      // const distinctCalls = distinctor<{ assemblyName: string; methodId: number }>(
+      //   (lhs, rhs) => lhs.assemblyName == rhs.assemblyName && lhs.methodId == rhs.methodId
+      // );
 
-      for (const [assemblyName, methodsDictionary] of Object.entries(reflected.assemblyMethods)) {
-        const badCallDetails: BadCallDetails[] = [];
+      // [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
+      const assemblyCalls = new Map<string, Map<number, { assemblyName: string; methodId: number }[]>>();
 
-        const methodCalls: { [methodId: number]: { assemblyName: string; methodId: number }[] } = {};
-        assemblyCalls[assemblyName] = methodCalls;
+      for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
+        const { methodCalls, methods, badCallDetails } = saveMethodDictionary(assemblyName, methodDictionary);
 
-        const methods: MethodColumns[] = Object.entries(methodsDictionary).map(([key, methodDetails]) => {
-          const metadataToken = +key;
+        // const methodCalls: { [methodId: number]: { assemblyName: string; methodId: number }[] } = {};
+        // assemblyCalls[assemblyName] = methodCalls;
 
-          // remember any which are bad
-          badCallDetails.push(...methodDetails.calls.filter(isBadCallDetails));
+        // const methods: MethodColumns[] = Object.entries(methodDictionary).map(([key, methodDetails]) => {
+        //   const metadataToken = +key;
 
-          // remember all to be copied into CallsColumns
-          methodCalls[metadataToken] = methodDetails.calls
-            .filter(isGoodCallDetails)
-            .map((callDetails) => ({
-              assemblyName: callDetails.assemblyName,
-              methodId: callDetails.metadataToken,
-            }))
-            .filter(distinctCalls);
+        //   // remember any which are bad
+        //   badCallDetails.push(...methodDetails.calls.filter(isBadCallDetails));
 
-          // return MethodColumns
-          return { assemblyName, metadataToken, methodDetails: JSON.stringify(methodDetails) };
-        });
+        //   // remember all to be copied into CallsColumns
+        //   methodCalls[metadataToken] = methodDetails.calls
+        //     .filter(isGoodCallDetails)
+        //     .map((callDetails) => ({
+        //       assemblyName: callDetails.assemblyName,
+        //       methodId: callDetails.metadataToken,
+        //     }))
+        //     .filter(distinctCalls);
+
+        //   // return MethodColumns
+        //   return { assemblyName, metadataToken, methodDetails: JSON.stringify(methodDetails) };
+        // });
+
+        assemblyCalls.set(assemblyName, new Map<number, { assemblyName: string; methodId: number }[]>(methodCalls));
 
         // => errorsTable
-
         if (badCallDetails.length) {
           const found = errorTable.selectOne({ assemblyName });
           const columns: ErrorColumns = {
@@ -418,15 +246,18 @@ export class SqlLoaded {
 
       const getWanted = (assemblyName: string, methodId: number): { namespace: string; wantedTypeId: number } => {
         // get typeId from methodId
-        const typeId = assemblyMethodTypes[assemblyName][methodId];
+        const typeId = assemblyMethodTypes.get(assemblyName)?.get(methodId);
+        if (!typeId) throw new Error("typeId not found");
         // get namespace and wantedTypeId from typeId
-        const found = assemblyTypeNames[assemblyName][typeId];
+        const found = assemblyTypeNames.get(assemblyName)?.get(typeId);
+        if (!found) throw new Error("typeName not found");
         return {
           namespace: found.namespace ?? "(no namespace)",
           wantedTypeId: found.wantedTypeId ?? found.metadataToken,
         };
       };
 
+      /*
       const getTypeFromMethod = (assemblyName: string, methodId: number): TypeNameColumns => {
         // get typeId from methodId
         const typeId = assemblyMethodTypes[assemblyName][methodId];
@@ -471,13 +302,14 @@ export class SqlLoaded {
       };
 
       const getOwnerMethod = nestMethods();
+      */
 
       const callColumns: CallColumns[] = [];
-      Object.entries(assemblyCalls).forEach(([assemblyName, methodCalls]) =>
-        Object.keys(methodCalls).forEach((key) => {
+      [...assemblyCalls.entries()].forEach(([assemblyName, methodCalls]) =>
+        [...methodCalls.entries()].forEach(([key, calls]) => {
           const methodId = +key;
           const { namespace: fromNamespace, wantedTypeId: fromTypeId } = getWanted(assemblyName, methodId);
-          methodCalls[methodId].forEach((called) => {
+          calls.forEach((called) => {
             const { namespace: toNamespace, wantedTypeId: toTypeId } = getWanted(called.assemblyName, called.methodId);
             callColumns.push({
               fromAssemblyName: assemblyName,
