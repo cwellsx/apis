@@ -1,4 +1,3 @@
-import { TypeNodeId, typeNodeId } from "../../../shared-types";
 import { GoodTypeInfo, Members } from "../../loaded";
 import { getTypeInfoName, nestTypes } from "../../shared-types";
 import { MemberColumns, MethodNameColumns, TypeColumns, TypeNameColumns } from "./columns";
@@ -6,64 +5,57 @@ import { createSavedTypeInfo } from "./savedTypeInfo";
 
 export const saveGoodTypeInfo = (
   assemblyName: string,
-  // assemblyInfo: AssemblyInfo,
   goodTypeInfos: GoodTypeInfo[]
 ): {
   typeColumns: TypeColumns[];
-  typeNodeIds: TypeNodeId[];
-  members: MemberColumns[];
+  memberColumns: MemberColumns[];
   methodNameColumns: MethodNameColumns[];
   typeNameColumns: TypeNameColumns[];
 } => {
-  // typeIds dictionary
-  // const methodTypes: { [methodId: number]: number } = {};
-  // assemblyMethodTypes[assemblyName] = methodTypes;
+  // types
 
-  // => assemblyTable
-  // assemblyTable.insert({
-  //   assemblyName,
-  //   // uniqueStrings because I've unusually seen an assembly return two references to the same assembly name
-  //   references: JSON.stringify(uniqueStrings(assemblyInfo.referencedAssemblies)),
-  // });
+  const typeColumns: TypeColumns[] = goodTypeInfos.map((type) => ({
+    assemblyName,
+    metadataToken: type.typeId.metadataToken,
+    typeInfo: JSON.stringify(createSavedTypeInfo(type)),
+  }));
 
-  const typeColumns: TypeColumns[] = [];
-  const typeNodeIds: TypeNodeId[] = [];
-  const members: MemberColumns[] = [];
+  // members and methods for each type
+
+  const memberColumns: MemberColumns[] = [];
   const methodNameColumns: MethodNameColumns[] = [];
 
   for (const type of goodTypeInfos) {
-    const typeInfo = createSavedTypeInfo(type);
-
-    typeColumns.push({
-      assemblyName,
-      metadataToken: typeInfo.typeId.metadataToken,
-      typeInfo: JSON.stringify(typeInfo),
-    });
-
-    typeNodeIds.push(typeNodeId(assemblyName, typeInfo.typeId.metadataToken));
-
-    for (const [memberType, memberInfos] of Object.entries(type.members)) {
-      members.push(
-        ...memberInfos.map((memberInfo) => {
-          if ((memberType as keyof Members) == "methodMembers") {
-            methodNameColumns.push({
-              assemblyName,
-              name: memberInfo.name,
-              metadataToken: memberInfo.metadataToken,
-            });
-          }
-          return {
+    memberColumns.push(
+      ...Object.entries(type.members)
+        .map(([memberType, memberValues]) =>
+          memberValues.map((memberInfo) => ({
             assemblyName,
             // memberType is string[] -- https://github.com/microsoft/TypeScript/pull/12253#issuecomment-263132208
             memberType: memberType as keyof Members,
-            typeMetadataToken: typeInfo.typeId.metadataToken,
+            typeMetadataToken: type.typeId.metadataToken,
             metadataToken: memberInfo.metadataToken,
             memberInfo: JSON.stringify(memberInfo),
-          };
-        })
-      );
-    }
+          }))
+        )
+        .flat()
+    );
+
+    methodNameColumns.push(
+      ...Object.entries(type.members)
+        .filter(([memberType]) => (memberType as keyof Members) == "methodMembers")
+        .map(([, memberValues]) =>
+          memberValues.map((memberInfo) => ({
+            assemblyName,
+            name: memberInfo.name,
+            metadataToken: memberInfo.metadataToken,
+          }))
+        )
+        .flat()
+    );
   }
+
+  // type names
 
   const { unwantedTypes } = nestTypes(goodTypeInfos);
   const typeNameColumns: TypeNameColumns[] = goodTypeInfos.map((typeInfo) => ({
@@ -74,12 +66,6 @@ export const saveGoodTypeInfo = (
     // the wantedTypeId is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
     wantedTypeId: unwantedTypes[typeInfo.typeId.metadataToken] ?? null,
   }));
-  // => typeNameTable
-  //typeNameTable.insertMany(typeNameColumns);
 
-  // const typeNames: { [typeId: number]: TypeNameColumns } = {};
-  // typeNameColumns.forEach((nameColumns) => (typeNames[nameColumns.metadataToken] = nameColumns));
-  // assemblyTypeNames[assemblyName] = typeNames;
-
-  return { typeColumns, typeNodeIds, members, methodNameColumns, typeNameColumns };
+  return { typeColumns, memberColumns, methodNameColumns, typeNameColumns };
 };

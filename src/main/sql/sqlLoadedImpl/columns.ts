@@ -14,7 +14,6 @@ export type TypeColumns = {
 };
 
 export type MemberColumns = {
-  // each record contains MethodDetails for a single method, application reads several methods at a time
   assemblyName: string;
   metadataToken: number;
   typeMetadataToken: number;
@@ -23,7 +22,7 @@ export type MemberColumns = {
 };
 
 export type MethodColumns = {
-  // each record contains MethodDetails for a single method, application reads several methods at a time
+  // each record contains all MethodDetails for a single method
   assemblyName: string;
   metadataToken: number;
   methodDetails: string;
@@ -65,4 +64,12 @@ export type GraphFilterColumns = {
   viewType: CommonGraphViewType;
   clusterBy: ClusterBy | "leafVisible";
   value: string;
+};
+
+// this table is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
+export type NestedTypeColumns = {
+  assemblyName: string;
+  nestedType: number;
+  declaringType: number;
+  declaringMethod: number;
 };

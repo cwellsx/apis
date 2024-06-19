@@ -2,7 +2,6 @@ import { BadCallDetails, MethodDictionary, isBadCallDetails, isGoodCallDetails }
 import { distinctor } from "../../shared-types";
 import { MethodColumns } from "./columns";
 
-//type MethodCalls = { methodId: number; calls: { assemblyName: string; methodId: number }[] };
 type MethodCalls = [number, { assemblyName: string; methodId: number }[]];
 
 const distinctCalls = distinctor<{ assemblyName: string; methodId: number }>(
@@ -14,13 +13,7 @@ export const saveMethodDictionary = (
   methodDictionary: MethodDictionary
 ): { methodCalls: MethodCalls[]; methods: MethodColumns[]; badCallDetails: BadCallDetails[] } => {
   const methodCalls: MethodCalls[] = [];
-
   const badCallDetails: BadCallDetails[] = [];
-
-  //const {} = saveMethodDictionary(assemblyName, methodDictionary);
-
-  // const methodCalls: { [methodId: number]: { assemblyName: string; methodId: number }[] } = {};
-  // assemblyCalls[assemblyName] = methodCalls;
 
   const methods: MethodColumns[] = Object.entries(methodDictionary).map(([key, methodDetails]) => {
     const metadataToken = +key;

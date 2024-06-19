@@ -6,7 +6,7 @@ export { nestTypes } from "./nestTypes";
 export * from "./nodeIdUtils";
 export { options } from "./options";
 export type { StringPredicate } from "./predicate";
-export { distinctor, remove, replace, uniqueStrings } from "./remove";
+export { distinctor, getOrSet, mapOfMaps, remove, replace, uniqueStrings } from "./remove";
 export type { Call, TypeAndMethodId } from "./typeAndMethodId";
 export { getTypeAndMethodNames } from "./typeAndMethodNames";
 export type { GetTypeOrMethodName } from "./typeAndMethodNames";

@@ -8,13 +8,13 @@ import type {
   NodeId,
   TypeNodeId,
 } from "../../shared-types";
-import { nameNodeId } from "../../shared-types";
+import { nameNodeId, typeNodeId } from "../../shared-types";
 import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodDetails, Reflected } from "../loaded";
 import { loadedVersion, validateTypeInfo } from "../loaded";
 import { badTypeInfo } from "../loaded/loadedTypeInfo";
 import { log } from "../log";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../shared-types";
-import { getTypeAndMethodNames } from "../shared-types";
+import { getTypeAndMethodNames, nestTypes } from "../shared-types";
 import { uniqueStrings } from "../shared-types/remove";
 import type {
   CallColumns,
@@ -28,28 +28,7 @@ import type {
 import { saveGoodTypeInfo, saveMethodDictionary, tables } from "./sqlLoadedImpl";
 import { ViewState } from "./viewState";
 
-//export type ErrorsInfo = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badCallDetails: BadCallDetails[] };
-
 /*
-  This defines all SQLite tables used by the application, include the record format and the methods to access them
-  They're all in this one source file, because their implementations are similar
-
-  - SqlLoaded is implemented using
-    - SqlTable<AssemblyColumns>
-    - SqlTable<TypeColumns>
-    - SqlTable<MemberColumns>
-    - SqlTable<MethodColumns>
-    - SqlTable<ErrorsColumns>
-    - SqlTable<CallsColumns>
-    - ViewState i.e. ConfigCache
-  
-  - SqlConfig is implemented using
-    - SqlTable<RecentColumns>
-    - ConfigCache i.e. SqlConfigTable plus a values cache
-  
-  - SqlConfigTable is implemented using
-    - SqlTable<ConfigColumns>
-  
   SqlLoaded saves an instance of the Reflected type, which contains all TypeInfo and all MethodDetails, and which is:
   - Obtained from Core.exe via the electron-cgi connection
   - Saved into the SQLite tables
@@ -58,9 +37,6 @@ import { ViewState } from "./viewState";
   Conversely the ViewState contains a cache-on-write, which the application reads from without selecting from SQLite.
 
   If in future the Reflected data is too large, rework the transfer to make it incremental e.g. one assembly at a time.
-
-  A future refactoring could remove the column definitions to another module, e.g. sqlColumns.ts could define and export
-  the *Columns types, with corresponding load* and save* methods to wrap JSON and convert to and from application types.
 
   These tables don't use WITHOUT ROWID because https://www.sqlite.org/withoutrowid.html#when_to_use_without_rowid
   says to do it when the rows are less than 50 bytes in size, however these tables contain serialized JSON columns.
@@ -94,14 +70,14 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-07";
+    const loadedSchemaVersionExpected = "2024-06-18";
 
     this.viewState = new ViewState(db);
 
     const schema = this.viewState.loadedSchemaVersion;
+    const isSchemaChanged = schema !== loadedSchemaVersionExpected;
 
     const {
-      dropTables,
       deleteTables,
       assemblyTable,
       typeTable,
@@ -112,11 +88,10 @@ export class SqlLoaded {
       typeNameTable,
       methodNameTable,
       graphFilterTable,
-    } = tables(db);
+      nestedTypeTable,
+    } = tables(db, isSchemaChanged);
 
-    if (schema !== loadedSchemaVersionExpected) {
-      // schema has changed
-      dropTables();
+    if (isSchemaChanged) {
       this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
@@ -139,7 +114,10 @@ export class SqlLoaded {
       // { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
       const assemblyTypeNames = new Map<string, Map<number, TypeNameColumns>>();
 
-      const assemblyMethodNames: MethodNameColumns[] = [];
+      // map nestedTypeId to declaringType
+      // { [assemblyName: string]: { [nestedTypeId: number]: number } } = {};
+      const assemblyNestedTypes = new Map<string, Map<number, number>>();
+
       const assemblyTypeIds: TypeNodeId[] = [];
 
       for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
@@ -152,7 +130,7 @@ export class SqlLoaded {
         }
 
         // GoodTypeInfo[]
-        const { typeColumns, typeNodeIds, members, methodNameColumns, typeNameColumns } = saveGoodTypeInfo(
+        const { typeColumns, memberColumns, methodNameColumns, typeNameColumns } = saveGoodTypeInfo(
           assemblyName,
           allTypeInfo.good
         );
@@ -160,7 +138,7 @@ export class SqlLoaded {
         // update the two Maps
 
         const methodTypes = new Map<number, number>(
-          members
+          memberColumns
             .filter((member) => member.memberType === "methodMembers")
             .map((member) => [member.metadataToken, member.typeMetadataToken])
         );
@@ -182,49 +160,26 @@ export class SqlLoaded {
         // => typeTable
         typeTable.insertMany(typeColumns);
         // => memberTable
-        memberTable.insertMany(members);
+        memberTable.insertMany(memberColumns);
+        // => methodNameTable
+        methodNameTable.insertMany(methodNameColumns);
 
-        assemblyMethodNames.push(...methodNameColumns);
-        assemblyTypeIds.push(...typeNodeIds);
+        assemblyTypeIds.push(...typeColumns.map((it) => typeNodeId(assemblyName, it.metadataToken)));
+
+        const { unwantedTypes } = nestTypes(allTypeInfo.good);
+        assemblyNestedTypes.set(
+          assemblyName,
+          new Map<number, number>(Object.entries(unwantedTypes).map(([key, value]) => [+key, value]))
+        );
       }
 
       log("save reflected.assemblyMethods");
-
-      // const assemblyCalls: {
-      //   [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
-      // } = {};
-
-      // const distinctCalls = distinctor<{ assemblyName: string; methodId: number }>(
-      //   (lhs, rhs) => lhs.assemblyName == rhs.assemblyName && lhs.methodId == rhs.methodId
-      // );
 
       // [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
       const assemblyCalls = new Map<string, Map<number, { assemblyName: string; methodId: number }[]>>();
 
       for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
         const { methodCalls, methods, badCallDetails } = saveMethodDictionary(assemblyName, methodDictionary);
-
-        // const methodCalls: { [methodId: number]: { assemblyName: string; methodId: number }[] } = {};
-        // assemblyCalls[assemblyName] = methodCalls;
-
-        // const methods: MethodColumns[] = Object.entries(methodDictionary).map(([key, methodDetails]) => {
-        //   const metadataToken = +key;
-
-        //   // remember any which are bad
-        //   badCallDetails.push(...methodDetails.calls.filter(isBadCallDetails));
-
-        //   // remember all to be copied into CallsColumns
-        //   methodCalls[metadataToken] = methodDetails.calls
-        //     .filter(isGoodCallDetails)
-        //     .map((callDetails) => ({
-        //       assemblyName: callDetails.assemblyName,
-        //       methodId: callDetails.metadataToken,
-        //     }))
-        //     .filter(distinctCalls);
-
-        //   // return MethodColumns
-        //   return { assemblyName, metadataToken, methodDetails: JSON.stringify(methodDetails) };
-        // });
 
         assemblyCalls.set(assemblyName, new Map<number, { assemblyName: string; methodId: number }[]>(methodCalls));
 
@@ -244,7 +199,7 @@ export class SqlLoaded {
         methodTable.insertMany(methods);
       }
 
-      const getWanted = (assemblyName: string, methodId: number): { namespace: string; wantedTypeId: number } => {
+      const getTypeId = (assemblyName: string, methodId: number): { namespace: string; typeId: number } => {
         // get typeId from methodId
         const typeId = assemblyMethodTypes.get(assemblyName)?.get(methodId);
         if (!typeId) throw new Error("typeId not found");
@@ -253,64 +208,17 @@ export class SqlLoaded {
         if (!found) throw new Error("typeName not found");
         return {
           namespace: found.namespace ?? "(no namespace)",
-          wantedTypeId: found.wantedTypeId ?? found.metadataToken,
+          typeId: found.wantedTypeId ?? found.metadataToken,
         };
       };
-
-      /*
-      const getTypeFromMethod = (assemblyName: string, methodId: number): TypeNameColumns => {
-        // get typeId from methodId
-        const typeId = assemblyMethodTypes[assemblyName][methodId];
-        // get namespace and wantedTypeId from typeId
-        return assemblyTypeNames[assemblyName][typeId];
-      };
-
-      type GetOwnerMethod = (assemblyName: string, nestedType: number) => number | undefined;
-      const nestMethods = () => {
-        // a "nested type" is a compiler-generated type which implements anonymous delegates
-        // they have methods and are defined outside the method which calls the delegate
-        // guess that each is called from only one method
-        const ownedTypes: { [assemblyName: string]: { [nestedType: number]: number } } = {};
-
-        Object.entries(assemblyCalls).forEach(([assemblyName, methodCalls]) =>
-          Object.entries(methodCalls).forEach(([caller, allCalled]) => {
-            const callerId = +caller;
-            // which types is this method calling?
-            allCalled.forEach((calledMethod) => {
-              const calledType = getTypeFromMethod(calledMethod.assemblyName, calledMethod.methodId);
-              if (!calledType.wantedTypeId) return;
-              // sanity check
-              if (
-                calledMethod.assemblyName !== assemblyName ||
-                assemblyMethodTypes[assemblyName][callerId] !== calledType.wantedTypeId
-              )
-                throw new Error("Expect nested type to be called by method within its wanted type");
-              // get or set this type's owner method
-              const ownerMethod = ownedTypes[assemblyName][calledType.metadataToken];
-              if (!ownerMethod) ownedTypes[assemblyName][calledType.metadataToken] == callerId;
-              else if (ownerMethod !== callerId) {
-                throw new Error("Nested type has more than one owner method");
-              }
-            });
-          })
-        );
-
-        const getOwnerMethod: GetOwnerMethod = (assemblyName: string, nestedType: number) =>
-          ownedTypes[assemblyName][nestedType];
-
-        return getOwnerMethod;
-      };
-
-      const getOwnerMethod = nestMethods();
-      */
 
       const callColumns: CallColumns[] = [];
       [...assemblyCalls.entries()].forEach(([assemblyName, methodCalls]) =>
         [...methodCalls.entries()].forEach(([key, calls]) => {
           const methodId = +key;
-          const { namespace: fromNamespace, wantedTypeId: fromTypeId } = getWanted(assemblyName, methodId);
+          const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(assemblyName, methodId);
           calls.forEach((called) => {
-            const { namespace: toNamespace, wantedTypeId: toTypeId } = getWanted(called.assemblyName, called.methodId);
+            const { namespace: toNamespace, typeId: toTypeId } = getTypeId(called.assemblyName, called.methodId);
             callColumns.push({
               fromAssemblyName: assemblyName,
               fromNamespace,
@@ -327,8 +235,8 @@ export class SqlLoaded {
 
       callTable.insertMany(callColumns);
 
-      // => methodNameTable
-      methodNameTable.insertMany(assemblyMethodNames);
+      // const { nestedTypeColumns, errors } = saveNestedTypes(assemblyCalls, assemblyNestedTypes, assemblyMethodTypes);
+      // nestedTypeTable.insertMany(nestedTypeColumns);
 
       // => viewState => _cache => _sqlConfig
       this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes);

@@ -22,3 +22,21 @@ export function distinctor<T>(equals: (lhs: T, rhs: T) => boolean) {
 }
 
 export const uniqueStrings = (strings: string[]): string[] => [...new Set<string>(strings)];
+
+export const getOrSet = <K, V>(map: Map<K, V>, key: K, create: () => V) => {
+  let found = map.get(key);
+  if (!found) {
+    found = create();
+    map.set(key, found);
+  }
+  return found;
+};
+
+export const mapOfMaps = <K, K2, V>(records: [K, K2, V][]): Map<K, Map<K2, V>> => {
+  const result = new Map<K, Map<K2, V>>();
+  records.forEach(([key, key2, value]) => {
+    const map = getOrSet(result, key, () => new Map<K2, V>());
+    map.set(key2, value);
+  });
+  return result;
+};

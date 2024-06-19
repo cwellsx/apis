@@ -8,11 +8,25 @@ import {
   MemberColumns,
   MethodColumns,
   MethodNameColumns,
+  NestedTypeColumns,
   TypeColumns,
   TypeNameColumns,
 } from "./columns";
 
-export const tables = (db: Database) => {
+export const tables = (db: Database, isSchemaChanged: boolean) => {
+  if (isSchemaChanged) {
+    dropTable(db, "assembly");
+    dropTable(db, "type");
+    dropTable(db, "member");
+    dropTable(db, "method");
+    dropTable(db, "error");
+    dropTable(db, "call");
+    dropTable(db, "typeName");
+    dropTable(db, "methodName");
+    dropTable(db, "graphFilter");
+    dropTable(db, "nestedType");
+  }
+
   const assemblyTable = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
     assemblyName: "foo",
     references: "bar",
@@ -84,21 +98,22 @@ export const tables = (db: Database) => {
     clusterBy: "assembly",
     value: "baz",
   });
-
-  const dropTables = (): void => {
-    dropTable(db, "assembly");
-    dropTable(db, "type");
-    dropTable(db, "member");
-    dropTable(db, "method");
-    dropTable(db, "error");
-    dropTable(db, "call");
-    dropTable(db, "typeName");
-    dropTable(db, "methodName");
-    dropTable(db, "graphFilter");
-  };
+  const nestedTypeTable = new SqlTable<NestedTypeColumns>(
+    db,
+    "nestedType",
+    ["assemblyName", "nestedType"],
+    () => false,
+    {
+      assemblyName: "references",
+      nestedType: 0,
+      declaringType: 0,
+      declaringMethod: 0,
+    }
+  );
 
   const deleteTables = (): void => {
     // delete in reverse order
+    nestedTypeTable.deleteAll();
     graphFilterTable.deleteAll();
     methodNameTable.deleteAll();
     typeNameTable.deleteAll();
@@ -111,7 +126,6 @@ export const tables = (db: Database) => {
   };
 
   return {
-    dropTables,
     deleteTables,
     assemblyTable,
     typeTable,
@@ -122,5 +136,6 @@ export const tables = (db: Database) => {
     typeNameTable,
     methodNameTable,
     graphFilterTable,
+    nestedTypeTable,
   };
 };
