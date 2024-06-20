@@ -13,7 +13,21 @@ import {
   TypeNameColumns,
 } from "./columns";
 
-export const tables = (db: Database, isSchemaChanged: boolean) => {
+export type Tables = {
+  assembly: SqlTable<AssemblyColumns>;
+  type: SqlTable<TypeColumns>;
+  member: SqlTable<MemberColumns>;
+  method: SqlTable<MethodColumns>;
+  error: SqlTable<ErrorColumns>;
+  call: SqlTable<CallColumns>;
+  typeName: SqlTable<TypeNameColumns>;
+  methodName: SqlTable<MethodNameColumns>;
+  graphFilter: SqlTable<GraphFilterColumns>;
+  nestedType: SqlTable<NestedTypeColumns>;
+  deleteAll: () => void;
+};
+
+export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
   if (isSchemaChanged) {
     dropTable(db, "assembly");
     dropTable(db, "type");
@@ -27,33 +41,33 @@ export const tables = (db: Database, isSchemaChanged: boolean) => {
     dropTable(db, "nestedType");
   }
 
-  const assemblyTable = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
+  const assembly = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
     assemblyName: "foo",
     references: "bar",
   });
-  const typeTable = new SqlTable<TypeColumns>(db, "type", ["assemblyName", "metadataToken"], () => false, {
+  const type = new SqlTable<TypeColumns>(db, "type", ["assemblyName", "metadataToken"], () => false, {
     assemblyName: "foo",
     metadataToken: 1,
     typeInfo: "bar",
   });
-  const memberTable = new SqlTable<MemberColumns>(db, "member", ["assemblyName", "metadataToken"], () => false, {
+  const member = new SqlTable<MemberColumns>(db, "member", ["assemblyName", "metadataToken"], () => false, {
     assemblyName: "foo",
     metadataToken: 1,
     typeMetadataToken: 1,
     memberType: "methodMembers",
     memberInfo: "bat",
   });
-  const methodTable = new SqlTable<MethodColumns>(db, "method", ["assemblyName", "metadataToken"], () => false, {
+  const method = new SqlTable<MethodColumns>(db, "method", ["assemblyName", "metadataToken"], () => false, {
     assemblyName: "foo",
     metadataToken: 1,
     methodDetails: "bar",
   });
-  const errorTable = new SqlTable<ErrorColumns>(db, "error", "assemblyName", () => false, {
+  const error = new SqlTable<ErrorColumns>(db, "error", "assemblyName", () => false, {
     assemblyName: "foo",
     badTypeInfos: "bar",
     badCallDetails: "baz",
   });
-  const callTable = new SqlTable<CallColumns>(
+  const call = new SqlTable<CallColumns>(
     db,
     "call",
     ["fromAssemblyName", "fromMethodId", "toAssemblyName", "toMethodId"],
@@ -69,7 +83,7 @@ export const tables = (db: Database, isSchemaChanged: boolean) => {
       toMethodId: 0,
     }
   );
-  const typeNameTable = new SqlTable<TypeNameColumns>(
+  const typeName = new SqlTable<TypeNameColumns>(
     db,
     "typeName",
     ["assemblyName", "metadataToken"],
@@ -82,60 +96,48 @@ export const tables = (db: Database, isSchemaChanged: boolean) => {
       wantedTypeId: 0,
     }
   );
-  const methodNameTable = new SqlTable<MethodNameColumns>(
-    db,
-    "methodName",
-    ["assemblyName", "metadataToken"],
-    () => false,
-    {
-      assemblyName: "foo",
-      metadataToken: 0,
-      name: "bar",
-    }
-  );
-  const graphFilterTable = new SqlTable<GraphFilterColumns>(db, "graphFilter", ["viewType", "clusterBy"], () => false, {
+  const methodName = new SqlTable<MethodNameColumns>(db, "methodName", ["assemblyName", "metadataToken"], () => false, {
+    assemblyName: "foo",
+    metadataToken: 0,
+    name: "bar",
+  });
+  const graphFilter = new SqlTable<GraphFilterColumns>(db, "graphFilter", ["viewType", "clusterBy"], () => false, {
     viewType: "references",
     clusterBy: "assembly",
     value: "baz",
   });
-  const nestedTypeTable = new SqlTable<NestedTypeColumns>(
-    db,
-    "nestedType",
-    ["assemblyName", "nestedType"],
-    () => false,
-    {
-      assemblyName: "references",
-      nestedType: 0,
-      declaringType: 0,
-      declaringMethod: 0,
-    }
-  );
+  const nestedType = new SqlTable<NestedTypeColumns>(db, "nestedType", ["assemblyName", "nestedType"], () => false, {
+    assemblyName: "references",
+    nestedType: 0,
+    declaringType: 0,
+    declaringMethod: 0,
+  });
 
-  const deleteTables = (): void => {
+  const deleteAll = (): void => {
     // delete in reverse order
-    nestedTypeTable.deleteAll();
-    graphFilterTable.deleteAll();
-    methodNameTable.deleteAll();
-    typeNameTable.deleteAll();
-    callTable.deleteAll();
-    errorTable.deleteAll();
-    methodTable.deleteAll();
-    memberTable.deleteAll();
-    typeTable.deleteAll();
-    assemblyTable.deleteAll();
+    nestedType.deleteAll();
+    graphFilter.deleteAll();
+    methodName.deleteAll();
+    typeName.deleteAll();
+    call.deleteAll();
+    error.deleteAll();
+    method.deleteAll();
+    member.deleteAll();
+    type.deleteAll();
+    assembly.deleteAll();
   };
 
   return {
-    deleteTables,
-    assemblyTable,
-    typeTable,
-    memberTable,
-    methodTable,
-    errorTable,
-    callTable,
-    typeNameTable,
-    methodNameTable,
-    graphFilterTable,
-    nestedTypeTable,
+    deleteAll,
+    assembly,
+    type,
+    member,
+    method,
+    error,
+    call,
+    typeName,
+    methodName,
+    graphFilter,
+    nestedType,
   };
 };

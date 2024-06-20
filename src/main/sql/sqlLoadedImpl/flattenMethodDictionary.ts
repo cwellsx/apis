@@ -8,7 +8,7 @@ const distinctCalls = distinctor<{ assemblyName: string; methodId: number }>(
   (lhs, rhs) => lhs.assemblyName == rhs.assemblyName && lhs.methodId == rhs.methodId
 );
 
-export const saveMethodDictionary = (
+export const flattenMethodDictionary = (
   assemblyName: string,
   methodDictionary: MethodDictionary
 ): { methodCalls: MethodCalls[]; methods: MethodColumns[]; badCallDetails: BadCallDetails[] } => {

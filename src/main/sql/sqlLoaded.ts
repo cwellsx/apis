@@ -11,21 +11,18 @@ import type {
 import { nameNodeId, typeNodeId } from "../../shared-types";
 import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodDetails, Reflected } from "../loaded";
 import { loadedVersion, validateTypeInfo } from "../loaded";
-import { badTypeInfo } from "../loaded/loadedTypeInfo";
 import { log } from "../log";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../shared-types";
-import { getTypeAndMethodNames, nestTypes } from "../shared-types";
-import { uniqueStrings } from "../shared-types/remove";
+import { getTypeAndMethodNames } from "../shared-types";
 import type {
   CallColumns,
-  ErrorColumns,
   MemberColumns,
   MethodColumns,
   MethodNameColumns,
   SavedTypeInfo,
   TypeNameColumns,
 } from "./sqlLoadedImpl";
-import { saveGoodTypeInfo, saveMethodDictionary, tables } from "./sqlLoadedImpl";
+import { newTables, save } from "./sqlLoadedImpl";
 import { ViewState } from "./viewState";
 
 /*
@@ -77,19 +74,7 @@ export class SqlLoaded {
     const schema = this.viewState.loadedSchemaVersion;
     const isSchemaChanged = schema !== loadedSchemaVersionExpected;
 
-    const {
-      deleteTables,
-      assemblyTable,
-      typeTable,
-      memberTable,
-      methodTable,
-      errorTable,
-      callTable,
-      typeNameTable,
-      methodNameTable,
-      graphFilterTable,
-      nestedTypeTable,
-    } = tables(db, isSchemaChanged);
+    const table = newTables(db, isSchemaChanged);
 
     if (isSchemaChanged) {
       this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
@@ -101,150 +86,19 @@ export class SqlLoaded {
     };
 
     this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
-      // delete in reverse order
-      deleteTables();
+      table.deleteAll();
 
-      log("save reflected.assemblies");
+      save(reflected, table);
 
-      // map methodId to typeId
-      // { [assemblyName: string]: { [methodId: number]: number } } = {};
-      const assemblyMethodTypes = new Map<string, Map<number, number>>();
-
-      // map typeId to TypeNameColumns
-      // { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
-      const assemblyTypeNames = new Map<string, Map<number, TypeNameColumns>>();
-
-      // map nestedTypeId to declaringType
-      // { [assemblyName: string]: { [nestedTypeId: number]: number } } = {};
-      const assemblyNestedTypes = new Map<string, Map<number, number>>();
-
-      const assemblyTypeIds: TypeNodeId[] = [];
-
-      for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
-        const allTypeInfo = validateTypeInfo(assemblyInfo.types);
-
-        // BadTypeInfo[]
-        const bad = badTypeInfo(allTypeInfo);
-        if (bad.length) {
-          errorTable.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallDetails: JSON.stringify([]) });
-        }
-
-        // GoodTypeInfo[]
-        const { typeColumns, memberColumns, methodNameColumns, typeNameColumns } = saveGoodTypeInfo(
-          assemblyName,
-          allTypeInfo.good
-        );
-
-        // update the two Maps
-
-        const methodTypes = new Map<number, number>(
-          memberColumns
-            .filter((member) => member.memberType === "methodMembers")
-            .map((member) => [member.metadataToken, member.typeMetadataToken])
-        );
-        assemblyMethodTypes.set(assemblyName, methodTypes);
-
-        const typeNames = new Map<number, TypeNameColumns>(typeNameColumns.map((it) => [it.metadataToken, it]));
-        assemblyTypeNames.set(assemblyName, typeNames);
-
-        // update the tables
-
-        // => assemblyTable
-        assemblyTable.insert({
-          assemblyName,
-          // uniqueStrings because I've unusually seen an assembly return two references to the same assembly name
-          references: JSON.stringify(uniqueStrings(assemblyInfo.referencedAssemblies)),
-        });
-        // => typeNameTable
-        typeNameTable.insertMany(typeNameColumns);
-        // => typeTable
-        typeTable.insertMany(typeColumns);
-        // => memberTable
-        memberTable.insertMany(memberColumns);
-        // => methodNameTable
-        methodNameTable.insertMany(methodNameColumns);
-
-        assemblyTypeIds.push(...typeColumns.map((it) => typeNodeId(assemblyName, it.metadataToken)));
-
-        const { unwantedTypes } = nestTypes(allTypeInfo.good);
-        assemblyNestedTypes.set(
-          assemblyName,
-          new Map<number, number>(Object.entries(unwantedTypes).map(([key, value]) => [+key, value]))
-        );
-      }
-
-      log("save reflected.assemblyMethods");
-
-      // [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
-      const assemblyCalls = new Map<string, Map<number, { assemblyName: string; methodId: number }[]>>();
-
-      for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
-        const { methodCalls, methods, badCallDetails } = saveMethodDictionary(assemblyName, methodDictionary);
-
-        assemblyCalls.set(assemblyName, new Map<number, { assemblyName: string; methodId: number }[]>(methodCalls));
-
-        // => errorsTable
-        if (badCallDetails.length) {
-          const found = errorTable.selectOne({ assemblyName });
-          const columns: ErrorColumns = {
-            assemblyName,
-            badTypeInfos: found?.badTypeInfos ?? JSON.stringify([]),
-            badCallDetails: JSON.stringify(badCallDetails),
-          };
-          if (found) errorTable.update(columns);
-          else errorTable.insert(columns);
-        }
-
-        // => methodTable
-        methodTable.insertMany(methods);
-      }
-
-      const getTypeId = (assemblyName: string, methodId: number): { namespace: string; typeId: number } => {
-        // get typeId from methodId
-        const typeId = assemblyMethodTypes.get(assemblyName)?.get(methodId);
-        if (!typeId) throw new Error("typeId not found");
-        // get namespace and wantedTypeId from typeId
-        const found = assemblyTypeNames.get(assemblyName)?.get(typeId);
-        if (!found) throw new Error("typeName not found");
-        return {
-          namespace: found.namespace ?? "(no namespace)",
-          typeId: found.wantedTypeId ?? found.metadataToken,
-        };
-      };
-
-      const callColumns: CallColumns[] = [];
-      [...assemblyCalls.entries()].forEach(([assemblyName, methodCalls]) =>
-        [...methodCalls.entries()].forEach(([key, calls]) => {
-          const methodId = +key;
-          const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(assemblyName, methodId);
-          calls.forEach((called) => {
-            const { namespace: toNamespace, typeId: toTypeId } = getTypeId(called.assemblyName, called.methodId);
-            callColumns.push({
-              fromAssemblyName: assemblyName,
-              fromNamespace,
-              fromTypeId,
-              fromMethodId: methodId,
-              toAssemblyName: called.assemblyName,
-              toNamespace,
-              toTypeId,
-              toMethodId: called.methodId,
-            });
-          });
-        })
-      );
-
-      callTable.insertMany(callColumns);
-
-      // const { nestedTypeColumns, errors } = saveNestedTypes(assemblyCalls, assemblyNestedTypes, assemblyMethodTypes);
-      // nestedTypeTable.insertMany(nestedTypeColumns);
-
-      // => viewState => _cache => _sqlConfig
       this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes);
 
       this.writeLeafVisible(
         "references",
         Object.keys(reflected.assemblies).map((assemblyName) => nameNodeId("assembly", assemblyName))
       );
+      const assemblyTypeIds: TypeNodeId[] = table.type
+        .selectAll()
+        .map((type) => typeNodeId(type.assemblyName, type.metadataToken));
       this.writeLeafVisible("apis", assemblyTypeIds);
 
       log("save complete");
@@ -259,7 +113,7 @@ export class SqlLoaded {
       loadedSchemaVersionExpected !== this.viewState.loadedSchemaVersion;
 
     this.readAssemblyReferences = () =>
-      assemblyTable.selectAll().reduce<AssemblyReferences>((found, entry) => {
+      table.assembly.selectAll().reduce<AssemblyReferences>((found, entry) => {
         found[entry.assemblyName] = JSON.parse(entry.references);
         return found;
       }, {});
@@ -268,12 +122,12 @@ export class SqlLoaded {
       const where = { assemblyName };
 
       // all the bad types are JSON in a single record
-      const errors = errorTable.selectWhere(where);
+      const errors = table.error.selectWhere(where);
       const badTypes: BadTypeInfo[] = errors.length > 0 ? JSON.parse(errors[0].badTypeInfos) : [];
       const allTypeInfo = validateTypeInfo(badTypes);
 
       // all the good types are JSON in multiple records
-      const savedTypes: SavedTypeInfo[] = typeTable.selectWhere(where).map((columns) => JSON.parse(columns.typeInfo));
+      const savedTypes: SavedTypeInfo[] = table.type.selectWhere(where).map((columns) => JSON.parse(columns.typeInfo));
       allTypeInfo.good = savedTypes.map((type) => ({ ...type, members: {} }));
 
       const goodTypeDictionary: GoodTypeDictionary = {};
@@ -281,7 +135,7 @@ export class SqlLoaded {
 
       // all the members are saved separately
       // so read them from a different table and reinsert them into the GoodTypeInfo instances
-      memberTable.selectWhere(where).forEach((member) => {
+      table.member.selectWhere(where).forEach((member) => {
         const type = goodTypeDictionary[member.typeMetadataToken];
         if (!type.members[member.memberType]) type.members[member.memberType] = [];
         type.members[member.memberType]?.push(JSON.parse(member.memberInfo));
@@ -291,7 +145,7 @@ export class SqlLoaded {
     };
 
     this.readErrors = (): ErrorsInfo[] =>
-      errorTable.selectAll().map((errorColumns) => ({
+      table.error.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
         badTypeInfos: JSON.parse(errorColumns.badTypeInfos),
         badCallDetails: JSON.parse(errorColumns.badCallDetails),
@@ -307,10 +161,10 @@ export class SqlLoaded {
         }
       })();
 
-      const result = callTable.selectCustom(true, `${fromName} != ${toName}`);
+      const result = table.call.selectCustom(true, `${fromName} != ${toName}`);
       expandedClusterNames.forEach((clusterName) =>
         result.push(
-          ...callTable.selectCustom(true, `${fromName} == ${toName} AND ${fromName} == @clusterName`, {
+          ...table.call.selectCustom(true, `${fromName} == ${toName} AND ${fromName} == @clusterName`, {
             clusterName,
           })
         )
@@ -348,7 +202,7 @@ export class SqlLoaded {
       where[assemblyNameField] = assemblyName;
       where[methodIdField] = methodId;
 
-      const rows = callTable.selectCustom(
+      const rows = table.call.selectCustom(
         true,
         `${assemblyNameField} == @${assemblyNameField} AND ${methodIdField} == @${methodIdField}`,
         where
@@ -378,12 +232,12 @@ export class SqlLoaded {
       // use MemberColumns to get type Id
       const { assemblyName, metadataToken } = nodeId;
       const memberKey: Partial<MemberColumns> = { assemblyName, metadataToken };
-      const member = memberTable.selectOne(memberKey);
+      const member = table.member.selectOne(memberKey);
       if (!member) throw new Error(`Member not found ${JSON.stringify(memberKey)}`);
 
       const getTypeName = (typeMetadataToken: number): TypeNameColumns => {
         const typeNamekey: Partial<TypeNameColumns> = { assemblyName, metadataToken: typeMetadataToken };
-        const typeName = typeNameTable.selectOne(typeNamekey);
+        const typeName = table.typeName.selectOne(typeNamekey);
         if (!typeName) throw new Error(`Type not found ${JSON.stringify(typeNamekey)}`);
         return typeName;
       };
@@ -406,7 +260,7 @@ export class SqlLoaded {
     this.readMethodDetails = (nodeId: MethodNodeId): MethodDetails => {
       const { assemblyName, metadataToken } = nodeId;
       const methodKey: Partial<MethodColumns> = { assemblyName, metadataToken };
-      const method = methodTable.selectOne(methodKey);
+      const method = table.method.selectOne(methodKey);
       if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
       return JSON.parse(method.methodDetails) as MethodDetails;
     };
@@ -417,20 +271,20 @@ export class SqlLoaded {
         assemblyName: typeAndMethodId.assemblyName,
         metadataToken: typeAndMethodId.typeId,
       };
-      const typeName = typeNameTable.selectOne(typeKey);
+      const typeName = table.typeName.selectOne(typeKey);
       const methodKey: Partial<MethodNameColumns> = {
         assemblyName: typeAndMethodId.assemblyName,
         metadataToken: typeAndMethodId.methodId,
       };
-      const methodName = methodNameTable.selectOne(methodKey);
+      const methodName = table.methodName.selectOne(methodKey);
       if (!typeName) throw new Error(`Type name not found ${JSON.stringify(typeAndMethodId)}`);
       if (!methodName) throw new Error(`Method name not found ${JSON.stringify(typeAndMethodId)}`);
       return { methodName: methodName.name, typeName: typeName.decoratedName };
     };
 
     this.readNames = (): GetTypeOrMethodName => {
-      const typeNames = typeNameTable.selectAll();
-      const methodNames = methodNameTable.selectAll();
+      const typeNames = table.typeName.selectAll();
+      const methodNames = table.methodName.selectAll();
       return getTypeAndMethodNames(
         typeNames.map((typeNameColumns) => ({
           assemblyName: typeNameColumns.assemblyName,
@@ -446,19 +300,19 @@ export class SqlLoaded {
     };
 
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {
-      const found = graphFilterTable.selectOne({ viewType, clusterBy: "leafVisible" });
+      const found = table.graphFilter.selectOne({ viewType, clusterBy: "leafVisible" });
       if (!found) throw new Error("readLeafVisible nodes not found");
       return JSON.parse(found.value);
     };
     this.readGroupExpanded = (viewType: CommonGraphViewType, clusterBy: ClusterBy): NodeId[] => {
-      const found = graphFilterTable.selectOne({ viewType, clusterBy });
+      const found = table.graphFilter.selectOne({ viewType, clusterBy });
       return !found ? [] : JSON.parse(found.value);
     };
     this.writeLeafVisible = (viewType: CommonGraphViewType, leafVisible: NodeId[]): void => {
-      graphFilterTable.upsert({ viewType, clusterBy: "leafVisible", value: JSON.stringify(leafVisible) });
+      table.graphFilter.upsert({ viewType, clusterBy: "leafVisible", value: JSON.stringify(leafVisible) });
     };
     this.writeGroupExpanded = (viewType: CommonGraphViewType, clusterBy: ClusterBy, groupExpanded: NodeId[]): void => {
-      graphFilterTable.upsert({ viewType, clusterBy, value: JSON.stringify(groupExpanded) });
+      table.graphFilter.upsert({ viewType, clusterBy, value: JSON.stringify(groupExpanded) });
     };
     this.readGraphFilter = (viewType: CommonGraphViewType, clusterBy: ClusterBy): GraphFilter => ({
       leafVisible: this.readLeafVisible(viewType),

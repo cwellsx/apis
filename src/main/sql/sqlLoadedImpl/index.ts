@@ -9,8 +9,7 @@ export type {
   TypeColumns,
   TypeNameColumns,
 } from "./columns";
-export { saveGoodTypeInfo } from "./saveGoodTypeInfo";
-export { saveMethodDictionary } from "./saveMethodDictionary";
-export { saveNestedTypes } from "./saveNestedTypes";
+export { save } from "./save";
 export type { SavedTypeInfo } from "./savedTypeInfo";
-export { tables } from "./tables";
+export { newTables } from "./tables";
+export type { Tables } from "./tables";

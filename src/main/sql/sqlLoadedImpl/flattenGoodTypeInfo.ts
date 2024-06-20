@@ -3,7 +3,7 @@ import { getTypeInfoName, nestTypes } from "../../shared-types";
 import { MemberColumns, MethodNameColumns, TypeColumns, TypeNameColumns } from "./columns";
 import { createSavedTypeInfo } from "./savedTypeInfo";
 
-export const saveGoodTypeInfo = (
+export const flattenGoodTypeInfo = (
   assemblyName: string,
   goodTypeInfos: GoodTypeInfo[]
 ): {
