@@ -9,6 +9,7 @@ export type {
   TypeColumns,
   TypeNameColumns,
 } from "./columns";
+export { getTypeAndMethodNames } from "./getTypeAndMethodNames";
 export { save } from "./save";
 export type { SavedTypeInfo } from "./savedTypeInfo";
 export { newTables } from "./tables";

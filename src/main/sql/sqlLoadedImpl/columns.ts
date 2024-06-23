@@ -34,16 +34,19 @@ export type ErrorColumns = {
   badCallDetails: string;
 };
 
-export type CallColumns = {
-  // this could be refactored as one table with three or four columns, plus a join table
+export type LoadedCall = {
   fromAssemblyName: string;
-  fromNamespace: string;
-  fromTypeId: number;
   fromMethodId: number;
   toAssemblyName: string;
+  toMethodId: number;
+};
+
+export type CallColumns = LoadedCall & {
+  // this could be refactored as one table with three or four columns, plus a join table
+  fromNamespace: string;
+  fromTypeId: number;
   toNamespace: string;
   toTypeId: number;
-  toMethodId: number;
 };
 
 export type TypeNameColumns = {
@@ -51,7 +54,7 @@ export type TypeNameColumns = {
   metadataToken: number;
   namespace: string | null;
   decoratedName: string;
-  wantedTypeId: number | null;
+  //wantedTypeId: number | null;
 };
 
 export type MethodNameColumns = {
@@ -66,10 +69,17 @@ export type GraphFilterColumns = {
   value: string;
 };
 
-// this table is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
-export type NestedTypeColumns = {
+export type DeclaringTypeColumns = {
   assemblyName: string;
   nestedType: number;
   declaringType: number;
-  declaringMethod: number;
+};
+
+// this table is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
+export type WantedTypeColumns = {
+  assemblyName: string;
+  nestedType: number;
+  wantedType: number;
+  wantedNamespace: string | undefined;
+  wantedMethod: number;
 };

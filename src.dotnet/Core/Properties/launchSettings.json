@@ -2,7 +2,7 @@
   "profiles": {
     "Core": {
       "commandName": "Project",
-      "commandLineArgs": "C:\\Users\\Christopher\\Source\\Repos\\apis\\src.dotnet\\Core\\bin\\Debug\\net5.0"
+      "commandLineArgs": "C:\\Users\\Christopher\\Source\\Repos\\apis\\src.dotnet\\Core\\bin\\Release\\net5.0"
     }
   }
 }

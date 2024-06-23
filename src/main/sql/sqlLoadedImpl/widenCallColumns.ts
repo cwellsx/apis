@@ -1,13 +1,9 @@
 import { mapOfMaps } from "../../shared-types";
-import { CallColumns, TypeNameColumns } from "./columns";
+import { CallColumns, LoadedCall, TypeNameColumns } from "./columns";
 import { Tables } from "./tables";
 
-export type GetCallColumns = (
-  fromAssemblyName: string,
-  fromMethodId: number,
-  toAssemblyName: string,
-  toMethodId: number
-) => CallColumns;
+export type GetCallColumns = (loaded: LoadedCall) => CallColumns;
+
 export const widenCallColumns = (table: Tables): GetCallColumns => {
   // read previously-saved data from tables into map-of-maps
   const assemblyMethodTypes: Map<string, Map<number, number>> = mapOfMaps(
@@ -33,28 +29,14 @@ export const widenCallColumns = (table: Tables): GetCallColumns => {
     if (!found) throw new Error("typeName not found");
     return {
       namespace: found.namespace ?? "(no namespace)",
-      typeId: found.wantedTypeId ?? found.metadataToken,
+      typeId: /*found.wantedTypeId ??*/ found.metadataToken,
     };
   };
 
-  const getCallColumns = (
-    fromAssemblyName: string,
-    fromMethodId: number,
-    toAssemblyName: string,
-    toMethodId: number
-  ) => {
-    const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(fromAssemblyName, fromMethodId);
-    const { namespace: toNamespace, typeId: toTypeId } = getTypeId(toAssemblyName, toMethodId);
-    return {
-      fromAssemblyName,
-      fromNamespace,
-      fromTypeId,
-      fromMethodId,
-      toAssemblyName,
-      toNamespace,
-      toTypeId,
-      toMethodId,
-    };
+  const getCallColumns = (loaded: LoadedCall) => {
+    const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(loaded.fromAssemblyName, loaded.fromMethodId);
+    const { namespace: toNamespace, typeId: toTypeId } = getTypeId(loaded.toAssemblyName, loaded.toMethodId);
+    return { ...loaded, fromNamespace, fromTypeId, toNamespace, toTypeId };
   };
 
   return getCallColumns;

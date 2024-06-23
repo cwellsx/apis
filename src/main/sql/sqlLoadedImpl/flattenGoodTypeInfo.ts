@@ -1,5 +1,5 @@
 import { GoodTypeInfo, Members } from "../../loaded";
-import { getTypeInfoName, nestTypes } from "../../shared-types";
+import { getTypeInfoName } from "../../shared-types";
 import { MemberColumns, MethodNameColumns, TypeColumns, TypeNameColumns } from "./columns";
 import { createSavedTypeInfo } from "./savedTypeInfo";
 
@@ -57,14 +57,11 @@ export const flattenGoodTypeInfo = (
 
   // type names
 
-  const { unwantedTypes } = nestTypes(goodTypeInfos);
   const typeNameColumns: TypeNameColumns[] = goodTypeInfos.map((typeInfo) => ({
     assemblyName,
     metadataToken: typeInfo.typeId.metadataToken,
     namespace: typeInfo.typeId.namespace ?? null,
     decoratedName: getTypeInfoName(typeInfo),
-    // the wantedTypeId is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
-    wantedTypeId: unwantedTypes[typeInfo.typeId.metadataToken] ?? null,
   }));
 
   return { typeColumns, memberColumns, methodNameColumns, typeNameColumns };

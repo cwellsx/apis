@@ -1,5 +1,5 @@
-import type { GoodTypeInfo, MethodDictionary, Reflected } from "../../loaded";
-import { badTypeInfo, validateTypeInfo } from "../../loaded";
+import type { GoodTypeInfo, MethodDictionary, NamedTypeInfo, Reflected } from "../../loaded";
+import { badTypeInfo, namedTypeInfo, validateTypeInfo } from "../../loaded";
 import { Tables } from "./tables";
 
 import { log } from "../../log";
@@ -8,7 +8,9 @@ import { uniqueStrings } from "../../shared-types";
 import type { ErrorColumns } from "./columns";
 import { flattenGoodTypeInfo } from "./flattenGoodTypeInfo";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
+import { flattenNamedTypeInfo } from "./flattenNamedTypeInfo";
 import { GetCallColumns, widenCallColumns } from "./widenCallColumns";
+import { SetWantedMethods, widenWantedMethods } from "./widenWantedMethods";
 
 /*
   Save the namespace in CallColumns, because that is:
@@ -20,71 +22,58 @@ import { GetCallColumns, widenCallColumns } from "./widenCallColumns";
   so do all reflected.assemblies to get MapMethodTypes before doing any reflected.assemblyMethods
 */
 
-const saveReflectedAssemblies = (assemblyName: string, good: GoodTypeInfo[], table: Tables): void => {
-  // GoodTypeInfo[]
+const saveGoodTypeInfo = (assemblyName: string, good: GoodTypeInfo[], table: Tables): void => {
   const { typeColumns, memberColumns, methodNameColumns, typeNameColumns } = flattenGoodTypeInfo(assemblyName, good);
 
-  // => typeNameTable
   table.typeName.insertMany(typeNameColumns);
-  // => typeTable
   table.type.insertMany(typeColumns);
-  // => memberTable
   table.member.insertMany(memberColumns);
-  // => methodNameTable
   table.methodName.insertMany(methodNameColumns);
 };
 
-type AssemblyMethods = [assemblyName: string, methodDictionary: MethodDictionary];
-const saveAssemblyMethods = (allAssemblyMethods: AssemblyMethods[], table: Tables): void => {
-  const getCallColumns: GetCallColumns = widenCallColumns(table);
+const saveNamedTypeInfo = (assemblyName: string, named: NamedTypeInfo[], table: Tables): void => {
+  const { declaringTypeColumns, wantedTypeColumns } = flattenNamedTypeInfo(assemblyName, named);
 
-  for (const [assemblyName, methodDictionary] of allAssemblyMethods) {
-    const { methodCalls, methods, badCallDetails } = flattenMethodDictionary(assemblyName, methodDictionary);
+  table.declaringType.insertMany(declaringTypeColumns);
+  table.wantedType.insertMany(wantedTypeColumns);
+};
 
-    // => errorsTable
-    if (badCallDetails.length) {
-      const found = table.error.selectOne({ assemblyName });
-      const columns: ErrorColumns = {
-        assemblyName,
-        badTypeInfos: found?.badTypeInfos ?? JSON.stringify([]),
-        badCallDetails: JSON.stringify(badCallDetails),
-      };
-      if (found) table.error.update(columns);
-      else table.error.insert(columns);
-    }
+const saveAssemblyMethods = (
+  assemblyName: string,
+  methodDictionary: MethodDictionary,
+  getCallColumns: GetCallColumns,
+  setWantedMethods: SetWantedMethods,
+  table: Tables
+): void => {
+  const { callColumns, methods, badCallDetails } = flattenMethodDictionary(
+    assemblyName,
+    methodDictionary,
+    getCallColumns
+  );
 
-    // => methodTable
-    table.method.insertMany(methods);
-
-    const callColumns = methodCalls
-      .map(([fromMethodId, calls]) =>
-        calls.map(({ assemblyName: toAssemblyName, methodId: toMethodId }) =>
-          getCallColumns(assemblyName, fromMethodId, toAssemblyName, toMethodId)
-        )
-      )
-      .flat();
-
-    // => call
-    table.call.insertMany(callColumns);
+  // => errorsTable
+  if (badCallDetails.length) {
+    const found = table.error.selectOne({ assemblyName });
+    const columns: ErrorColumns = {
+      assemblyName,
+      badTypeInfos: found?.badTypeInfos ?? JSON.stringify([]),
+      badCallDetails: JSON.stringify(badCallDetails),
+    };
+    if (found) table.error.update(columns);
+    else table.error.insert(columns);
   }
+
+  // => methodTable
+  table.method.insertMany(methods);
+
+  // => call
+  table.call.insertMany(callColumns);
+
+  setWantedMethods(assemblyName, callColumns);
 };
 
 export const save = (reflected: Reflected, table: Tables): void => {
   log("save reflected.assemblies");
-
-  // // map methodId to typeId
-  // // { [assemblyName: string]: { [methodId: number]: number } } = {};
-  // const assemblyMethodTypes = new Map<string, Map<number, number>>();
-
-  // // map typeId to TypeNameColumns
-  // // { [assemblyName: string]: { [typeId: number]: TypeNameColumns } } = {};
-  // const assemblyTypeNames = new Map<string, Map<number, TypeNameColumns>>();
-
-  // // map nestedTypeId to declaringType
-  // // { [assemblyName: string]: { [nestedTypeId: number]: number } } = {};
-  // const assemblyNestedTypes = new Map<string, Map<number, number>>();
-
-  // const assemblyTypeIds: TypeNodeId[] = [];
 
   for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
     const allTypeInfo = validateTypeInfo(assemblyInfo.types);
@@ -96,7 +85,10 @@ export const save = (reflected: Reflected, table: Tables): void => {
     }
 
     // GoodTypeInfo[]
-    saveReflectedAssemblies(assemblyName, allTypeInfo.good, table);
+    saveGoodTypeInfo(assemblyName, allTypeInfo.good, table);
+
+    // NamedTypeInfo[]
+    saveNamedTypeInfo(assemblyName, namedTypeInfo(allTypeInfo), table);
 
     // referencedAssemblies[]
     table.assembly.insert({
@@ -107,65 +99,12 @@ export const save = (reflected: Reflected, table: Tables): void => {
   }
 
   log("save reflected.assemblyMethods");
-  saveAssemblyMethods(Object.entries(reflected.assemblyMethods), table);
+  const getCallColumns: GetCallColumns = widenCallColumns(table);
+  const { setWantedMethods, updateWantedTypes } = widenWantedMethods(table);
 
-  // // [assemblyName: string]: { [methodId: number]: { assemblyName: string; methodId: number }[] };
-  // const assemblyCalls = new Map<string, Map<number, { assemblyName: string; methodId: number }[]>>();
+  for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
+    saveAssemblyMethods(assemblyName, methodDictionary, getCallColumns, setWantedMethods, table);
+  }
 
-  // for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
-  //   const { methodCalls, methods, badCallDetails } = flattenMethodDictionary(assemblyName, methodDictionary);
-
-  //   assemblyCalls.set(assemblyName, new Map<number, { assemblyName: string; methodId: number }[]>(methodCalls));
-
-  //   // => errorsTable
-  //   if (badCallDetails.length) {
-  //     const found = table.error.selectOne({ assemblyName });
-  //     const columns: ErrorColumns = {
-  //       assemblyName,
-  //       badTypeInfos: found?.badTypeInfos ?? JSON.stringify([]),
-  //       badCallDetails: JSON.stringify(badCallDetails),
-  //     };
-  //     if (found) table.error.update(columns);
-  //     else table.error.insert(columns);
-  //   }
-
-  //   // => methodTable
-  //   table.method.insertMany(methods);
-  // }
-
-  // const getTypeId = (assemblyName: string, methodId: number): { namespace: string; typeId: number } => {
-  //   // get typeId from methodId
-  //   const typeId = assemblyMethodTypes.get(assemblyName)?.get(methodId);
-  //   if (!typeId) throw new Error("typeId not found");
-  //   // get namespace and wantedTypeId from typeId
-  //   const found = assemblyTypeNames.get(assemblyName)?.get(typeId);
-  //   if (!found) throw new Error("typeName not found");
-  //   return {
-  //     namespace: found.namespace ?? "(no namespace)",
-  //     typeId: found.wantedTypeId ?? found.metadataToken,
-  //   };
-  // };
-
-  // const callColumns: CallColumns[] = [];
-  // [...assemblyCalls.entries()].forEach(([assemblyName, methodCalls]) =>
-  //   [...methodCalls.entries()].forEach(([key, calls]) => {
-  //     const methodId = +key;
-  //     const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(assemblyName, methodId);
-  //     calls.forEach((called) => {
-  //       const { namespace: toNamespace, typeId: toTypeId } = getTypeId(called.assemblyName, called.methodId);
-  //       callColumns.push({
-  //         fromAssemblyName: assemblyName,
-  //         fromNamespace,
-  //         fromTypeId,
-  //         fromMethodId: methodId,
-  //         toAssemblyName: called.assemblyName,
-  //         toNamespace,
-  //         toTypeId,
-  //         toMethodId: called.methodId,
-  //       });
-  //     });
-  //   })
-  // );
-
-  // table.call.insertMany(callColumns);
+  updateWantedTypes();
 };

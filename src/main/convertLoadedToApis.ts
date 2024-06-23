@@ -3,8 +3,8 @@ import { Parent, methodNodeId as getMethodNodeId, isParent, typeNodeId } from ".
 import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import { log } from "./log";
-import type { Call, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
 import { Edges, NodeIdMap } from "./shared-types";
+import type { Call, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
 
 export const convertLoadedToApis = (
   calls: Call[],

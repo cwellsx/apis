@@ -1,20 +1,22 @@
+import { getAppFilename } from "../fs";
 import { log } from "../log";
+import type { DataSource } from "./sqlConfig";
 import { SqlConfig } from "./sqlConfig";
 import { SqlCustom } from "./sqlCustom";
 import { createSqlDatabase } from "./sqlDatabase";
 import { SqlLoaded } from "./sqlLoaded";
 
-export function createSqlLoaded(filename: string): SqlLoaded {
+export function createSqlLoaded(dataSource: DataSource): SqlLoaded {
   log("createSqlLoaded");
-  return new SqlLoaded(createSqlDatabase(filename));
+  return new SqlLoaded(createSqlDatabase(getAppFilename(`${dataSource.type}-${dataSource.hash}.db`)));
 }
 
-export function createSqlCustom(filename: string): SqlCustom {
+export function createSqlCustom(dataSource: DataSource): SqlCustom {
   log("createSqlCustom");
-  return new SqlCustom(createSqlDatabase(filename));
+  return new SqlCustom(createSqlDatabase(getAppFilename(`${dataSource.type}-${dataSource.hash}.db`)));
 }
 
 export function createSqlConfig(filename: string): SqlConfig {
   log("createSqlConfig");
-  return new SqlConfig(createSqlDatabase(filename));
+  return new SqlConfig(createSqlDatabase(getAppFilename(filename)));
 }

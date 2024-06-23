@@ -26,6 +26,13 @@ Generally:
 
 Improve the software first, then the documentation
 
+- `*.ts`
+
+  - Review where nestTypes is used and try to remove it
+  - Use WantedTypeColumns to process the output
+  - Make some of the app options conditionally visible
+  - Display errors from widenWantedMethods
+
 - `*.cs`
 
   - Fix the use case where the generic declaringType is in a Microsoft assembly

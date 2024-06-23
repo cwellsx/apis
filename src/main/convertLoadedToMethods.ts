@@ -17,8 +17,8 @@ import {
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
 import { log } from "./log";
-import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./shared-types";
 import { Edges, NodeIdMap } from "./shared-types";
+import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
 
 /*
   exported

@@ -3,14 +3,15 @@ import { SqlTable, dropTable } from "../sqlTable";
 import {
   AssemblyColumns,
   CallColumns,
+  DeclaringTypeColumns,
   ErrorColumns,
   GraphFilterColumns,
   MemberColumns,
   MethodColumns,
   MethodNameColumns,
-  NestedTypeColumns,
   TypeColumns,
   TypeNameColumns,
+  WantedTypeColumns,
 } from "./columns";
 
 export type Tables = {
@@ -23,7 +24,8 @@ export type Tables = {
   typeName: SqlTable<TypeNameColumns>;
   methodName: SqlTable<MethodNameColumns>;
   graphFilter: SqlTable<GraphFilterColumns>;
-  nestedType: SqlTable<NestedTypeColumns>;
+  declaringType: SqlTable<DeclaringTypeColumns>;
+  wantedType: SqlTable<WantedTypeColumns>;
   deleteAll: () => void;
 };
 
@@ -87,13 +89,13 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     db,
     "typeName",
     ["assemblyName", "metadataToken"],
-    (key) => key === "namespace" || key === "wantedTypeId",
+    (key) => key === "namespace", //|| key === "wantedTypeId"
     {
       assemblyName: "foo",
       metadataToken: 0,
       namespace: "bar",
       decoratedName: "baz",
-      wantedTypeId: 0,
+      //wantedTypeId: 0,
     }
   );
   const methodName = new SqlTable<MethodNameColumns>(db, "methodName", ["assemblyName", "metadataToken"], () => false, {
@@ -106,16 +108,29 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     clusterBy: "assembly",
     value: "baz",
   });
-  const nestedType = new SqlTable<NestedTypeColumns>(db, "nestedType", ["assemblyName", "nestedType"], () => false, {
+  const declaringType = new SqlTable<DeclaringTypeColumns>(
+    db,
+    "declaringType",
+    ["assemblyName", "nestedType"],
+    () => false,
+    {
+      assemblyName: "references",
+      nestedType: 0,
+      declaringType: 0,
+    }
+  );
+  const wantedType = new SqlTable<WantedTypeColumns>(db, "wantedType", ["assemblyName", "nestedType"], () => false, {
     assemblyName: "references",
     nestedType: 0,
-    declaringType: 0,
-    declaringMethod: 0,
+    wantedType: 0,
+    wantedNamespace: "foo",
+    wantedMethod: 0,
   });
 
   const deleteAll = (): void => {
     // delete in reverse order
-    nestedType.deleteAll();
+    wantedType.deleteAll();
+    declaringType.deleteAll();
     graphFilter.deleteAll();
     methodName.deleteAll();
     typeName.deleteAll();
@@ -138,6 +153,7 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     typeName,
     methodName,
     graphFilter,
-    nestedType,
+    declaringType,
+    wantedType,
   };
 };

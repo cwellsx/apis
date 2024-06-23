@@ -1,4 +1,3 @@
-export type { Direction } from "./direction";
 export { Edges } from "./edge";
 export type { Edge } from "./edge";
 export * from "./memberNames";
@@ -6,7 +5,4 @@ export { nestTypes } from "./nestTypes";
 export * from "./nodeIdUtils";
 export { options } from "./options";
 export type { StringPredicate } from "./predicate";
-export { distinctor, getOrSet, mapOfMaps, remove, replace, uniqueStrings } from "./remove";
-export type { Call, TypeAndMethodId } from "./typeAndMethodId";
-export { getTypeAndMethodNames } from "./typeAndMethodNames";
-export type { GetTypeOrMethodName } from "./typeAndMethodNames";
+export { distinctor, getMapped, getOrSet, mapOfMaps, remove, replace, uniqueStrings } from "./remove";

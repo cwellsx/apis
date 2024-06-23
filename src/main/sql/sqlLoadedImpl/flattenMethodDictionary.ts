@@ -1,41 +1,41 @@
 import { BadCallDetails, MethodDictionary, isBadCallDetails, isGoodCallDetails } from "../../loaded";
 import { distinctor } from "../../shared-types";
-import { MethodColumns } from "./columns";
+import { CallColumns, MethodColumns } from "./columns";
+import { GetCallColumns } from "./widenCallColumns";
 
-type MethodCalls = [number, { assemblyName: string; methodId: number }[]];
-
-const distinctCalls = distinctor<{ assemblyName: string; methodId: number }>(
-  (lhs, rhs) => lhs.assemblyName == rhs.assemblyName && lhs.methodId == rhs.methodId
+const distinctCalls = distinctor<{ toAssemblyName: string; toMethodId: number }>(
+  (lhs, rhs) => lhs.toAssemblyName == rhs.toAssemblyName && lhs.toMethodId == rhs.toMethodId
 );
 
 export const flattenMethodDictionary = (
   assemblyName: string,
-  methodDictionary: MethodDictionary
-): { methodCalls: MethodCalls[]; methods: MethodColumns[]; badCallDetails: BadCallDetails[] } => {
-  const methodCalls: MethodCalls[] = [];
+  methodDictionary: MethodDictionary,
+  getCallColumns: GetCallColumns
+): { callColumns: CallColumns[]; methods: MethodColumns[]; badCallDetails: BadCallDetails[] } => {
+  const callColumns: CallColumns[] = [];
   const badCallDetails: BadCallDetails[] = [];
 
   const methods: MethodColumns[] = Object.entries(methodDictionary).map(([key, methodDetails]) => {
     const metadataToken = +key;
 
-    // remember any which are bad
+    // BadCallDetails[]
     badCallDetails.push(...methodDetails.calls.filter(isBadCallDetails));
 
-    // remember all to be copied into CallsColumns
-    methodCalls.push([
-      metadataToken,
-      methodDetails.calls
+    // CallColumns[]
+    callColumns.push(
+      ...methodDetails.calls
         .filter(isGoodCallDetails)
         .map((callDetails) => ({
-          assemblyName: callDetails.assemblyName,
-          methodId: callDetails.metadataToken,
+          toAssemblyName: callDetails.assemblyName,
+          toMethodId: callDetails.metadataToken,
         }))
-        .filter(distinctCalls),
-    ]);
+        .filter(distinctCalls)
+        .map((call) => getCallColumns({ ...call, fromAssemblyName: assemblyName, fromMethodId: metadataToken }))
+    );
 
     // return MethodColumns
     return { assemblyName, metadataToken, methodDetails: JSON.stringify(methodDetails) };
   });
 
-  return { methodCalls, methods, badCallDetails };
+  return { callColumns, methods, badCallDetails };
 };

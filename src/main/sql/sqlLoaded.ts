@@ -12,8 +12,7 @@ import { nameNodeId, typeNodeId } from "../../shared-types";
 import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodDetails, Reflected } from "../loaded";
 import { loadedVersion, validateTypeInfo } from "../loaded";
 import { log } from "../log";
-import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../shared-types";
-import { getTypeAndMethodNames } from "../shared-types";
+import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
 import type {
   CallColumns,
   MemberColumns,
@@ -22,7 +21,7 @@ import type {
   SavedTypeInfo,
   TypeNameColumns,
 } from "./sqlLoadedImpl";
-import { newTables, save } from "./sqlLoadedImpl";
+import { getTypeAndMethodNames, newTables, save } from "./sqlLoadedImpl";
 import { ViewState } from "./viewState";
 
 /*
@@ -67,7 +66,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-18";
+    const loadedSchemaVersionExpected = "2024-06-22";
 
     this.viewState = new ViewState(db);
 
@@ -242,14 +241,12 @@ export class SqlLoaded {
         return typeName;
       };
 
-      let typeName = getTypeName(member.typeMetadataToken);
-      // if we want a different type then get it again to get the right namespace
-      if (typeName.wantedTypeId) typeName = getTypeName(typeName.wantedTypeId);
-      if (typeName.wantedTypeId) throw new Error(`Wanted type defines a wantedTypeId of its own`);
+      const typeName = getTypeName(member.typeMetadataToken);
 
       return [
         {
           assemblyName,
+          // TODO check that namespace is correct when the type is nested
           namespace: typeName.namespace ?? "(no namespace)",
           methodId: metadataToken,
           typeId: typeName.metadataToken,
@@ -282,22 +279,7 @@ export class SqlLoaded {
       return { methodName: methodName.name, typeName: typeName.decoratedName };
     };
 
-    this.readNames = (): GetTypeOrMethodName => {
-      const typeNames = table.typeName.selectAll();
-      const methodNames = table.methodName.selectAll();
-      return getTypeAndMethodNames(
-        typeNames.map((typeNameColumns) => ({
-          assemblyName: typeNameColumns.assemblyName,
-          metadataToken: typeNameColumns.metadataToken,
-          name: typeNameColumns.decoratedName,
-        })),
-        methodNames.map((methodNameColumns) => ({
-          assemblyName: methodNameColumns.assemblyName,
-          metadataToken: methodNameColumns.metadataToken,
-          name: methodNameColumns.name,
-        }))
-      );
-    };
+    this.readNames = (): GetTypeOrMethodName => getTypeAndMethodNames(table);
 
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {
       const found = table.graphFilter.selectOne({ viewType, clusterBy: "leafVisible" });

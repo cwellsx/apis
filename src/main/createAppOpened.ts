@@ -20,7 +20,7 @@ declare const CORE_EXE: string;
 
 export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotNetApi): Promise<void> => {
   // instantiate the Config SQL
-  const sqlConfig = createSqlConfig(getAppFilename("config.db"));
+  const sqlConfig = createSqlConfig("config.db");
 
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
@@ -44,13 +44,13 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
     log("changeSqlLoaded");
     closeAll();
-    return createSqlLoaded(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
+    return createSqlLoaded(dataSource);
   };
 
   const changeSqlCustom = (dataSource: DataSource): SqlCustom => {
     log("changeSqlCustom");
     closeAll();
-    return createSqlCustom(getAppFilename(`${dataSource.type}-${dataSource.hash}`));
+    return createSqlCustom(dataSource);
   };
 
   /*
@@ -68,6 +68,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         const reflected = await getReflected(dataSource.path);
         // save Reflected
         const jsonPath = getAppFilename(`Reflected.${dataSource.hash}.json`);
+        log(`writeFileSync(${jsonPath})`);
         writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
         sqlLoaded.save(reflected, when, dataSource.hash);
       } else log("!getLoaded");
