@@ -12,6 +12,7 @@ type PanesProps = {
   left: React.ReactNode;
   center: React.ReactNode;
   right?: React.ReactNode;
+  appOptions: React.ReactNode;
   fontSize: number;
   onWheelZoomPercent: OnWheel;
   onWheelFontSize: OnWheel;
@@ -19,7 +20,8 @@ type PanesProps = {
 };
 
 export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) => {
-  const { left, center, right, fontSize, onWheelZoomPercent, onWheelFontSize, rightWidthMaxContent } = props;
+  const { left, center, right, fontSize, appOptions, onWheelZoomPercent, onWheelFontSize, rightWidthMaxContent } =
+    props;
   const leftRef = React.useRef<HTMLDivElement>(null);
   const rightRef = React.useRef<HTMLDivElement>(null);
 
@@ -52,7 +54,8 @@ export const Panes: React.FunctionComponent<PanesProps> = (props: PanesProps) =>
       <div id="group" onWheel={onWheelFontSize} style={style}>
         <div ref={leftRef} className="pane-resizes">
           {left}
-          <span className="zoom">{`${fontSize}px`}</span>
+          <div className="bottom">{appOptions}</div>
+          <div className="zoom">{`${fontSize}px`}</div>
         </div>
       </div>
       <div id="graph" onWheel={onWheelZoomPercent}>

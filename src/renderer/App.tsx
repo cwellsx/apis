@@ -12,7 +12,7 @@ import type {
 } from "../shared-types";
 import { defaultAppOptions, defaultView } from "../shared-types";
 import { Panes } from "./Panes";
-import { getCenter, getLeft, getRight, isGreeting } from "./appViews";
+import { getAppOptions, getCenter, getLeft, getRight, isGreeting } from "./appViews";
 import { log } from "./log";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
@@ -83,6 +83,7 @@ const App: React.FunctionComponent = () => {
         left={getLeft(view, onViewOptions, onGraphFilter, appOptions, onAppOptions)}
         center={getCenter(view, onGraphClick, zoomPercent)}
         right={getRight(details, onDetailClick)}
+        appOptions={getAppOptions(appOptions, onAppOptions)}
         fontSize={fontSize}
         onWheelZoomPercent={onWheelZoomPercent}
         onWheelFontSize={onWheelFontSize}

@@ -15,7 +15,7 @@ import { AssemblyDetails } from "./AssemblyDetails";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
 import { BadCallDetails, MethodDetails } from "./MethodDetails";
-import { Options } from "./Options";
+import { AppOptionsDetails, ViewOptionsDetails } from "./Options";
 import { Tree } from "./Tree";
 
 export function isGreeting(view: View): view is ViewGreeting {
@@ -38,7 +38,7 @@ export const getLeft = (
   const { leafVisible, groupExpanded } = view.graphFilter;
   return (
     <>
-      <Options
+      <ViewOptionsDetails
         viewOptions={view.viewOptions}
         setViewOptions={onViewOptions}
         appOptions={appOptions}
@@ -104,4 +104,8 @@ export const getRight = (details: ViewDetails | undefined, onDetailClick: OnDeta
     case "methodDetails":
       return <MethodDetails methodBody={details} />;
   }
+};
+
+export const getAppOptions = (appOptions: AppOptions, setAppOptions: (appOptions: AppOptions) => void): JSX.Element => {
+  return <AppOptionsDetails appOptions={appOptions} setAppOptions={setAppOptions} />;
 };

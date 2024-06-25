@@ -184,7 +184,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
         height={height}
         className={className}
       />
-      <span className="zoom">{`${zoomPercent}%`}</span>
+      <div className="zoom bottom">{`${zoomPercent}%`}</div>
     </>
   );
 };

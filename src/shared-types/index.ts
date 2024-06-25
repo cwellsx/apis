@@ -9,7 +9,7 @@ export type {
   RendererApi,
 } from "./apis";
 export { defaultAppOptions } from "./appOptions";
-export type { AppOptions } from "./appOptions";
+export type { AppOptions, OptionsType } from "./appOptions";
 export type { AsText, CallStack } from "./callStack";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";

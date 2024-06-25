@@ -4,19 +4,13 @@ import type {
   AppOptions,
   CustomViewOptions,
   GraphViewOptions,
+  OptionsType,
   ReferenceViewOptions,
 } from "../shared-types";
 import "./Options.css";
 import { log } from "./log";
 
 // types
-
-type OptionsProps = {
-  viewOptions: GraphViewOptions;
-  setViewOptions: (viewOptions: GraphViewOptions) => void;
-  appOptions: AppOptions;
-  setAppOptions: (appOptions: AppOptions) => void;
-};
 
 type BooleanState = [value: boolean, setValue: (newValue: boolean) => void];
 
@@ -157,7 +151,7 @@ const Radios: React.FunctionComponent<RadiosProps> = (props: RadiosProps) => {
 
 // React elements
 
-const ShowIntraAssemblyCalls: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
+const ShowIntraAssemblyCalls: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
   const { viewOptions, setViewOptions } = props;
   const booleanState = getShowInternalCalls(viewOptions);
   if (!booleanState) return <></>;
@@ -176,7 +170,7 @@ const ShowIntraAssemblyCalls: React.FunctionComponent<OptionsProps> = (props: Op
   );
 };
 
-const ShowCustom: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
+const ShowCustom: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
   const { viewOptions, setViewOptions } = props;
   if (!isCustomViewOptions(viewOptions)) return <></>;
 
@@ -206,7 +200,7 @@ const ShowCustom: React.FunctionComponent<OptionsProps> = (props: OptionsProps) 
   );
 };
 
-const ShowEdgeLabels: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
+const ShowEdgeLabels: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
   const { viewOptions, setViewOptions } = props;
   const showEdgeLabels = getShowEdgeLabels(viewOptions);
   if (!showEdgeLabels) return <></>;
@@ -236,7 +230,7 @@ const ShowEdgeLabels: React.FunctionComponent<OptionsProps> = (props: OptionsPro
   );
 };
 
-const ShowClustered: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
+const ShowClustered: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
   const { viewOptions, setViewOptions } = props;
   const showClustered = getShowClustered(viewOptions);
   if (!showClustered) {
@@ -282,11 +276,39 @@ const ShowClustered: React.FunctionComponent<OptionsProps> = (props: OptionsProp
   );
 };
 
-export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsProps) => {
-  const { viewOptions, appOptions, setAppOptions } = props;
+type ViewOptionsProps = {
+  viewOptions: GraphViewOptions;
+  setViewOptions: (viewOptions: GraphViewOptions) => void;
+  appOptions: AppOptions;
+  setAppOptions: (appOptions: AppOptions) => void;
+};
 
-  const viewType = viewOptions.viewType;
-  const isClosed = appOptions.detailsClosed?.includes(viewOptions.viewType) ?? false;
+export const ViewOptionsDetails: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
+  const { viewOptions, appOptions, setAppOptions } = props;
+  const { isClosed, onToggle } = detailsClosed(appOptions, setAppOptions, viewOptions.viewType);
+
+  return (
+    <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
+      <summary>Options</summary>
+      {ShowClustered(props)}
+      {ShowCustom(props)}
+      {ShowEdgeLabels(props)}
+      {ShowIntraAssemblyCalls(props)}
+    </details>
+  );
+};
+
+type AppOptionsProps = {
+  appOptions: AppOptions;
+  setAppOptions: (appOptions: AppOptions) => void;
+};
+
+const detailsClosed = (
+  appOptions: AppOptions,
+  setAppOptions: (appOptions: AppOptions) => void,
+  viewType: OptionsType
+) => {
+  const isClosed = appOptions.detailsClosed?.includes(viewType) ?? false;
 
   const onToggle = (element: HTMLDetailsElement) => {
     log(`open=${element.open}`);
@@ -301,14 +323,46 @@ export const Options: React.FunctionComponent<OptionsProps> = (props: OptionsPro
     }
     setAppOptions(appOptions);
   };
+  return { isClosed, onToggle };
+};
+
+export const AppOptionsDetails: React.FunctionComponent<AppOptionsProps> = (props: AppOptionsProps) => {
+  const { appOptions, setAppOptions } = props;
+  const { isClosed, onToggle } = detailsClosed(appOptions, setAppOptions, "app");
 
   return (
     <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
       <summary>Options</summary>
-      {ShowClustered(props)}
-      {ShowCustom(props)}
-      {ShowEdgeLabels(props)}
-      {ShowIntraAssemblyCalls(props)}
+      <p>
+        Show compiler-defines types:
+        <br />
+        <Checkbox
+          label="Types"
+          checked={!!appOptions.showCompilerGeneratedTypes}
+          onChange={(newValue) => {
+            appOptions.showCompilerGeneratedTypes = newValue;
+            setAppOptions(appOptions);
+          }}
+        />
+        <br />
+        <Checkbox
+          label="Methods"
+          checked={!!appOptions.showCompilerGeneratedMethod}
+          onChange={(newValue) => {
+            appOptions.showCompilerGeneratedMethod = newValue;
+            setAppOptions(appOptions);
+          }}
+        />
+        <br />
+        <Checkbox
+          label="View menu"
+          checked={!!appOptions.showCompilerGeneratedMenuItem}
+          onChange={(newValue) => {
+            appOptions.showCompilerGeneratedMenuItem = newValue;
+            setAppOptions(appOptions);
+          }}
+        />
+      </p>
     </details>
   );
 };

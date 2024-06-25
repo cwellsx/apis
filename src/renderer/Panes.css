@@ -18,14 +18,27 @@
 
 .pane-resizes {
   width: max-content;
+  position: relative;
+  min-height: 100%;
+}
+
+.bottom {
+  margin-top: auto;
+}
+
+.pane-resizes, #graph {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+#graph > .zoom {
+  width: 100%;
 }
 
 .zoom {
-  bottom: 0.25rem;
-  right: 0.5rem;
-  position: absolute;
-  z-index: 2;
   font-size: 1rem;
+  text-align: right;
 }
 
 .react-split__pane > * {
