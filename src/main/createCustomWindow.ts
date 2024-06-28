@@ -12,6 +12,7 @@ import type {
 import { viewFeatures } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
+import type { SetViewMenu, ViewMenuItem } from "./menu";
 import { isEdgeId, toggleNodeId } from "./shared-types";
 import { renderer as createRenderer } from "./show";
 import { SqlConfig, SqlCustom } from "./sql";
@@ -21,10 +22,23 @@ export const createCustomWindow = (
   window: BrowserWindow,
   sqlCustom: SqlCustom,
   sqlConfig: SqlConfig,
-  dataSourcePath: string
+  dataSourcePath: string,
+  setViewMenu: SetViewMenu
 ): AppWindow => {
   const renderer = createRenderer(window);
   renderer.showAppOptions(sqlConfig.appOptions);
+
+  const createViewMenu = (): void => {
+    const menuItems: ViewMenuItem[] = [{ label: "Custom JSON", viewType: "custom" }];
+    if (sqlCustom.readErrors().length !== 0) menuItems.push({ label: "Custom JSON syntax errors", viewType: "errors" });
+    const viewMenu = {
+      menuItems,
+      currentViewType: sqlCustom.viewState.viewType,
+      showViewType: (viewType: ViewType): void => openViewType(viewType),
+    };
+    setViewMenu(viewMenu);
+  };
+  createViewMenu();
 
   const setCustomViewOptions = (viewOptions: ViewOptions): void => {
     switch (viewOptions.viewType) {

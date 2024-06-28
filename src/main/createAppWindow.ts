@@ -22,6 +22,8 @@ import { convertCallstackToImage, convertLoadedToCallstack } from "./convertLoad
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
+import type { SetViewMenu, ViewMenu, ViewMenuItem } from "./menu";
+import { createSecondMenu } from "./menu";
 import { showAdjacent } from "./onGraphClick";
 import { getClusterNames, isEdgeId, isMethodNodeId, isNameNodeId, removeNodeId, toggleNodeId } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
@@ -31,10 +33,29 @@ export const createAppWindow = (
   window: BrowserWindow,
   sqlLoaded: SqlLoaded,
   sqlConfig: SqlConfig,
-  dataSourcePath: string
+  dataSourcePath: string,
+  setViewMenu: SetViewMenu
 ): AppWindow & { showMethods: (methodId?: MethodNodeId) => void } => {
   const show = createShow(window);
   const renderer = createRenderer(window);
+
+  const createViewMenu = (): void => {
+    // initialize ViewMenu before the menu is recreated
+    const menuItems: ViewMenuItem[] = [
+      { label: "Assembly references", viewType: "references" },
+      { label: "APIs", viewType: "apis" },
+    ];
+    if (sqlLoaded.readErrors().length !== 0) menuItems.push({ label: ".NET reflection errors", viewType: "errors" });
+    if (sqlConfig.appOptions.showCompilerGeneratedMenuItem)
+      menuItems.push({ label: "Compiler-generated types", viewType: "errors" });
+    const viewMenu: ViewMenu = {
+      menuItems,
+      currentViewType: sqlLoaded.viewState.viewType,
+      showViewType: (viewType: ViewType): void => openViewType(viewType),
+    };
+    setViewMenu(viewMenu);
+  };
+  createViewMenu();
 
   const setViewOptions = (viewOptions: ViewOptions): void => {
     switch (viewOptions.viewType) {
@@ -90,6 +111,7 @@ export const createAppWindow = (
     },
     onAppOptions: (appOptions: AppOptions): void => {
       sqlConfig.appOptions = appOptions;
+      createViewMenu(); // because change appOptions might affect the View menu
       renderer.showAppOptions(appOptions);
     },
     onGraphClick: (graphEvent: GraphEvent): void => {
@@ -159,7 +181,8 @@ export const createAppWindow = (
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
       createSecondWindow().then((secondWindow) => {
-        const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, dataSourcePath);
+        const { setViewMenu } = createSecondMenu(secondWindow);
+        const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, dataSourcePath, setViewMenu);
         secondWindow.setTitle(`Method — ${dataSourcePath}`);
         appWindow.showMethods(nodeId);
       });

@@ -28,10 +28,11 @@ Improve the software first, then the documentation
 
 - `*.ts`
 
-  - Review where nestTypes is used and try to remove it
-  - Use WantedTypeColumns to process the output
   - Make some of the app options conditionally visible
   - Display errors from widenWantedMethods
+  - Try to fix C# to show remaining types
+  - Use WantedTypeColumns to process the output
+  - Review where nestTypes is used and try to remove it
 
 - `*.cs`
 
@@ -41,7 +42,7 @@ Improve the software first, then the documentation
 
   - Remove compiler-types from the list of types
   - Rename the "method" view to "callstack"
-  - Support typeNodeId as well as methodNodeId in in the convertLoadedToMethods implementation
+  - Support typeNodeId as well as methodNodeId in the convertLoadedToMethods implementation
   - Add source code details to the api and callstack views
   - Show subclasses nested inside their superclasses and interfaces
 

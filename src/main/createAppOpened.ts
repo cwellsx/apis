@@ -1,5 +1,4 @@
 import { FileFilter, dialog, type BrowserWindow } from "electron";
-import { ViewType } from "../shared-types";
 import { createAppWindow } from "./createAppWindow";
 import { appWindows } from "./createBrowserWindow";
 import { createCustomWindow } from "./createCustomWindow";
@@ -11,7 +10,7 @@ import { hash } from "./hash";
 import type { Reflected } from "./loaded";
 import { isReflected } from "./loaded";
 import { log } from "./log";
-import { ViewMenu, ViewMenuItem, createMenu } from "./menu";
+import { createAppMenu } from "./menu";
 import { options } from "./shared-types";
 import { show } from "./show";
 import { SqlCustom, SqlLoaded, createSqlConfig, createSqlCustom, createSqlLoaded, type DataSource } from "./sql";
@@ -25,9 +24,6 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
   let sqlCustom: SqlCustom | undefined;
-
-  // not yet the ViewMenu
-  let viewMenu: ViewMenu | undefined;
 
   const closeAll = (): void => {
     if (sqlLoaded) {
@@ -72,23 +68,8 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
         sqlLoaded.save(reflected, when, dataSource.hash);
       } else log("!getLoaded");
-      const appWindow = createAppWindow(mainWindow, sqlLoaded, sqlConfig, dataSource.path);
+      const appWindow = createAppWindow(mainWindow, sqlLoaded, sqlConfig, dataSource.path, setViewMenu);
       appWindow.openViewType();
-
-      // initialize ViewMenu before the menu is recreated
-      const menuItems: ViewMenuItem[] = [
-        { label: "Assembly references", viewType: "references" },
-        { label: "APIs", viewType: "apis" },
-      ];
-      if (sqlLoaded.readErrors().length !== 0) menuItems.push({ label: ".NET reflection errors", viewType: "errors" });
-      viewMenu = {
-        menuItems,
-        getViewType: () => sqlLoaded?.viewState.viewType,
-        showViewType: (viewType?: ViewType): void => {
-          appWindow.openViewType(viewType);
-          setApplicationMenu();
-        },
-      };
     };
 
     const openSqlCustom = async (when: string, getCustom: (path: string) => Promise<CustomNode[]>): Promise<void> => {
@@ -98,20 +79,8 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         const errors = fixCustomJson(nodes);
         sqlCustom.save(nodes, errors, when);
       }
-      const customWindow = createCustomWindow(mainWindow, sqlCustom, sqlConfig, dataSource.path);
+      const customWindow = createCustomWindow(mainWindow, sqlCustom, sqlConfig, dataSource.path, setViewMenu);
       customWindow.openViewType();
-
-      const menuItems: ViewMenuItem[] = [{ label: "Custom JSON", viewType: "custom" }];
-      if (sqlCustom.readErrors().length !== 0)
-        menuItems.push({ label: "Custom JSON syntax errors", viewType: "errors" });
-      viewMenu = {
-        menuItems,
-        getViewType: () => sqlCustom?.viewState.viewType,
-        showViewType: (viewType?: ViewType): void => {
-          customWindow.openViewType(viewType);
-          setApplicationMenu();
-        },
-      };
     };
 
     const readDotNetApi = async (path: string): Promise<Reflected> => {
@@ -130,7 +99,6 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
 
     try {
       log("openDataSource");
-      viewMenu = undefined;
       const path = dataSource.path;
       show(mainWindow).showMessage(`Loading ${path}`, "Loading...");
       switch (dataSource.type) {
@@ -146,8 +114,6 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
       }
       // remember as most-recently-opened iff it opens successfully
       sqlConfig.dataSource = dataSource;
-      // update the list of recently opened paths by recreating the menu
-      setApplicationMenu();
     } catch (error: unknown | Error) {
       show(mainWindow).showException(error);
     }
@@ -192,20 +158,19 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     await openDataSource(dataSource);
   };
 
-  const setApplicationMenu = (): void => {
+  const getRecent = (): string[] => {
     const recent = sqlConfig.recent();
     recent.sort((x, y) => -(x.when - y.when)); // reverse chronological
-    createMenu(
-      openAssemblies,
-      openCustomJson,
-      openCoreJson,
-      recent.map((it) => it.path),
-      openRecent,
-      viewMenu
-    );
+    return recent.map((it) => it.path);
   };
-
-  setApplicationMenu();
+  const { setViewMenu } = createAppMenu(
+    mainWindow,
+    openAssemblies,
+    openCustomJson,
+    openCoreJson,
+    openRecent,
+    getRecent
+  );
 
   if (sqlConfig.dataSource) {
     await openDataSource(sqlConfig.dataSource);

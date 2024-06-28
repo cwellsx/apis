@@ -334,7 +334,7 @@ export const AppOptionsDetails: React.FunctionComponent<AppOptionsProps> = (prop
     <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
       <summary>Options</summary>
       <p>
-        Show compiler-defines types:
+        Show compiler-defined types:
         <br />
         <Checkbox
           label="Types"
