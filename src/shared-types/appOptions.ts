@@ -1,5 +1,5 @@
+import { ViewType } from "./view";
 import { DetailType } from "./viewDetails";
-import { ViewType } from "./viewOptions";
 
 export type OptionsType = ViewType | DetailType | "app";
 

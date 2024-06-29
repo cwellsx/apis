@@ -239,9 +239,7 @@ export const createAppWindow = (
 
     const viewErrors: ViewErrors = {
       errors,
-      viewOptions: {
-        viewType: "errors",
-      },
+      viewType: "errors",
     };
     renderer.showView(viewErrors);
   };
@@ -267,7 +265,7 @@ export const createAppWindow = (
 
   const showWanted = (): void => {
     const wanted = sqlLoaded.readWanted();
-    const viewWanted: ViewWanted = { wanted, viewOptions: { viewType: "wanted" } };
+    const viewWanted: ViewWanted = { wanted, viewType: "wanted" };
     renderer.showView(viewWanted);
   };
 

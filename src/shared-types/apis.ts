@@ -1,8 +1,8 @@
 import type { AppOptions } from "./appOptions";
 import type { DetailEvent, FilterEvent, GraphEvent } from "./events";
+import type { ViewOptions } from "./graphViewOptions";
 import type { View } from "./view";
 import type { ViewDetails } from "./viewDetails";
-import type { ViewOptions } from "./viewOptions";
 
 /*
   The underlying APIs, which the application-specific classes wrap, are:

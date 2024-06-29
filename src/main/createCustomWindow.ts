@@ -114,9 +114,7 @@ export const createCustomWindow = (
 
     const viewErrors: ViewErrors = {
       customErrors,
-      viewOptions: {
-        viewType: "errors",
-      },
+      viewType: "errors",
     };
     renderer.showView(viewErrors);
   };

@@ -37,26 +37,10 @@ export type CustomViewOptions = {
   viewType: "custom";
 };
 
-export type ErrorsViewOptions = {
-  viewType: "errors";
-};
-
-export type GreetingViewOptions = {
-  viewType: "greeting";
-};
-
-export type WantedViewOptions = {
-  viewType: "wanted";
-};
-
 export type GraphViewOptions = ReferenceViewOptions | MethodViewOptions | ApiViewOptions | CustomViewOptions;
 export type GraphViewType = "references" | "methods" | "apis" | "custom";
-export type CommonGraphViewType = Exclude<GraphViewType, "custom">;
 
-export type GraphFilter = {
-  leafVisible: NodeId[];
-  groupExpanded: NodeId[];
-};
+export type CommonGraphViewType = Exclude<GraphViewType, "custom">;
 
 export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"]; details: ("leaf" | "edge")[] }> = {
   references: { leafType: "assembly", details: ["leaf"] },
@@ -65,16 +49,7 @@ export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"]; det
   methods: { leafType: "method", details: ["leaf"] },
 };
 
-export type ViewOptions =
-  | ReferenceViewOptions
-  | MethodViewOptions
-  | ErrorsViewOptions
-  | WantedViewOptions
-  | GreetingViewOptions
-  | CustomViewOptions
-  | ApiViewOptions;
-
-export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom" | "wanted";
+export type ViewOptions = ReferenceViewOptions | MethodViewOptions | CustomViewOptions | ApiViewOptions;
 
 export type AnyGraphViewOptions = Partial<
   Omit<ReferenceViewOptions, "viewType"> &

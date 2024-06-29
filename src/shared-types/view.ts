@@ -1,19 +1,19 @@
 import { CustomError } from "./customError";
 import { ErrorsInfo } from "./errors";
+import { GraphViewOptions } from "./graphViewOptions";
 import { Image } from "./image";
 import { Node } from "./node";
-import {
-  ErrorsViewOptions,
-  GraphFilter,
-  GraphViewOptions,
-  GreetingViewOptions,
-  WantedViewOptions,
-} from "./viewOptions";
+import { NodeId } from "./nodeId";
 import { Wanted } from "./wanted";
 
 /*
   The types of View are distinguished by the viewType which is an element of every viewOptions
 */
+
+export type GraphFilter = {
+  leafVisible: NodeId[];
+  groupExpanded: NodeId[];
+};
 
 export type ViewGraph = {
   // string is a message if there isn't an Image
@@ -25,31 +25,32 @@ export type ViewGraph = {
   groups: Node[];
 
   graphFilter: GraphFilter;
-
   viewOptions: GraphViewOptions;
 };
 
 export type ViewGreeting = {
+  viewType: "greeting";
   greeting: string;
-  viewOptions: GreetingViewOptions;
 };
 
 export type ViewErrors = {
+  viewType: "errors";
   customErrors?: CustomError[];
   errors?: ErrorsInfo[];
-  viewOptions: ErrorsViewOptions;
 };
 
 export type ViewWanted = {
+  viewType: "wanted";
   wanted: Wanted[];
-  viewOptions: WantedViewOptions;
 };
 
-export type View = ViewGraph | ViewGreeting | ViewErrors | ViewWanted;
+export type ViewText = ViewGreeting | ViewErrors | ViewWanted;
+
+export type View = ViewGraph | ViewText;
+
+export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom" | "wanted";
 
 export const defaultView: ViewGreeting = {
   greeting: "No data",
-  viewOptions: {
-    viewType: "greeting",
-  },
+  viewType: "greeting",
 };

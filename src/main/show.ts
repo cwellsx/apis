@@ -12,10 +12,7 @@ export const show = (mainWindow: BrowserWindow): Show => {
   const webContents = mainWindow.webContents;
 
   const showGreeting = (greeting: string): void => {
-    const view: ViewGreeting = {
-      greeting,
-      viewOptions: { viewType: "greeting" },
-    };
+    const view: ViewGreeting = { greeting, viewType: "greeting" };
     log(`showGreeting(${greeting})`);
     webContents.send("showView", view);
   };

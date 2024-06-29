@@ -9,12 +9,14 @@ import type {
   PreloadApis,
   View,
   ViewDetails,
+  ViewGraph,
 } from "../shared-types";
 import { defaultAppOptions, defaultView } from "../shared-types";
 import { Panes } from "./Panes";
-import { getAppOptions, getCenter, getLeft, getRight, isViewGraph } from "./appViews";
 import { log } from "./log";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
+import { getAppOptions, getCenter, getLeft, getRight } from "./viewGraph";
+import { getText } from "./viewText";
 
 declare global {
   export interface Window {
@@ -25,6 +27,8 @@ declare global {
 const mainApi = window.preloadApis.mainApi;
 
 let once = false;
+
+const isViewGraph = (view: View): view is ViewGraph => (view as ViewGraph).viewOptions !== undefined;
 
 const App: React.FunctionComponent = () => {
   const [view, setView] = React.useState<View>(defaultView);
@@ -59,6 +63,11 @@ const App: React.FunctionComponent = () => {
       },
     });
   });
+
+  if (!isViewGraph(view)) {
+    const text = getText(view);
+    return <React.StrictMode>{text}</React.StrictMode>;
+  }
 
   const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
   const onAppOptions: OnAppOptions = (appOptions) => mainApi.onAppOptions(appOptions);

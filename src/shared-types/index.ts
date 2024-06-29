@@ -15,6 +15,18 @@ export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
 export type { ErrorsInfo } from "./errors";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
+export { viewFeatures } from "./graphViewOptions";
+export type {
+  AnyGraphViewOptions,
+  ApiViewOptions,
+  CommonGraphViewType,
+  CustomViewOptions,
+  GraphViewOptions,
+  GraphViewType,
+  MethodViewOptions,
+  ReferenceViewOptions,
+  ViewOptions,
+} from "./graphViewOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { BadCallDetails, BadTypeInfo, MethodNameStrings } from "./loaded";
 export { isParent } from "./node";
@@ -23,21 +35,6 @@ export * from "./nodeId";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown } from "./types";
 export { defaultView } from "./view";
-export type { View, ViewErrors, ViewGraph, ViewGreeting, ViewWanted } from "./view";
+export type { GraphFilter, View, ViewErrors, ViewGraph, ViewGreeting, ViewText, ViewType, ViewWanted } from "./view";
 export type { DetailType, DetailedAssembly, DetailedMethod, ViewDetails } from "./viewDetails";
-export { viewFeatures } from "./viewOptions";
-export type {
-  AnyGraphViewOptions,
-  ApiViewOptions,
-  CommonGraphViewType,
-  CustomViewOptions,
-  GraphFilter,
-  GraphViewOptions,
-  GraphViewType,
-  MethodViewOptions,
-  ReferenceViewOptions,
-  ViewOptions,
-  ViewType,
-  WantedViewOptions,
-} from "./viewOptions";
 export type { Wanted } from "./wanted";
