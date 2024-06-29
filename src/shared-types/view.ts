@@ -2,7 +2,14 @@ import { CustomError } from "./customError";
 import { ErrorsInfo } from "./errors";
 import { Image } from "./image";
 import { Node } from "./node";
-import { ErrorsViewOptions, GraphFilter, GraphViewOptions, GreetingViewOptions } from "./viewOptions";
+import {
+  ErrorsViewOptions,
+  GraphFilter,
+  GraphViewOptions,
+  GreetingViewOptions,
+  WantedViewOptions,
+} from "./viewOptions";
+import { Wanted } from "./wanted";
 
 /*
   The types of View are distinguished by the viewType which is an element of every viewOptions
@@ -33,7 +40,12 @@ export type ViewErrors = {
   viewOptions: ErrorsViewOptions;
 };
 
-export type View = ViewGraph | ViewGreeting | ViewErrors;
+export type ViewWanted = {
+  wanted: Wanted[];
+  viewOptions: WantedViewOptions;
+};
+
+export type View = ViewGraph | ViewGreeting | ViewErrors | ViewWanted;
 
 export const defaultView: ViewGreeting = {
   greeting: "No data",

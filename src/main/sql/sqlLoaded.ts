@@ -7,11 +7,13 @@ import type {
   MethodNodeId,
   NodeId,
   TypeNodeId,
+  Wanted,
 } from "../../shared-types";
-import { nameNodeId, typeNodeId } from "../../shared-types";
+import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
 import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodDetails, Reflected } from "../loaded";
 import { loadedVersion, validateTypeInfo } from "../loaded";
 import { log } from "../log";
+import { getMapped, mapOfMaps } from "../shared-types";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
 import type {
   CallColumns,
@@ -55,6 +57,7 @@ export class SqlLoaded {
   readMethodDetails: (nodeId: MethodNodeId) => MethodDetails;
   readMethodName: (nodeId: MethodNodeId) => { methodName: string; typeName: string };
   readNames: () => GetTypeOrMethodName;
+  readWanted: () => Wanted[];
 
   private readLeafVisible: (viewType: CommonGraphViewType) => NodeId[];
   private readGroupExpanded: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => NodeId[];
@@ -280,6 +283,35 @@ export class SqlLoaded {
     };
 
     this.readNames = (): GetTypeOrMethodName => getTypeAndMethodNames(table);
+
+    this.readWanted = (): Wanted[] => {
+      const declaringTypes = table.declaringType.selectAll();
+      const wantedTypes = table.wantedType.selectAll();
+      const { getTypeName, getMethodName } = this.readNames();
+      const assemblyDeclaringTypes = mapOfMaps(
+        declaringTypes.map((column) => [
+          column.assemblyName,
+          column.nestedType,
+          typeNodeId(column.assemblyName, column.declaringType),
+        ])
+      );
+      const wanted: Wanted[] = wantedTypes.map((column) => ({
+        assemblyName: column.assemblyName,
+        declaringType: getTypeName(getMapped(assemblyDeclaringTypes, column.assemblyName, column.nestedType)),
+        nestedType: getTypeName(typeNodeId(column.assemblyName, column.nestedType)),
+        wantedType: column.wantedType ? getTypeName(typeNodeId(column.assemblyName, column.wantedType)) : undefined,
+        wantedMethod: column.wantedMethod
+          ? getMethodName(methodNodeId(column.assemblyName, column.wantedMethod))
+          : undefined,
+      }));
+      wanted.sort((x, y) => {
+        let result = x.assemblyName.localeCompare(y.assemblyName);
+        if (result) return result;
+        result = x.declaringType.localeCompare(y.declaringType);
+        return result ? result : x.nestedType.localeCompare(y.nestedType);
+      });
+      return wanted;
+    };
 
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {
       const found = table.graphFilter.selectOne({ viewType, clusterBy: "leafVisible" });

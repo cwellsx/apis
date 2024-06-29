@@ -12,7 +12,7 @@ import type {
 } from "../shared-types";
 import { defaultAppOptions, defaultView } from "../shared-types";
 import { Panes } from "./Panes";
-import { getAppOptions, getCenter, getLeft, getRight, isGreeting } from "./appViews";
+import { getAppOptions, getCenter, getLeft, getRight, isViewGraph } from "./appViews";
 import { log } from "./log";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
@@ -47,7 +47,7 @@ const App: React.FunctionComponent = () => {
       showView(view: View): void {
         log("showView");
         setView(view);
-        if (isGreeting(view)) setDetails(undefined);
+        if (!isViewGraph(view)) setDetails(undefined);
       },
       showDetails(details: ViewDetails): void {
         log("showDetails");

@@ -45,6 +45,10 @@ export type GreetingViewOptions = {
   viewType: "greeting";
 };
 
+export type WantedViewOptions = {
+  viewType: "wanted";
+};
+
 export type GraphViewOptions = ReferenceViewOptions | MethodViewOptions | ApiViewOptions | CustomViewOptions;
 export type GraphViewType = "references" | "methods" | "apis" | "custom";
 export type CommonGraphViewType = Exclude<GraphViewType, "custom">;
@@ -65,11 +69,12 @@ export type ViewOptions =
   | ReferenceViewOptions
   | MethodViewOptions
   | ErrorsViewOptions
+  | WantedViewOptions
   | GreetingViewOptions
   | CustomViewOptions
   | ApiViewOptions;
 
-export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom";
+export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom" | "wanted";
 
 export type AnyGraphViewOptions = Partial<
   Omit<ReferenceViewOptions, "viewType"> &

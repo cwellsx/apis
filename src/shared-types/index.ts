@@ -23,7 +23,7 @@ export * from "./nodeId";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown } from "./types";
 export { defaultView } from "./view";
-export type { View, ViewErrors, ViewGraph, ViewGreeting } from "./view";
+export type { View, ViewErrors, ViewGraph, ViewGreeting, ViewWanted } from "./view";
 export type { DetailType, DetailedAssembly, DetailedMethod, ViewDetails } from "./viewDetails";
 export { viewFeatures } from "./viewOptions";
 export type {
@@ -38,4 +38,6 @@ export type {
   ReferenceViewOptions,
   ViewOptions,
   ViewType,
+  WantedViewOptions,
 } from "./viewOptions";
+export type { Wanted } from "./wanted";

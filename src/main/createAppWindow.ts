@@ -13,6 +13,7 @@ import type {
   ViewErrors,
   ViewOptions,
   ViewType,
+  ViewWanted,
 } from "../shared-types";
 import { viewFeatures } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
@@ -47,7 +48,7 @@ export const createAppWindow = (
     ];
     if (sqlLoaded.readErrors().length !== 0) menuItems.push({ label: ".NET reflection errors", viewType: "errors" });
     if (sqlConfig.appOptions.showCompilerGeneratedMenuItem)
-      menuItems.push({ label: "Compiler-generated types", viewType: "errors" });
+      menuItems.push({ label: "Compiler-generated types", viewType: "wanted" });
     const viewMenu: ViewMenu = {
       menuItems,
       currentViewType: sqlLoaded.viewState.viewType,
@@ -264,6 +265,12 @@ export const createAppWindow = (
     renderer.showView(viewGraph);
   };
 
+  const showWanted = (): void => {
+    const wanted = sqlLoaded.readWanted();
+    const viewWanted: ViewWanted = { wanted, viewOptions: { viewType: "wanted" } };
+    renderer.showView(viewWanted);
+  };
+
   const showViewType = (viewType: ViewType): void => {
     log(`showViewType(${viewType})`);
     switch (viewType) {
@@ -278,6 +285,9 @@ export const createAppWindow = (
         break;
       case "apis":
         showApis();
+        break;
+      case "wanted":
+        showWanted();
         break;
       default:
         throw new Error("ViewType not implemented");
@@ -298,6 +308,9 @@ export const createAppWindow = (
         break;
       case "apis":
         window.setTitle(`APIs — ${dataSourcePath}`);
+        break;
+      case "wanted":
+        window.setTitle(`Compiler types — ${dataSourcePath}`);
         break;
       default:
         throw new Error("ViewType not implemented");
