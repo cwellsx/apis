@@ -299,7 +299,7 @@ export class SqlLoaded {
         assemblyName: column.assemblyName,
         declaringType: getTypeName(getMapped(assemblyDeclaringTypes, column.assemblyName, column.nestedType)),
         nestedType: getTypeName(typeNodeId(column.assemblyName, column.nestedType)),
-        wantedType: column.wantedType ? getTypeName(typeNodeId(column.assemblyName, column.wantedType)) : undefined,
+        wantedType: getTypeName(typeNodeId(column.assemblyName, column.wantedType)),
         wantedMethod: column.wantedMethod
           ? getMethodName(methodNodeId(column.assemblyName, column.wantedMethod))
           : undefined,

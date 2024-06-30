@@ -70,45 +70,92 @@ const getWanted = (view: ViewWanted): JSX.Element => {
       .map((part) => (separator == "<" ? part : part.length < 25 && part[0] !== "<" ? part : splitAt(part, "<")))
       .map((part, index) =>
         !index ? (
-          <>{part}</>
+          <React.Fragment key={index}>{part}</React.Fragment>
         ) : (
-          <>
+          <React.Fragment key={index}>
             {separator}
             <wbr />
             {part}
-          </>
+          </React.Fragment>
         )
       );
 
   const split = (text: string | undefined): React.ReactNode => (!text ? "" : splitAt(text, "+"));
 
-  return (
+  const unusual = view.wanted.filter((wanted) => wanted.declaringType !== wanted.wantedType);
+
+  /*
+      If we display everything in the wanted column then it's too wide, but normally:
+      - declaringType === wantedType
+      - nestedType.StartsWith(declaringType)
+      So exclude declaringType and wantedType from the normal table, but this preamble says if there are any exceptions.
+  */
+
+  const preamble = !unusual.length ? (
+    <p>All compiler-generated types are declared in user-defined types.</p>
+  ) : (
     <>
-      <h2>Compiler-generated types</h2>
+      <p>All compiler-generated types are declared in user-defined types, except the following:</p>
       <table>
         <thead>
           <tr>
             <th>Declared In</th>
             <th>This</th>
             <th>Resolved Type</th>
-            <th>Resolved Method</th>
           </tr>
         </thead>
         <tbody>
           {Object.entries(grouped).map(([assemblyName, array]) => (
             <>
               <tr key={assemblyName}>
-                <th colSpan={4}>{assemblyName}</th>
+                <th colSpan={3}>{assemblyName}</th>
               </tr>
               {array.map((wanted, index) => (
                 <tr key={`${assemblyName}-${index}`}>
                   <td>{split(wanted.declaringType)}</td>
                   <td>{split(wanted.nestedType)}</td>
                   <td>{split(wanted.wantedType)}</td>
-                  <td>{wanted.wantedMethod}</td>
                 </tr>
               ))}
             </>
+          ))}
+        </tbody>
+      </table>
+    </>
+  );
+
+  for (const wanted of view.wanted)
+    if (!wanted.nestedType.startsWith(wanted.declaringType + "+"))
+      throw new Error("Expect nested type name to begin with declaring type name");
+
+  return (
+    <>
+      <h2>Compiler-generated types</h2>
+      {preamble}
+      <table>
+        <thead>
+          <tr>
+            <th>Declared In</th>
+            <th>This</th>
+            <th>Resolved Method</th>
+            <th>Error</th>
+          </tr>
+        </thead>
+        <tbody>
+          {Object.entries(grouped).map(([assemblyName, array]) => (
+            <React.Fragment key={assemblyName}>
+              <tr>
+                <th colSpan={4}>{assemblyName}</th>
+              </tr>
+              {array.map((wanted, index) => (
+                <tr key={`${assemblyName}-${index}`}>
+                  <td>{split(wanted.declaringType)}</td>
+                  <td>{split(wanted.nestedType.substring(wanted.declaringType.length + 1))}</td>
+                  <td>{wanted.wantedMethod}</td>
+                  <td></td>
+                </tr>
+              ))}
+            </React.Fragment>
           ))}
         </tbody>
       </table>
