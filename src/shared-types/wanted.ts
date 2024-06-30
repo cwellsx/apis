@@ -4,4 +4,5 @@ export type Wanted = {
   nestedType: string;
   wantedType: string;
   wantedMethod?: string;
+  errors?: string[];
 };

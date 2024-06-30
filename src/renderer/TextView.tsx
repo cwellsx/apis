@@ -152,7 +152,14 @@ const getWanted = (view: ViewWanted): JSX.Element => {
                   <td>{split(wanted.declaringType)}</td>
                   <td>{split(wanted.nestedType.substring(wanted.declaringType.length + 1))}</td>
                   <td>{wanted.wantedMethod}</td>
-                  <td></td>
+                  <td>
+                    {wanted.errors?.map((error) => (
+                      <>
+                        {error}
+                        <br />
+                      </>
+                    ))}
+                  </td>
                 </tr>
               ))}
             </React.Fragment>

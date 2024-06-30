@@ -83,6 +83,8 @@ export type WantedTypeColumns = {
   assemblyName: string;
   nestedType: number;
   wantedType: number;
-  wantedNamespace: string | undefined;
+  wantedNamespace: string | null;
   wantedMethod: number;
+  calledFrom: { fromMethodId: number; toMethodId: number }[];
+  errors: string[] | null;
 };

@@ -69,7 +69,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-30a";
+    const loadedSchemaVersionExpected = "2024-06-30d";
 
     this.viewState = new ViewState(db);
 
@@ -303,6 +303,7 @@ export class SqlLoaded {
         wantedMethod: column.wantedMethod
           ? getMethodName(methodNodeId(column.assemblyName, column.wantedMethod))
           : undefined,
+        errors: !column.errors ? undefined : column.errors,
       }));
       wanted.sort((x, y) => {
         let result = x.assemblyName.localeCompare(y.assemblyName);

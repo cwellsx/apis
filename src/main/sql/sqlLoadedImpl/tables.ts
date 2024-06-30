@@ -42,7 +42,8 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     dropTable(db, "typeName");
     dropTable(db, "methodName");
     dropTable(db, "graphFilter");
-    dropTable(db, "nestedType");
+    dropTable(db, "declaringType");
+    dropTable(db, "wantedType");
   }
 
   const assembly = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
@@ -120,13 +121,21 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
       declaringType: 0,
     }
   );
-  const wantedType = new SqlTable<WantedTypeColumns>(db, "wantedType", ["assemblyName", "nestedType"], () => false, {
-    assemblyName: "references",
-    nestedType: 0,
-    wantedType: 0,
-    wantedNamespace: "foo",
-    wantedMethod: 0,
-  });
+  const wantedType = new SqlTable<WantedTypeColumns>(
+    db,
+    "wantedType",
+    ["assemblyName", "nestedType"],
+    (key) => key === "errors",
+    {
+      assemblyName: "references",
+      nestedType: 0,
+      wantedType: 0,
+      wantedNamespace: "foo",
+      wantedMethod: 0,
+      calledFrom: [],
+      errors: [],
+    }
+  );
 
   const deleteAll = (): void => {
     // delete in reverse order

@@ -30,8 +30,10 @@ export const flattenNamedTypeInfo = (
       assemblyName,
       nestedType,
       wantedType: declaringType,
-      wantedMethod: 0,
       wantedNamespace: "",
+      wantedMethod: 0,
+      calledFrom: [],
+      errors: null,
     });
   });
 
@@ -45,7 +47,7 @@ export const flattenNamedTypeInfo = (
   wantedTypeColumns.forEach((columns) => {
     const wantedType = recurse(columns.wantedType);
     columns.wantedType = wantedType;
-    columns.wantedNamespace = namespaces.get(wantedType);
+    columns.wantedNamespace = namespaces.get(wantedType) ?? null;
   });
 
   return { declaringTypeColumns, wantedTypeColumns };
