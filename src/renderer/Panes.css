@@ -26,7 +26,7 @@
   margin-top: auto;
 }
 
-.pane-resizes, #graph {
+.pane-resizes, #graph, #textView {
   display: flex;
   flex-direction: column;
   justify-content: flex-start;

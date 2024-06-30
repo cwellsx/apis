@@ -13,10 +13,10 @@ import type {
 } from "../shared-types";
 import { defaultAppOptions, defaultView } from "../shared-types";
 import { Panes } from "./Panes";
+import { TextView } from "./TextView";
 import { log } from "./log";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 import { getAppOptions, getCenter, getLeft, getRight } from "./viewGraph";
-import { getText } from "./viewText";
 
 declare global {
   export interface Window {
@@ -64,16 +64,19 @@ const App: React.FunctionComponent = () => {
     });
   });
 
-  if (!isViewGraph(view)) {
-    const text = getText(view);
-    return <React.StrictMode>{text}</React.StrictMode>;
-  }
-
   const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
   const onAppOptions: OnAppOptions = (appOptions) => mainApi.onAppOptions(appOptions);
   const onGraphClick: OnGraphClick = (graphEvent) => mainApi.onGraphClick(graphEvent);
   const onGraphFilter: OnGraphFilter = (filterEvent) => mainApi.onGraphFilter(filterEvent);
   const onDetailClick: OnDetailClick = (nodeId) => mainApi.onDetailClick(nodeId);
+
+  if (!isViewGraph(view)) {
+    return (
+      <React.StrictMode>
+        <TextView view={view} fontSize={fontSize} onWheelFontSize={onWheelFontSize} />
+      </React.StrictMode>
+    );
+  }
 
   const rightWidthMaxContent = (() => {
     switch (details?.detailType) {
