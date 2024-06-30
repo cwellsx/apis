@@ -34,7 +34,7 @@ export const flattenMethodDictionary = (
     );
 
     // return MethodColumns
-    return { assemblyName, metadataToken, methodDetails: JSON.stringify(methodDetails) };
+    return { assemblyName, metadataToken, methodDetails };
   });
 
   return { callColumns, methods, badCallDetails };

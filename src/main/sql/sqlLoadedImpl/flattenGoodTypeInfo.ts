@@ -17,7 +17,7 @@ export const flattenGoodTypeInfo = (
   const typeColumns: TypeColumns[] = goodTypeInfos.map((type) => ({
     assemblyName,
     metadataToken: type.typeId.metadataToken,
-    typeInfo: JSON.stringify(createSavedTypeInfo(type)),
+    typeInfo: createSavedTypeInfo(type),
   }));
 
   // members and methods for each type

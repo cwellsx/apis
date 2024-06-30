@@ -1,16 +1,20 @@
-import type { ClusterBy, CommonGraphViewType } from "../../../shared-types";
-import type { Members } from "../../loaded";
+import type { ClusterBy, CommonGraphViewType, NodeId } from "../../../shared-types";
+import type { BadCallDetails, BadTypeInfo, Members, MethodDetails } from "../../loaded";
+import type { SavedTypeInfo } from "./savedTypeInfo";
+
+/*
+  This defines types used by most of the SQL source, and imports types from elsewhere -- avoid circular dependencies
+*/
 
 export type AssemblyColumns = {
   assemblyName: string;
-  // JSON-encoded array of names of referenced assemblies
-  references: string;
+  references: string[]; // array of names of referenced assemblies
 };
 
 export type TypeColumns = {
   assemblyName: string;
   metadataToken: number; // Id of Type within assembly
-  typeInfo: string;
+  typeInfo: SavedTypeInfo;
 };
 
 export type MemberColumns = {
@@ -18,20 +22,20 @@ export type MemberColumns = {
   metadataToken: number;
   typeMetadataToken: number;
   memberType: keyof Members;
-  memberInfo: string;
+  memberInfo: string; // FieldMember[] | EventMember[] | etc.
 };
 
 export type MethodColumns = {
   // each record contains all MethodDetails for a single method
   assemblyName: string;
   metadataToken: number;
-  methodDetails: string;
+  methodDetails: MethodDetails;
 };
 
 export type ErrorColumns = {
   assemblyName: string;
-  badTypeInfos: string;
-  badCallDetails: string;
+  badTypeInfos: BadTypeInfo[];
+  badCallDetails: BadCallDetails[];
 };
 
 export type LoadedCall = {
@@ -54,7 +58,6 @@ export type TypeNameColumns = {
   metadataToken: number;
   namespace: string | null;
   decoratedName: string;
-  //wantedTypeId: number | null;
 };
 
 export type MethodNameColumns = {
@@ -66,7 +69,7 @@ export type MethodNameColumns = {
 export type GraphFilterColumns = {
   viewType: CommonGraphViewType;
   clusterBy: ClusterBy | "leafVisible";
-  value: string;
+  nodeIds: NodeId[];
 };
 
 export type DeclaringTypeColumns = {

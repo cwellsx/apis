@@ -13,6 +13,8 @@ function getColumnType(value: unknown): columnType {
       return "INT";
     case "number":
       return Number.isInteger(value) ? "INT" : "REAL";
+    case "object":
+      return "TEXT";
     default:
       throw new Error("Unsupported type");
   }
@@ -34,6 +36,39 @@ function quoteAndJoin(ids: string[]) {
 export const dropTable = (db: Database, tableName: string): void => {
   const source = `DROP TABLE IF EXISTS "${tableName}"`;
   db.prepare(source).run();
+};
+
+// this lets you define columns of type [] and {} which during I/O are automatically converted to/from string using JSON
+const sqlJson = <T extends object>(
+  t: T
+): {
+  toSql: (t: T) => object;
+  fromSql: (t: unknown) => T;
+} => {
+  type Stringified = { [key: string]: unknown };
+
+  const keys: string[] = [];
+  Object.entries(t).forEach(([key, value]) => {
+    if (typeof value === "object") keys.push(key);
+  });
+
+  if (!keys.length) {
+    const toSql = (t: T) => t;
+    const fromSql = (t: unknown) => t as T;
+    return { toSql, fromSql };
+  } else {
+    const toSql = (t: T) => {
+      const result = { ...t } as Stringified;
+      keys.forEach((key) => (result[key] = JSON.stringify(result[key])));
+      return result;
+    };
+    const fromSql = (t: unknown) => {
+      const result = { ...(t as object) } as Stringified;
+      keys.forEach((key) => (result[key] = JSON.parse(result[key] as string)));
+      return result as T;
+    };
+    return { toSql, fromSql };
+  }
 };
 
 export class SqlTable<T extends object> {
@@ -92,50 +127,59 @@ export class SqlTable<T extends object> {
     const selectStmt = db.prepare(`SELECT * FROM "${tableName}"`);
     const deleteAllStmt = db.prepare(`DELETE FROM "${tableName}"`);
 
+    const { fromSql, toSql } = sqlJson(t);
+
     this.insert = db.transaction((t: T) => {
-      const info = insertStmt.run(t);
+      const u = toSql(t);
+      const info = insertStmt.run(u);
       if (info.changes !== 1) throw new Error("insert failed");
       verbose(`inserted row #${info.lastInsertRowid}`);
     });
     this.update = db.transaction((t: T) => {
-      const info = updateStmt.run(t);
+      const u = toSql(t);
+      const info = updateStmt.run(u);
       if (info.changes !== 1) throw new Error("insert failed");
       verbose(`updated row #${info.lastInsertRowid}`);
     });
     this.upsert = db.transaction((t: T) => {
-      const info = upsertStmt.run(t);
+      const u = toSql(t);
+      const info = upsertStmt.run(u);
       if (info.changes !== 1) throw new Error("upsert failed");
       verbose(`upserted row #${info.lastInsertRowid}`);
     });
     this.insertMany = db.transaction((many: T[]) => {
-      for (const t of many) insertStmt.run(t);
+      for (const u of many.map(toSql)) insertStmt.run(u);
     });
-    this.selectAll = () => selectStmt.all() as T[];
+    this.selectAll = () => selectStmt.all().map((u) => fromSql(u));
     this.deleteAll = db.transaction(() => deleteAllStmt.run());
 
-    const getSelectWhere = (where: Partial<T>): Statement<unknown[]> => {
+    const prepareSelectWhere = (where: Partial<T>): Statement<unknown[]> => {
       const keys = Object.keys(where);
       keys.sort();
       const source = `SELECT * FROM "${tableName}" WHERE ${whereKeys(keys)}`;
       return prepare(source);
     };
 
-    this.selectWhere = (where: Partial<T>): T[] => getSelectWhere(where).all(where) as T[];
-    this.selectOne = (where: Partial<T>): T | undefined => getSelectWhere(where).get(where) as T | undefined;
+    this.selectWhere = (where: Partial<T>): T[] => prepareSelectWhere(where).all(where).map(fromSql);
+
+    this.selectOne = (where: Partial<T>): T | undefined => {
+      const u = prepareSelectWhere(where).get(where);
+      return u === undefined ? undefined : fromSql(u);
+    };
 
     this.selectCustom = (distinct: boolean, custom: string, where?: object): T[] => {
       const source = `${distinct ? "SELECT DISTINCT" : "SELECT"} * FROM "${tableName}" WHERE ${custom}`;
       const statement = prepare(source);
-      return !where ? (statement.all() as T[]) : (statement.all(where) as T[]);
+      return (!where ? statement.all() : statement.all(where)).map(fromSql);
     };
 
-    this.selectCustomSpecific = <U extends object>(u: U, distinct: boolean, custom: string, where?: object): U[] => {
+    this.selectCustomSpecific = (u: Partial<T>, distinct: boolean, custom: string, where?: object): Partial<T>[] => {
       const keys = Object.keys(u);
       const source = `${distinct ? "SELECT DISTINCT" : "SELECT"} ${quoteAndJoin(
         keys
       )} FROM "${tableName}" WHERE ${custom}`;
       const statement = prepare(source);
-      return !where ? (statement.all() as U[]) : (statement.all(where) as U[]);
+      return (!where ? statement.all() : statement.all(where)).map(fromSql);
     };
 
     const prepared: { [source: string]: Statement<unknown[]> | undefined } = {};
@@ -158,5 +202,5 @@ export class SqlTable<T extends object> {
   selectWhere: (where: Partial<T>) => T[];
   selectOne: (where: Partial<T>) => T | undefined;
   selectCustom: (distinct: boolean, custom: string, where?: object) => T[];
-  selectCustomSpecific: <U extends object>(u: U, distinct: boolean, custom: string, where?: object) => U[];
+  selectCustomSpecific: (u: Partial<T>, distinct: boolean, custom: string, where?: object) => Partial<T>[];
 }

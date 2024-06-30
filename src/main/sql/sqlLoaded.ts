@@ -69,7 +69,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-22";
+    const loadedSchemaVersionExpected = "2024-06-30a";
 
     this.viewState = new ViewState(db);
 
@@ -116,7 +116,7 @@ export class SqlLoaded {
 
     this.readAssemblyReferences = () =>
       table.assembly.selectAll().reduce<AssemblyReferences>((found, entry) => {
-        found[entry.assemblyName] = JSON.parse(entry.references);
+        found[entry.assemblyName] = entry.references;
         return found;
       }, {});
 
@@ -125,11 +125,11 @@ export class SqlLoaded {
 
       // all the bad types are JSON in a single record
       const errors = table.error.selectWhere(where);
-      const badTypes: BadTypeInfo[] = errors.length > 0 ? JSON.parse(errors[0].badTypeInfos) : [];
+      const badTypes: BadTypeInfo[] = errors.length > 0 ? errors[0].badTypeInfos : [];
       const allTypeInfo = validateTypeInfo(badTypes);
 
       // all the good types are JSON in multiple records
-      const savedTypes: SavedTypeInfo[] = table.type.selectWhere(where).map((columns) => JSON.parse(columns.typeInfo));
+      const savedTypes: SavedTypeInfo[] = table.type.selectWhere(where).map((columns) => columns.typeInfo);
       allTypeInfo.good = savedTypes.map((type) => ({ ...type, members: {} }));
 
       const goodTypeDictionary: GoodTypeDictionary = {};
@@ -149,8 +149,8 @@ export class SqlLoaded {
     this.readErrors = (): ErrorsInfo[] =>
       table.error.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
-        badTypeInfos: JSON.parse(errorColumns.badTypeInfos),
-        badCallDetails: JSON.parse(errorColumns.badCallDetails),
+        badTypeInfos: errorColumns.badTypeInfos,
+        badCallDetails: errorColumns.badCallDetails,
       }));
 
     this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): Call[] => {
@@ -262,7 +262,7 @@ export class SqlLoaded {
       const methodKey: Partial<MethodColumns> = { assemblyName, metadataToken };
       const method = table.method.selectOne(methodKey);
       if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
-      return JSON.parse(method.methodDetails) as MethodDetails;
+      return method.methodDetails;
     };
 
     this.readMethodName = (nodeId: MethodNodeId): { methodName: string; typeName: string } => {
@@ -316,17 +316,17 @@ export class SqlLoaded {
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {
       const found = table.graphFilter.selectOne({ viewType, clusterBy: "leafVisible" });
       if (!found) throw new Error("readLeafVisible nodes not found");
-      return JSON.parse(found.value);
+      return found.nodeIds;
     };
     this.readGroupExpanded = (viewType: CommonGraphViewType, clusterBy: ClusterBy): NodeId[] => {
       const found = table.graphFilter.selectOne({ viewType, clusterBy });
-      return !found ? [] : JSON.parse(found.value);
+      return !found ? [] : found.nodeIds;
     };
     this.writeLeafVisible = (viewType: CommonGraphViewType, leafVisible: NodeId[]): void => {
-      table.graphFilter.upsert({ viewType, clusterBy: "leafVisible", value: JSON.stringify(leafVisible) });
+      table.graphFilter.upsert({ viewType, clusterBy: "leafVisible", nodeIds: leafVisible });
     };
     this.writeGroupExpanded = (viewType: CommonGraphViewType, clusterBy: ClusterBy, groupExpanded: NodeId[]): void => {
-      table.graphFilter.upsert({ viewType, clusterBy, value: JSON.stringify(groupExpanded) });
+      table.graphFilter.upsert({ viewType, clusterBy, nodeIds: groupExpanded });
     };
     this.readGraphFilter = (viewType: CommonGraphViewType, clusterBy: ClusterBy): GraphFilter => ({
       leafVisible: this.readLeafVisible(viewType),

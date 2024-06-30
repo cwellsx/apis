@@ -56,8 +56,8 @@ const saveAssemblyMethods = (
     const found = table.error.selectOne({ assemblyName });
     const columns: ErrorColumns = {
       assemblyName,
-      badTypeInfos: found?.badTypeInfos ?? JSON.stringify([]),
-      badCallDetails: JSON.stringify(badCallDetails),
+      badTypeInfos: found?.badTypeInfos ?? [],
+      badCallDetails: badCallDetails,
     };
     if (found) table.error.update(columns);
     else table.error.insert(columns);
@@ -79,9 +79,9 @@ export const save = (reflected: Reflected, table: Tables): void => {
     const allTypeInfo = validateTypeInfo(assemblyInfo.types);
 
     // BadTypeInfo[]
-    const bad = badTypeInfo(allTypeInfo);
-    if (bad.length) {
-      table.error.insert({ assemblyName, badTypeInfos: JSON.stringify(bad), badCallDetails: JSON.stringify([]) });
+    const badTypeInfos = badTypeInfo(allTypeInfo);
+    if (badTypeInfos.length) {
+      table.error.insert({ assemblyName, badTypeInfos, badCallDetails: [] });
     }
 
     // GoodTypeInfo[]
@@ -94,7 +94,7 @@ export const save = (reflected: Reflected, table: Tables): void => {
     table.assembly.insert({
       assemblyName,
       // uniqueStrings because I've unusually seen an assembly return two references to the same assembly name
-      references: JSON.stringify(uniqueStrings(assemblyInfo.referencedAssemblies)),
+      references: uniqueStrings(assemblyInfo.referencedAssemblies),
     });
   }
 

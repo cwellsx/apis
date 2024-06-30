@@ -1,4 +1,5 @@
 import { Database } from "better-sqlite3";
+import type { MethodDetails } from "../../loaded";
 import { SqlTable, dropTable } from "../sqlTable";
 import {
   AssemblyColumns,
@@ -13,6 +14,7 @@ import {
   TypeNameColumns,
   WantedTypeColumns,
 } from "./columns";
+import type { SavedTypeInfo } from "./savedTypeInfo";
 
 export type Tables = {
   assembly: SqlTable<AssemblyColumns>;
@@ -45,12 +47,12 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
 
   const assembly = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
     assemblyName: "foo",
-    references: "bar",
+    references: ["bar"],
   });
   const type = new SqlTable<TypeColumns>(db, "type", ["assemblyName", "metadataToken"], () => false, {
     assemblyName: "foo",
     metadataToken: 1,
-    typeInfo: "bar",
+    typeInfo: {} as SavedTypeInfo,
   });
   const member = new SqlTable<MemberColumns>(db, "member", ["assemblyName", "metadataToken"], () => false, {
     assemblyName: "foo",
@@ -62,12 +64,12 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
   const method = new SqlTable<MethodColumns>(db, "method", ["assemblyName", "metadataToken"], () => false, {
     assemblyName: "foo",
     metadataToken: 1,
-    methodDetails: "bar",
+    methodDetails: {} as MethodDetails,
   });
   const error = new SqlTable<ErrorColumns>(db, "error", "assemblyName", () => false, {
     assemblyName: "foo",
-    badTypeInfos: "bar",
-    badCallDetails: "baz",
+    badTypeInfos: [],
+    badCallDetails: [],
   });
   const call = new SqlTable<CallColumns>(
     db,
@@ -89,13 +91,12 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     db,
     "typeName",
     ["assemblyName", "metadataToken"],
-    (key) => key === "namespace", //|| key === "wantedTypeId"
+    (key) => key === "namespace",
     {
       assemblyName: "foo",
       metadataToken: 0,
       namespace: "bar",
       decoratedName: "baz",
-      //wantedTypeId: 0,
     }
   );
   const methodName = new SqlTable<MethodNameColumns>(db, "methodName", ["assemblyName", "metadataToken"], () => false, {
@@ -106,7 +107,7 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
   const graphFilter = new SqlTable<GraphFilterColumns>(db, "graphFilter", ["viewType", "clusterBy"], () => false, {
     viewType: "references",
     clusterBy: "assembly",
-    value: "baz",
+    nodeIds: [],
   });
   const declaringType = new SqlTable<DeclaringTypeColumns>(
     db,
