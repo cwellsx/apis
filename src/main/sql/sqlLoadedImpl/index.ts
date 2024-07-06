@@ -1,5 +1,6 @@
 export type {
   AssemblyColumns,
+  BadMethodInfoAndIds,
   CallColumns,
   ErrorColumns,
   GraphFilterColumns,

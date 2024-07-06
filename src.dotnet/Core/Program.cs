@@ -1,6 +1,7 @@
 ﻿using Core.Output.Public;
 using ElectronCgi.DotNet;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
@@ -43,29 +44,32 @@ namespace Core
 
             connection.On<string, string>("json", directory =>
             {
-                var result = AssemblyLoader.LoadAssemblies(directory);
+                var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
                 Logger.Log("returning json");
-                return result.ToJson(false);
+                return all.ToJson(false);
             });
 
             connection.Listen();
         }
 
-        static void WriteJsonToFiles(All all)
+        static void WriteJsonToFiles(All all, Dictionary<string, Dictionary<int, MethodDetails>> assemblyMethodDetails)
         {
             File.WriteAllText("Core.json", all.Assemblies.ToJson(true));
-            File.WriteAllText("Found.json", all.AssemblyMethods.ToJson(true));
-            File.WriteAllText("All.json", all.ToJson(true));
+            File.WriteAllText("FoundCallDetails.json", assemblyMethodDetails.ToJson(true));
+            File.WriteAllText("FoundCalls.json", all.AssemblyMethods.ToJson(true));
+
             File.WriteAllText("All2.json", all.ToJson(false));
+            File.WriteAllText("FoundCallDetails2.json", assemblyMethodDetails.ToJson(false));
+            File.WriteAllText("FoundCalls2.json", all.AssemblyMethods.ToJson(false));
         }
 
         static void SelfTest()
         {
-            CallDetails[] GetAllErrors(string directory)
+            MethodCall[] GetAllErrors(string directory)
             {
-                var result = AssemblyLoader.LoadAssemblies(directory);
-                var allMethodDetails = result.AssemblyMethods.Values.SelectMany(dictionary => dictionary.Values);
-                var allCallDetails = allMethodDetails.SelectMany(methodDetails => methodDetails.Calls);
+                var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
+                var allMethodDetails = all.AssemblyMethods.Values.SelectMany(dictionary => dictionary.Values);
+                var allCallDetails = allMethodDetails.SelectMany(methodDetails => methodDetails.Called ?? Array.Empty<MethodCall>());
                 return allCallDetails.Where(callDetails => callDetails.Error != null).ToArray();
             }
 
@@ -112,11 +116,11 @@ namespace Core
                 return;
             }
 
-            //directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Debug\net5.0";
-            //directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
+            directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Debug\net5.0";
+            // directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
 
-            var result = AssemblyLoader.LoadAssemblies(directory);
-            WriteJsonToFiles(result);
+            var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
+            WriteJsonToFiles(all, assemblyMethodDetails);
         }
     }
 }

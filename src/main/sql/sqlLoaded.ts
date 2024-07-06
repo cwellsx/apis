@@ -1,5 +1,6 @@
 import { Database } from "better-sqlite3";
 import type {
+  BadMethodInfoAndNames,
   ClusterBy,
   CommonGraphViewType,
   ErrorsInfo,
@@ -10,12 +11,13 @@ import type {
   Wanted,
 } from "../../shared-types";
 import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
-import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodDetails, Reflected } from "../loaded";
+import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodInfo, Reflected } from "../loaded";
 import { loadedVersion, validateTypeInfo } from "../loaded";
 import { log } from "../log";
 import { getMapped, mapOfMaps } from "../shared-types";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
 import type {
+  BadMethodInfoAndIds,
   CallColumns,
   MemberColumns,
   MethodColumns,
@@ -54,7 +56,7 @@ export class SqlLoaded {
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => Call[];
   readCallStack: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
   readMethods: (nodeId: MethodNodeId) => TypeAndMethodId[];
-  readMethodDetails: (nodeId: MethodNodeId) => MethodDetails;
+  readMethodInfo: (nodeId: MethodNodeId) => MethodInfo;
   readMethodName: (nodeId: MethodNodeId) => { methodName: string; typeName: string };
   readNames: () => GetTypeOrMethodName;
   readWanted: () => Wanted[];
@@ -69,7 +71,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-06-30d";
+    const loadedSchemaVersionExpected = "2024-07-06";
 
     this.viewState = new ViewState(db);
 
@@ -146,12 +148,23 @@ export class SqlLoaded {
       return allTypeInfo;
     };
 
-    this.readErrors = (): ErrorsInfo[] =>
-      table.error.selectAll().map((errorColumns) => ({
+    this.readErrors = (): ErrorsInfo[] => {
+      const { getTypeName, getMethodName } = this.readNames();
+      const convert = (assemblyName: string, errorColumn: BadMethodInfoAndIds): BadMethodInfoAndNames => {
+        return {
+          ...errorColumn,
+          methodMember: getMethodName(methodNodeId(assemblyName, errorColumn.methodId)),
+          declaringType: getTypeName(typeNodeId(assemblyName, errorColumn.typeId)),
+        };
+      };
+      return table.error.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
         badTypeInfos: errorColumns.badTypeInfos,
-        badCallDetails: errorColumns.badCallDetails,
+        badMethodInfos: errorColumns.badMethodInfos.map((badMethodInfo) =>
+          convert(errorColumns.assemblyName, badMethodInfo)
+        ),
       }));
+    };
 
     this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): Call[] => {
       const { fromName, toName } = (() => {
@@ -257,12 +270,12 @@ export class SqlLoaded {
       ];
     };
 
-    this.readMethodDetails = (nodeId: MethodNodeId): MethodDetails => {
+    this.readMethodInfo = (nodeId: MethodNodeId): MethodInfo => {
       const { assemblyName, metadataToken } = nodeId;
       const methodKey: Partial<MethodColumns> = { assemblyName, metadataToken };
       const method = table.method.selectOne(methodKey);
       if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
-      return method.methodDetails;
+      return method.methodInfo;
     };
 
     this.readMethodName = (nodeId: MethodNodeId): { methodName: string; typeName: string } => {

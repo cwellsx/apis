@@ -5,7 +5,7 @@ import type {
   FilterEvent,
   GraphEvent,
   MainApi,
-  ViewErrors,
+  ViewCustomErrors,
   ViewOptions,
   ViewType,
 } from "../shared-types";
@@ -112,9 +112,9 @@ export const createCustomWindow = (
   const showErrors = (): void => {
     const customErrors = sqlCustom.readErrors();
 
-    const viewErrors: ViewErrors = {
+    const viewErrors: ViewCustomErrors = {
       customErrors,
-      viewType: "errors",
+      viewType: "customErrors",
     };
     renderer.showView(viewErrors);
   };

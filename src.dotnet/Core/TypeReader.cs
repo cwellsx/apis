@@ -4,7 +4,13 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+
+// we don't use Reflection.TypeInfo which is similar to Type but requires the assembly to be loaded
+// https://learn.microsoft.com/en-us/dotnet/api/system.reflection.typeinfo?view=net-8.0
 using TypeInfo = Core.Output.Public.TypeInfo;
+
+// there are types named TypeInfo and MethodInfo in the Output namespace, here is using Reflection.MethodInfo
+using MethodInfo = System.Reflection.MethodInfo;
 
 namespace Core
 {

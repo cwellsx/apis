@@ -41,7 +41,7 @@ namespace Core
                     {
                         var methodDetails = methodDictionary[decompiled.MetadataToken];
                         var caller = new CallDetails(typeId, decompiled);
-                        foreach (var call in decompiled.Calls)
+                        foreach (var call in decompiled.CalledMethods)
                         {
                             if (call.DeclaringType.AssemblyName == null)
                             {
@@ -53,7 +53,21 @@ namespace Core
                                 var found = Dictionary[callDetails.AssemblyName][callDetails.MetadataToken.Value];
                                 found.CalledBy.Add(caller);
                             }
-                            methodDetails.Calls.Add(callDetails);
+                            methodDetails.Called.Add(callDetails);
+                        }
+                        foreach (var call in decompiled.ArguedMethods)
+                        {
+                            if (call.DeclaringType.AssemblyName == null)
+                            {
+                                continue;
+                            }
+                            var callDetails = Find(call, assembliesDecompiled);
+                            if (callDetails.MetadataToken.HasValue)
+                            {
+                                var found = Dictionary[callDetails.AssemblyName][callDetails.MetadataToken.Value];
+                                found.ArguedBy.Add(caller);
+                            }
+                            methodDetails.Argued.Add(callDetails);
                         }
                     }
                 }

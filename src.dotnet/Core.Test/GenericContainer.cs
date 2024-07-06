@@ -10,7 +10,7 @@ using IOutput = System.Int32;
 
 namespace Core.Test
 {
-    public class TestClass
+    public class GenericContainer
     {
         internal class ArrayT<T>
         {
@@ -43,7 +43,7 @@ namespace Core.Test
             return child.Length;
         }
 
-        public static void Run()
+        public static void Test()
         {
             var strings = new string[] { "Hello", "World" };
             var array = new ArrayT<string>(Create, strings);

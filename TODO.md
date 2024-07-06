@@ -137,3 +137,8 @@ This section contains "counsel of perfection" items which I'm not doing now beca
 - Update to the latest versions of React, Electron, Electron Forge, etc.
 - Read about document-oriented DBs
 - Publish release builds
+
+The algorithm implemented by MethodFinder is funky http://catb.org/jargon/html/F/funky.html -- it uses Core.IL to get
+a `record` with text fields which describes each call; transforms the record to subtitute generic arguments; etc.
+But IL consists of opcodes plus metadata tokens, so it might be less code and more robust to use those tokens directly.
+Metadata tokens identify items in this assembly and others, the Tables include *Def and *Ref for types, methods, etc.

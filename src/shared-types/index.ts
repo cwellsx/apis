@@ -13,7 +13,7 @@ export type { AppOptions, OptionsType } from "./appOptions";
 export type { AsText, CallStack } from "./callStack";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
-export type { ErrorsInfo } from "./errors";
+export type { BadMethodInfoAndNames, ErrorsInfo } from "./errors";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export { viewFeatures } from "./graphViewOptions";
 export type {
@@ -28,13 +28,23 @@ export type {
   ViewOptions,
 } from "./graphViewOptions";
 export type { Area, AreaClass, Image } from "./image";
-export type { BadCallDetails, BadTypeInfo, MethodNameStrings } from "./loaded";
+export type { BadMethodCall, BadTypeInfo, LoadedMethodError } from "./loaded";
 export { isParent } from "./node";
 export type { Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
 export { isTypeException } from "./types";
 export type { Access, MemberInfo, Members, Named, Namespace, Type, TypeException, TypeKnown } from "./types";
 export { defaultView } from "./view";
-export type { GraphFilter, View, ViewErrors, ViewGraph, ViewGreeting, ViewText, ViewType, ViewWanted } from "./view";
-export type { DetailType, DetailedAssembly, DetailedMethod, ViewDetails } from "./viewDetails";
+export type {
+  GraphFilter,
+  View,
+  ViewCustomErrors,
+  ViewErrors,
+  ViewGraph,
+  ViewGreeting,
+  ViewText,
+  ViewType,
+  ViewWanted,
+} from "./view";
+export type { DetailType, DetailedAssembly, DetailedMethod, MethodNameStrings, ViewDetails } from "./viewDetails";
 export type { Wanted } from "./wanted";

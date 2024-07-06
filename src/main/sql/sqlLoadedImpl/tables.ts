@@ -1,5 +1,5 @@
 import { Database } from "better-sqlite3";
-import type { MethodDetails } from "../../loaded";
+import type { MethodInfo } from "../../loaded";
 import { SqlTable, dropTable } from "../sqlTable";
 import {
   AssemblyColumns,
@@ -65,12 +65,12 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
   const method = new SqlTable<MethodColumns>(db, "method", ["assemblyName", "metadataToken"], () => false, {
     assemblyName: "foo",
     metadataToken: 1,
-    methodDetails: {} as MethodDetails,
+    methodInfo: {} as MethodInfo,
   });
   const error = new SqlTable<ErrorColumns>(db, "error", "assemblyName", () => false, {
     assemblyName: "foo",
     badTypeInfos: [],
-    badCallDetails: [],
+    badMethodInfos: [],
   });
   const call = new SqlTable<CallColumns>(
     db,

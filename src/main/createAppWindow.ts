@@ -138,9 +138,9 @@ export const createAppWindow = (
       switch (viewType) {
         case "methods": {
           if (!isMethodNodeId(nodeId)) throw new Error("Expected method id");
-          const methodDetails = sqlLoaded.readMethodDetails(nodeId);
+          const methodInfo = sqlLoaded.readMethodInfo(nodeId);
           const { methodName, typeName } = sqlLoaded.readMethodName(nodeId);
-          const methodBody = convertLoadedToDetailedMethod(nodeId.assemblyName, typeName, methodName, methodDetails);
+          const methodBody = convertLoadedToDetailedMethod(nodeId.assemblyName, typeName, methodName, methodInfo);
           renderer.showDetails(methodBody);
           return;
         }

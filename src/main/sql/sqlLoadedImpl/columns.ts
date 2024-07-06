@@ -1,9 +1,14 @@
 import type { ClusterBy, CommonGraphViewType, NodeId } from "../../../shared-types";
-import type { BadCallDetails, BadTypeInfo, Members, MethodDetails } from "../../loaded";
+import type { BadMethodInfo, BadTypeInfo, Members, MethodInfo } from "../../loaded";
 import type { SavedTypeInfo } from "./savedTypeInfo";
+
+export type BadMethodInfoAndIds = BadMethodInfo & { methodId: number; typeId: number };
 
 /*
   This defines types used by most of the SQL source, and imports types from elsewhere -- avoid circular dependencies
+
+  Mapping from methodId to its typeId is defined on save by the getMethodTypeId method,
+  and stored denormalized in tables which need this mapping.
 */
 
 export type AssemblyColumns = {
@@ -26,16 +31,16 @@ export type MemberColumns = {
 };
 
 export type MethodColumns = {
-  // each record contains all MethodDetails for a single method
+  // each record contains all MethodInfo for a single method
   assemblyName: string;
   metadataToken: number;
-  methodDetails: MethodDetails;
+  methodInfo: MethodInfo;
 };
 
 export type ErrorColumns = {
   assemblyName: string;
   badTypeInfos: BadTypeInfo[];
-  badCallDetails: BadCallDetails[];
+  badMethodInfos: BadMethodInfoAndIds[];
 };
 
 export type LoadedCall = {

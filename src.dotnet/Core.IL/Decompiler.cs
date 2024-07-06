@@ -69,9 +69,9 @@ namespace Core.IL
             return cSharpDecompiler.DecompileTypeAsString(fullTypeName);
         }
 
-        public (string, Output.Method[]) Decompile(MethodBase methodBase) => Decompile(methodBase.MetadataToken);
+        public (string, Output.Method[], Output.Method[]) Decompile(MethodBase methodBase) => Decompile(methodBase.MetadataToken);
 
-        public (string, Output.Method[]) Decompile(int metadataToken)
+        public (string, Output.Method[], Output.Method[]) Decompile(int metadataToken)
         {
             EntityHandle entityHandle = MetadataTokens.EntityHandle(metadataToken);
             var asString = cSharpDecompiler.DecompileAsString(entityHandle);
@@ -82,7 +82,7 @@ namespace Core.IL
             Assert(method.MetadataToken == entityHandle, "Expect MetadataToken equality");
             if (!method.HasBody)
             {
-                return (asString, Array.Empty<Output.Method>());
+                return (asString, Array.Empty<Output.Method>(), Array.Empty<Output.Method>());
             }
 
             var context = new SimpleTypeResolveContext(method);
@@ -100,9 +100,10 @@ namespace Core.IL
                 throw new ArgumentNullException("function");
             }
             ILInstruction body = function.Body;
+            Visitor.Log("==**==");
             var visitor = new Visitor();
             body.AcceptVisitor(visitor);
-            return (asString, visitor.CalledMethods.Transform());
+            return (asString, visitor.CalledMethods.Transform(), visitor.ArguedMethods.Transform());
         }
 
         void Assert(bool b, string message)
@@ -115,29 +116,67 @@ namespace Core.IL
 
         class Visitor : ILVisitor
         {
-            internal List<IMethod> CalledMethods { get; } = new List<IMethod>();
+            static bool EnableLogging = false;
+            static int Level = 0;
 
-            void Found(CallInstruction inst) => CalledMethods.Add(inst.Method);
+            static void Log(ILInstruction inst)
+            {
+                if (EnableLogging)
+                {
+                    Log("---");
+                    Console.WriteLine(new string(' ', Level * 2) + inst.ToString());
+                }
+            }
+
+            internal static void Log(string separator)
+            {
+                if (EnableLogging)
+                {
+                    Console.WriteLine(new string(' ', Level * 2) + separator);
+                }
+            }
+
+            internal List<IMethod> CalledMethods { get; } = new List<IMethod>();
+            internal List<IMethod> ArguedMethods { get; } = new List<IMethod>();
+
+            void Found(CallInstruction inst)
+            {
+                CalledMethods.Add(inst.Method);
+                foreach (var argument in inst.Arguments)
+                {
+                    var method = (argument as LdFtn)?.Method;
+                    if (method != null)
+                    {
+                        ArguedMethods.Add(method);
+                    }
+                }
+            }
 
             protected override void Default(ILInstruction inst)
             {
+                // Log(inst);
+                ++Level;
                 foreach (var child in inst.Children)
                 {
                     child.AcceptVisitor(this);
                 }
+                --Level;
             }
             protected override void VisitCall(Call inst)
             {
+                Log(inst);
                 Found(inst);
                 base.VisitCall(inst);
             }
             protected override void VisitNewObj(NewObj inst)
             {
+                Log(inst);
                 Found(inst);
                 base.VisitNewObj(inst);
             }
             protected override void VisitCallVirt(CallVirt inst)
             {
+                Log(inst);
                 Found(inst);
                 base.VisitCallVirt(inst);
             }

@@ -1,10 +1,10 @@
 import { mapOfMaps } from "../../shared-types";
-import { CallColumns, LoadedCall, TypeNameColumns } from "./columns";
+import { TypeNameColumns } from "./columns";
 import { Tables } from "./tables";
 
-export type GetCallColumns = (loaded: LoadedCall) => CallColumns;
+export type GetTypeId = (assemblyName: string, methodId: number) => { namespace: string; typeId: number };
 
-export const widenCallColumns = (table: Tables): GetCallColumns => {
+export const getMethodTypeId = (table: Tables): GetTypeId => {
   // read previously-saved data from tables into map-of-maps
   const assemblyMethodTypes: Map<string, Map<number, number>> = mapOfMaps(
     table.member
@@ -33,11 +33,5 @@ export const widenCallColumns = (table: Tables): GetCallColumns => {
     };
   };
 
-  const getCallColumns = (loaded: LoadedCall) => {
-    const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(loaded.fromAssemblyName, loaded.fromMethodId);
-    const { namespace: toNamespace, typeId: toTypeId } = getTypeId(loaded.toAssemblyName, loaded.toMethodId);
-    return { ...loaded, fromNamespace, fromTypeId, toNamespace, toTypeId };
-  };
-
-  return getCallColumns;
+  return getTypeId;
 };

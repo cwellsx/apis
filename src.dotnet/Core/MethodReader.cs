@@ -56,7 +56,7 @@ namespace Core
                 try
                 {
                     var methodMemberEx = new MethodMemberEx(methodMember, isMicrosoftAssemblyName);
-                    var (asText, calls) = decompiler.Decompile(methodMember.MetadataToken);
+                    var (asText, calledMethods, arguedMethods) = decompiler.Decompile(methodMember.MetadataToken);
                     var methodDetails = new MethodDetails(
                         asText,
                         methodMemberEx.AsString(methodMember.GenericArguments, false),
@@ -64,7 +64,8 @@ namespace Core
                         );
                     var decompiled = new Decompiled(
                         methodDetails,
-                        calls.Select(call => call.Transform(isMicrosoftAssemblyName)).ToArray(),
+                        calledMethods.Select(call => call.Transform(isMicrosoftAssemblyName)).ToArray(),
+                        arguedMethods.Select(call => call.Transform(isMicrosoftAssemblyName)).ToArray(),
                         methodMember.MetadataToken,
                         methodMemberEx,
                         methodMember.GenericArguments
@@ -87,6 +88,7 @@ namespace Core
                     );
                 var decompiled = new Decompiled(
                     methodDetails,
+                    Array.Empty<MethodId>(),
                     Array.Empty<MethodId>(),
                     methodMember.MetadataToken,
                     methodMemberEx,

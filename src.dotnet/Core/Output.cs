@@ -205,11 +205,42 @@ namespace Core.Output.Public
         { }
     }
 
-    public record MethodDetails(string AsText, string MethodMember, string DeclaringType, List<CallDetails> Calls, List<CallDetails> CalledBy, string? Exception)
+    public record MethodDetails(
+        string AsText,
+        string MethodMember,
+        string DeclaringType,
+        List<CallDetails> Called,
+        List<CallDetails> CalledBy,
+        List<CallDetails> Argued,
+        List<CallDetails> ArguedBy,
+        string? Exception
+        )
     {
-        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType, new List<CallDetails>(), new List<CallDetails>(), null) { }
-        internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType, new List<CallDetails>(), new List<CallDetails>(), exception.ToString()) { }
+        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType,
+            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(),
+            null) { }
+        internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType,
+            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(),
+            exception.ToString()) { }
     }
 
-    public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodDetails>> AssemblyMethods);
+    // a shorter version of CallDetails
+    public record MethodCall(string AssemblyName, int? MetadataToken, Error? Error)
+    {
+        internal MethodCall(CallDetails callDetails) : this(callDetails.AssemblyName, callDetails.MetadataToken, callDetails.Error) { }
+    }
+
+    // a shorter version of MethodDetails
+    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, string? Exception)
+    {
+        internal MethodInfo(MethodDetails methodDetails) : this(
+            methodDetails.AsText,
+            From(methodDetails.Called),
+            From(methodDetails.Argued),
+            methodDetails.Exception)
+        { }
+        private static MethodCall[]? From(List<CallDetails> list) => list.Count == 0 ? null : list.Select(from => new MethodCall(from)).ToArray();
+    }
+
+    public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods);
 }

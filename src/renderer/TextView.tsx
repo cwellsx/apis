@@ -1,5 +1,15 @@
 import * as React from "react";
-import { ViewErrors, ViewGreeting, ViewText, ViewWanted, Wanted } from "../shared-types";
+import {
+  BadMethodInfoAndNames,
+  ErrorsInfo,
+  MethodNameStrings,
+  ViewCustomErrors,
+  ViewErrors,
+  ViewGreeting,
+  ViewText,
+  ViewWanted,
+  Wanted,
+} from "../shared-types";
 import { Message } from "./Message";
 import { BadCallDetails } from "./MethodDetails";
 import { OnWheel } from "./useZoomPercent";
@@ -28,6 +38,8 @@ const getText = (view: ViewText): JSX.Element => {
       return getGreeting(view);
     case "errors":
       return getErrors(view);
+    case "customErrors":
+      return getCustomErrors(view);
     case "wanted":
       return getWanted(view);
   }
@@ -35,7 +47,7 @@ const getText = (view: ViewText): JSX.Element => {
 
 const getGreeting = (view: ViewGreeting): JSX.Element => <Message message={view.greeting} />;
 
-const getErrors = (view: ViewErrors): JSX.Element => (
+const getCustomErrors = (view: ViewCustomErrors): JSX.Element => (
   <>
     <h2>Errors</h2>
     {view.customErrors?.map((customError, index) => (
@@ -44,13 +56,48 @@ const getErrors = (view: ViewErrors): JSX.Element => (
         <pre>{customError.elementJson}</pre>
       </section>
     ))}
-    {view.errors?.map((errorsInfo) =>
-      errorsInfo.badCallDetails.map((badCall, index) => (
-        <BadCallDetails badCall={badCall} key={errorsInfo.assemblyName + index} />
-      ))
-    )}
   </>
 );
+
+const getErrors = (view: ViewErrors): JSX.Element => {
+  const getBadMethodInfo = (badMethodInfo: BadMethodInfoAndNames, index: number, assemblyName: string): JSX.Element => {
+    // TODO display badMethodInfo.exception
+
+    const title: MethodNameStrings = {
+      assemblyName,
+      declaringType: badMethodInfo.declaringType,
+      methodMember: badMethodInfo.methodMember,
+    };
+    return (
+      <React.Fragment key={index}>
+        <>
+          {badMethodInfo.badMethodCalls?.map((badMethodCall, index) => (
+            <BadCallDetails error={badMethodCall.error} title={title} key={index} />
+          ))}
+        </>
+      </React.Fragment>
+    );
+  };
+
+  const getErrorsInfo = (errorsInfo: ErrorsInfo, index: number): JSX.Element => {
+    // TODO display BadTypeInfo
+
+    const assemblyName = errorsInfo.assemblyName;
+    return (
+      <React.Fragment key={index}>
+        <h3>{assemblyName}</h3>
+        {errorsInfo.badMethodInfos.map((badMethodInfo, index) => getBadMethodInfo(badMethodInfo, index, assemblyName))}
+      </React.Fragment>
+    );
+  };
+
+  return (
+    <>
+      <h2>Errors</h2>
+      {view.errors?.map(getErrorsInfo)}
+    </>
+  );
+};
 
 const getWanted = (view: ViewWanted): JSX.Element => {
   // it's already sorted alphabetically but now also sort by assembly

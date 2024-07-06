@@ -35,8 +35,12 @@ export type ViewGreeting = {
 
 export type ViewErrors = {
   viewType: "errors";
-  customErrors?: CustomError[];
   errors?: ErrorsInfo[];
+};
+
+export type ViewCustomErrors = {
+  viewType: "customErrors";
+  customErrors?: CustomError[];
 };
 
 export type ViewWanted = {
@@ -44,11 +48,11 @@ export type ViewWanted = {
   wanted: Wanted[];
 };
 
-export type ViewText = ViewGreeting | ViewErrors | ViewWanted;
+export type ViewText = ViewGreeting | ViewErrors | ViewCustomErrors | ViewWanted;
 
 export type View = ViewGraph | ViewText;
 
-export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom" | "wanted";
+export type ViewType = "references" | "methods" | "errors" | "greeting" | "apis" | "custom" | "wanted" | "customErrors";
 
 export const defaultView: ViewGreeting = {
   greeting: "No data",

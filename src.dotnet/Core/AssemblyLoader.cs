@@ -13,9 +13,9 @@ namespace Core
 
     static class AssemblyLoader
     {
-        const string version = "2024-05-09"; // see also src\main\shared-types\loaded\loadedVersion.ts
+        const string version = "2024-07-04"; // see also src\main\shared-types\loaded\loadedVersion.ts
 
-        internal static All LoadAssemblies(string directory)
+        internal static (All, Dictionary<string, Dictionary<int, MethodDetails>>) LoadAssemblies(string directory)
         {
             if (!Directory.Exists(directory))
             {
@@ -68,9 +68,18 @@ namespace Core
                     }
                 }
             }
-            var assemblyMethods = MethodFinder.GetAssemblyMethods(assembliesDecompiled);
-            var result = new All(assemblies, exceptions, version, exes, assemblyMethods);
-            return result;
+            var assemblyMethodDetails = MethodFinder.GetAssemblyMethods(assembliesDecompiled);
+            var assemblyMethodCalls = new Dictionary<string, Dictionary<int, Output.Public.MethodInfo>>(assemblyMethodDetails
+                .Select(kvp => new KeyValuePair<string, Dictionary<int, Output.Public.MethodInfo>>(
+                    kvp.Key,
+                    new Dictionary<int, Output.Public.MethodInfo>(kvp.Value.Select(kvp => new KeyValuePair<int, Output.Public.MethodInfo>(
+                        kvp.Key,
+                        new Output.Public.MethodInfo(kvp.Value)
+                        ))))));
+            return (
+                new All(assemblies, exceptions, version, exes, assemblyMethodCalls),
+                assemblyMethodDetails
+                );
         }
 
         internal static string GetDateModified(string directory)

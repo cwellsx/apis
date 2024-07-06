@@ -1,41 +1,69 @@
-import { BadCallDetails, MethodDictionary, isBadCallDetails, isGoodCallDetails } from "../../loaded";
+import type { MethodDictionary, MethodInfo, ValidMethodCall } from "../../loaded";
+import { getBadMethodCalls, getValidMethodCalls } from "../../loaded";
 import { distinctor } from "../../shared-types";
-import { CallColumns, MethodColumns } from "./columns";
-import { GetCallColumns } from "./widenCallColumns";
+import { BadMethodInfoAndIds, CallColumns, LoadedCall, MethodColumns } from "./columns";
+import { GetTypeId } from "./getMethodTypeId";
 
 const distinctCalls = distinctor<{ toAssemblyName: string; toMethodId: number }>(
   (lhs, rhs) => lhs.toAssemblyName == rhs.toAssemblyName && lhs.toMethodId == rhs.toMethodId
 );
 
+type GetCallColumns = (loaded: LoadedCall) => CallColumns;
+
 export const flattenMethodDictionary = (
   assemblyName: string,
   methodDictionary: MethodDictionary,
-  getCallColumns: GetCallColumns
-): { callColumns: CallColumns[]; methods: MethodColumns[]; badCallDetails: BadCallDetails[] } => {
+  getTypeId: GetTypeId
+): { callColumns: CallColumns[]; methodColumns: MethodColumns[]; badMethodInfos: BadMethodInfoAndIds[] } => {
   const callColumns: CallColumns[] = [];
-  const badCallDetails: BadCallDetails[] = [];
+  const methodColumns: MethodColumns[] = [];
+  const badMethodInfos: BadMethodInfoAndIds[] = [];
 
-  const methods: MethodColumns[] = Object.entries(methodDictionary).map(([key, methodDetails]) => {
-    const metadataToken = +key;
+  const getCallColumns: GetCallColumns = (loaded: LoadedCall) => {
+    const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(loaded.fromAssemblyName, loaded.fromMethodId);
+    const { namespace: toNamespace, typeId: toTypeId } = getTypeId(loaded.toAssemblyName, loaded.toMethodId);
+    return { ...loaded, fromNamespace, fromTypeId, toNamespace, toTypeId };
+  };
 
-    // BadCallDetails[]
-    badCallDetails.push(...methodDetails.calls.filter(isBadCallDetails));
+  const addBadMethodInfo = (methodId: number, methodInfo: MethodInfo): void => {
+    const badMethodCalls = getBadMethodCalls(methodInfo);
+    if (badMethodCalls || methodInfo.exception) {
+      const { typeId } = getTypeId(assemblyName, methodId);
+      badMethodInfos.push({
+        methodId,
+        typeId,
+        asText: methodInfo.asText,
+        badMethodCalls,
+        exception: methodInfo.exception,
+      });
+    }
+  };
 
-    // CallColumns[]
+  const addCallColumns = (fromMethodId: number, calls: ValidMethodCall[] | undefined): void => {
+    if (!calls) return;
     callColumns.push(
-      ...methodDetails.calls
-        .filter(isGoodCallDetails)
-        .map((callDetails) => ({
-          toAssemblyName: callDetails.assemblyName,
-          toMethodId: callDetails.metadataToken,
+      ...calls
+        .map((methodCall) => ({
+          toAssemblyName: methodCall.assemblyName,
+          toMethodId: methodCall.metadataToken,
         }))
         .filter(distinctCalls)
-        .map((call) => getCallColumns({ ...call, fromAssemblyName: assemblyName, fromMethodId: metadataToken }))
+        .map((call) => getCallColumns({ ...call, fromAssemblyName: assemblyName, fromMethodId }))
     );
+  };
 
-    // return MethodColumns
-    return { assemblyName, metadataToken, methodDetails };
+  Object.entries(methodDictionary).forEach(([key, methodInfo]) => {
+    const metadataToken = +key;
+
+    // BadMethodInfoAndIds[]
+    addBadMethodInfo(metadataToken, methodInfo);
+
+    // CallColumns[]
+    addCallColumns(metadataToken, getValidMethodCalls(methodInfo));
+
+    // MethodColumns[]
+    methodColumns.push({ assemblyName, metadataToken, methodInfo });
   });
 
-  return { callColumns, methods, badCallDetails };
+  return { callColumns, methodColumns, badMethodInfos };
 };

@@ -1,4 +1,4 @@
-export type { BadCallDetails, BadTypeInfo, MethodNameStrings } from "../main/loaded";
+export type { BadMethodCall, BadMethodInfo, BadTypeInfo, Error as LoadedMethodError } from "../main/loaded";
 
 // this is the only place where a module in shared-types does an import from outside itself
 // beware not to create cyclic dependencies by doing this

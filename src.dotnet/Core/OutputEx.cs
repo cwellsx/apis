@@ -86,7 +86,8 @@ namespace Core.Output.Internal
 
     internal record Decompiled(
         MethodDetails MethodDetails,
-        MethodId[] Calls,
+        MethodId[] CalledMethods,
+        MethodId[] ArguedMethods,
         int MetadataToken,
         MethodMemberEx MethodMember,
         Values<TypeId>? GenericArguments

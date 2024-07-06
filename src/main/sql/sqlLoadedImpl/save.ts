@@ -1,4 +1,4 @@
-import type { GoodTypeInfo, MethodDictionary, NamedTypeInfo, Reflected } from "../../loaded";
+import type { GoodTypeInfo, NamedTypeInfo, Reflected } from "../../loaded";
 import { badTypeInfo, namedTypeInfo, validateTypeInfo } from "../../loaded";
 import { Tables } from "./tables";
 
@@ -9,8 +9,8 @@ import type { ErrorColumns } from "./columns";
 import { flattenGoodTypeInfo } from "./flattenGoodTypeInfo";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
 import { flattenNamedTypeInfo } from "./flattenNamedTypeInfo";
-import { GetCallColumns, widenCallColumns } from "./widenCallColumns";
-import { SetWantedMethods, widenWantedMethods } from "./widenWantedMethods";
+import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
+import { widenWantedMethods } from "./widenWantedMethods";
 
 /*
   Save the namespace in CallColumns, because that is:
@@ -38,40 +38,6 @@ const saveNamedTypeInfo = (assemblyName: string, named: NamedTypeInfo[], table: 
   table.wantedType.insertMany(wantedTypeColumns);
 };
 
-const saveAssemblyMethods = (
-  assemblyName: string,
-  methodDictionary: MethodDictionary,
-  getCallColumns: GetCallColumns,
-  setWantedMethods: SetWantedMethods,
-  table: Tables
-): void => {
-  const { callColumns, methods, badCallDetails } = flattenMethodDictionary(
-    assemblyName,
-    methodDictionary,
-    getCallColumns
-  );
-
-  // => errorsTable
-  if (badCallDetails.length) {
-    const found = table.error.selectOne({ assemblyName });
-    const columns: ErrorColumns = {
-      assemblyName,
-      badTypeInfos: found?.badTypeInfos ?? [],
-      badCallDetails: badCallDetails,
-    };
-    if (found) table.error.update(columns);
-    else table.error.insert(columns);
-  }
-
-  // => methodTable
-  table.method.insertMany(methods);
-
-  // => call
-  table.call.insertMany(callColumns);
-
-  setWantedMethods(assemblyName, callColumns);
-};
-
 export const save = (reflected: Reflected, table: Tables): void => {
   log("save reflected.assemblies");
 
@@ -81,7 +47,7 @@ export const save = (reflected: Reflected, table: Tables): void => {
     // BadTypeInfo[]
     const badTypeInfos = badTypeInfo(allTypeInfo);
     if (badTypeInfos.length) {
-      table.error.insert({ assemblyName, badTypeInfos, badCallDetails: [] });
+      table.error.insert({ assemblyName, badTypeInfos, badMethodInfos: [] });
     }
 
     // GoodTypeInfo[]
@@ -99,11 +65,37 @@ export const save = (reflected: Reflected, table: Tables): void => {
   }
 
   log("save reflected.assemblyMethods");
-  const getCallColumns: GetCallColumns = widenCallColumns(table);
+
+  const getTypeId: GetTypeId = getMethodTypeId(table);
+
   const { setWantedMethods, updateWantedTypes } = widenWantedMethods(table);
 
   for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
-    saveAssemblyMethods(assemblyName, methodDictionary, getCallColumns, setWantedMethods, table);
+    const { callColumns, methodColumns, badMethodInfos } = flattenMethodDictionary(
+      assemblyName,
+      methodDictionary,
+      getTypeId
+    );
+
+    // => errorsTable
+    if (badMethodInfos.length) {
+      const found = table.error.selectOne({ assemblyName });
+      const columns: ErrorColumns = {
+        assemblyName,
+        badTypeInfos: found?.badTypeInfos ?? [],
+        badMethodInfos,
+      };
+      if (found) table.error.update(columns);
+      else table.error.insert(columns);
+    }
+
+    // => MethodColumns[]
+    table.method.insertMany(methodColumns);
+
+    // => CallColumns[]
+    table.call.insertMany(callColumns);
+
+    setWantedMethods(assemblyName, callColumns);
   }
 
   updateWantedTypes();

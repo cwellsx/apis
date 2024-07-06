@@ -1,14 +1,20 @@
-import type { BadCallDetails, MethodNameStrings } from "./loaded";
+import { LoadedMethodError } from "./loaded";
 import { Named, Namespace } from "./types";
 
 /*
   The types of ViewDetails are distinguished by the detailType
 */
 
+export type MethodNameStrings = {
+  methodMember: string;
+  declaringType: string;
+  assemblyName: string;
+};
+
 export type DetailedMethod = {
   title: MethodNameStrings;
   asText: string;
-  errors?: BadCallDetails[];
+  errors?: LoadedMethodError[];
   detailType: "methodDetails";
 };
 
