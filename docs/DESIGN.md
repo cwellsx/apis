@@ -41,7 +41,12 @@ The main process is the controller:
 - Formats the data as a view
 - Launches Graphviz to render the data as an image
 - Passes the data and the image to the renderer for display
-- Handles UI events from renderer, which change the view options
+
+UI events from renderer change the view options:
+
+- Save the new options in SQLite
+- Recreate the view with new options
+- Send the new view to the renderer
 
 ### `src/renderer`
 
@@ -55,6 +60,8 @@ These define the APIs -- the methods and data -- between the renderer and main p
 
 The .NET process uses the Reflection API, to read the APIs (i.e. the interfaces and classes) and the API calls,
 from the system which you're browsing.
+
+It also uses `ICSharpCode.Decompiler` to decompile all method bodies, in order to list all API calls.
 
 ### `.vscode`
 
@@ -77,6 +84,7 @@ This toolkit lets you write code which runs:
 
 - In a window, using a browser engine (e.g. using React, and/or HTML, CSS, JS, etc.)
 - In another 'main' process, which can access the Node API and the local file system etc.
+- Between the two, application-specific APIs to exchange data between the main process and the browser window
 
 ### Electron CGI
 

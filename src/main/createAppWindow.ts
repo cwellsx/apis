@@ -10,10 +10,10 @@ import type {
   GraphViewOptions,
   MainApi,
   MethodNodeId,
+  ViewCompilerMethods,
   ViewErrors,
   ViewOptions,
   ViewType,
-  ViewWanted,
 } from "../shared-types";
 import { viewFeatures } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
@@ -48,7 +48,7 @@ export const createAppWindow = (
     ];
     if (sqlLoaded.readErrors().length !== 0) menuItems.push({ label: ".NET reflection errors", viewType: "errors" });
     if (sqlConfig.appOptions.showCompilerGeneratedMenuItem)
-      menuItems.push({ label: "Compiler-generated types", viewType: "wanted" });
+      menuItems.push({ label: "Compiler-generated types", viewType: "compilerMethods" });
     const viewMenu: ViewMenu = {
       menuItems,
       currentViewType: sqlLoaded.viewState.viewType,
@@ -263,10 +263,10 @@ export const createAppWindow = (
     renderer.showView(viewGraph);
   };
 
-  const showWanted = (): void => {
-    const wanted = sqlLoaded.readWanted();
-    const viewWanted: ViewWanted = { wanted, viewType: "wanted" };
-    renderer.showView(viewWanted);
+  const showCompilerMethods = (): void => {
+    const compilerMethods = sqlLoaded.readCompilerMethods();
+    const viewCompilerMethods: ViewCompilerMethods = { compilerMethods, viewType: "compilerMethods" };
+    renderer.showView(viewCompilerMethods);
   };
 
   const showViewType = (viewType: ViewType): void => {
@@ -284,8 +284,8 @@ export const createAppWindow = (
       case "apis":
         showApis();
         break;
-      case "wanted":
-        showWanted();
+      case "compilerMethods":
+        showCompilerMethods();
         break;
       default:
         throw new Error("ViewType not implemented");
@@ -307,8 +307,8 @@ export const createAppWindow = (
       case "apis":
         window.setTitle(`APIs — ${dataSourcePath}`);
         break;
-      case "wanted":
-        window.setTitle(`Compiler types — ${dataSourcePath}`);
+      case "compilerMethods":
+        window.setTitle(`Compiler methods — ${dataSourcePath}`);
         break;
       default:
         throw new Error("ViewType not implemented");

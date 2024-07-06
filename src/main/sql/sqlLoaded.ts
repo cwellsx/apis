@@ -3,18 +3,18 @@ import type {
   BadMethodInfoAndNames,
   ClusterBy,
   CommonGraphViewType,
+  CompilerMethod,
   ErrorsInfo,
   GraphFilter,
   MethodNodeId,
   NodeId,
   TypeNodeId,
-  Wanted,
 } from "../../shared-types";
 import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
 import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodInfo, Reflected } from "../loaded";
 import { loadedVersion, validateTypeInfo } from "../loaded";
 import { log } from "../log";
-import { getMapped, mapOfMaps } from "../shared-types";
+import { mapOfMaps } from "../shared-types";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
 import type {
   BadMethodInfoAndIds,
@@ -59,7 +59,7 @@ export class SqlLoaded {
   readMethodInfo: (nodeId: MethodNodeId) => MethodInfo;
   readMethodName: (nodeId: MethodNodeId) => { methodName: string; typeName: string };
   readNames: () => GetTypeOrMethodName;
-  readWanted: () => Wanted[];
+  readCompilerMethods: () => CompilerMethod[];
 
   private readLeafVisible: (viewType: CommonGraphViewType) => NodeId[];
   private readGroupExpanded: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => NodeId[];
@@ -71,7 +71,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-07-06";
+    const loadedSchemaVersionExpected = "2024-07-06c";
 
     this.viewState = new ViewState(db);
 
@@ -297,10 +297,11 @@ export class SqlLoaded {
 
     this.readNames = (): GetTypeOrMethodName => getTypeAndMethodNames(table);
 
-    this.readWanted = (): Wanted[] => {
-      const declaringTypes = table.declaringType.selectAll();
-      const wantedTypes = table.wantedType.selectAll();
+    this.readCompilerMethods = (): CompilerMethod[] => {
+      const compilerMethodColumns = table.compilerMethod.selectAll();
       const { getTypeName, getMethodName } = this.readNames();
+
+      const declaringTypes = table.declaringType.selectAll();
       const assemblyDeclaringTypes = mapOfMaps(
         declaringTypes.map((column) => [
           column.assemblyName,
@@ -308,23 +309,33 @@ export class SqlLoaded {
           typeNodeId(column.assemblyName, column.declaringType),
         ])
       );
-      const wanted: Wanted[] = wantedTypes.map((column) => ({
-        assemblyName: column.assemblyName,
-        declaringType: getTypeName(getMapped(assemblyDeclaringTypes, column.assemblyName, column.nestedType)),
-        nestedType: getTypeName(typeNodeId(column.assemblyName, column.nestedType)),
-        wantedType: getTypeName(typeNodeId(column.assemblyName, column.wantedType)),
-        wantedMethod: column.wantedMethod
-          ? getMethodName(methodNodeId(column.assemblyName, column.wantedMethod))
-          : undefined,
-        errors: !column.errors ? undefined : column.errors,
-      }));
-      wanted.sort((x, y) => {
+
+      const compilerMethods: CompilerMethod[] = compilerMethodColumns.map((column) => {
+        // don't use getMapped which asserts a match is found
+        // because there may be other compiler-generated types at assembly scope i.e. not nested inside a method
+        const declaringType = assemblyDeclaringTypes.get(column.assemblyName)?.get(column.compilerType);
+        const result: CompilerMethod = {
+          assemblyName: column.assemblyName,
+          compilerType: getTypeName(typeNodeId(column.assemblyName, column.compilerType)),
+          compilerMethod: getMethodName(methodNodeId(column.assemblyName, column.compilerMethod)),
+          ownerType: column.ownerType ? getTypeName(typeNodeId(column.assemblyName, column.ownerType)) : "",
+          ownerMethod: column.ownerMethod ? getMethodName(methodNodeId(column.assemblyName, column.ownerMethod)) : "",
+          declaringType: declaringType ? getTypeName(declaringType) : "No declaringType",
+          error: column.error ?? undefined,
+        };
+        return result;
+      });
+      compilerMethods.sort((x, y) => {
         let result = x.assemblyName.localeCompare(y.assemblyName);
         if (result) return result;
-        result = x.declaringType.localeCompare(y.declaringType);
-        return result ? result : x.nestedType.localeCompare(y.nestedType);
+        result = x.ownerType.localeCompare(y.ownerType);
+        if (result) return result;
+        result = x.compilerType.localeCompare(y.compilerType);
+        if (result) return result;
+        result = x.compilerMethod.localeCompare(y.compilerMethod);
+        return result;
       });
-      return wanted;
+      return compilerMethods;
     };
 
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {

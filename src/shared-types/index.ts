@@ -11,6 +11,7 @@ export type {
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, OptionsType } from "./appOptions";
 export type { AsText, CallStack } from "./callStack";
+export type { CompilerMethod } from "./compilerMethod";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
 export type { BadMethodInfoAndNames, ErrorsInfo } from "./errors";
@@ -38,13 +39,12 @@ export { defaultView } from "./view";
 export type {
   GraphFilter,
   View,
+  ViewCompilerMethods,
   ViewCustomErrors,
   ViewErrors,
   ViewGraph,
   ViewGreeting,
   ViewText,
   ViewType,
-  ViewWanted,
 } from "./view";
 export type { DetailType, DetailedAssembly, DetailedMethod, MethodNameStrings, ViewDetails } from "./viewDetails";
-export type { Wanted } from "./wanted";

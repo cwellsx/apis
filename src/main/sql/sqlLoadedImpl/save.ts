@@ -5,12 +5,12 @@ import { Tables } from "./tables";
 import { log } from "../../log";
 import { uniqueStrings } from "../../shared-types";
 
-import type { ErrorColumns } from "./columns";
+import type { CallColumns, ErrorColumns } from "./columns";
+import { flattenCompilerMethods } from "./compilerMethods";
 import { flattenGoodTypeInfo } from "./flattenGoodTypeInfo";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
 import { flattenNamedTypeInfo } from "./flattenNamedTypeInfo";
 import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
-import { widenWantedMethods } from "./widenWantedMethods";
 
 /*
   Save the namespace in CallColumns, because that is:
@@ -32,10 +32,8 @@ const saveGoodTypeInfo = (assemblyName: string, good: GoodTypeInfo[], table: Tab
 };
 
 const saveNamedTypeInfo = (assemblyName: string, named: NamedTypeInfo[], table: Tables): void => {
-  const { declaringTypeColumns, wantedTypeColumns } = flattenNamedTypeInfo(assemblyName, named);
-
+  const { declaringTypeColumns } = flattenNamedTypeInfo(assemblyName, named);
   table.declaringType.insertMany(declaringTypeColumns);
-  table.wantedType.insertMany(wantedTypeColumns);
 };
 
 export const save = (reflected: Reflected, table: Tables): void => {
@@ -68,7 +66,7 @@ export const save = (reflected: Reflected, table: Tables): void => {
 
   const getTypeId: GetTypeId = getMethodTypeId(table);
 
-  const { setWantedMethods, updateWantedTypes } = widenWantedMethods(table);
+  const allCallColumns: CallColumns[] = [];
 
   for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
     const { callColumns, methodColumns, badMethodInfos } = flattenMethodDictionary(
@@ -95,8 +93,9 @@ export const save = (reflected: Reflected, table: Tables): void => {
     // => CallColumns[]
     table.call.insertMany(callColumns);
 
-    setWantedMethods(assemblyName, callColumns);
+    allCallColumns.push(...callColumns);
   }
 
-  updateWantedTypes();
+  const compilerMethodColumns = flattenCompilerMethods(reflected, allCallColumns);
+  table.compilerMethod.insertMany(compilerMethodColumns);
 };

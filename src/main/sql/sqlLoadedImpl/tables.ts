@@ -4,6 +4,7 @@ import { SqlTable, dropTable } from "../sqlTable";
 import {
   AssemblyColumns,
   CallColumns,
+  CompilerMethodColumns,
   DeclaringTypeColumns,
   ErrorColumns,
   GraphFilterColumns,
@@ -12,7 +13,6 @@ import {
   MethodNameColumns,
   TypeColumns,
   TypeNameColumns,
-  WantedTypeColumns,
 } from "./columns";
 import type { SavedTypeInfo } from "./savedTypeInfo";
 
@@ -27,7 +27,7 @@ export type Tables = {
   methodName: SqlTable<MethodNameColumns>;
   graphFilter: SqlTable<GraphFilterColumns>;
   declaringType: SqlTable<DeclaringTypeColumns>;
-  wantedType: SqlTable<WantedTypeColumns>;
+  compilerMethod: SqlTable<CompilerMethodColumns>;
   deleteAll: () => void;
 };
 
@@ -43,7 +43,7 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     dropTable(db, "methodName");
     dropTable(db, "graphFilter");
     dropTable(db, "declaringType");
-    dropTable(db, "wantedType");
+    dropTable(db, "compilerMethod");
   }
 
   const assembly = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
@@ -121,25 +121,25 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
       declaringType: 0,
     }
   );
-  const wantedType = new SqlTable<WantedTypeColumns>(
+  const compilerMethod = new SqlTable<CompilerMethodColumns>(
     db,
-    "wantedType",
-    ["assemblyName", "nestedType"],
-    (key) => key === "errors",
+    "compilerMethod",
+    ["assemblyName", "compilerMethod"],
+    (key) => key === "error" || key === "ownerNamespace",
     {
       assemblyName: "references",
-      nestedType: 0,
-      wantedType: 0,
-      wantedNamespace: "foo",
-      wantedMethod: 0,
-      calledFrom: [],
-      errors: [],
+      compilerType: 0,
+      compilerMethod: 0,
+      ownerType: 0,
+      ownerNamespace: "foo",
+      ownerMethod: 0,
+      error: "bar",
     }
   );
 
   const deleteAll = (): void => {
     // delete in reverse order
-    wantedType.deleteAll();
+    compilerMethod.deleteAll();
     declaringType.deleteAll();
     graphFilter.deleteAll();
     methodName.deleteAll();
@@ -164,6 +164,6 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     methodName,
     graphFilter,
     declaringType,
-    wantedType,
+    compilerMethod,
   };
 };

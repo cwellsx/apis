@@ -84,12 +84,12 @@ export type DeclaringTypeColumns = {
 };
 
 // this table is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
-export type WantedTypeColumns = {
+export type CompilerMethodColumns = {
   assemblyName: string;
-  nestedType: number;
-  wantedType: number;
-  wantedNamespace: string | null;
-  wantedMethod: number;
-  calledFrom: { fromMethodId: number; toMethodId: number }[];
-  errors: string[] | null;
+  compilerType: number; // not used much at run-time except to display in ViewCompilerMethods
+  compilerMethod: number;
+  ownerType: number;
+  ownerNamespace: string | null;
+  ownerMethod: number;
+  error: string | null;
 };

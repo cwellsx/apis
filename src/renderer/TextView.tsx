@@ -1,14 +1,14 @@
 import * as React from "react";
 import {
   BadMethodInfoAndNames,
+  CompilerMethod,
   ErrorsInfo,
   MethodNameStrings,
+  ViewCompilerMethods,
   ViewCustomErrors,
   ViewErrors,
   ViewGreeting,
   ViewText,
-  ViewWanted,
-  Wanted,
 } from "../shared-types";
 import { Message } from "./Message";
 import { BadCallDetails } from "./MethodDetails";
@@ -40,8 +40,8 @@ const getText = (view: ViewText): JSX.Element => {
       return getErrors(view);
     case "customErrors":
       return getCustomErrors(view);
-    case "wanted":
-      return getWanted(view);
+    case "compilerMethods":
+      return getCompilerMethods(view);
   }
 };
 
@@ -99,10 +99,10 @@ const getErrors = (view: ViewErrors): JSX.Element => {
   );
 };
 
-const getWanted = (view: ViewWanted): JSX.Element => {
+const getCompilerMethods = (view: ViewCompilerMethods): JSX.Element => {
   // it's already sorted alphabetically but now also sort by assembly
-  const grouped: { [assemblyName: string]: Wanted[] } = {};
-  view.wanted.forEach((wanted) => {
+  const grouped: { [assemblyName: string]: CompilerMethod[] } = {};
+  view.compilerMethods.forEach((wanted) => {
     let found = grouped[wanted.assemblyName];
     if (!found) {
       found = [];
@@ -129,7 +129,7 @@ const getWanted = (view: ViewWanted): JSX.Element => {
 
   const split = (text: string | undefined): React.ReactNode => (!text ? "" : splitAt(text, "+"));
 
-  const unusual = view.wanted.filter((wanted) => wanted.declaringType !== wanted.wantedType);
+  // const unusual = view.wanted.filter((wanted) => wanted.declaringType !== wanted.ownerType);
 
   /*
       If we display everything in the wanted column then it's too wide, but normally:
@@ -138,53 +138,16 @@ const getWanted = (view: ViewWanted): JSX.Element => {
       So exclude declaringType and wantedType from the normal table, but this preamble says if there are any exceptions.
   */
 
-  const preamble = !unusual.length ? (
-    <p>All compiler-generated types are declared in user-defined types.</p>
-  ) : (
-    <>
-      <p>All compiler-generated types are declared in user-defined types, except the following:</p>
-      <table>
-        <thead>
-          <tr>
-            <th>Declared In</th>
-            <th>This</th>
-            <th>Resolved Type</th>
-          </tr>
-        </thead>
-        <tbody>
-          {Object.entries(grouped).map(([assemblyName, array]) => (
-            <>
-              <tr key={assemblyName}>
-                <th colSpan={3}>{assemblyName}</th>
-              </tr>
-              {array.map((wanted, index) => (
-                <tr key={`${assemblyName}-${index}`}>
-                  <td>{split(wanted.declaringType)}</td>
-                  <td>{split(wanted.nestedType)}</td>
-                  <td>{split(wanted.wantedType)}</td>
-                </tr>
-              ))}
-            </>
-          ))}
-        </tbody>
-      </table>
-    </>
-  );
-
-  for (const wanted of view.wanted)
-    if (!wanted.nestedType.startsWith(wanted.declaringType + "+"))
-      throw new Error("Expect nested type name to begin with declaring type name");
-
   return (
     <>
       <h2>Compiler-generated types</h2>
-      {preamble}
+
       <table>
         <thead>
           <tr>
             <th>Declared In</th>
-            <th>This</th>
-            <th>Resolved Method</th>
+            <th>Compiler Method</th>
+            <th>Called By Method</th>
             <th>Error</th>
           </tr>
         </thead>
@@ -194,19 +157,20 @@ const getWanted = (view: ViewWanted): JSX.Element => {
               <tr>
                 <th colSpan={4}>{assemblyName}</th>
               </tr>
-              {array.map((wanted, index) => (
+              {array.map((columns, index) => (
                 <tr key={`${assemblyName}-${index}`}>
-                  <td>{split(wanted.declaringType)}</td>
-                  <td>{split(wanted.nestedType.substring(wanted.declaringType.length + 1))}</td>
-                  <td>{wanted.wantedMethod}</td>
+                  <td>{split(columns.declaringType)}</td>
                   <td>
-                    {wanted.errors?.map((error) => (
-                      <>
-                        {error}
-                        <br />
-                      </>
-                    ))}
+                    {split(columns.compilerType)}
+                    <br />
+                    {columns.compilerMethod}
                   </td>
+                  <td>
+                    {split(columns.ownerType)}
+                    <br />
+                    {columns.ownerMethod}
+                  </td>
+                  <td>{columns.error}</td>
                 </tr>
               ))}
             </React.Fragment>
