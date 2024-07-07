@@ -3,6 +3,7 @@ import type { BadMethodInfo, BadTypeInfo, Members, MethodInfo } from "../../load
 import type { SavedTypeInfo } from "./savedTypeInfo";
 
 export type BadMethodInfoAndIds = BadMethodInfo & { methodId: number; typeId: number };
+export type CompilerMethodError = "Multiple Callers" | "No Callers" | null;
 
 /*
   This defines types used by most of the SQL source, and imports types from elsewhere -- avoid circular dependencies
@@ -91,5 +92,6 @@ export type CompilerMethodColumns = {
   ownerType: number;
   ownerNamespace: string | null;
   ownerMethod: number;
-  error: string | null;
+  info: string | null;
+  error: CompilerMethodError;
 };

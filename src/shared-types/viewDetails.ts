@@ -1,15 +1,10 @@
 import { LoadedMethodError } from "./loaded";
+import { MethodNameStrings } from "./methodNameStrings";
 import { Named, Namespace } from "./types";
 
 /*
   The types of ViewDetails are distinguished by the detailType
 */
-
-export type MethodNameStrings = {
-  methodMember: string;
-  declaringType: string;
-  assemblyName: string;
-};
 
 export type DetailedMethod = {
   title: MethodNameStrings;

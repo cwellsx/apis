@@ -19,7 +19,9 @@ namespace Core.Extensions
             var returnType = method.IsConstructor == true
                 ? string.Empty
                 : method.ReturnType.AsString(isShort) + " ";
+            var staticType = method.IsStatic == true ? "static " : string.Empty;
             return access
+                + staticType
                 + returnType
                 + method.Name
                 + generic

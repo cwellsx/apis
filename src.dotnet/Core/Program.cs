@@ -116,8 +116,8 @@ namespace Core
                 return;
             }
 
-            directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Debug\net5.0";
-            // directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
+            // directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Debug\net5.0";
+            directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
 
             var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
             WriteJsonToFiles(all, assemblyMethodDetails);

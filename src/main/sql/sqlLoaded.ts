@@ -6,6 +6,7 @@ import type {
   CompilerMethod,
   ErrorsInfo,
   GraphFilter,
+  MethodNameStrings,
   MethodNodeId,
   NodeId,
   TypeNodeId,
@@ -26,6 +27,7 @@ import type {
   TypeNameColumns,
 } from "./sqlLoadedImpl";
 import { getTypeAndMethodNames, newTables, save } from "./sqlLoadedImpl";
+import { CompilerMethodColumns } from "./sqlLoadedImpl/columns";
 import { ViewState } from "./viewState";
 
 /*
@@ -71,7 +73,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-07-06c";
+    const loadedSchemaVersionExpected = "2024-07-07c";
 
     this.viewState = new ViewState(db);
 
@@ -310,6 +312,31 @@ export class SqlLoaded {
         ])
       );
 
+      const getCallStackFromDirection = (column: CompilerMethodColumns, direction: Direction): MethodNameStrings[] => {
+        const { assemblyName, compilerType, compilerMethod } = column;
+        const typeAndMethodIds = this.readCallStack(assemblyName, compilerMethod, direction);
+        const isSameType = (typeAndMethodId: TypeAndMethodId): boolean =>
+          assemblyName === typeAndMethodId.assemblyName && compilerType === typeAndMethodId.typeId;
+        return typeAndMethodIds
+          .filter((found) => !isSameType(found))
+          .map((typeAndMethodId) => ({
+            assemblyName,
+            declaringType: getTypeName(typeNodeId(assemblyName, typeAndMethodId.typeId)),
+            methodMember: getMethodName(methodNodeId(assemblyName, typeAndMethodId.methodId)),
+          }));
+      };
+
+      const getCallStackFromError = (column: CompilerMethodColumns): MethodNameStrings[] | undefined => {
+        switch (column.error) {
+          case null:
+            return undefined;
+          case "No Callers":
+            return getCallStackFromDirection(column, "downwards");
+          case "Multiple Callers":
+            return getCallStackFromDirection(column, "upwards");
+        }
+      };
+
       const compilerMethods: CompilerMethod[] = compilerMethodColumns.map((column) => {
         // don't use getMapped which asserts a match is found
         // because there may be other compiler-generated types at assembly scope i.e. not nested inside a method
@@ -323,10 +350,13 @@ export class SqlLoaded {
           ownerType: column.ownerType ? getTypeName(typeNodeId(column.assemblyName, column.ownerType)) : "",
           ownerMethod: column.ownerMethod ? getMethodName(methodNodeId(column.assemblyName, column.ownerMethod)) : "",
           declaringType: declaringType ? getTypeName(declaringType) : "(no declaringType)",
+          callStack: getCallStackFromError(column),
           error: column.error ?? undefined,
+          info: column.info ?? undefined,
         };
         return result;
       });
+
       compilerMethods.sort((x, y) => {
         let result = x.assemblyName.localeCompare(y.assemblyName);
         if (result) return result;

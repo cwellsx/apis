@@ -1,4 +1,5 @@
 import { GoodTypeInfo, Reflected, validateTypeInfo } from "../../loaded";
+import { getOrSet } from "../../shared-types";
 import { CallColumns, CompilerMethodColumns } from "./columns";
 
 type Owner = { fromMethodId: number; fromTypeId: number; fromNamespace: string };
@@ -95,6 +96,7 @@ export const flattenCompilerMethods = (reflected: Reflected, callColumns: CallCo
         ownerType: owner.fromTypeId,
         ownerMethod: owner.fromMethodId,
         ownerNamespace: owner.fromNamespace,
+        info: null,
         error: null,
       };
     else
@@ -105,12 +107,35 @@ export const flattenCompilerMethods = (reflected: Reflected, callColumns: CallCo
         ownerType: 0,
         ownerMethod: 0,
         ownerNamespace: null,
+        info: null,
         error: owners.size ? "Multiple Callers" : "No Callers",
       };
   };
 
   assemblyMethods.forEach((methods, assemblyName) => {
     methods.forEach((compiler, method) => result.push(getCompilerMethodColumns(assemblyName, method, compiler)));
+  });
+
+  const assemblyCallers = new Map<string, CallColumns[]>();
+  const getCompoundKey = (assemblyName: string, compilerMethod: number) => `${assemblyName}-${compilerMethod}`;
+  callColumns.forEach((call) => {
+    const found = getOrSet(assemblyCallers, getCompoundKey(call.fromAssemblyName, call.fromMethodId), () => []);
+    found.push(call);
+  });
+
+  const isSignificant = (assemblyName: string, compilerMethod: number): boolean => {
+    const found = assemblyCallers.get(getCompoundKey(assemblyName, compilerMethod));
+    if (!found) return false;
+    const isSameType = (columns: CallColumns): boolean =>
+      columns.fromAssemblyName === columns.toAssemblyName && columns.fromTypeId === columns.toTypeId;
+    return found.filter((columns) => !isSameType(columns)).length > 0;
+  };
+
+  result.forEach((columns) => {
+    if (columns.error === "No Callers" && !isSignificant(columns.assemblyName, columns.compilerMethod)) {
+      columns.error = null;
+      columns.info = "(insignificant)";
+    }
   });
 
   return result;

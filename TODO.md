@@ -112,7 +112,8 @@ Improve performance:
 
 ### Not now
 
--
+- If an assembly e.g. Core.Test has no API to external assemblies then even its internals can't be displayed,
+  because with no inter-assembly calls there are no initial children (types) of the assembly and so it can't be expanded
 
 ## Start new features
 

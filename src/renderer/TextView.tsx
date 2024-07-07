@@ -127,6 +127,27 @@ const getCompilerMethods = (view: ViewCompilerMethods): JSX.Element => {
     found.push(compilerMethod);
   });
 
+  const getOwnerCell = (compilerMethod: CompilerMethod): JSX.Element =>
+    compilerMethod.error ? (
+      <ul>
+        {compilerMethod.callStack?.map((methodNameStrings, index) => (
+          <li key={index}>
+            {methodNameStrings.declaringType}
+            <br />
+            {methodNameStrings.methodMember}
+          </li>
+        ))}
+      </ul>
+    ) : compilerMethod.info ? (
+      <>{compilerMethod.info}</>
+    ) : (
+      <>
+        {split(compilerMethod.ownerType)}
+        <br />
+        {compilerMethod.ownerMethod}
+      </>
+    );
+
   const showAssembly = (assemblyName: string, compilerMethods: CompilerMethod[]): JSX.Element => (
     <React.Fragment key={assemblyName}>
       <h3>{assemblyName}</h3>
@@ -164,11 +185,7 @@ const getCompilerMethods = (view: ViewCompilerMethods): JSX.Element => {
                 </td>
               </tr>
               <tr>
-                <td className="owner">
-                  {split(compilerMethod.ownerType)}
-                  <br />
-                  {compilerMethod.ownerMethod}
-                </td>
+                <td className="owner">{getOwnerCell(compilerMethod)}</td>
               </tr>
             </React.Fragment>
           ))}

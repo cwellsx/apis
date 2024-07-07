@@ -125,7 +125,7 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     db,
     "compilerMethod",
     ["assemblyName", "compilerMethod"],
-    (key) => key === "error" || key === "ownerNamespace",
+    (key) => key === "error" || key === "info" || key === "ownerNamespace",
     {
       assemblyName: "references",
       compilerType: 0,
@@ -133,7 +133,8 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
       ownerType: 0,
       ownerNamespace: "foo",
       ownerMethod: 0,
-      error: "bar",
+      info: "baz",
+      error: "No Callers",
     }
   );
 

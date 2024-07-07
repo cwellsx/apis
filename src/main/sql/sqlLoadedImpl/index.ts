@@ -2,6 +2,7 @@ export type {
   AssemblyColumns,
   BadMethodInfoAndIds,
   CallColumns,
+  CompilerMethodError,
   ErrorColumns,
   GraphFilterColumns,
   MemberColumns,
