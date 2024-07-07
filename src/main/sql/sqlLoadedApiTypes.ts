@@ -15,6 +15,7 @@ export type Call = {
 export type GetTypeOrMethodName = {
   getTypeName: (typeNodeId: TypeNodeId) => string;
   getMethodName: (methodNodeId: MethodNodeId) => string;
+  getTypeNamespace: (typeNodeId: TypeNodeId) => string | null;
 };
 
 export type Direction = "upwards" | "downwards";

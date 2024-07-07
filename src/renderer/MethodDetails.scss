@@ -1,0 +1,17 @@
+.errorDetails {
+  /* less padding between rows of nested table */
+
+  table table td,
+  table table th {
+    padding: 0.25em 0.5em;
+  }
+  /* don't left-pad first column nor top-pad first row of any table */
+
+  table th:first-child {
+    padding-left: 0;
+  }
+
+  table > *:first-child > tr > * {
+    padding-top: 0;
+  }
+}

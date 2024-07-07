@@ -12,6 +12,7 @@ import {
 } from "../shared-types";
 import { Message } from "./Message";
 import { BadCallDetails } from "./MethodDetails";
+import "./TextView.scss";
 import { OnWheel } from "./useZoomPercent";
 
 type TextViewProps = {
@@ -100,83 +101,88 @@ const getErrors = (view: ViewErrors): JSX.Element => {
 };
 
 const getCompilerMethods = (view: ViewCompilerMethods): JSX.Element => {
-  // it's already sorted alphabetically but now also sort by assembly
-  const grouped: { [assemblyName: string]: CompilerMethod[] } = {};
-  view.compilerMethods.forEach((wanted) => {
-    let found = grouped[wanted.assemblyName];
+  const join = (parts: string[], separator: JSX.Element): React.ReactNode =>
+    parts.map((part, index) =>
+      !index ? (
+        <React.Fragment key={index}>{part}</React.Fragment>
+      ) : (
+        <React.Fragment key={index}>
+          {separator}
+          <wbr />
+          {part}
+        </React.Fragment>
+      )
+    );
+
+  const split = (text: string): React.ReactNode => (!text ? "" : join(text.split("+"), <br />));
+
+  // it's already sorted alphabetically but now also group by assembly
+  const assemblyMethods = new Map<string, CompilerMethod[]>();
+  view.compilerMethods.forEach((compilerMethod) => {
+    let found = assemblyMethods.get(compilerMethod.assemblyName);
     if (!found) {
       found = [];
-      grouped[wanted.assemblyName] = found;
+      assemblyMethods.set(compilerMethod.assemblyName, found);
     }
-    found.push(wanted);
+    found.push(compilerMethod);
   });
 
-  const splitAt = (text: string, separator: string): React.ReactNode =>
-    text
-      .split(separator)
-      .map((part) => (separator == "<" ? part : part.length < 25 && part[0] !== "<" ? part : splitAt(part, "<")))
-      .map((part, index) =>
-        !index ? (
-          <React.Fragment key={index}>{part}</React.Fragment>
-        ) : (
-          <React.Fragment key={index}>
-            {separator}
-            <wbr />
-            {part}
-          </React.Fragment>
-        )
-      );
-
-  const split = (text: string | undefined): React.ReactNode => (!text ? "" : splitAt(text, "+"));
-
-  // const unusual = view.wanted.filter((wanted) => wanted.declaringType !== wanted.ownerType);
-
-  /*
-      If we display everything in the wanted column then it's too wide, but normally:
-      - declaringType === wantedType
-      - nestedType.StartsWith(declaringType)
-      So exclude declaringType and wantedType from the normal table, but this preamble says if there are any exceptions.
-  */
-
-  return (
-    <>
-      <h2>Compiler-generated types</h2>
-
-      <table>
+  const showAssembly = (assemblyName: string, compilerMethods: CompilerMethod[]): JSX.Element => (
+    <React.Fragment key={assemblyName}>
+      <h3>{assemblyName}</h3>
+      <table className="compilerMethods">
         <thead>
           <tr>
-            <th>Declared In</th>
+            <th rowSpan={3}>Error</th>
+            <th>Namespace / Declared In</th>
+          </tr>
+          <tr>
             <th>Compiler Method</th>
+          </tr>
+          <tr>
             <th>Called By Method</th>
-            <th>Error</th>
           </tr>
         </thead>
         <tbody>
-          {Object.entries(grouped).map(([assemblyName, array]) => (
-            <React.Fragment key={assemblyName}>
+          {compilerMethods.map((compilerMethod, index) => (
+            <React.Fragment key={index}>
               <tr>
-                <th colSpan={4}>{assemblyName}</th>
+                <td rowSpan={3} className="error">
+                  {compilerMethod.error}
+                </td>
+                <td className="container">
+                  {compilerMethod.compilerNamespace}
+                  <br />
+                  {compilerMethod.declaringType}
+                </td>
               </tr>
-              {array.map((columns, index) => (
-                <tr key={`${assemblyName}-${index}`}>
-                  <td>{split(columns.declaringType)}</td>
-                  <td>
-                    {split(columns.compilerType)}
-                    <br />
-                    {columns.compilerMethod}
-                  </td>
-                  <td>
-                    {split(columns.ownerType)}
-                    <br />
-                    {columns.ownerMethod}
-                  </td>
-                  <td>{columns.error}</td>
-                </tr>
-              ))}
+              <tr>
+                <td>
+                  {split(compilerMethod.compilerType)}
+                  <br />
+                  {compilerMethod.compilerMethod}
+                </td>
+              </tr>
+              <tr>
+                <td className="owner">
+                  {split(compilerMethod.ownerType)}
+                  <br />
+                  {compilerMethod.ownerMethod}
+                </td>
+              </tr>
             </React.Fragment>
           ))}
         </tbody>
       </table>
+    </React.Fragment>
+  );
+
+  return (
+    <>
+      <h2>Compiler-generated types</h2>
+      {[...assemblyMethods.entries()].map(([assemblyName, compilerMethods]) =>
+        showAssembly(assemblyName, compilerMethods)
+      )}
     </>
   );
 };

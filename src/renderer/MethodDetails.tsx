@@ -1,6 +1,7 @@
 import * as React from "react";
 import { DetailedMethod, LoadedMethodError, MethodNameStrings } from "../shared-types";
 import "./MethodDetails.css";
+import "./MethodDetails.scss";
 
 const toJson = (o: object) => <pre className="json">{JSON.stringify(o, null, " ")}</pre>;
 

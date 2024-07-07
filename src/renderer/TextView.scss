@@ -1,0 +1,22 @@
+table.compilerMethods {
+  border: 1px solid black;
+
+  td,
+  th {
+    border: 1px solid lightgray;
+  }
+
+  td.error {
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+    width: 10em;
+  }
+
+  td.container {
+    border-top: 1px solid black;
+  }
+
+  td.owner {
+    border-bottom: 1px solid black;
+  }
+}

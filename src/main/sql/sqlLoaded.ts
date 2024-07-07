@@ -299,7 +299,7 @@ export class SqlLoaded {
 
     this.readCompilerMethods = (): CompilerMethod[] => {
       const compilerMethodColumns = table.compilerMethod.selectAll();
-      const { getTypeName, getMethodName } = this.readNames();
+      const { getTypeName, getMethodName, getTypeNamespace } = this.readNames();
 
       const declaringTypes = table.declaringType.selectAll();
       const assemblyDeclaringTypes = mapOfMaps(
@@ -316,11 +316,13 @@ export class SqlLoaded {
         const declaringType = assemblyDeclaringTypes.get(column.assemblyName)?.get(column.compilerType);
         const result: CompilerMethod = {
           assemblyName: column.assemblyName,
+          compilerNamespace: getTypeNamespace(typeNodeId(column.assemblyName, column.compilerType)) ?? "(no namespace)",
           compilerType: getTypeName(typeNodeId(column.assemblyName, column.compilerType)),
           compilerMethod: getMethodName(methodNodeId(column.assemblyName, column.compilerMethod)),
+          ownerNamespace: column.ownerNamespace ?? "(no namespace)",
           ownerType: column.ownerType ? getTypeName(typeNodeId(column.assemblyName, column.ownerType)) : "",
           ownerMethod: column.ownerMethod ? getMethodName(methodNodeId(column.assemblyName, column.ownerMethod)) : "",
-          declaringType: declaringType ? getTypeName(declaringType) : "No declaringType",
+          declaringType: declaringType ? getTypeName(declaringType) : "(no declaringType)",
           error: column.error ?? undefined,
         };
         return result;

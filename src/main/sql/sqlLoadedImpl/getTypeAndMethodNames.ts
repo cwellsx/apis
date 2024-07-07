@@ -12,6 +12,9 @@ export const getTypeAndMethodNames = (table: Tables): GetTypeOrMethodName => {
   const assemblyTypeNames = mapOfMaps(
     typeNames.map((typeName) => [typeName.assemblyName, typeName.metadataToken, typeName.decoratedName])
   );
+  const assemblyTypeNamespaces = mapOfMaps(
+    typeNames.map((typeName) => [typeName.assemblyName, typeName.metadataToken, typeName.namespace])
+  );
   const assemblyMethodNames = mapOfMaps(
     methodNames.map((methodName) => [methodName.assemblyName, methodName.metadataToken, methodName.name])
   );
@@ -38,5 +41,8 @@ export const getTypeAndMethodNames = (table: Tables): GetTypeOrMethodName => {
   const getMethodName = (methodNodeId: MethodNodeId): string =>
     getMapped(assemblyMethodNames, methodNodeId.assemblyName, methodNodeId.metadataToken);
 
-  return { getTypeName, getMethodName };
+  const getTypeNamespace = (typeNodeId: TypeNodeId): string | null =>
+    getMapped(assemblyTypeNamespaces, typeNodeId.assemblyName, typeNodeId.metadataToken);
+
+  return { getTypeName, getMethodName, getTypeNamespace };
 };

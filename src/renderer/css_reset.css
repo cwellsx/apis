@@ -25,3 +25,25 @@ p, h1, h2, h3, h4, h5, h6 {
 #root, #__next {
   isolation: isolate;
 }
+
+/* CSS reset for tables */
+
+table, caption, tbody, tfoot, thead, tr, th, td {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  vertical-align: baseline;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+/* alignment and cell padding */
+
+td, th  {
+  vertical-align: top;
+  text-align: left;
+  padding: 0.5em;
+}
+

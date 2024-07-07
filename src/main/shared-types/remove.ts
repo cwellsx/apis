@@ -43,6 +43,6 @@ export const mapOfMaps = <K, K2, V>(records: [K, K2, V][]): Map<K, Map<K2, V>> =
 
 export const getMapped = <K, K2, V>(map: Map<K, Map<K2, V>>, key: K, key2: K2): V => {
   const result = map.get(key)?.get(key2);
-  if (!result) throw new Error(`Value not found for keys ${key}, ${key2}`);
+  if (result === undefined) throw new Error(`Value not found for keys ${key}, ${key2}`);
   return result;
 };
