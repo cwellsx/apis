@@ -1,17 +1,21 @@
 import * as React from "react";
 import {
+  AppOptions,
   BadMethodInfoAndNames,
   CompilerMethod,
   ErrorsInfo,
   MethodNameStrings,
+  OnUserEvent,
   ViewCompiler,
   ViewCustomErrors,
   ViewErrors,
   ViewGreeting,
+  ViewOptions,
   ViewText,
 } from "../shared-types";
 import { Message } from "./Message";
 import { BadCallDetails } from "./MethodDetails";
+import { ChooseCompilerViewOptions } from "./Options";
 import "./TextView.scss";
 import { OnWheel } from "./useZoomPercent";
 
@@ -19,12 +23,15 @@ type TextViewProps = {
   view: ViewText;
   fontSize: number;
   onWheelFontSize: OnWheel;
+  onViewOptions: OnUserEvent<ViewOptions>;
+  appOptions: AppOptions;
+  onAppOptions: OnUserEvent<AppOptions>;
 };
 export const TextView: React.FunctionComponent<TextViewProps> = (props: TextViewProps) => {
-  const { view, fontSize, onWheelFontSize } = props;
+  const { fontSize, onWheelFontSize } = props;
   const style = { fontSize: fontSize };
 
-  const text = getText(view);
+  const text = getText(props);
   return (
     <div id="textView" onWheel={onWheelFontSize} style={style}>
       {text}
@@ -33,7 +40,8 @@ export const TextView: React.FunctionComponent<TextViewProps> = (props: TextView
   );
 };
 
-const getText = (view: ViewText): JSX.Element => {
+const getText = (props: TextViewProps): JSX.Element => {
+  const { view } = props;
   switch (view.viewType) {
     case "greeting":
       return getGreeting(view);
@@ -41,8 +49,18 @@ const getText = (view: ViewText): JSX.Element => {
       return getErrors(view);
     case "customErrors":
       return getCustomErrors(view);
-    case "compilerMethods":
-      return getCompilerMethods(view);
+    case "compilerMethods": {
+      const { onViewOptions, appOptions, onAppOptions } = props;
+      const chooseOptions = (
+        <ChooseCompilerViewOptions
+          viewOptions={view.textViewOptions}
+          onViewOptions={onViewOptions}
+          appOptions={appOptions}
+          onAppOptions={onAppOptions}
+        />
+      );
+      return getCompilerMethods(view, chooseOptions);
+    }
   }
 };
 
@@ -100,7 +118,9 @@ const getErrors = (view: ViewErrors): JSX.Element => {
   );
 };
 
-const getCompilerMethods = (view: ViewCompiler): JSX.Element => {
+const getCompilerMethods = (view: ViewCompiler, chooseOptions: JSX.Element): JSX.Element => {
+  const errorsOnly = view.textViewOptions.errorsOnly;
+
   const join = (parts: string[], separator: JSX.Element): React.ReactNode =>
     parts.map((part, index) =>
       !index ? (
@@ -165,30 +185,32 @@ const getCompilerMethods = (view: ViewCompiler): JSX.Element => {
           </tr>
         </thead>
         <tbody>
-          {compilerMethods.map((compilerMethod, index) => (
-            <React.Fragment key={index}>
-              <tr>
-                <td rowSpan={3} className="error">
-                  {compilerMethod.error}
-                </td>
-                <td className="container">
-                  {compilerMethod.compilerNamespace}
-                  <br />
-                  {compilerMethod.declaringType}
-                </td>
-              </tr>
-              <tr>
-                <td>
-                  {split(compilerMethod.compilerType)}
-                  <br />
-                  {compilerMethod.compilerMethod}
-                </td>
-              </tr>
-              <tr>
-                <td className="owner">{getOwnerCell(compilerMethod)}</td>
-              </tr>
-            </React.Fragment>
-          ))}
+          {compilerMethods
+            .filter((compilerMethod) => !errorsOnly || compilerMethod.error)
+            .map((compilerMethod, index) => (
+              <React.Fragment key={index}>
+                <tr>
+                  <td rowSpan={3} className="error">
+                    {compilerMethod.error}
+                  </td>
+                  <td className="container">
+                    {compilerMethod.compilerNamespace}
+                    <br />
+                    {compilerMethod.declaringType}
+                  </td>
+                </tr>
+                <tr>
+                  <td>
+                    {split(compilerMethod.compilerType)}
+                    <br />
+                    {compilerMethod.compilerMethod}
+                  </td>
+                </tr>
+                <tr>
+                  <td className="owner">{getOwnerCell(compilerMethod)}</td>
+                </tr>
+              </React.Fragment>
+            ))}
         </tbody>
       </table>
     </React.Fragment>
@@ -197,8 +219,13 @@ const getCompilerMethods = (view: ViewCompiler): JSX.Element => {
   return (
     <>
       <h2>Compiler-generated types</h2>
+      {chooseOptions}
       {[...assemblyMethods.entries()].map(([assemblyName, compilerMethods]) =>
-        showAssembly(assemblyName, compilerMethods)
+        !errorsOnly || compilerMethods.some((column) => column.error) ? (
+          showAssembly(assemblyName, compilerMethods)
+        ) : (
+          <></>
+        )
       )}
     </>
   );

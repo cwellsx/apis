@@ -69,7 +69,7 @@ export const createCustomWindow = (
       sqlConfig.appOptions = appOptions;
       renderer.showAppOptions(appOptions);
     },
-    onGraphClick: (graphEvent: GraphEvent): void => {
+    onGraphEvent: (graphEvent: GraphEvent): void => {
       const { id, viewType, event } = graphEvent;
       const { leafType, details } = viewFeatures[viewType];
       if (isEdgeId(id)) return;
@@ -88,7 +88,7 @@ export const createCustomWindow = (
       // nothing to do
       return;
     },
-    onGraphFilter: (filterEvent: FilterEvent): void => {
+    onFilterEvent: (filterEvent: FilterEvent): void => {
       const { viewOptions, graphFilter } = filterEvent;
       const isCustomViewOptions = (viewOptions: ViewOptions): viewOptions is CustomViewOptions =>
         viewOptions.viewType === "custom";
@@ -96,7 +96,7 @@ export const createCustomWindow = (
       sqlCustom.writeGraphFilter(viewOptions.clusterBy, graphFilter);
       showCustom();
     },
-    onDetailClick: (detailEvent): void => {
+    onDetailEvent: (detailEvent): void => {
       // unexpected
     },
   };

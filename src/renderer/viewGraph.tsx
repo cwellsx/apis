@@ -1,9 +1,10 @@
 import * as React from "react";
 import type {
   AppOptions,
+  DetailEvent,
   FilterEvent,
-  OnDetailClick,
-  OnGraphClick,
+  GraphEvent,
+  OnUserEvent,
   ViewDetails,
   ViewGraph,
   ViewOptions,
@@ -13,7 +14,7 @@ import { AssemblyDetails } from "./AssemblyDetails";
 import { Graph } from "./Graph";
 import { Message } from "./Message";
 import { MethodDetails } from "./MethodDetails";
-import { AppOptionsDetails, ViewOptionsDetails } from "./Options";
+import { ChooseGraphViewOptions } from "./Options";
 import { Tree } from "./Tree";
 
 export const getLeft = (
@@ -21,17 +22,17 @@ export const getLeft = (
   onViewOptions: (viewOptions: ViewOptions) => void,
   onGraphFilter: (filterEvent: FilterEvent) => void,
   appOptions: AppOptions,
-  setAppOptions: (appOptions: AppOptions) => void
+  onAppOptions: (appOptions: AppOptions) => void
 ): JSX.Element => {
   const viewOptions = view.graphViewOptions;
   const { leafVisible, groupExpanded } = view.graphFilter;
   return (
     <>
-      <ViewOptionsDetails
+      <ChooseGraphViewOptions
         viewOptions={view.graphViewOptions}
-        setViewOptions={onViewOptions}
+        onViewOptions={onViewOptions}
         appOptions={appOptions}
-        setAppOptions={setAppOptions}
+        onAppOptions={onAppOptions}
       />
       <Tree
         nodes={view.groups}
@@ -48,7 +49,7 @@ export const getLeft = (
   );
 };
 
-export const getCenter = (view: ViewGraph, onGraphClick: OnGraphClick, zoomPercent: number): JSX.Element => {
+export const getCenter = (view: ViewGraph, onGraphEvent: OnUserEvent<GraphEvent>, zoomPercent: number): JSX.Element => {
   // display a message, or an image if there is one
   if (typeof view.image === "string") return <Message message={view.image} />;
 
@@ -58,23 +59,22 @@ export const getCenter = (view: ViewGraph, onGraphClick: OnGraphClick, zoomPerce
       areas={view.image.areas}
       now={view.image.now}
       zoomPercent={zoomPercent}
-      onGraphClick={onGraphClick}
+      onGraphEvent={onGraphEvent}
       useKeyStates={view.graphViewOptions.viewType == "references"}
       viewType={view.graphViewOptions.viewType}
     />
   );
 };
 
-export const getRight = (details: ViewDetails | undefined, onDetailClick: OnDetailClick): JSX.Element | undefined => {
+export const getRight = (
+  details: ViewDetails | undefined,
+  onDetailEvent: OnUserEvent<DetailEvent>
+): JSX.Element | undefined => {
   if (!details) return undefined;
   switch (details.detailType) {
     case "assemblyDetails":
-      return <AssemblyDetails types={details} onDetailClick={onDetailClick} />;
+      return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
     case "methodDetails":
       return <MethodDetails methodBody={details} />;
   }
-};
-
-export const getAppOptions = (appOptions: AppOptions, setAppOptions: (appOptions: AppOptions) => void): JSX.Element => {
-  return <AppOptionsDetails appOptions={appOptions} setAppOptions={setAppOptions} />;
 };

@@ -2,6 +2,7 @@ import * as React from "react";
 import type {
   AnyGraphViewOptions,
   AppOptions,
+  CompilerViewOptions,
   CustomViewOptions,
   GraphViewOptions,
   OptionsType,
@@ -151,8 +152,10 @@ const Radios: React.FunctionComponent<RadiosProps> = (props: RadiosProps) => {
 
 // React elements
 
-const ShowIntraAssemblyCalls: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
-  const { viewOptions, setViewOptions } = props;
+const ShowIntraAssemblyCalls: React.FunctionComponent<ChooseGraphViewOptionsProps> = (
+  props: ChooseGraphViewOptionsProps
+) => {
+  const { viewOptions, onViewOptions } = props;
   const booleanState = getShowInternalCalls(viewOptions);
   if (!booleanState) return <></>;
   const [value, setValue] = booleanState;
@@ -163,15 +166,15 @@ const ShowIntraAssemblyCalls: React.FunctionComponent<ViewOptionsProps> = (props
         checked={value}
         onChange={(newValue: boolean) => {
           setValue(newValue);
-          setViewOptions(viewOptions);
+          onViewOptions(viewOptions);
         }}
       />
     </p>
   );
 };
 
-const ShowCustom: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
-  const { viewOptions, setViewOptions } = props;
+const ShowCustom: React.FunctionComponent<ChooseGraphViewOptionsProps> = (props: ChooseGraphViewOptionsProps) => {
+  const { viewOptions, onViewOptions } = props;
   if (!isCustomViewOptions(viewOptions)) return <></>;
 
   return (
@@ -182,7 +185,7 @@ const ShowCustom: React.FunctionComponent<ViewOptionsProps> = (props: ViewOption
         options={viewOptions.nodeProperties}
         onChange={(newValue: string | undefined) => {
           viewOptions.clusterBy = !newValue ? [] : [newValue];
-          setViewOptions(viewOptions);
+          onViewOptions(viewOptions);
         }}
         isOptional={true}
       />
@@ -193,15 +196,15 @@ const ShowCustom: React.FunctionComponent<ViewOptionsProps> = (props: ViewOption
           const found = viewOptions.tags.find((tag) => tag.tag === key);
           if (!found) return; // shouldn't happen
           found.shown = newValue;
-          setViewOptions(viewOptions);
+          onViewOptions(viewOptions);
         }}
       />
     </p>
   );
 };
 
-const ShowEdgeLabels: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
-  const { viewOptions, setViewOptions } = props;
+const ShowEdgeLabels: React.FunctionComponent<ChooseGraphViewOptionsProps> = (props: ChooseGraphViewOptionsProps) => {
+  const { viewOptions, onViewOptions } = props;
   const showEdgeLabels = getShowEdgeLabels(viewOptions);
   if (!showEdgeLabels) return <></>;
 
@@ -214,7 +217,7 @@ const ShowEdgeLabels: React.FunctionComponent<ViewOptionsProps> = (props: ViewOp
         checked={showEdgeLabels.groups}
         onChange={(newValue) => {
           showEdgeLabels.groups = newValue;
-          setViewOptions(viewOptions);
+          onViewOptions(viewOptions);
         }}
       />
       <br />
@@ -223,15 +226,15 @@ const ShowEdgeLabels: React.FunctionComponent<ViewOptionsProps> = (props: ViewOp
         checked={showEdgeLabels.leafs}
         onChange={(newValue) => {
           showEdgeLabels.leafs = newValue;
-          setViewOptions(viewOptions);
+          onViewOptions(viewOptions);
         }}
       />
     </p>
   );
 };
 
-const ShowClustered: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
-  const { viewOptions, setViewOptions } = props;
+const ShowClustered: React.FunctionComponent<ChooseGraphViewOptionsProps> = (props: ChooseGraphViewOptionsProps) => {
+  const { viewOptions, onViewOptions } = props;
   const showClustered = getShowClustered(viewOptions);
   if (!showClustered) {
     if (isReferenceViewOptions(viewOptions))
@@ -242,7 +245,7 @@ const ShowClustered: React.FunctionComponent<ViewOptionsProps> = (props: ViewOpt
             checked={viewOptions.nestedClusters}
             onChange={(newValue: boolean) => {
               viewOptions.nestedClusters = newValue;
-              setViewOptions(viewOptions);
+              onViewOptions(viewOptions);
             }}
           />
         </p>
@@ -259,7 +262,7 @@ const ShowClustered: React.FunctionComponent<ViewOptionsProps> = (props: ViewOpt
         options={["assembly", "namespace"]}
         onChange={(newValue: string) => {
           showClustered.clusterBy = newValue as "assembly" | "namespace";
-          setViewOptions(viewOptions);
+          onViewOptions(viewOptions);
         }}
       />
       <p>
@@ -268,7 +271,7 @@ const ShowClustered: React.FunctionComponent<ViewOptionsProps> = (props: ViewOpt
           checked={showClustered.nestedClusters}
           onChange={(newValue: boolean) => {
             showClustered.nestedClusters = newValue;
-            setViewOptions(viewOptions);
+            onViewOptions(viewOptions);
           }}
         />
       </p>
@@ -276,16 +279,18 @@ const ShowClustered: React.FunctionComponent<ViewOptionsProps> = (props: ViewOpt
   );
 };
 
-type ViewOptionsProps = {
+type ChooseGraphViewOptionsProps = {
   viewOptions: GraphViewOptions;
-  setViewOptions: (viewOptions: GraphViewOptions) => void;
+  onViewOptions: (viewOptions: GraphViewOptions) => void;
   appOptions: AppOptions;
-  setAppOptions: (appOptions: AppOptions) => void;
+  onAppOptions: (appOptions: AppOptions) => void;
 };
 
-export const ViewOptionsDetails: React.FunctionComponent<ViewOptionsProps> = (props: ViewOptionsProps) => {
-  const { viewOptions, appOptions, setAppOptions } = props;
-  const { isClosed, onToggle } = detailsClosed(appOptions, setAppOptions, viewOptions.viewType);
+export const ChooseGraphViewOptions: React.FunctionComponent<ChooseGraphViewOptionsProps> = (
+  props: ChooseGraphViewOptionsProps
+) => {
+  const { viewOptions, appOptions, onAppOptions } = props;
+  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, viewOptions.viewType);
 
   return (
     <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
@@ -298,14 +303,9 @@ export const ViewOptionsDetails: React.FunctionComponent<ViewOptionsProps> = (pr
   );
 };
 
-type AppOptionsProps = {
-  appOptions: AppOptions;
-  setAppOptions: (appOptions: AppOptions) => void;
-};
-
 const detailsClosed = (
   appOptions: AppOptions,
-  setAppOptions: (appOptions: AppOptions) => void,
+  onAppOptions: (appOptions: AppOptions) => void,
   viewType: OptionsType
 ) => {
   const isClosed = appOptions.detailsClosed?.includes(viewType) ?? false;
@@ -321,14 +321,18 @@ const detailsClosed = (
     } else if (!isOpen && !detailsClosed.includes(viewType)) {
       detailsClosed.push(viewType);
     }
-    setAppOptions(appOptions);
+    onAppOptions(appOptions);
   };
   return { isClosed, onToggle };
 };
 
-export const AppOptionsDetails: React.FunctionComponent<AppOptionsProps> = (props: AppOptionsProps) => {
-  const { appOptions, setAppOptions } = props;
-  const { isClosed, onToggle } = detailsClosed(appOptions, setAppOptions, "app");
+type ChooseAppOptionsProps = {
+  appOptions: AppOptions;
+  onAppOptions: (appOptions: AppOptions) => void;
+};
+export const ChooseAppOptions: React.FunctionComponent<ChooseAppOptionsProps> = (props: ChooseAppOptionsProps) => {
+  const { appOptions, onAppOptions } = props;
+  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, "app");
 
   return (
     <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
@@ -341,7 +345,7 @@ export const AppOptionsDetails: React.FunctionComponent<AppOptionsProps> = (prop
           checked={!!appOptions.showCompilerGeneratedTypes}
           onChange={(newValue) => {
             appOptions.showCompilerGeneratedTypes = newValue;
-            setAppOptions(appOptions);
+            onAppOptions(appOptions);
           }}
         />
         <br />
@@ -350,7 +354,7 @@ export const AppOptionsDetails: React.FunctionComponent<AppOptionsProps> = (prop
           checked={!!appOptions.showCompilerGeneratedMethod}
           onChange={(newValue) => {
             appOptions.showCompilerGeneratedMethod = newValue;
-            setAppOptions(appOptions);
+            onAppOptions(appOptions);
           }}
         />
         <br />
@@ -359,7 +363,37 @@ export const AppOptionsDetails: React.FunctionComponent<AppOptionsProps> = (prop
           checked={!!appOptions.showCompilerGeneratedMenuItem}
           onChange={(newValue) => {
             appOptions.showCompilerGeneratedMenuItem = newValue;
-            setAppOptions(appOptions);
+            onAppOptions(appOptions);
+          }}
+        />
+      </p>
+    </details>
+  );
+};
+
+type ChooseCompilerViewOptionsProps = {
+  viewOptions: CompilerViewOptions;
+  onViewOptions: (viewOptions: CompilerViewOptions) => void;
+  appOptions: AppOptions;
+  onAppOptions: (appOptions: AppOptions) => void;
+};
+
+export const ChooseCompilerViewOptions: React.FunctionComponent<ChooseCompilerViewOptionsProps> = (
+  props: ChooseCompilerViewOptionsProps
+) => {
+  const { viewOptions, onViewOptions, appOptions, onAppOptions } = props;
+  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, viewOptions.viewType);
+
+  return (
+    <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
+      <summary>Options</summary>
+      <p>
+        <Checkbox
+          label="Show errors only"
+          checked={viewOptions.errorsOnly}
+          onChange={(newValue: boolean) => {
+            viewOptions.errorsOnly = newValue;
+            onViewOptions(viewOptions);
           }}
         />
       </p>

@@ -69,6 +69,9 @@ export const createAppWindow = (
       case "apis":
         sqlLoaded.viewState.apiViewOptions = viewOptions;
         break;
+      case "compilerMethods":
+        sqlLoaded.viewState.compilerViewOptions = viewOptions;
+        break;
     }
   };
 
@@ -115,7 +118,7 @@ export const createAppWindow = (
       createViewMenu(); // because change appOptions might affect the View menu
       renderer.showAppOptions(appOptions);
     },
-    onGraphClick: (graphEvent: GraphEvent): void => {
+    onGraphEvent: (graphEvent: GraphEvent): void => {
       const { id, viewType, event } = graphEvent;
       if (viewType === "custom") throw new Error("Unexpected viewType");
       const { leafType, details } = viewFeatures[viewType];
@@ -169,7 +172,7 @@ export const createAppWindow = (
         }
       }
     },
-    onGraphFilter: (filterEvent: FilterEvent): void => {
+    onFilterEvent: (filterEvent: FilterEvent): void => {
       const { viewOptions, graphFilter } = filterEvent;
       const viewType = viewOptions.viewType;
       if (viewType === "custom") throw new Error("Unexpected viewType");
@@ -177,7 +180,7 @@ export const createAppWindow = (
       sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
       showViewType(viewType);
     },
-    onDetailClick: (detailEvent: DetailEvent): void => {
+    onDetailEvent: (detailEvent: DetailEvent): void => {
       const { id: nodeId, viewType } = detailEvent;
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window

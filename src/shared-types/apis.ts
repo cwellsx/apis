@@ -13,20 +13,15 @@ import type { ViewOptions } from "./viewOptions";
   - https://www.electronjs.org/docs/latest/tutorial/ipc
 */
 
-// TODO redeclare these as a single generic type
-export type OnViewOptions = (viewOptions: ViewOptions) => void;
-export type OnAppOptions = (appOptions: AppOptions) => void;
-export type OnGraphClick = (graphEvent: GraphEvent) => void;
-export type OnGraphFilter = (filterEvent: FilterEvent) => void;
-export type OnDetailClick = (detailEvent: DetailEvent) => void;
+export type OnUserEvent<T> = (event: T) => void;
 
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {
-  onViewOptions: OnViewOptions;
-  onAppOptions: OnAppOptions;
-  onGraphClick: OnGraphClick;
-  onGraphFilter: OnGraphFilter;
-  onDetailClick: OnDetailClick;
+  onViewOptions: OnUserEvent<ViewOptions>;
+  onAppOptions: OnUserEvent<AppOptions>;
+  onGraphEvent: OnUserEvent<GraphEvent>;
+  onFilterEvent: OnUserEvent<FilterEvent>;
+  onDetailEvent: OnUserEvent<DetailEvent>;
 };
 
 // this Api is available to the main process and its functions are all void

@@ -35,15 +35,15 @@ export function createApplication(mainWindow: BrowserWindow): void {
   });
   ipcMain.on("onGraphClick", (event, graphEvent) => {
     logApi("on", "onGraphClick", graphEvent);
-    on(event)?.onGraphClick(graphEvent);
+    on(event)?.onGraphEvent(graphEvent);
   });
   ipcMain.on("onGraphFilter", (event, filterEvent) => {
     logApi("on", "onGraphFilter", filterEvent);
-    on(event)?.onGraphFilter(filterEvent);
+    on(event)?.onFilterEvent(filterEvent);
   });
   ipcMain.on("onDetailClick", (event, nodeId) => {
     logApi("on", "onDetailClick", nodeId);
-    on(event)?.onDetailClick(nodeId);
+    on(event)?.onDetailEvent(nodeId);
   });
 
   // these mutate sqlLoaded so they're declared inline

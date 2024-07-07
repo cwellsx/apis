@@ -13,9 +13,9 @@ import type {
 const mainApiProxy: MainApi = {
   onViewOptions: (viewOptions: ViewOptions) => ipcRenderer.send("onViewOptions", viewOptions),
   onAppOptions: (appOptions: AppOptions) => ipcRenderer.send("onAppOptions", appOptions),
-  onGraphClick: (graphEvent: GraphEvent) => ipcRenderer.send("onGraphClick", graphEvent),
-  onGraphFilter: (filterEvent: FilterEvent) => ipcRenderer.send("onGraphFilter", filterEvent),
-  onDetailClick: (detailEvent: DetailEvent) => ipcRenderer.send("onDetailClick", detailEvent),
+  onGraphEvent: (graphEvent: GraphEvent) => ipcRenderer.send("onGraphClick", graphEvent),
+  onFilterEvent: (filterEvent: FilterEvent) => ipcRenderer.send("onGraphFilter", filterEvent),
+  onDetailEvent: (detailEvent: DetailEvent) => ipcRenderer.send("onDetailClick", detailEvent),
 };
 
 const bindIpcRenderer = (rendererApi: RendererApi): void => {

@@ -1,6 +1,15 @@
 import * as React from "react";
 import CheckboxTree, { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
-import type { Access, DetailedAssembly, MemberInfo, Named, Namespace, OnDetailClick, Type } from "../shared-types";
+import type {
+  Access,
+  DetailedAssembly,
+  DetailEvent,
+  MemberInfo,
+  Named,
+  Namespace,
+  OnUserEvent,
+  Type,
+} from "../shared-types";
 import { isTypeException, nodeIdToText, textToNodeId } from "../shared-types";
 import * as Icon from "./Icons.Microsoft";
 import { icons } from "./checkboxTreeIcons";
@@ -175,7 +184,7 @@ const reducer = (state: State, action: Action): State => {
 
 type DetailsProps = {
   types: DetailedAssembly;
-  onDetailClick: OnDetailClick;
+  onDetailEvent: OnUserEvent<DetailEvent>;
 };
 export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: DetailsProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState(props.types));
@@ -188,7 +197,7 @@ export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: De
 
   const onClick = (node: OnCheckNode): void => {
     // caution -- this will return a click event even if the node is not a method
-    props.onDetailClick({ id: textToNodeId(node.value), viewType: "assemblyDetails" });
+    props.onDetailEvent({ id: textToNodeId(node.value), viewType: "assemblyDetails" });
   };
 
   return (

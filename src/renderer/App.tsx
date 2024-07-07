@@ -1,22 +1,23 @@
 import * as React from "react";
 import type {
   AppOptions,
-  OnAppOptions,
-  OnDetailClick,
-  OnGraphClick,
-  OnGraphFilter,
-  OnViewOptions,
+  DetailEvent,
+  FilterEvent,
+  GraphEvent,
+  OnUserEvent,
   PreloadApis,
   View,
   ViewDetails,
   ViewGraph,
+  ViewOptions,
 } from "../shared-types";
 import { defaultAppOptions, defaultView } from "../shared-types";
+import { ChooseAppOptions } from "./Options";
 import { Panes } from "./Panes";
 import { TextView } from "./TextView";
 import { log } from "./log";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
-import { getAppOptions, getCenter, getLeft, getRight } from "./viewGraph";
+import { getCenter, getLeft, getRight } from "./viewGraph";
 
 declare global {
   export interface Window {
@@ -64,16 +65,23 @@ const App: React.FunctionComponent = () => {
     });
   });
 
-  const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
-  const onAppOptions: OnAppOptions = (appOptions) => mainApi.onAppOptions(appOptions);
-  const onGraphClick: OnGraphClick = (graphEvent) => mainApi.onGraphClick(graphEvent);
-  const onGraphFilter: OnGraphFilter = (filterEvent) => mainApi.onGraphFilter(filterEvent);
-  const onDetailClick: OnDetailClick = (nodeId) => mainApi.onDetailClick(nodeId);
+  const onViewOptions: OnUserEvent<ViewOptions> = (viewOptions) => mainApi.onViewOptions(viewOptions);
+  const onAppOptions: OnUserEvent<AppOptions> = (appOptions) => mainApi.onAppOptions(appOptions);
+  const onGraphEvent: OnUserEvent<GraphEvent> = (graphEvent) => mainApi.onGraphEvent(graphEvent);
+  const onFilterEvent: OnUserEvent<FilterEvent> = (filterEvent) => mainApi.onFilterEvent(filterEvent);
+  const onDetailEvent: OnUserEvent<DetailEvent> = (nodeId) => mainApi.onDetailEvent(nodeId);
 
   if (!isViewGraph(view)) {
     return (
       <React.StrictMode>
-        <TextView view={view} fontSize={fontSize} onWheelFontSize={onWheelFontSize} />
+        <TextView
+          view={view}
+          fontSize={fontSize}
+          onWheelFontSize={onWheelFontSize}
+          onViewOptions={onViewOptions}
+          appOptions={appOptions}
+          onAppOptions={onAppOptions}
+        />
       </React.StrictMode>
     );
   }
@@ -89,13 +97,15 @@ const App: React.FunctionComponent = () => {
     }
   })();
 
+  const chooseAppOptions = <ChooseAppOptions appOptions={appOptions} onAppOptions={onAppOptions} />;
+
   return (
     <React.StrictMode>
       <Panes
-        left={getLeft(view, onViewOptions, onGraphFilter, appOptions, onAppOptions)}
-        center={getCenter(view, onGraphClick, zoomPercent)}
-        right={getRight(details, onDetailClick)}
-        appOptions={getAppOptions(appOptions, onAppOptions)}
+        left={getLeft(view, onViewOptions, onFilterEvent, appOptions, onAppOptions)}
+        center={getCenter(view, onGraphEvent, zoomPercent)}
+        right={getRight(details, onDetailEvent)}
+        appOptions={chooseAppOptions}
         fontSize={fontSize}
         onWheelZoomPercent={onWheelZoomPercent}
         onWheelFontSize={onWheelFontSize}
