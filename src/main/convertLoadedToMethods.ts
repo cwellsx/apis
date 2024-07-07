@@ -82,7 +82,7 @@ export const convertLoadedToCallstack = (
 export const convertCallstackToImage = (
   callstackElements: CallstackElements,
   typeOrMethodName: GetTypeOrMethodName,
-  viewOptions: MethodViewOptions,
+  graphViewOptions: MethodViewOptions,
   graphFilter: GraphFilter | undefined
 ): ViewGraph => {
   const { leafs, edges } = callstackElements;
@@ -97,7 +97,7 @@ export const convertCallstackToImage = (
   type TypesAndMethods = NodeIdMap<MethodNodeId[], TypeNodeId>;
   const topNodes = new NodeIdMap<TypesAndMethods, NameNodeId>();
 
-  const clusterBy = viewOptions.showClustered.clusterBy;
+  const clusterBy = graphViewOptions.showClustered.clusterBy;
   const getName = (typeAndMethodId: TypeAndMethodId): string => {
     switch (clusterBy) {
       case "assembly":
@@ -175,7 +175,7 @@ export const convertCallstackToImage = (
 
   // convert to Image
   log("convertToImage");
-  const image = convertToImage(groups, edges.values(), viewOptions, graphFilter, false, imageAttributes);
+  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, imageAttributes);
 
-  return { image, viewOptions, graphFilter, groups };
+  return { image, graphViewOptions, graphFilter, groups };
 };

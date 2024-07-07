@@ -7,14 +7,14 @@ import { Edges } from "./shared-types";
 
 export const convertLoadedToCustom = (
   nodes: CustomNode[],
-  viewOptions: CustomViewOptions,
+  graphViewOptions: CustomViewOptions,
   graphFilter: GraphFilter
 ): ViewGraph => {
   log("convertLoadedToView");
   const leafs: { [id: string]: Leaf } = {};
 
   const tags: { [index: string]: boolean } = {};
-  viewOptions.tags.forEach((element) => (tags[element.tag] = element.shown));
+  graphViewOptions.tags.forEach((element) => (tags[element.tag] = element.shown));
 
   const hiddenNodeIds = new Set<string>();
 
@@ -48,7 +48,7 @@ export const convertLoadedToCustom = (
   });
 
   // next do the group
-  const groupedBy = viewOptions.clusterBy.length ? viewOptions.clusterBy[0] : undefined;
+  const groupedBy = graphViewOptions.clusterBy.length ? graphViewOptions.clusterBy[0] : undefined;
   const groups: Node[] = [];
   if (groupedBy) {
     const parents: { [id: string]: Parent } = {};
@@ -73,6 +73,6 @@ export const convertLoadedToCustom = (
 
   groups.sort((x, y) => x.label.localeCompare(y.label));
 
-  const image = convertToImage(groups, edges.values(), viewOptions, graphFilter, false, undefined);
-  return { groups, image, viewOptions, graphFilter };
+  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, undefined);
+  return { groups, image, graphViewOptions, graphFilter };
 };

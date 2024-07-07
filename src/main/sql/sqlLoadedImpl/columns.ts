@@ -1,5 +1,6 @@
-import type { ClusterBy, CommonGraphViewType, NodeId } from "../../../shared-types";
+import type { ClusterBy, NodeId } from "../../../shared-types";
 import type { BadMethodInfo, BadTypeInfo, Members, MethodInfo } from "../../loaded";
+import { CommonGraphViewType } from "../sqlLoadedApiTypes";
 import type { SavedTypeInfo } from "./savedTypeInfo";
 
 export type BadMethodInfoAndIds = BadMethodInfo & { methodId: number; typeId: number };
@@ -87,7 +88,7 @@ export type DeclaringTypeColumns = {
 // this table is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
 export type CompilerMethodColumns = {
   assemblyName: string;
-  compilerType: number; // not used much at run-time except to display in ViewCompilerMethods
+  compilerType: number; // not used much at run-time except to display in ViewCompiler
   compilerMethod: number;
   ownerType: number;
   ownerNamespace: string | null;

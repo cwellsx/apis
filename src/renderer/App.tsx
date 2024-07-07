@@ -28,7 +28,7 @@ const mainApi = window.preloadApis.mainApi;
 
 let once = false;
 
-const isViewGraph = (view: View): view is ViewGraph => (view as ViewGraph).viewOptions !== undefined;
+const isViewGraph = (view: View): view is ViewGraph => (view as ViewGraph).graphViewOptions !== undefined;
 
 const App: React.FunctionComponent = () => {
   const [view, setView] = React.useState<View>(defaultView);

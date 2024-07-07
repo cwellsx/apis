@@ -2,7 +2,6 @@ import { BrowserWindow } from "electron";
 import type {
   AppOptions,
   ClusterBy,
-  CommonGraphViewType,
   DetailEvent,
   FilterEvent,
   GraphEvent,
@@ -10,7 +9,7 @@ import type {
   GraphViewOptions,
   MainApi,
   MethodNodeId,
-  ViewCompilerMethods,
+  ViewCompiler,
   ViewErrors,
   ViewOptions,
   ViewType,
@@ -29,6 +28,7 @@ import { showAdjacent } from "./onGraphClick";
 import { getClusterNames, isEdgeId, isMethodNodeId, isNameNodeId, removeNodeId, toggleNodeId } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sql";
+import { CommonGraphViewType } from "./sql/sqlLoadedApiTypes";
 
 export const createAppWindow = (
   window: BrowserWindow,
@@ -265,7 +265,12 @@ export const createAppWindow = (
 
   const showCompilerMethods = (): void => {
     const compilerMethods = sqlLoaded.readCompilerMethods();
-    const viewCompilerMethods: ViewCompilerMethods = { compilerMethods, viewType: "compilerMethods" };
+    const compilerViewOptions = sqlLoaded.viewState.compilerViewOptions;
+    const viewCompilerMethods: ViewCompiler = {
+      compilerMethods,
+      viewType: "compilerMethods",
+      textViewOptions: compilerViewOptions,
+    };
     renderer.showView(viewCompilerMethods);
   };
 

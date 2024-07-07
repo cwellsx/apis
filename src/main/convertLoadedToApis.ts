@@ -9,7 +9,7 @@ import type { Call, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
 export const convertLoadedToApis = (
   calls: Call[],
   typeOrMethodName: GetTypeOrMethodName,
-  viewOptions: ApiViewOptions,
+  graphViewOptions: ApiViewOptions,
   graphFilter: GraphFilter,
   exes: string[]
 ): ViewGraph => {
@@ -42,7 +42,7 @@ export const convertLoadedToApis = (
     from: TypeAndMethodId,
     to: TypeAndMethodId
   ) => { fromGroupName: string; toGroupName: string } = (from, to) => {
-    switch (viewOptions.showClustered.clusterBy) {
+    switch (graphViewOptions.showClustered.clusterBy) {
       case "assembly":
         return { fromGroupName: from.assemblyName, toGroupName: to.assemblyName };
       case "namespace":
@@ -68,11 +68,11 @@ export const convertLoadedToApis = (
   });
 
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const nestedClusters = viewOptions.showClustered.nestedClusters;
+  const nestedClusters = graphViewOptions.showClustered.nestedClusters;
   const { groups, leafs } = convertNamesToNodes(
     Object.keys(groupedTypes),
     exes,
-    viewOptions.showClustered.clusterBy,
+    graphViewOptions.showClustered.clusterBy,
     nestedClusters
   );
 
@@ -85,6 +85,6 @@ export const convertLoadedToApis = (
     parent["children"] = children;
   });
 
-  const image = convertToImage(groups, edges.values(), viewOptions, graphFilter, false, undefined);
-  return { groups, image, viewOptions, graphFilter };
+  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, undefined);
+  return { groups, image, graphViewOptions, graphFilter };
 };

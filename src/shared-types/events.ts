@@ -1,7 +1,8 @@
-import { GraphViewOptions, GraphViewType } from "./graphViewOptions";
+import { GraphFilter } from "./graphFilter";
 import { EdgeId, NodeId } from "./nodeId";
-import { GraphFilter } from "./view";
 import { DetailType } from "./viewDetails";
+import { GraphViewOptions } from "./viewOptions";
+import { GraphViewType } from "./viewType";
 
 // import OnGraphClick into the renderer-side code, but avoid importing MouseEvent
 // because it can be confusing because there's also a React.MouseEvent and a DOM MouseEvent

@@ -23,12 +23,12 @@ export const getLeft = (
   appOptions: AppOptions,
   setAppOptions: (appOptions: AppOptions) => void
 ): JSX.Element => {
-  const viewOptions = view.viewOptions;
+  const viewOptions = view.graphViewOptions;
   const { leafVisible, groupExpanded } = view.graphFilter;
   return (
     <>
       <ViewOptionsDetails
-        viewOptions={view.viewOptions}
+        viewOptions={view.graphViewOptions}
         setViewOptions={onViewOptions}
         appOptions={appOptions}
         setAppOptions={setAppOptions}
@@ -59,8 +59,8 @@ export const getCenter = (view: ViewGraph, onGraphClick: OnGraphClick, zoomPerce
       now={view.image.now}
       zoomPercent={zoomPercent}
       onGraphClick={onGraphClick}
-      useKeyStates={view.viewOptions.viewType == "references"}
-      viewType={view.viewOptions.viewType}
+      useKeyStates={view.graphViewOptions.viewType == "references"}
+      viewType={view.graphViewOptions.viewType}
     />
   );
 };

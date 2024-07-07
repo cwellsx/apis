@@ -2,7 +2,6 @@ import { Database } from "better-sqlite3";
 import type {
   BadMethodInfoAndNames,
   ClusterBy,
-  CommonGraphViewType,
   CompilerMethod,
   ErrorsInfo,
   GraphFilter,
@@ -16,7 +15,7 @@ import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, Method
 import { loadedVersion, validateTypeInfo } from "../loaded";
 import { log } from "../log";
 import { mapOfMaps } from "../shared-types";
-import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
+import type { Call, CommonGraphViewType, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
 import type {
   BadMethodInfoAndIds,
   CallColumns,

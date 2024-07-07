@@ -1,7 +1,13 @@
 import { Database } from "better-sqlite3";
-import { ApiViewOptions, MethodViewOptions, ReferenceViewOptions, ViewType } from "../../shared-types";
+import {
+  ApiViewOptions,
+  CompilerViewOptions,
+  MethodViewOptions,
+  ReferenceViewOptions,
+  ViewType,
+} from "../../shared-types";
 import { ConfigCache } from "./configCache";
-import { defaultApiViewOptions, defaultMethodViewOptions, defaultReferenceViewOptions } from "./defaultViewOptions";
+import { defaultViewOptions } from "./defaultViewOptions";
 
 export class ViewState {
   private _cache: ConfigCache;
@@ -15,9 +21,9 @@ export class ViewState {
     this.hashDataSource = hashDataSource;
     this.loadedVersion = version;
     this.exes = exes;
-    this.referenceViewOptions = defaultReferenceViewOptions;
-    this.methodViewOptions = defaultMethodViewOptions;
-    this.apiViewOptions = defaultApiViewOptions;
+    this.referenceViewOptions = defaultViewOptions.referenceViewOptions;
+    this.methodViewOptions = defaultViewOptions.methodViewOptions;
+    this.apiViewOptions = defaultViewOptions.apiViewOptions;
   }
 
   // this changes when the SQL schema definition changes
@@ -54,7 +60,9 @@ export class ViewState {
   }
   get referenceViewOptions(): ReferenceViewOptions {
     const value = this._cache.getValue("referenceViewOptions");
-    return value ? { defaultReferenceViewOptions, ...JSON.parse(value) } : defaultReferenceViewOptions;
+    return value
+      ? { ...defaultViewOptions.referenceViewOptions, ...JSON.parse(value) }
+      : defaultViewOptions.referenceViewOptions;
   }
 
   set methodViewOptions(viewOptions: MethodViewOptions) {
@@ -62,7 +70,9 @@ export class ViewState {
   }
   get methodViewOptions(): MethodViewOptions {
     const value = this._cache.getValue("methodViewOptions");
-    return value ? { ...defaultMethodViewOptions, ...JSON.parse(value) } : defaultMethodViewOptions;
+    return value
+      ? { ...defaultViewOptions.methodViewOptions, ...JSON.parse(value) }
+      : defaultViewOptions.methodViewOptions;
   }
 
   set apiViewOptions(viewOptions: ApiViewOptions) {
@@ -70,7 +80,17 @@ export class ViewState {
   }
   get apiViewOptions(): ApiViewOptions {
     const value = this._cache.getValue("apiViewOptions");
-    return value ? { defaultApiViewOptions, ...JSON.parse(value) } : defaultApiViewOptions;
+    return value ? { ...defaultViewOptions.apiViewOptions, ...JSON.parse(value) } : defaultViewOptions.apiViewOptions;
+  }
+
+  set compilerViewOptions(viewOptions: CompilerViewOptions) {
+    this._cache.setValue("compilerViewOptions", JSON.stringify(viewOptions));
+  }
+  get compilerViewOptions(): CompilerViewOptions {
+    const value = this._cache.getValue("compilerViewOptions");
+    return value
+      ? { ...defaultViewOptions.compilerViewOptions, ...JSON.parse(value) }
+      : defaultViewOptions.compilerViewOptions;
   }
 
   set exes(names: string[]) {

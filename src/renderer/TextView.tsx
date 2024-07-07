@@ -4,7 +4,7 @@ import {
   CompilerMethod,
   ErrorsInfo,
   MethodNameStrings,
-  ViewCompilerMethods,
+  ViewCompiler,
   ViewCustomErrors,
   ViewErrors,
   ViewGreeting,
@@ -100,7 +100,7 @@ const getErrors = (view: ViewErrors): JSX.Element => {
   );
 };
 
-const getCompilerMethods = (view: ViewCompilerMethods): JSX.Element => {
+const getCompilerMethods = (view: ViewCompiler): JSX.Element => {
   const join = (parts: string[], separator: JSX.Element): React.ReactNode =>
     parts.map((part, index) =>
       !index ? (

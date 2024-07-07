@@ -3,7 +3,7 @@ import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } fr
 import { nameNodeId } from "../../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
 import { log } from "../log";
-import { defaultCustomViewOptions } from "./defaultViewOptions";
+import { defaultViewOptions } from "./defaultViewOptions";
 import { SqlTable } from "./sqlTable";
 
 type ConfigColumns = {
@@ -138,7 +138,7 @@ export class SqlCustom {
         configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
 
         this.viewState.customViewOptions = {
-          ...defaultCustomViewOptions,
+          ...defaultViewOptions.customViewOptions,
           nodeProperties: nodeProperties.sort(),
           tags: tags.sort().map((tag) => ({ tag, shown: true })),
         };

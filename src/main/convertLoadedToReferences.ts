@@ -9,7 +9,7 @@ import { NodeIdMap, type Edge } from "./shared-types";
 
 export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,
-  viewOptions: ReferenceViewOptions,
+  graphViewOptions: ReferenceViewOptions,
   graphFilter: GraphFilter,
   exes: string[]
 ): ViewGraph => {
@@ -32,7 +32,7 @@ export const convertLoadedToReferences = (
     names.push(...references);
   }
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
-  const nestedClusters = viewOptions.nestedClusters;
+  const nestedClusters = graphViewOptions.nestedClusters;
   const { groups, leafs } = convertNamesToNodes(names, exes, "assembly", nestedClusters);
   // if they're not grouped on the image then pass them all, including .NET assemblies
   // but we don't disassemble .NET so assign them a non-default ImageAttribute
@@ -44,10 +44,10 @@ export const convertLoadedToReferences = (
   const image = convertToImage(
     nestedClusters ? groups : Object.values(leafs),
     edges,
-    viewOptions,
+    graphViewOptions,
     graphFilter,
     nestedClusters,
     imageAttributes
   );
-  return { groups, image, viewOptions, graphFilter };
+  return { groups, image, graphViewOptions, graphFilter };
 };

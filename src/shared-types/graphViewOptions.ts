@@ -1,4 +1,4 @@
-import type { ClusterBy, MethodNodeId, NodeId } from "./nodeId";
+import type { ClusterBy, MethodNodeId } from "./nodeId";
 
 type ShowClustered = {
   clusterBy: ClusterBy;
@@ -30,30 +30,9 @@ export type ApiViewOptions = {
 };
 
 export type CustomViewOptions = {
+  viewType: "custom";
   nodeProperties: string[];
   clusterBy: string[]; // one element from ShowClustered
   showEdgeLabels: ShowEdgeLabels;
   tags: { tag: string; shown: boolean }[];
-  viewType: "custom";
 };
-
-export type GraphViewOptions = ReferenceViewOptions | MethodViewOptions | ApiViewOptions | CustomViewOptions;
-export type GraphViewType = "references" | "methods" | "apis" | "custom";
-
-export type CommonGraphViewType = Exclude<GraphViewType, "custom">;
-
-export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"]; details: ("leaf" | "edge")[] }> = {
-  references: { leafType: "assembly", details: ["leaf"] },
-  apis: { leafType: "type", details: ["edge"] },
-  custom: { leafType: "customLeaf", details: [] },
-  methods: { leafType: "method", details: ["leaf"] },
-};
-
-export type ViewOptions = ReferenceViewOptions | MethodViewOptions | CustomViewOptions | ApiViewOptions;
-
-export type AnyGraphViewOptions = Partial<
-  Omit<ReferenceViewOptions, "viewType"> &
-    Omit<MethodViewOptions, "viewType"> &
-    Omit<ApiViewOptions, "viewType"> &
-    Omit<CustomViewOptions, "viewType">
->;

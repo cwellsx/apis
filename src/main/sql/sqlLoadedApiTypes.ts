@@ -1,4 +1,4 @@
-import { MethodNodeId, TypeNodeId } from "../../shared-types";
+import { GraphViewType, MethodNodeId, TypeNodeId } from "../../shared-types";
 
 export type TypeAndMethodId = {
   assemblyName: string;
@@ -19,3 +19,5 @@ export type GetTypeOrMethodName = {
 };
 
 export type Direction = "upwards" | "downwards";
+
+export type CommonGraphViewType = Exclude<GraphViewType, "custom">;

@@ -1,8 +1,8 @@
 import type { AppOptions } from "./appOptions";
 import type { DetailEvent, FilterEvent, GraphEvent } from "./events";
-import type { ViewOptions } from "./graphViewOptions";
 import type { View } from "./view";
 import type { ViewDetails } from "./viewDetails";
+import type { ViewOptions } from "./viewOptions";
 
 /*
   The underlying APIs, which the application-specific classes wrap, are:
@@ -13,6 +13,7 @@ import type { ViewDetails } from "./viewDetails";
   - https://www.electronjs.org/docs/latest/tutorial/ipc
 */
 
+// TODO redeclare these as a single generic type
 export type OnViewOptions = (viewOptions: ViewOptions) => void;
 export type OnAppOptions = (appOptions: AppOptions) => void;
 export type OnGraphClick = (graphEvent: GraphEvent) => void;
