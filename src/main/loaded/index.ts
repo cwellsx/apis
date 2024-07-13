@@ -2,7 +2,7 @@
 
 export { isReflected } from "./isReflected";
 export type { AssemblyInfo, AssemblyReferences, Reflected } from "./loadedAssemblies";
-export { getBadMethodCalls, getValidMethodCalls } from "./loadedCalls";
+export { validateMethodInfo } from "./loadedCalls";
 export type { BadMethodCall, BadMethodInfo, Error, MethodDictionary, MethodInfo, ValidMethodCall } from "./loadedCalls";
 export { Access } from "./loadedEnums";
 export type { EventMember, FieldMember, Members, MethodMember, Parameter, PropertyMember } from "./loadedMembers";

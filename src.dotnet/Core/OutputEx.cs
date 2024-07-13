@@ -88,10 +88,14 @@ namespace Core.Output.Internal
         MethodDetails MethodDetails,
         MethodId[] CalledMethods,
         MethodId[] ArguedMethods,
+        TypeIdEx[] LocalsTypes,
         int MetadataToken,
         MethodMemberEx MethodMember,
         Values<TypeId>? GenericArguments
         );
 
-    internal record TypeDecompiled(TypeId[]? GenericTypeParameters, List<Decompiled> ListDecompiled);
+    internal record TypeDecompiled(TypeInfo TypeInfo, List<Decompiled> ListDecompiled)
+    {
+        internal TypeId[]? GenericTypeParameters => TypeInfo.GenericTypeParameters;
+    }
 }

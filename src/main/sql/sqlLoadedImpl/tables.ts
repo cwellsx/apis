@@ -8,6 +8,7 @@ import {
   DeclaringTypeColumns,
   ErrorColumns,
   GraphFilterColumns,
+  LocalsTypeColumns,
   MemberColumns,
   MethodColumns,
   MethodNameColumns,
@@ -28,6 +29,7 @@ export type Tables = {
   graphFilter: SqlTable<GraphFilterColumns>;
   declaringType: SqlTable<DeclaringTypeColumns>;
   compilerMethod: SqlTable<CompilerMethodColumns>;
+  localsType: SqlTable<LocalsTypeColumns>;
   deleteAll: () => void;
 };
 
@@ -44,6 +46,7 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     dropTable(db, "graphFilter");
     dropTable(db, "declaringType");
     dropTable(db, "compilerMethod");
+    dropTable(db, "localsType");
   }
 
   const assembly = new SqlTable<AssemblyColumns>(db, "assembly", "assemblyName", () => false, {
@@ -98,6 +101,7 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
       metadataToken: 0,
       namespace: "bar",
       decoratedName: "baz",
+      isCompilerType: 0,
     }
   );
   const methodName = new SqlTable<MethodNameColumns>(db, "methodName", ["assemblyName", "metadataToken"], () => false, {
@@ -137,9 +141,23 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
       error: "No Callers",
     }
   );
+  const localsType = new SqlTable<LocalsTypeColumns>(
+    db,
+    "localsType",
+    ["assemblyName", "ownerMethod", "compilerType"],
+    (key) => false,
+    {
+      assemblyName: "references",
+      ownerType: 0,
+      ownerNamespace: "foo",
+      ownerMethod: 0,
+      compilerType: 0,
+    }
+  );
 
   const deleteAll = (): void => {
     // delete in reverse order
+    localsType.deleteAll();
     compilerMethod.deleteAll();
     declaringType.deleteAll();
     graphFilter.deleteAll();
@@ -166,5 +184,6 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     graphFilter,
     declaringType,
     compilerMethod,
+    localsType,
   };
 };

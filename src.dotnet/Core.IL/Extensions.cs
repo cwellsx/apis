@@ -13,6 +13,11 @@ namespace Core.IL
             return methods.Select(Transform).ToArray();
         }
 
+        internal static TypeId[] Transform(this IEnumerable<IType> types)
+        {
+            return types.Select(type => Transform(type)).ToArray();
+        }
+
         static Method Transform(IMethod method)
         {
             var declaringType = method.DeclaringType.Transform();

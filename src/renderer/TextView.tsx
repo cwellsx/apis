@@ -4,6 +4,7 @@ import {
   BadMethodInfoAndNames,
   CompilerMethod,
   ErrorsInfo,
+  LocalsType,
   MethodNameStrings,
   OnUserEvent,
   ViewCompiler,
@@ -147,17 +148,45 @@ const getCompilerMethods = (view: ViewCompiler, chooseOptions: JSX.Element): JSX
     found.push(compilerMethod);
   });
 
+  const assemblyLocals = new Map<string, LocalsType[]>();
+  view.localsTypes.forEach((localsType) => {
+    let found = assemblyLocals.get(localsType.assemblyName);
+    if (!found) {
+      found = [];
+      assemblyLocals.set(localsType.assemblyName, found);
+    }
+    found.push(localsType);
+  });
+
+  const getLocal = (compilerMethod: CompilerMethod): JSX.Element => {
+    const found = assemblyLocals
+      .get(compilerMethod.assemblyName)
+      ?.find((local) => local.compilerType === compilerMethod.compilerType);
+    return found ? (
+      <p>
+        ({found.ownerType}
+        <br />
+        {found.ownerMethod})
+      </p>
+    ) : (
+      <></>
+    );
+  };
+
   const getOwnerCell = (compilerMethod: CompilerMethod): JSX.Element =>
     compilerMethod.error ? (
-      <ul>
-        {compilerMethod.callStack?.map((methodNameStrings, index) => (
-          <li key={index}>
-            {methodNameStrings.declaringType}
-            <br />
-            {methodNameStrings.methodMember}
-          </li>
-        ))}
-      </ul>
+      <>
+        <ul>
+          {compilerMethod.callStack?.map((methodNameStrings, index) => (
+            <li key={index}>
+              {methodNameStrings.declaringType}
+              <br />
+              {methodNameStrings.methodMember}
+            </li>
+          ))}
+        </ul>
+        {getLocal(compilerMethod)}
+      </>
     ) : compilerMethod.info ? (
       <>{compilerMethod.info}</>
     ) : (
@@ -168,7 +197,7 @@ const getCompilerMethods = (view: ViewCompiler, chooseOptions: JSX.Element): JSX
       </>
     );
 
-  const showAssembly = (assemblyName: string, compilerMethods: CompilerMethod[]): JSX.Element => (
+  const showCompilerMethods = (assemblyName: string, compilerMethods: CompilerMethod[]): JSX.Element => (
     <React.Fragment key={assemblyName}>
       <h3>{assemblyName}</h3>
       <table className="compilerMethods">
@@ -216,16 +245,54 @@ const getCompilerMethods = (view: ViewCompiler, chooseOptions: JSX.Element): JSX
     </React.Fragment>
   );
 
+  const showLocalsTypes = (assemblyName: string, localsTypes: LocalsType[]): JSX.Element => (
+    <React.Fragment key={assemblyName}>
+      <h3>{assemblyName}</h3>
+      <table className="compilerMethods">
+        <thead>
+          <tr>
+            <th>Owner Method</th>
+            <th>Compiler Type</th>
+          </tr>
+        </thead>
+        <tbody>
+          {localsTypes.map((localsType, index) => (
+            <React.Fragment key={index}>
+              <tr>
+                <td className="container">
+                  {localsType.ownerType}
+                  <br />
+                  {localsType.ownerMethod}
+                </td>
+                <td>{split(localsType.compilerType)}</td>
+              </tr>
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
+    </React.Fragment>
+  );
+
   return (
     <>
       <h2>Compiler-generated types</h2>
       {chooseOptions}
       {[...assemblyMethods.entries()].map(([assemblyName, compilerMethods]) =>
         !errorsOnly || compilerMethods.some((column) => column.error) ? (
-          showAssembly(assemblyName, compilerMethods)
+          showCompilerMethods(assemblyName, compilerMethods)
         ) : (
           <></>
         )
+      )}
+      {!errorsOnly ? (
+        <>
+          <h2>Locals types</h2>
+          {[...assemblyLocals.entries()].map(([assemblyName, localsTypes]) =>
+            showLocalsTypes(assemblyName, localsTypes)
+          )}
+        </>
+      ) : (
+        <></>
       )}
     </>
   );

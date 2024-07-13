@@ -267,10 +267,11 @@ export const createAppWindow = (
   };
 
   const showCompilerMethods = (): void => {
-    const compilerMethods = sqlLoaded.readCompilerMethods();
+    const { compilerMethods, localsTypes } = sqlLoaded.readCompilerMethods();
     const compilerViewOptions = sqlLoaded.viewState.compilerViewOptions;
     const viewCompilerMethods: ViewCompiler = {
       compilerMethods,
+      localsTypes,
       viewType: "compilerMethods",
       textViewOptions: compilerViewOptions,
     };

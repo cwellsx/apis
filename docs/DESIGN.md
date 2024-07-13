@@ -141,20 +141,31 @@ The solution uses a C# application i.e. `src.net/Core` to read metadata from .NE
 
 There seem to be three ways to do this:
 
-- Dynamic-loading assemlies
+- Dynamic-loading assemblies using the `System.Reflection.Assembly.LoadFrom` method.
 
   This doesn't work well, so this solution doesn't use it,
   e.g. a .NET Core application cannot load a .NET Framework assembly and vice versa.
 
-- Using the `MetadataLoadContext.LoadFromAssemblyPath` method
+- Using the `System.Reflection.MetadataLoadContext.LoadFromAssemblyPath` method
 
-  This is used in the `AssemblyLoader` and `TypeReader` classes to read the type and method declarations.
+  This is used in the `Core.AssemblyLoader` and `Core.TypeReader` classes to read the type and method declarations.
 
-- Using the `ICSharpCode.Decompiler`
+- Using the `ICSharpCode.Decompiler` which uses the `System.Reflection.Metadata.MetadataReader` class
 
-  This is used in the `MethodReader` class and `Core.IL` assembly to decompile the method bodies.
+  This is used in the `Core.MethodReader` class and `Core.IL` assembly to decompile the method bodies.
 
-They use different technologies -- the second is a .NET API, the third reads the PE file more directly somethow.
+The two which are used used --
+`System.Reflection` and `System.Reflection.Metadata` --
+are different technologies.
+The latter is newer and reads the PE file more directly somethow.
+
+It's unfortunate,
+that this solution uses both,
+and that the latter is used only indirectly,
+i.e. via `ICSharpCode.Decompiler`.
+This is for historical reasons,
+i.e. I started using the traditional `System.Reflection` API,
+and then I used `ICSharpCode.Decompiler`to help decompile method bodies.
 
 ### Development tools
 

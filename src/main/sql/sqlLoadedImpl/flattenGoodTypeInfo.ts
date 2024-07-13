@@ -1,17 +1,11 @@
 import { GoodTypeInfo, Members } from "../../loaded";
-import { getTypeInfoName } from "../../shared-types";
-import { MemberColumns, MethodNameColumns, TypeColumns, TypeNameColumns } from "./columns";
+import { MemberColumns, MethodNameColumns, TypeColumns } from "./columns";
 import { createSavedTypeInfo } from "./savedTypeInfo";
 
 export const flattenGoodTypeInfo = (
   assemblyName: string,
   goodTypeInfos: GoodTypeInfo[]
-): {
-  typeColumns: TypeColumns[];
-  memberColumns: MemberColumns[];
-  methodNameColumns: MethodNameColumns[];
-  typeNameColumns: TypeNameColumns[];
-} => {
+): { typeColumns: TypeColumns[]; memberColumns: MemberColumns[]; methodNameColumns: MethodNameColumns[] } => {
   // types
 
   const typeColumns: TypeColumns[] = goodTypeInfos.map((type) => ({
@@ -55,14 +49,5 @@ export const flattenGoodTypeInfo = (
     );
   }
 
-  // type names
-
-  const typeNameColumns: TypeNameColumns[] = goodTypeInfos.map((typeInfo) => ({
-    assemblyName,
-    metadataToken: typeInfo.typeId.metadataToken,
-    namespace: typeInfo.typeId.namespace ?? null,
-    decoratedName: getTypeInfoName(typeInfo),
-  }));
-
-  return { typeColumns, memberColumns, methodNameColumns, typeNameColumns };
+  return { typeColumns, memberColumns, methodNameColumns };
 };

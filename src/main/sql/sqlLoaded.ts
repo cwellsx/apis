@@ -5,6 +5,7 @@ import type {
   CompilerMethod,
   ErrorsInfo,
   GraphFilter,
+  LocalsType,
   MethodNameStrings,
   MethodNodeId,
   NodeId,
@@ -60,7 +61,7 @@ export class SqlLoaded {
   readMethodInfo: (nodeId: MethodNodeId) => MethodInfo;
   readMethodName: (nodeId: MethodNodeId) => { methodName: string; typeName: string };
   readNames: () => GetTypeOrMethodName;
-  readCompilerMethods: () => CompilerMethod[];
+  readCompilerMethods: () => { compilerMethods: CompilerMethod[]; localsTypes: LocalsType[] };
 
   private readLeafVisible: (viewType: CommonGraphViewType) => NodeId[];
   private readGroupExpanded: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => NodeId[];
@@ -72,7 +73,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-07-07c";
+    const loadedSchemaVersionExpected = "2024-07-13a";
 
     this.viewState = new ViewState(db);
 
@@ -298,8 +299,10 @@ export class SqlLoaded {
 
     this.readNames = (): GetTypeOrMethodName => getTypeAndMethodNames(table);
 
-    this.readCompilerMethods = (): CompilerMethod[] => {
+    this.readCompilerMethods = (): { compilerMethods: CompilerMethod[]; localsTypes: LocalsType[] } => {
       const compilerMethodColumns = table.compilerMethod.selectAll();
+      const localsTypeColumns = table.localsType.selectAll();
+
       const { getTypeName, getMethodName, getTypeNamespace } = this.readNames();
 
       const declaringTypes = table.declaringType.selectAll();
@@ -356,6 +359,13 @@ export class SqlLoaded {
         return result;
       });
 
+      const localsTypes: LocalsType[] = localsTypeColumns.map((column) => ({
+        assemblyName: column.assemblyName,
+        ownerMethod: getMethodName(methodNodeId(column.assemblyName, column.ownerMethod)),
+        ownerType: getTypeName(typeNodeId(column.assemblyName, column.ownerType)),
+        compilerType: getTypeName(typeNodeId(column.assemblyName, column.compilerType)),
+      }));
+
       compilerMethods.sort((x, y) => {
         let result = x.assemblyName.localeCompare(y.assemblyName);
         if (result) return result;
@@ -366,7 +376,7 @@ export class SqlLoaded {
         result = x.compilerMethod.localeCompare(y.compilerMethod);
         return result;
       });
-      return compilerMethods;
+      return { compilerMethods, localsTypes };
     };
 
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {

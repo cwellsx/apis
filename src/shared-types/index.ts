@@ -2,7 +2,7 @@ export type { MainApi, OnUserEvent, PreloadApis, RendererApi } from "./apis";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, OptionsType } from "./appOptions";
 export type { AsText, CallStack } from "./callStack";
-export type { CompilerMethod } from "./compilerMethod";
+export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
 export type { BadMethodInfoAndNames, ErrorsInfo } from "./errors";

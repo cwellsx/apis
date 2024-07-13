@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Reflection.Metadata;
 using System.Reflection.Metadata.Ecma335;
 using System.Reflection.PortableExecutable;
+using System.Linq;
 
 /*
  * This class is implemented using and encapsulates the ICSharpCode.Decompiler package.
@@ -69,9 +70,9 @@ namespace Core.IL
             return cSharpDecompiler.DecompileTypeAsString(fullTypeName);
         }
 
-        public (string, Output.Method[], Output.Method[]) Decompile(MethodBase methodBase) => Decompile(methodBase.MetadataToken);
+        public (string, Output.Method[], Output.Method[], Output.TypeId[]) Decompile(MethodBase methodBase) => Decompile(methodBase.MetadataToken);
 
-        public (string, Output.Method[], Output.Method[]) Decompile(int metadataToken)
+        public (string, Output.Method[], Output.Method[], Output.TypeId[]) Decompile(int metadataToken)
         {
             EntityHandle entityHandle = MetadataTokens.EntityHandle(metadataToken);
             var asString = cSharpDecompiler.DecompileAsString(entityHandle);
@@ -82,7 +83,7 @@ namespace Core.IL
             Assert(method.MetadataToken == entityHandle, "Expect MetadataToken equality");
             if (!method.HasBody)
             {
-                return (asString, Array.Empty<Output.Method>(), Array.Empty<Output.Method>());
+                return (asString, Array.Empty<Output.Method>(), Array.Empty<Output.Method>(), Array.Empty<Output.TypeId>());
             }
 
             var context = new SimpleTypeResolveContext(method);
@@ -103,7 +104,49 @@ namespace Core.IL
             Visitor.Log("==**==");
             var visitor = new Visitor();
             body.AcceptVisitor(visitor);
-            return (asString, visitor.CalledMethods.Transform(), visitor.ArguedMethods.Transform());
+            ILVariableCollection variables = function.Variables;
+            // there are two reasons to decompile only some of the variables
+            // - we only need some, which are defined as local variables, to find which method uses a compiler-generated type
+            // - some of the types like `T` would fail to pass through the Transform method
+            var locals = variables.Where(variable => IsLocal(variable.Kind) && IsSimpleClass(variable.Type.Kind));
+            return (
+                asString,
+                visitor.CalledMethods.Transform(),
+                visitor.ArguedMethods.Transform(),
+                locals.Select(variable => variable.Type).Transform()
+                );
+        }
+
+        // copy-and-pasted from the internal VariableKindExtensions class
+        static bool IsLocal(VariableKind kind)
+        {
+            switch (kind)
+            {
+                case VariableKind.Local:
+                case VariableKind.ExceptionLocal:
+                case VariableKind.ForeachLocal:
+                case VariableKind.UsingLocal:
+                case VariableKind.PatternLocal:
+                case VariableKind.PinnedLocal:
+                case VariableKind.PinnedRegionLocal:
+                case VariableKind.DisplayClassLocal:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        static bool IsSimpleClass(TypeKind kind)
+        {
+            switch (kind)
+            {
+                case TypeKind.Class:
+                case TypeKind.Interface:
+                case TypeKind.Struct:
+                    return true;
+                default:
+                    return false;
+            }
         }
 
         void Assert(bool b, string message)

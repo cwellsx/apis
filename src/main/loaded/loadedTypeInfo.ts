@@ -25,6 +25,8 @@ export type GoodTypeInfo = {
 type AnonTypeInfo = {
   exceptions: string[];
 };
+
+// if an exception is thrown when reading members, then members are missing but at least the TypeId exists
 type PartTypeInfo = {
   typeId: TypeId;
   exceptions: string[];
@@ -35,6 +37,9 @@ type PartTypeInfo = {
 
 // the TypeInfo array may be a micture of good, bad, and very bad (i.e. anonymous) instances
 export type TypeInfo = GoodTypeInfo | PartTypeInfo | AnonTypeInfo;
+
+export type BadTypeInfo = PartTypeInfo | AnonTypeInfo;
+export type NamedTypeInfo = PartTypeInfo | GoodTypeInfo;
 
 function isBadTypeInfo(typeInfo: TypeInfo): typeInfo is AnonTypeInfo | PartTypeInfo {
   return (typeInfo as AnonTypeInfo).exceptions !== undefined || (typeInfo as PartTypeInfo).exceptions !== undefined;
@@ -63,7 +68,6 @@ export const validateTypeInfo = (types: TypeInfo[]): AllTypeInfo => {
   return { good, part, anon };
 };
 
-export type BadTypeInfo = PartTypeInfo | AnonTypeInfo;
 export const badTypeInfo = (all: AllTypeInfo): BadTypeInfo[] => {
   const result: (PartTypeInfo | AnonTypeInfo)[] = [];
   result.push(...all.anon);
@@ -71,7 +75,6 @@ export const badTypeInfo = (all: AllTypeInfo): BadTypeInfo[] => {
   return result;
 };
 
-export type NamedTypeInfo = PartTypeInfo | GoodTypeInfo;
 export const namedTypeInfo = (all: AllTypeInfo): NamedTypeInfo[] => {
   const result: (PartTypeInfo | GoodTypeInfo)[] = [];
   result.push(...all.good);

@@ -69,6 +69,21 @@ namespace Core
                             }
                             methodDetails.Argued.Add(callDetails);
                         }
+                        foreach (var type in decompiled.LocalsTypes)
+                        {
+                            if (type.AssemblyName == null)
+                            {
+                                continue;
+                            }
+                            TypeDetails typeDetails = Find(type, assembliesDecompiled);
+                            if (
+                                typeDetails.Error != null ||
+                                (typeDetails.Attributes?.Any(attribute => attribute == "[System.Runtime.CompilerServices.CompilerGeneratedAttribute]") ?? false)
+                                )
+                            {
+                                methodDetails.Locals.Add(typeDetails);
+                            }
+                        }
                     }
                 }
             }
@@ -76,7 +91,25 @@ namespace Core
             return Dictionary;
         }
 
-        private static CallDetails Find(MethodId call, Dictionary<string, AssemblyDecompiled> assembliesTypesDictionary)
+        private static TypeDetails Find(TypeIdEx type, Dictionary<string, AssemblyDecompiled> assembliesDecompiled)
+        {
+            TypeDetails Error(string message)
+            {
+                return new TypeDetails(type.AssemblyName!, type.AsString(false), null, null, message);
+            }
+            if (!assembliesDecompiled.TryGetValue(type.AssemblyName!, out var typesDictionary))
+            {
+                return Error("Unknown AssemblyName");
+            }
+            if (!typesDictionary.TryGetValue(type.WithoutArguments(), out var typeMethods))
+            {
+                return Error("Call unknown TypeId");
+            }
+            var typeInfo = typeMethods.TypeInfo;
+            return new TypeDetails(type.AssemblyName!, type.AsString(false), typeInfo.Attributes, typeInfo.TypeId!.MetadataToken, null);
+        }
+
+        private static CallDetails Find(MethodId call, Dictionary<string, AssemblyDecompiled> assembliesDecompiled)
         {
             CallDetails Error(string message)
             {
@@ -110,7 +143,7 @@ namespace Core
             {
                 return Error("Missing AssemblyName");
             }
-            if (!assembliesTypesDictionary.TryGetValue(call.DeclaringType.AssemblyName, out var typesDictionary))
+            if (!assembliesDecompiled.TryGetValue(call.DeclaringType.AssemblyName, out var typesDictionary))
             {
                 return Error("Unknown AssemblyName");
             }
@@ -176,7 +209,7 @@ namespace Core
                        genericTypeParameters,
                        call.GenericTypeArguments
                        );
-                   return decompiled.MethodMember.Substitute(substitutions, assembliesTypesDictionary);
+                   return decompiled.MethodMember.Substitute(substitutions, assembliesDecompiled);
                 };
 
                 // find one single whose transformation is an exact match

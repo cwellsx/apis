@@ -205,6 +205,8 @@ namespace Core.Output.Public
         { }
     }
 
+    public record TypeDetails(string AssemblyName, string TypeName, string[]? Attributes, int? MetadataToken, string? Error);
+
     public record MethodDetails(
         string AsText,
         string MethodMember,
@@ -213,14 +215,15 @@ namespace Core.Output.Public
         List<CallDetails> CalledBy,
         List<CallDetails> Argued,
         List<CallDetails> ArguedBy,
+        List<TypeDetails> Locals,
         string? Exception
         )
     {
         internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType,
-            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(),
+            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<TypeDetails>(),
             null) { }
         internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType,
-            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(),
+            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<TypeDetails>(),
             exception.ToString()) { }
     }
 
@@ -230,16 +233,24 @@ namespace Core.Output.Public
         internal MethodCall(CallDetails callDetails) : this(callDetails.AssemblyName, callDetails.MetadataToken, callDetails.Error) { }
     }
 
+    // a shorter version of TypeDetails
+    public record LocalsType(string AssemblyName, int? MetadataToken, string? Error)
+    {
+        internal LocalsType(TypeDetails typeDetails) : this(typeDetails.AssemblyName, typeDetails.MetadataToken, typeDetails.Error) { }
+    }
+
     // a shorter version of MethodDetails
-    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, string? Exception)
+    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals, string? Exception)
     {
         internal MethodInfo(MethodDetails methodDetails) : this(
             methodDetails.AsText,
             From(methodDetails.Called),
             From(methodDetails.Argued),
+            From(methodDetails.Locals),
             methodDetails.Exception)
         { }
         private static MethodCall[]? From(List<CallDetails> list) => list.Count == 0 ? null : list.Select(from => new MethodCall(from)).ToArray();
+        private static LocalsType[]? From(List<TypeDetails> list) => list.Count == 0 ? null : list.Select(from => new LocalsType(from)).ToArray();
     }
 
     public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods);

@@ -1,5 +1,6 @@
 import { MethodNameStrings } from "./methodNameStrings";
 
+// same as CompilerMethodColumns except with string instead of number
 export type CompilerMethod = {
   assemblyName: string;
   compilerNamespace: string;
@@ -12,4 +13,11 @@ export type CompilerMethod = {
   callStack: MethodNameStrings[] | undefined;
   error: string | undefined;
   info: string | undefined;
+};
+
+export type LocalsType = {
+  assemblyName: string;
+  ownerType: string;
+  ownerMethod: string;
+  compilerType: string;
 };

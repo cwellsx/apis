@@ -1,4 +1,4 @@
-import { CompilerMethod } from "./compilerMethod";
+import { CompilerMethod, LocalsType } from "./compilerMethod";
 import { CustomError } from "./customError";
 import { ErrorsInfo } from "./errors";
 import { GraphFilter } from "./graphFilter";
@@ -41,6 +41,7 @@ export type ViewCustomErrors = {
 export type ViewCompiler = {
   viewType: "compilerMethods";
   compilerMethods: CompilerMethod[];
+  localsTypes: LocalsType[];
   textViewOptions: CompilerViewOptions;
 };
 

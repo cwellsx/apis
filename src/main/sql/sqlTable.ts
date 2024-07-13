@@ -9,12 +9,12 @@ function getColumnType(value: unknown): columnType {
   switch (typeof value) {
     case "string":
       return "TEXT";
-    case "boolean":
-      return "INT";
     case "number":
       return Number.isInteger(value) ? "INT" : "REAL";
     case "object":
       return "TEXT";
+    case "boolean":
+      throw new Error("boolean not nsupported so use `0 | 1` type instead");
     default:
       throw new Error("Unsupported type");
   }

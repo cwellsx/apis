@@ -1,5 +1,6 @@
 import type { DetailedMethod } from "../shared-types";
-import { getBadMethodCalls, MethodInfo } from "./loaded";
+import type { MethodInfo } from "./loaded";
+import { validateMethodInfo } from "./loaded";
 
 export const convertLoadedToDetailedMethod = (
   assemblyName: string,
@@ -13,6 +14,6 @@ export const convertLoadedToDetailedMethod = (
     methodMember: methodName,
   },
   asText: methodInfo.asText,
-  errors: getBadMethodCalls(methodInfo)?.map((badMethodCall) => badMethodCall.error),
+  errors: validateMethodInfo(methodInfo).badMethodInfo?.badMethodCalls?.map((badMethodCall) => badMethodCall.error),
   detailType: "methodDetails",
 });

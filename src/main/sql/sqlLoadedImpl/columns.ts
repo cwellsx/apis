@@ -65,6 +65,7 @@ export type TypeNameColumns = {
   metadataToken: number;
   namespace: string | null;
   decoratedName: string;
+  isCompilerType: 0 | 1; // "SQLite3 can only bind numbers, strings, bigints, buffers, and null"
 };
 
 export type MethodNameColumns = {
@@ -95,4 +96,13 @@ export type CompilerMethodColumns = {
   ownerMethod: number;
   info: string | null;
   error: CompilerMethodError;
+};
+
+// this table too helps to implement compilerMethods module
+export type LocalsTypeColumns = {
+  assemblyName: string;
+  ownerType: number;
+  ownerNamespace: string | null;
+  ownerMethod: number;
+  compilerType: number;
 };

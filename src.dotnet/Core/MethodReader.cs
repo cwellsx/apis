@@ -38,7 +38,7 @@ namespace Core
                         continue;
                     }
                     var listDecompiled = new List<Decompiled>();
-                    var typeMethods = new TypeDecompiled(typeInfo.GenericTypeParameters, listDecompiled);
+                    var typeMethods = new TypeDecompiled(typeInfo, listDecompiled);
                     var typeId = new TypeIdEx(typeInfo.TypeId, isMicrosoftAssemblyName);
                     typeDictionary.Add(typeId, typeMethods);
                     foreach (var methodMember in typeInfo.Members.MethodMembers)
@@ -56,7 +56,7 @@ namespace Core
                 try
                 {
                     var methodMemberEx = new MethodMemberEx(methodMember, isMicrosoftAssemblyName);
-                    var (asText, calledMethods, arguedMethods) = decompiler.Decompile(methodMember.MetadataToken);
+                    var (asText, calledMethods, arguedMethods, localsTypes) = decompiler.Decompile(methodMember.MetadataToken);
                     var methodDetails = new MethodDetails(
                         asText,
                         methodMemberEx.AsString(methodMember.GenericArguments, false),
@@ -66,6 +66,7 @@ namespace Core
                         methodDetails,
                         calledMethods.Select(call => call.Transform(isMicrosoftAssemblyName)).ToArray(),
                         arguedMethods.Select(call => call.Transform(isMicrosoftAssemblyName)).ToArray(),
+                        localsTypes.Select(localsType => new TypeIdEx(localsType.Transform(), isMicrosoftAssemblyName)).ToArray(),
                         methodMember.MetadataToken,
                         methodMemberEx,
                         methodMember.GenericArguments
@@ -90,6 +91,7 @@ namespace Core
                     methodDetails,
                     Array.Empty<MethodId>(),
                     Array.Empty<MethodId>(),
+                    Array.Empty<TypeIdEx>(),
                     methodMember.MetadataToken,
                     methodMemberEx,
                     methodMember.GenericArguments

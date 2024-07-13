@@ -1,69 +1,78 @@
-import type { MethodDictionary, MethodInfo, ValidMethodCall } from "../../loaded";
-import { getBadMethodCalls, getValidMethodCalls } from "../../loaded";
+import type { MethodDictionary } from "../../loaded";
+import { validateMethodInfo } from "../../loaded";
+import { log } from "../../log";
 import { distinctor } from "../../shared-types";
-import { BadMethodInfoAndIds, CallColumns, LoadedCall, MethodColumns } from "./columns";
+import { BadMethodInfoAndIds, CallColumns, LocalsTypeColumns, MethodColumns } from "./columns";
 import { GetTypeId } from "./getMethodTypeId";
 
 const distinctCalls = distinctor<{ toAssemblyName: string; toMethodId: number }>(
   (lhs, rhs) => lhs.toAssemblyName == rhs.toAssemblyName && lhs.toMethodId == rhs.toMethodId
 );
 
-type GetCallColumns = (loaded: LoadedCall) => CallColumns;
-
 export const flattenMethodDictionary = (
   assemblyName: string,
   methodDictionary: MethodDictionary,
   getTypeId: GetTypeId
-): { callColumns: CallColumns[]; methodColumns: MethodColumns[]; badMethodInfos: BadMethodInfoAndIds[] } => {
+): {
+  callColumns: CallColumns[];
+  methodColumns: MethodColumns[];
+  badMethodInfos: BadMethodInfoAndIds[];
+  localsTypeColumns: LocalsTypeColumns[];
+} => {
+  log("flattenMethodDictionary");
+
   const callColumns: CallColumns[] = [];
   const methodColumns: MethodColumns[] = [];
   const badMethodInfos: BadMethodInfoAndIds[] = [];
+  const localsTypeColumns: LocalsTypeColumns[] = [];
 
-  const getCallColumns: GetCallColumns = (loaded: LoadedCall) => {
-    const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(loaded.fromAssemblyName, loaded.fromMethodId);
-    const { namespace: toNamespace, typeId: toTypeId } = getTypeId(loaded.toAssemblyName, loaded.toMethodId);
-    return { ...loaded, fromNamespace, fromTypeId, toNamespace, toTypeId };
-  };
+  Object.entries(methodDictionary).forEach(([key, methodInfo]) => {
+    const metadataToken = +key;
 
-  const addBadMethodInfo = (methodId: number, methodInfo: MethodInfo): void => {
-    const badMethodCalls = getBadMethodCalls(methodInfo);
-    if (badMethodCalls || methodInfo.exception) {
-      const { typeId } = getTypeId(assemblyName, methodId);
+    const { methodCalls, localsTypes, badMethodInfo } = validateMethodInfo(methodInfo);
+
+    // BadMethodInfoAndIds[]
+    if (badMethodInfo)
       badMethodInfos.push({
-        methodId,
-        typeId,
-        asText: methodInfo.asText,
-        badMethodCalls,
-        exception: methodInfo.exception,
+        methodId: metadataToken,
+        typeId: getTypeId(assemblyName, metadataToken).typeId,
+        ...badMethodInfo,
       });
-    }
-  };
 
-  const addCallColumns = (fromMethodId: number, calls: ValidMethodCall[] | undefined): void => {
-    if (!calls) return;
+    // CallColumns[]
     callColumns.push(
-      ...calls
+      ...methodCalls
         .map((methodCall) => ({
           toAssemblyName: methodCall.assemblyName,
           toMethodId: methodCall.metadataToken,
         }))
         .filter(distinctCalls)
-        .map((call) => getCallColumns({ ...call, fromAssemblyName: assemblyName, fromMethodId }))
+        .map((call) => {
+          const fromAssemblyName = assemblyName;
+          const fromMethodId = metadataToken;
+          const { namespace: fromNamespace, typeId: fromTypeId } = getTypeId(fromAssemblyName, fromMethodId);
+          const { namespace: toNamespace, typeId: toTypeId } = getTypeId(call.toAssemblyName, call.toMethodId);
+          return { ...call, fromNamespace, fromTypeId, toNamespace, toTypeId, fromAssemblyName, fromMethodId };
+        })
     );
-  };
 
-  Object.entries(methodDictionary).forEach(([key, methodInfo]) => {
-    const metadataToken = +key;
-
-    // BadMethodInfoAndIds[]
-    addBadMethodInfo(metadataToken, methodInfo);
-
-    // CallColumns[]
-    addCallColumns(metadataToken, getValidMethodCalls(methodInfo));
+    // LocalsTypeColumns[]
+    localsTypeColumns.push(
+      ...localsTypes.map((localsType) => {
+        const { typeId: ownerType, namespace: ownerNamespace } = getTypeId(assemblyName, metadataToken);
+        return {
+          assemblyName: localsType.assemblyName,
+          ownerType,
+          ownerNamespace,
+          ownerMethod: metadataToken,
+          compilerType: localsType.metadataToken,
+        };
+      })
+    );
 
     // MethodColumns[]
     methodColumns.push({ assemblyName, metadataToken, methodInfo });
   });
 
-  return { callColumns, methodColumns, badMethodInfos };
+  return { callColumns, methodColumns, badMethodInfos, localsTypeColumns };
 };

@@ -1,16 +1,17 @@
-import type { GoodTypeInfo, NamedTypeInfo, Reflected } from "../../loaded";
+import type { Reflected } from "../../loaded";
 import { badTypeInfo, namedTypeInfo, validateTypeInfo } from "../../loaded";
 import { Tables } from "./tables";
 
 import { log } from "../../log";
 import { uniqueStrings } from "../../shared-types";
 
-import type { CallColumns, ErrorColumns } from "./columns";
+import type { CallColumns, ErrorColumns, LocalsTypeColumns } from "./columns";
 import { flattenCompilerMethods } from "./compilerMethods";
 import { flattenGoodTypeInfo } from "./flattenGoodTypeInfo";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
 import { flattenNamedTypeInfo } from "./flattenNamedTypeInfo";
 import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
+import { getTypeAndMethodNames } from "./getTypeAndMethodNames";
 
 /*
   Save the namespace in CallColumns, because that is:
@@ -22,22 +23,10 @@ import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
   so do all reflected.assemblies to get MapMethodTypes before doing any reflected.assemblyMethods
 */
 
-const saveGoodTypeInfo = (assemblyName: string, good: GoodTypeInfo[], table: Tables): void => {
-  const { typeColumns, memberColumns, methodNameColumns, typeNameColumns } = flattenGoodTypeInfo(assemblyName, good);
-
-  table.typeName.insertMany(typeNameColumns);
-  table.type.insertMany(typeColumns);
-  table.member.insertMany(memberColumns);
-  table.methodName.insertMany(methodNameColumns);
-};
-
-const saveNamedTypeInfo = (assemblyName: string, named: NamedTypeInfo[], table: Tables): void => {
-  const { declaringTypeColumns } = flattenNamedTypeInfo(assemblyName, named);
-  table.declaringType.insertMany(declaringTypeColumns);
-};
-
 export const save = (reflected: Reflected, table: Tables): void => {
   log("save reflected.assemblies");
+
+  const allCompilerTypes = new Map<string, Set<number>>();
 
   for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
     const allTypeInfo = validateTypeInfo(assemblyInfo.types);
@@ -49,10 +38,15 @@ export const save = (reflected: Reflected, table: Tables): void => {
     }
 
     // GoodTypeInfo[]
-    saveGoodTypeInfo(assemblyName, allTypeInfo.good, table);
+    const { typeColumns, memberColumns, methodNameColumns } = flattenGoodTypeInfo(assemblyName, allTypeInfo.good);
+    table.type.insertMany(typeColumns);
+    table.member.insertMany(memberColumns);
+    table.methodName.insertMany(methodNameColumns);
 
     // NamedTypeInfo[]
-    saveNamedTypeInfo(assemblyName, namedTypeInfo(allTypeInfo), table);
+    const { declaringTypeColumns, typeNameColumns } = flattenNamedTypeInfo(assemblyName, namedTypeInfo(allTypeInfo));
+    table.declaringType.insertMany(declaringTypeColumns);
+    table.typeName.insertMany(typeNameColumns);
 
     // referencedAssemblies[]
     table.assembly.insert({
@@ -60,6 +54,12 @@ export const save = (reflected: Reflected, table: Tables): void => {
       // uniqueStrings because I've unusually seen an assembly return two references to the same assembly name
       references: uniqueStrings(assemblyInfo.referencedAssemblies),
     });
+
+    // allCompilerTypes
+    allCompilerTypes.set(
+      assemblyName,
+      new Set<number>(typeNameColumns.filter((column) => column.isCompilerType).map((column) => column.metadataToken))
+    );
   }
 
   log("save reflected.assemblyMethods");
@@ -67,9 +67,10 @@ export const save = (reflected: Reflected, table: Tables): void => {
   const getTypeId: GetTypeId = getMethodTypeId(table);
 
   const allCallColumns: CallColumns[] = [];
+  const allLocalsTypeColumns: LocalsTypeColumns[] = [];
 
   for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
-    const { callColumns, methodColumns, badMethodInfos } = flattenMethodDictionary(
+    const { callColumns, methodColumns, badMethodInfos, localsTypeColumns } = flattenMethodDictionary(
       assemblyName,
       methodDictionary,
       getTypeId
@@ -92,10 +93,19 @@ export const save = (reflected: Reflected, table: Tables): void => {
 
     // => CallColumns[]
     table.call.insertMany(callColumns);
+    // => LocalsTypeColumns[]
+    table.localsType.insertMany(localsTypeColumns);
 
     allCallColumns.push(...callColumns);
+    allLocalsTypeColumns.push(...localsTypeColumns);
   }
 
-  const compilerMethodColumns = flattenCompilerMethods(reflected, allCallColumns);
+  const compilerMethodColumns = flattenCompilerMethods(
+    reflected,
+    allCallColumns,
+    allLocalsTypeColumns,
+    allCompilerTypes,
+    getTypeAndMethodNames(table)
+  );
   table.compilerMethod.insertMany(compilerMethodColumns);
 };

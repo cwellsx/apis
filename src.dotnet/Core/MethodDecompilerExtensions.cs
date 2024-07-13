@@ -32,7 +32,7 @@ namespace Core.Extensions
             return new Parameter(name.ToStringOrNull(), type.Transform());
         }
 
-        static TypeId Transform(this Core.IL.Output.TypeId typeId) => new TypeId(
+        internal static TypeId Transform(this Core.IL.Output.TypeId typeId) => new TypeId(
             typeId.AssemblyName,
             typeId.Namespace,
             typeId.Name,
