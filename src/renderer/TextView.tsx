@@ -230,9 +230,9 @@ const getCompilerMethods = (view: ViewCompiler, chooseOptions: JSX.Element): JSX
                 </tr>
                 <tr>
                   <td>
-                    {split(compilerMethod.compilerType)}
+                    {split(compilerMethod.compilerType)} ({compilerMethod.compilerTypeId})
                     <br />
-                    {compilerMethod.compilerMethod}
+                    {compilerMethod.compilerMethod} ({compilerMethod.compilerMethodId})
                   </td>
                 </tr>
                 <tr>

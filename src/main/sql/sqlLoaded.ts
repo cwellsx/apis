@@ -348,6 +348,8 @@ export class SqlLoaded {
           compilerNamespace: getTypeNamespace(typeNodeId(column.assemblyName, column.compilerType)) ?? "(no namespace)",
           compilerType: getTypeName(typeNodeId(column.assemblyName, column.compilerType)),
           compilerMethod: getMethodName(methodNodeId(column.assemblyName, column.compilerMethod)),
+          compilerTypeId: column.compilerType,
+          compilerMethodId: column.compilerMethod,
           ownerNamespace: column.ownerNamespace ?? "(no namespace)",
           ownerType: column.ownerType ? getTypeName(typeNodeId(column.assemblyName, column.ownerType)) : "",
           ownerMethod: column.ownerMethod ? getMethodName(methodNodeId(column.assemblyName, column.ownerMethod)) : "",

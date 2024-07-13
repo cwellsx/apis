@@ -29,6 +29,7 @@ export const flattenMethodDictionary = (
   Object.entries(methodDictionary).forEach(([key, methodInfo]) => {
     const metadataToken = +key;
 
+    // returned methodCalls includes methodInfo.called and methodInfo.argued
     const { methodCalls, localsTypes, badMethodInfo } = validateMethodInfo(methodInfo);
 
     // BadMethodInfoAndIds[]

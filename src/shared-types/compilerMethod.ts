@@ -6,6 +6,8 @@ export type CompilerMethod = {
   compilerNamespace: string;
   compilerType: string;
   compilerMethod: string;
+  compilerTypeId: number;
+  compilerMethodId: number;
   ownerNamespace: string;
   ownerType: string;
   ownerMethod: string;
