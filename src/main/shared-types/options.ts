@@ -7,7 +7,7 @@ export const options = {
   shortLeafNames: true,
   noSelfEdges: true,
   alwaysReload: true,
-  showCompilerGeneratedAttributes: false,
-  showCompilerGeneratedTypes: false,
+  showCompilerGeneratedAttributes: true,
+  showCompilerGeneratedTypes: true,
   logApi: false,
 };

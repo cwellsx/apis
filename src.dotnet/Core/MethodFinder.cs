@@ -76,10 +76,7 @@ namespace Core
                                 continue;
                             }
                             TypeDetails typeDetails = Find(type, assembliesDecompiled);
-                            if (
-                                typeDetails.Error != null ||
-                                (typeDetails.Attributes?.Any(attribute => attribute == "[System.Runtime.CompilerServices.CompilerGeneratedAttribute]") ?? false)
-                                )
+                            if (typeDetails.Error != null || typeDetails.IsCompiler)
                             {
                                 methodDetails.Locals.Add(typeDetails);
                             }
@@ -95,18 +92,18 @@ namespace Core
         {
             TypeDetails Error(string message)
             {
-                return new TypeDetails(type.AssemblyName!, type.AsString(false), null, null, message);
+                return new TypeDetails(type.AssemblyName!, type.AsString(false), false, null, message);
             }
             if (!assembliesDecompiled.TryGetValue(type.AssemblyName!, out var typesDictionary))
             {
                 return Error("Unknown AssemblyName");
             }
-            if (!typesDictionary.TryGetValue(type.WithoutArguments(), out var typeMethods))
+            if (!typesDictionary.TryGetValue(type.WithoutArguments(), out var typeDecompiled))
             {
                 return Error("Call unknown TypeId");
             }
-            var typeInfo = typeMethods.TypeInfo;
-            return new TypeDetails(type.AssemblyName!, type.AsString(false), typeInfo.Attributes, typeInfo.TypeId!.MetadataToken, null);
+            var typeInfo = typeDecompiled.TypeInfo;
+            return new TypeDetails(type.AssemblyName!, type.AsString(false), typeDecompiled.IsCompiler, typeInfo.TypeId!.MetadataToken, null);
         }
 
         private static CallDetails Find(MethodId call, Dictionary<string, AssemblyDecompiled> assembliesDecompiled)

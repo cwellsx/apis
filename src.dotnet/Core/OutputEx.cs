@@ -94,7 +94,7 @@ namespace Core.Output.Internal
         Values<TypeId>? GenericArguments
         );
 
-    internal record TypeDecompiled(TypeInfo TypeInfo, List<Decompiled> ListDecompiled)
+    internal record TypeDecompiled(TypeInfo TypeInfo, List<Decompiled> ListDecompiled, bool IsCompiler)
     {
         internal TypeId[]? GenericTypeParameters => TypeInfo.GenericTypeParameters;
     }

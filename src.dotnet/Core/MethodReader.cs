@@ -27,9 +27,48 @@ namespace Core
             Func<string, bool> isMicrosoftAssemblyName,
             string? targetFramework)
         {
+            HashSet<int> GetCompilerTypes(TypeInfo[] types)
+            {
+                var result = new HashSet<int>();
+                var mapTypes = new Dictionary<int, TypeInfo>();
+                foreach (var typeInfo in assemblyInfo.Types)
+                {
+                    if (typeInfo.TypeId == null || typeInfo.Members?.MethodMembers == null)
+                    {
+                        continue;
+                    }
+                    mapTypes.Add(typeInfo.TypeId.MetadataToken, typeInfo);
+                }
+
+                bool IsCompiler(TypeInfo typeInfo, Dictionary<int, TypeInfo> mapTypes)
+                {
+                    if (typeInfo.Attributes?.Any(attribute => attribute == "[System.Runtime.CompilerServices.CompilerGeneratedAttribute]") ?? false)
+                    {
+                        return true;
+                    }
+                    var declaringType = typeInfo.TypeId?.DeclaringType?.MetadataToken;
+                    if (declaringType == null) return false;
+                    mapTypes.TryGetValue(declaringType.Value, out var parent);
+                    if (parent == null) return false;
+                    return IsCompiler(parent, mapTypes); // <== recurse
+                }
+
+                foreach (var typeInfo in assemblyInfo.Types)
+                {
+                    if (IsCompiler(typeInfo, mapTypes))
+                    {
+                        result.Add(typeInfo.TypeId!.MetadataToken);
+                    }
+                }
+
+                return result;
+            }
+
             AssemblyDecompiled Get(Func<MethodMember, TypeIdEx, Decompiled> decompile)
             {
                 var typeDictionary = new AssemblyDecompiled();
+
+                var compilerTypes = GetCompilerTypes(assemblyInfo.Types);
 
                 foreach (var typeInfo in assemblyInfo.Types)
                 {
@@ -38,7 +77,7 @@ namespace Core
                         continue;
                     }
                     var listDecompiled = new List<Decompiled>();
-                    var typeMethods = new TypeDecompiled(typeInfo, listDecompiled);
+                    var typeMethods = new TypeDecompiled(typeInfo, listDecompiled, compilerTypes.Contains(typeInfo.TypeId.MetadataToken));
                     var typeId = new TypeIdEx(typeInfo.TypeId, isMicrosoftAssemblyName);
                     typeDictionary.Add(typeId, typeMethods);
                     foreach (var methodMember in typeInfo.Members.MethodMembers)

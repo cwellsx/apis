@@ -128,10 +128,7 @@ namespace Core.Output.Public
         TypeId ReturnType,
         Values<string>? Attributes,
         int MetadataToken
-        )
-    {
-        public const string CtorName = ".ctor"; // matches the name returned from Core.IL
-    }
+        );
 
     public record MemberException(
         string Name,
@@ -205,7 +202,7 @@ namespace Core.Output.Public
         { }
     }
 
-    public record TypeDetails(string AssemblyName, string TypeName, string[]? Attributes, int? MetadataToken, string? Error);
+    public record TypeDetails(string AssemblyName, string TypeName, bool IsCompiler, int? MetadataToken, string? Error);
 
     public record MethodDetails(
         string AsText,
