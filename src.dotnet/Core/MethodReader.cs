@@ -72,7 +72,8 @@ namespace Core
 
                 foreach (var typeInfo in assemblyInfo.Types)
                 {
-                    if (typeInfo.TypeId == null || typeInfo.Members?.MethodMembers == null)
+                    // even include types with null MethodMembers so there's no error if they're referenced as a locals type
+                    if (typeInfo.TypeId == null || typeInfo.Members == null)
                     {
                         continue;
                     }
@@ -80,10 +81,13 @@ namespace Core
                     var typeMethods = new TypeDecompiled(typeInfo, listDecompiled, compilerTypes.Contains(typeInfo.TypeId.MetadataToken));
                     var typeId = new TypeIdEx(typeInfo.TypeId, isMicrosoftAssemblyName);
                     typeDictionary.Add(typeId, typeMethods);
-                    foreach (var methodMember in typeInfo.Members.MethodMembers)
+                    if (typeInfo.Members.MethodMembers != null)
                     {
-                        var decompiled = decompile(methodMember, typeId);
-                        listDecompiled.Add(decompiled);
+                        foreach (var methodMember in typeInfo.Members.MethodMembers)
+                        {
+                            var decompiled = decompile(methodMember, typeId);
+                            listDecompiled.Add(decompiled);
+                        }
                     }
                 }
 
