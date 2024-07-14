@@ -5,6 +5,18 @@ import { getOrSet } from "../../shared-types";
 import { GetTypeOrMethodName } from "../sqlLoadedApiTypes";
 import { CallColumns, CompilerMethodColumns, LocalsTypeColumns } from "./columns";
 
+// use Inspected with Watch to debug specific metadataToken values displayed within errors on the compiler view
+// - add the typeId and methodId of the method in error, to the array of Inspected instances
+// - if that's not enough info then also add other methods, which call it, or which contain it as a local variable
+
+type Inspected = { assemblyName: string; typeId: number; methodId: number };
+const inspected: Inspected[] = [
+  //
+  // { assemblyName: "Newtonsoft.Json", typeId: 33554886, methodId: 100667314 },
+  // { assemblyName: "Newtonsoft.Json", typeId: 33554886, methodId: 100667320 },
+  // { assemblyName: "Newtonsoft.Json", typeId: 33554886, methodId: 100667312 },
+];
+
 type Owner = { fromMethodId: number; fromTypeId: number; fromAssemblyName: string; fromNamespace: string | null };
 type Compiler = { compilerType: number; owners: Owners };
 type IsOwner = (owner: Owner) => boolean;
@@ -46,8 +58,8 @@ class Owners {
       this._array.push(owner);
   }
 
-  contradicts(owner: Owner): boolean {
-    return this._array.some(
+  contradicts(owner: Owner, isOwner: IsOwner): boolean {
+    return this.result(isOwner).some(
       (existing) => existing.fromAssemblyName !== owner.fromAssemblyName || existing.fromMethodId !== owner.fromMethodId
     );
   }
@@ -62,30 +74,9 @@ class Owners {
   }
 }
 
-// use inspected and watch to debug specific metadataToken values displayed within errors on the compiler view
-
-const createInspected = (): {
+type Watch = {
   isInspectedMethod: (assemblyName: string, methodId: number) => boolean;
   isInspectedType: (assemblyName: string, typeId: number) => boolean;
-} => {
-  type Inspected = { assemblyName: string; typeId: number; methodId: number };
-  const inspected: Inspected[] = [
-    { assemblyName: "ElectronCgi.DotNet", typeId: 33554498, methodId: 100663539 },
-    { assemblyName: "ElectronCgi.DotNet", typeId: 33554492, methodId: 100663527 },
-    { assemblyName: "ElectronCgi.DotNet", typeId: 0, methodId: 100663526 },
-    { assemblyName: "ElectronCgi.DotNet", typeId: 0, methodId: 100663428 },
-  ];
-
-  const isInspectedMethod = (assemblyName: string, methodId: number): boolean =>
-    inspected.some((found) => found.assemblyName === assemblyName && found.methodId === methodId);
-  const isInspectedType = (assemblyName: string, typeId: number): boolean =>
-    inspected.some((found) => found.assemblyName === assemblyName && found.typeId === typeId);
-  return { isInspectedMethod, isInspectedType };
-};
-
-const createWatch = (
-  getTypeOrMethodName: GetTypeOrMethodName
-): {
   logMethod: (assemblyName: string, typeIdId: number, methodId: number) => void;
   logCall: (call: CallColumns) => void;
   logLocals: (localsType: LocalsTypeColumns) => void;
@@ -93,9 +84,15 @@ const createWatch = (
   inspectCall: (call: CallColumns) => void;
   inspectLocals: (localsType: LocalsTypeColumns) => void;
   inspectOwners: (message: string, assemblyName: string, methodId: number, compiler: Compiler) => void;
-} => {
+};
+
+const createWatch = (getTypeOrMethodName: GetTypeOrMethodName): Watch => {
   const { getTypeName, getMethodName } = getTypeOrMethodName;
-  const { isInspectedMethod, isInspectedType } = createInspected();
+
+  const isInspectedMethod = (assemblyName: string, methodId: number): boolean =>
+    inspected.some((found) => found.assemblyName === assemblyName && found.methodId === methodId);
+  const isInspectedType = (assemblyName: string, typeId: number): boolean =>
+    inspected.some((found) => found.assemblyName === assemblyName && found.typeId === typeId);
 
   const getName = (assemblyName: string, typeId: number, methodId: number) => {
     const typeName = getTypeName(typeNodeId(assemblyName, typeId));
@@ -150,7 +147,17 @@ const createWatch = (
       logOwners(`${message}(${getName(assemblyName, compiler.compilerType, methodId)})`, compiler.owners.all());
   };
 
-  return { logMethod, logCall, logLocals, logOwners, inspectCall, inspectLocals, inspectOwners };
+  return {
+    isInspectedMethod,
+    isInspectedType,
+    logMethod,
+    logCall,
+    logLocals,
+    logOwners,
+    inspectCall,
+    inspectLocals,
+    inspectOwners,
+  };
 };
 
 export const flattenCompilerMethods = (
@@ -254,8 +261,8 @@ export const flattenCompilerMethods = (
       let result = false;
       methods.forEach((compiler, methodId) => {
         const owners = compiler.owners;
-        if (methodId == 100663539) {
-          log("found");
+        if (watch.isInspectedMethod(assemblyName, methodId)) {
+          log("resolving watched method"); // put a breakpoint here to step through the resolve method
         }
         const isOwner = getIsOwner(assemblyName, compiler.compilerType);
         if (owners.resolve(methods, isOwner)) {
@@ -267,13 +274,15 @@ export const flattenCompilerMethods = (
       result = false;
     }
   });
-  log("resolved compiler types");
 
   // handle class with well-known system interfaces which are instantiated and passed to a system method
   // so that one of the compiler-generated methods is called from within the system e.g. MoveNext
   log("resolving system interfaces");
   assemblyCompilerMethods.forEach((methods, assemblyName) => {
     methods.forEach((compiler, methodId) => {
+      if (watch.isInspectedMethod(assemblyName, methodId)) {
+        log("resolving(2) watched method"); // put a breakpoint here to step through the resolve method
+      }
       const isOwner = getIsOwner(assemblyName, compiler.compilerType);
       if (compiler.owners.result(isOwner).length > 0) return;
       // get the other methods for this type
@@ -285,7 +294,7 @@ export const flattenCompilerMethods = (
       if (owners.length !== 1) return;
       const owner = owners[0];
       // verify that's not contradicted by the owner of any other method
-      if (others.some(([, compiler]) => compiler.owners.contradicts(owner))) return;
+      if (others.some(([, compiler]) => compiler.owners.contradicts(owner, isOwner))) return;
       // use the owner of the constructor
       compiler.owners.add(owner);
     });

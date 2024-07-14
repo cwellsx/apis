@@ -1,6 +1,5 @@
 import type { MethodDictionary } from "../../loaded";
 import { validateMethodInfo } from "../../loaded";
-import { log } from "../../log";
 import { distinctor } from "../../shared-types";
 import { BadMethodInfoAndIds, CallColumns, LocalsTypeColumns, MethodColumns } from "./columns";
 import { GetTypeId } from "./getMethodTypeId";
@@ -19,8 +18,6 @@ export const flattenMethodDictionary = (
   badMethodInfos: BadMethodInfoAndIds[];
   localsTypeColumns: LocalsTypeColumns[];
 } => {
-  log("flattenMethodDictionary");
-
   const callColumns: CallColumns[] = [];
   const methodColumns: MethodColumns[] = [];
   const badMethodInfos: BadMethodInfoAndIds[] = [];
