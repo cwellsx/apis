@@ -100,7 +100,7 @@ namespace Core
             }
             if (!typesDictionary.TryGetValue(type.WithoutArguments(), out var typeDecompiled))
             {
-                return Error("Call unknown TypeId");
+                return Error($"Local unknown TypeId: {type.WithoutArguments().AsString()}");
             }
             var typeInfo = typeDecompiled.TypeInfo;
             return new TypeDetails(type.AssemblyName!, type.AsString(false), typeDecompiled.IsCompiler, typeInfo.TypeId!.MetadataToken, null);

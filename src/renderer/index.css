@@ -16,9 +16,16 @@ html, body, #renderer {
   font-family: Consolas;
 }
 
-p, details, h2, h3, table {
+p, details, h2, h3, h4, table {
   /* line-height is 1.5 em */
   margin-bottom: 0.75em;
+}
+
+h4 {
+  text-decoration: underline;
+  font-weight: normal;
+  font-style: italic;
+  font-size: 1.17em;
 }
 
 details[open] {

@@ -1,6 +1,7 @@
 import { Database } from "better-sqlite3";
 import type {
   BadMethodInfoAndNames,
+  BadTypeInfoAndNames,
   ClusterBy,
   CompilerMethod,
   ErrorsInfo,
@@ -13,7 +14,7 @@ import type {
 } from "../../shared-types";
 import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
 import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodInfo, Reflected } from "../loaded";
-import { loadedVersion, validateTypeInfo } from "../loaded";
+import { isPartTypeInfo, loadedVersion, validateTypeInfo } from "../loaded";
 import { log } from "../log";
 import { mapOfMaps } from "../shared-types";
 import type { Call, CommonGraphViewType, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
@@ -159,9 +160,15 @@ export class SqlLoaded {
           declaringType: getTypeName(typeNodeId(assemblyName, errorColumn.typeId)),
         };
       };
+      const convertType = (badTypeInfo: BadTypeInfo): BadTypeInfoAndNames => {
+        const typeName = isPartTypeInfo(badTypeInfo)
+          ? getTypeName(typeNodeId(badTypeInfo.typeId.assemblyName, badTypeInfo.typeId.metadataToken))
+          : undefined;
+        return { typeName, exceptions: badTypeInfo.exceptions };
+      };
       return table.error.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
-        badTypeInfos: errorColumns.badTypeInfos,
+        badTypeInfos: errorColumns.badTypeInfos.map(convertType),
         badMethodInfos: errorColumns.badMethodInfos.map((badMethodInfo) =>
           convert(errorColumns.assemblyName, badMethodInfo)
         ),

@@ -14,6 +14,6 @@ export const convertLoadedToDetailedMethod = (
     methodMember: methodName,
   },
   asText: methodInfo.asText,
-  errors: validateMethodInfo(methodInfo).badMethodInfo?.badMethodCalls?.map((badMethodCall) => badMethodCall.error),
+  badMethodCalls: validateMethodInfo(methodInfo).badMethodInfo?.badMethodCalls,
   detailType: "methodDetails",
 });

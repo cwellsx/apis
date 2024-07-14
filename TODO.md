@@ -28,9 +28,6 @@ Improve the software first, then the documentation
 
 - `*.ts`
 
-  - Make some of the app options conditionally visible
-  - Display errors from widenWantedMethods
-  - Try to fix C# to show remaining types
   - Use WantedTypeColumns to process the output
   - Review where nestTypes is used and try to remove it
 

@@ -5,7 +5,7 @@ export type { AsText, CallStack } from "./callStack";
 export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
-export type { BadMethodInfoAndNames, ErrorsInfo } from "./errors";
+export type { BadMethodInfoAndNames, BadTypeInfoAndNames, ErrorsInfo } from "./errors";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export type { GraphFilter } from "./graphFilter";
 export type { ApiViewOptions, CustomViewOptions, MethodViewOptions, ReferenceViewOptions } from "./graphViewOptions";
