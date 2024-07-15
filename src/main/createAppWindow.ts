@@ -10,6 +10,7 @@ import type {
   MainApi,
   MethodNodeId,
   ViewCompiler,
+  ViewDetails,
   ViewErrors,
   ViewOptions,
   ViewType,
@@ -17,7 +18,6 @@ import type {
 import { viewFeatures } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
-import { convertLoadedToDetailedMethod } from "./convertLoadedToDetailedMethod";
 import { convertCallstackToImage, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
@@ -48,7 +48,7 @@ export const createAppWindow = (
     ];
     if (sqlLoaded.readErrors().length !== 0) menuItems.push({ label: ".NET reflection errors", viewType: "errors" });
     if (sqlConfig.appOptions.showCompilerGeneratedMenuItem)
-      menuItems.push({ label: "Compiler-generated types", viewType: "compilerMethods" });
+      menuItems.push({ label: "Compiler-generated types", viewType: "compiler" });
     const viewMenu: ViewMenu = {
       menuItems,
       currentViewType: sqlLoaded.viewState.viewType,
@@ -69,7 +69,7 @@ export const createAppWindow = (
       case "apis":
         sqlLoaded.viewState.apiViewOptions = viewOptions;
         break;
-      case "compilerMethods":
+      case "compiler":
         sqlLoaded.viewState.compilerViewOptions = viewOptions;
         break;
     }
@@ -141,10 +141,8 @@ export const createAppWindow = (
       switch (viewType) {
         case "methods": {
           if (!isMethodNodeId(nodeId)) throw new Error("Expected method id");
-          const methodInfo = sqlLoaded.readMethodInfo(nodeId);
-          const { methodName, typeName } = sqlLoaded.readMethodName(nodeId);
-          const methodBody = convertLoadedToDetailedMethod(nodeId.assemblyName, typeName, methodName, methodInfo);
-          renderer.showDetails(methodBody);
+          const viewDetails: ViewDetails = { ...sqlLoaded.readMethodDetails(nodeId), detailType: "methodDetails" };
+          renderer.showDetails(viewDetails);
           return;
         }
         case "references": {
@@ -198,8 +196,7 @@ export const createAppWindow = (
       log(`showMethods(${methodId ?? ""})`);
 
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const firstLeaf = sqlLoaded.readMethods(methodId ?? methodViewOptions.methodId);
-
+      const firstLeaf = sqlLoaded.readCallStackFirst(methodId ?? methodViewOptions.methodId);
       const readCallStack = sqlLoaded.readCallStack.bind(sqlLoaded);
       const callstack = convertLoadedToCallstack(readCallStack, firstLeaf);
 
@@ -266,16 +263,16 @@ export const createAppWindow = (
     renderer.showView(viewGraph);
   };
 
-  const showCompilerMethods = (): void => {
-    const { compilerMethods, localsTypes } = sqlLoaded.readCompilerMethods();
+  const showCompiler = (): void => {
+    const { compilerMethods, localsTypes } = sqlLoaded.readCompiler();
     const compilerViewOptions = sqlLoaded.viewState.compilerViewOptions;
-    const viewCompilerMethods: ViewCompiler = {
+    const viewCompiler: ViewCompiler = {
       compilerMethods,
       localsTypes,
-      viewType: "compilerMethods",
+      viewType: "compiler",
       textViewOptions: compilerViewOptions,
     };
-    renderer.showView(viewCompilerMethods);
+    renderer.showView(viewCompiler);
   };
 
   const showViewType = (viewType: ViewType): void => {
@@ -293,8 +290,8 @@ export const createAppWindow = (
       case "apis":
         showApis();
         break;
-      case "compilerMethods":
-        showCompilerMethods();
+      case "compiler":
+        showCompiler();
         break;
       default:
         throw new Error("ViewType not implemented");
@@ -316,7 +313,7 @@ export const createAppWindow = (
       case "apis":
         window.setTitle(`APIs — ${dataSourcePath}`);
         break;
-      case "compilerMethods":
+      case "compiler":
         window.setTitle(`Compiler methods — ${dataSourcePath}`);
         break;
       default:

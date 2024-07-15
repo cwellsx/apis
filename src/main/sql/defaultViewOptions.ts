@@ -59,7 +59,7 @@ export const defaultViewOptions: DefaultViewOptions = {
   },
 
   compilerViewOptions: {
-    viewType: "compilerMethods",
+    viewType: "compiler",
     errorsOnly: true,
   },
 };

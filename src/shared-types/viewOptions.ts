@@ -19,7 +19,7 @@ export type AnyGraphViewOptions = Partial<
 >;
 
 export type CompilerViewOptions = {
-  viewType: "compilerMethods";
+  viewType: "compiler";
   errorsOnly: boolean;
 };
 

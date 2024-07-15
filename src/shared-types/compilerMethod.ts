@@ -1,4 +1,4 @@
-import { MethodNameStrings } from "./methodNameStrings";
+import { MethodName } from "./methodName";
 
 // same as CompilerMethodColumns except with string instead of number
 export type CompilerMethod = {
@@ -12,7 +12,7 @@ export type CompilerMethod = {
   ownerType: string;
   ownerMethod: string;
   declaringType: string; // used to assert that declaringType matches ownerType
-  callStack: MethodNameStrings[] | undefined;
+  callStack: MethodName[] | undefined;
   error: string | undefined;
   info: string | undefined;
 };

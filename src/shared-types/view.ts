@@ -39,7 +39,7 @@ export type ViewCustomErrors = {
 };
 
 export type ViewCompiler = {
-  viewType: "compilerMethods";
+  viewType: "compiler";
   compilerMethods: CompilerMethod[];
   localsTypes: LocalsType[];
   textViewOptions: CompilerViewOptions;

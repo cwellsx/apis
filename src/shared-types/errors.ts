@@ -1,7 +1,7 @@
 import type { BadMethodInfo } from "./loaded";
-import { MethodNameStrings } from "./methodNameStrings";
+import { MethodName } from "./methodName";
 
-export type BadMethodInfoAndNames = BadMethodInfo & Omit<MethodNameStrings, "assemblyName">;
+export type BadMethodInfoAndNames = BadMethodInfo & Omit<MethodName, "assemblyName">;
 
 export type BadTypeInfoAndNames = {
   typeName: string;

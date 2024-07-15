@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BadMethodInfoAndNames, ErrorsInfo, MethodNameStrings, ViewErrors } from "../../shared-types";
+import { BadMethodInfoAndNames, ErrorsInfo, MethodName, ViewErrors } from "../../shared-types";
 import { BadMethodCallsDetails, BadMethodException } from "./BadMethodCallsDetails";
 import { BadTypeInfoDetails } from "./BadTypeInfoDetails";
 
@@ -11,7 +11,7 @@ export const TextErrors: React.FunctionComponent<TextErrorsProps> = (props: Text
   const getBadMethodInfo = (badMethodInfo: BadMethodInfoAndNames, index: number, assemblyName: string): JSX.Element => {
     // TODO display badMethodInfo.exception
 
-    const title: MethodNameStrings = {
+    const title: MethodName = {
       assemblyName,
       declaringType: badMethodInfo.declaringType,
       methodMember: badMethodInfo.methodMember,

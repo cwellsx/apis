@@ -34,7 +34,7 @@ type CallstackElements = {
 
 export const convertLoadedToCallstack = (
   readCallStack: ReadCallStack,
-  firstLeaf: TypeAndMethodId[]
+  firstLeaf: TypeAndMethodId
 ): CallstackElements => {
   const called = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
   const caller = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
@@ -71,8 +71,8 @@ export const convertLoadedToCallstack = (
     }
   };
 
-  firstLeaf.forEach((called) => findNextLayer(called, "upwards", caller));
-  firstLeaf.forEach((calledBy) => findNextLayer(calledBy, "downwards", called));
+  [firstLeaf].forEach((called) => findNextLayer(called, "upwards", caller));
+  [firstLeaf].forEach((calledBy) => findNextLayer(calledBy, "downwards", called));
 
   const combined = called.combine(caller);
 

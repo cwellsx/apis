@@ -11,7 +11,7 @@ export type { GraphFilter } from "./graphFilter";
 export type { ApiViewOptions, CustomViewOptions, MethodViewOptions, ReferenceViewOptions } from "./graphViewOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { BadMethodCall, LoadedMethodError } from "./loaded";
-export type { MethodNameStrings } from "./methodNameStrings";
+export type { MethodName } from "./methodName";
 export { isParent } from "./node";
 export type { Leaf, Node, Parent } from "./node";
 export * from "./nodeId";

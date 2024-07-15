@@ -1,5 +1,5 @@
 import { BadMethodCall } from "./loaded";
-import { MethodNameStrings } from "./methodNameStrings";
+import { MethodName } from "./methodName";
 import { Named, Namespace } from "./types";
 
 /*
@@ -7,9 +7,8 @@ import { Named, Namespace } from "./types";
 */
 
 export type DetailedMethod = {
-  title: MethodNameStrings;
+  title: MethodName;
   asText: string;
-  //errors?: LoadedMethodError[];
   badMethodCalls?: BadMethodCall[];
   detailType: "methodDetails";
 };

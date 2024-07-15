@@ -7,14 +7,22 @@ import type {
   ErrorsInfo,
   GraphFilter,
   LocalsType,
-  MethodNameStrings,
+  MethodName,
   MethodNodeId,
   NodeId,
   TypeNodeId,
 } from "../../shared-types";
 import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
-import type { AnonTypeInfo, AssemblyReferences, GoodTypeInfo, MethodInfo, Reflected, TypeInfo } from "../loaded";
-import { isAnonTypeInfo, loadedVersion } from "../loaded";
+import type {
+  AnonTypeInfo,
+  AssemblyReferences,
+  BadMethodCall,
+  GoodTypeInfo,
+  MethodInfo,
+  Reflected,
+  TypeInfo,
+} from "../loaded";
+import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../loaded";
 import { log } from "../log";
 import { mapOfMaps } from "../shared-types";
 import type { Call, CommonGraphViewType, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
@@ -24,7 +32,6 @@ import type {
   CallColumns,
   MemberColumns,
   MethodColumns,
-  MethodNameColumns,
   NamedBadTypeInfo,
   SavedTypeInfo,
   TypeNameColumns,
@@ -59,12 +66,18 @@ export class SqlLoaded {
   readTypeInfos: (assemblyName: string) => TypeInfo[];
   readErrors: () => ErrorsInfo[];
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => Call[];
+
   readCallStack: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
-  readMethods: (nodeId: MethodNodeId) => TypeAndMethodId[];
-  readMethodInfo: (nodeId: MethodNodeId) => MethodInfo;
-  readMethodName: (nodeId: MethodNodeId) => { methodName: string; typeName: string };
+  readCallStackFirst: (nodeId: MethodNodeId) => TypeAndMethodId;
+
+  // reads data for DetailedMethod
+  readMethodDetails: (nodeId: MethodNodeId) => { title: MethodName; asText: string; badMethodCalls?: BadMethodCall[] };
+  // reads data for ViewCompiler
+  readCompiler: () => { compilerMethods: CompilerMethod[]; localsTypes: LocalsType[] };
+
+  // utility method
   readNames: () => GetTypeOrMethodName;
-  readCompilerMethods: () => { compilerMethods: CompilerMethod[]; localsTypes: LocalsType[] };
+  private readMethodTypeId: (nodeId: MethodNodeId) => TypeNodeId;
 
   private readLeafVisible: (viewType: CommonGraphViewType) => NodeId[];
   private readGroupExpanded: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => NodeId[];
@@ -76,7 +89,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-07-13a";
+    const loadedSchemaVersionExpected = "2024-07-15";
 
     this.viewState = new ViewState(db);
 
@@ -269,61 +282,66 @@ export class SqlLoaded {
       });
     };
 
-    this.readMethods = (nodeId: MethodNodeId): TypeAndMethodId[] => {
+    this.readMethodTypeId = (methodNodeId: MethodNodeId): TypeNodeId => {
       // use MemberColumns to get type Id
-      const { assemblyName, metadataToken } = nodeId;
+      const { assemblyName, metadataToken } = methodNodeId;
       const memberKey: Partial<MemberColumns> = { assemblyName, metadataToken };
       const member = table.member.selectOne(memberKey);
       if (!member) throw new Error(`Member not found ${JSON.stringify(memberKey)}`);
-
-      const getTypeName = (typeMetadataToken: number): TypeNameColumns => {
-        const typeNamekey: Partial<TypeNameColumns> = { assemblyName, metadataToken: typeMetadataToken };
-        const typeName = table.typeName.selectOne(typeNamekey);
-        if (!typeName) throw new Error(`Type not found ${JSON.stringify(typeNamekey)}`);
-        return typeName;
-      };
-
-      const typeName = getTypeName(member.typeMetadataToken);
-
-      return [
-        {
-          assemblyName,
-          // TODO check that namespace is correct when the type is nested
-          namespace: typeName.namespace ?? "(no namespace)",
-          methodId: metadataToken,
-          typeId: typeName.metadataToken,
-        },
-      ];
+      return typeNodeId(assemblyName, member.typeMetadataToken);
     };
 
-    this.readMethodInfo = (nodeId: MethodNodeId): MethodInfo => {
-      const { assemblyName, metadataToken } = nodeId;
-      const methodKey: Partial<MethodColumns> = { assemblyName, metadataToken };
-      const method = table.method.selectOne(methodKey);
-      if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
-      return method.methodInfo;
-    };
+    this.readCallStackFirst = (methodNodeId: MethodNodeId): TypeAndMethodId => {
+      const typeId = this.readMethodTypeId(methodNodeId);
+      const { assemblyName, metadataToken } = methodNodeId;
+      const typeNamekey: Partial<TypeNameColumns> = typeId;
+      const typeNameColumns = table.typeName.selectOne(typeNamekey);
+      if (!typeNameColumns) throw new Error(`Type not found ${JSON.stringify(typeNamekey)}`);
 
-    this.readMethodName = (nodeId: MethodNodeId): { methodName: string; typeName: string } => {
-      const typeAndMethodId = this.readMethods(nodeId)[0];
-      const typeKey: Partial<TypeNameColumns> = {
-        assemblyName: typeAndMethodId.assemblyName,
-        metadataToken: typeAndMethodId.typeId,
+      return {
+        assemblyName,
+        // TODO check that namespace is correct when the type is nested
+        namespace: typeNameColumns.namespace ?? "(no namespace)",
+        methodId: metadataToken,
+        typeId: typeNameColumns.metadataToken,
       };
-      const typeName = table.typeName.selectOne(typeKey);
-      const methodKey: Partial<MethodNameColumns> = {
-        assemblyName: typeAndMethodId.assemblyName,
-        metadataToken: typeAndMethodId.methodId,
-      };
-      const methodName = table.methodName.selectOne(methodKey);
-      if (!typeName) throw new Error(`Type name not found ${JSON.stringify(typeAndMethodId)}`);
-      if (!methodName) throw new Error(`Method name not found ${JSON.stringify(typeAndMethodId)}`);
-      return { methodName: methodName.name, typeName: typeName.decoratedName };
     };
 
     this.readNames = (): GetTypeOrMethodName => getTypeAndMethodNames(table);
 
-    this.readCompilerMethods = (): { compilerMethods: CompilerMethod[]; localsTypes: LocalsType[] } => {
+    this.readMethodDetails = (
+      methodNodeId: MethodNodeId
+    ): { title: MethodName; asText: string; badMethodCalls?: BadMethodCall[] } => {
+      // read one MethodInfo
+      const readMethodInfo = (nodeId: MethodNodeId): MethodInfo => {
+        const { assemblyName, metadataToken } = nodeId;
+        const methodKey: Partial<MethodColumns> = { assemblyName, metadataToken };
+        const method = table.method.selectOne(methodKey);
+        if (!method) throw new Error(`Method details not found ${JSON.stringify(methodKey)}`);
+        return method.methodInfo;
+      };
+      // should it really be this difficult to read a method name?
+      const readMethodName = (nodeId: MethodNodeId): { methodName: string; typeName: string } => {
+        const typeId = this.readMethodTypeId(nodeId);
+        const { getTypeName, getMethodName } = this.readNames();
+        return { methodName: getMethodName(methodNodeId), typeName: getTypeName(typeId) };
+      };
+
+      const methodInfo = readMethodInfo(methodNodeId);
+      const { methodName, typeName } = readMethodName(methodNodeId);
+
+      return {
+        title: {
+          assemblyName: methodNodeId.assemblyName,
+          declaringType: typeName,
+          methodMember: methodName,
+        },
+        asText: methodInfo.asText,
+        badMethodCalls: validateMethodInfo(methodInfo).badMethodInfo?.badMethodCalls,
+      };
+    };
+
+    this.readCompiler = (): { compilerMethods: CompilerMethod[]; localsTypes: LocalsType[] } => {
       const compilerMethodColumns = table.compilerMethod.selectAll();
       const localsTypeColumns = table.localsType.selectAll();
 
@@ -338,7 +356,7 @@ export class SqlLoaded {
         ])
       );
 
-      const getCallStackFromDirection = (column: CompilerMethodColumns, direction: Direction): MethodNameStrings[] => {
+      const getCallStackFromDirection = (column: CompilerMethodColumns, direction: Direction): MethodName[] => {
         const { assemblyName, compilerType, compilerMethod } = column;
         const typeAndMethodIds = this.readCallStack(assemblyName, compilerMethod, direction);
         const isSameType = (typeAndMethodId: TypeAndMethodId): boolean =>
@@ -352,7 +370,7 @@ export class SqlLoaded {
           }));
       };
 
-      const getCallStackFromError = (column: CompilerMethodColumns): MethodNameStrings[] | undefined => {
+      const getCallStackFromError = (column: CompilerMethodColumns): MethodName[] | undefined => {
         switch (column.error) {
           case null:
             return undefined;

@@ -35,7 +35,7 @@ const getText = (props: TextViewProps): JSX.Element => {
       return <TextErrors view={view} />;
     case "customErrors":
       return <TextCustomErrors view={view} />;
-    case "compilerMethods": {
+    case "compiler": {
       const { onViewOptions, appOptions, onAppOptions } = props;
       const chooseOptions = (
         <ChooseCompilerViewOptions

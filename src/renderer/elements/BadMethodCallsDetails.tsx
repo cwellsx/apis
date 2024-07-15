@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BadMethodCall, LoadedMethodError, MethodNameStrings } from "../../shared-types";
+import { BadMethodCall, LoadedMethodError, MethodName } from "../../shared-types";
 import { makeRow, MethodTitle } from "./MethodTitle";
 
 const toJson = (o: object) => <pre className="json">{JSON.stringify(o, null, " ")}</pre>;
@@ -14,7 +14,7 @@ const makeJsonRow = (first: object, next: object[] | undefined) => (
 );
 
 type LoadedMethodErrorDetailsProps = {
-  title?: MethodNameStrings;
+  title?: MethodName;
   error: LoadedMethodError;
 };
 const LoadedMethodErrorDetails: React.FunctionComponent<LoadedMethodErrorDetailsProps> = (
@@ -71,7 +71,7 @@ const LoadedMethodErrorDetails: React.FunctionComponent<LoadedMethodErrorDetails
 };
 
 type BadMethodCallsDetailsProps = {
-  title?: MethodNameStrings;
+  title?: MethodName;
   badMethodCalls: BadMethodCall[];
 };
 export const BadMethodCallsDetails: React.FunctionComponent<BadMethodCallsDetailsProps> = (
@@ -88,7 +88,7 @@ export const BadMethodCallsDetails: React.FunctionComponent<BadMethodCallsDetail
 };
 
 type BadMethodExceptionProps = {
-  title?: MethodNameStrings;
+  title?: MethodName;
   exception: string;
 };
 export const BadMethodException: React.FunctionComponent<BadMethodExceptionProps> = (

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { MethodNameStrings } from "../../shared-types";
+import { MethodName } from "../../shared-types";
 
 export const makeRow = (first: string, second: JSX.Element | string) => (
   <tr>
@@ -9,7 +9,7 @@ export const makeRow = (first: string, second: JSX.Element | string) => (
 );
 
 type MethodTitleProps = {
-  title: MethodNameStrings;
+  title: MethodName;
 };
 export const MethodTitle: React.FunctionComponent<MethodTitleProps> = (props: MethodTitleProps) => {
   const { title } = props;

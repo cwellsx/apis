@@ -84,10 +84,10 @@ export const TextCompiler: React.FunctionComponent<TextCompilerProps> = (props: 
       </>
     );
 
-  const showCompilerMethods = (assemblyName: string, compilerMethods: CompilerMethod[]): JSX.Element => (
+  const showCompiler = (assemblyName: string, compilerMethods: CompilerMethod[]): JSX.Element => (
     <React.Fragment key={assemblyName}>
       <h3>{assemblyName}</h3>
-      <table className="compilerMethods">
+      <table className="compiler">
         <thead>
           <tr>
             <th rowSpan={3}>Error</th>
@@ -135,7 +135,7 @@ export const TextCompiler: React.FunctionComponent<TextCompilerProps> = (props: 
   const showLocalsTypes = (assemblyName: string, localsTypes: LocalsType[]): JSX.Element => (
     <React.Fragment key={assemblyName}>
       <h3>{assemblyName}</h3>
-      <table className="compilerMethods">
+      <table className="compiler">
         <thead>
           <tr>
             <th>Owner Method</th>
@@ -166,7 +166,7 @@ export const TextCompiler: React.FunctionComponent<TextCompilerProps> = (props: 
       {chooseOptions}
       {[...assemblyMethods.entries()].map(([assemblyName, compilerMethods]) =>
         !errorsOnly || compilerMethods.some((column) => column.error) ? (
-          showCompilerMethods(assemblyName, compilerMethods)
+          showCompiler(assemblyName, compilerMethods)
         ) : (
           <></>
         )
