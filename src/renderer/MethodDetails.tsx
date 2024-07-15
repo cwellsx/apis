@@ -1,9 +1,8 @@
 import * as React from "react";
 import { DetailedMethod } from "../shared-types";
-import { BadMethodCallsDetails } from "./BadMethodCallsDetails";
+import { BadMethodCallsDetails, MethodTitle } from "./elements";
 import "./MethodDetails.css";
 import "./MethodDetails.scss";
-import { MethodTitle } from "./MethodTitle";
 
 type MethodDetailsProps = {
   methodBody: DetailedMethod;

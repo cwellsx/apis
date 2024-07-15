@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BadMethodCall, LoadedMethodError, MethodNameStrings } from "../shared-types";
+import { BadMethodCall, LoadedMethodError, MethodNameStrings } from "../../shared-types";
 import { makeRow, MethodTitle } from "./MethodTitle";
 
 const toJson = (o: object) => <pre className="json">{JSON.stringify(o, null, " ")}</pre>;

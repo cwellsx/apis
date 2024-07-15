@@ -11,8 +11,8 @@ import type {
 } from "../shared-types";
 import { nodeIdToText, textToNodeId } from "../shared-types";
 import { AssemblyDetails } from "./AssemblyDetails";
+import { Message } from "./elements";
 import { Graph } from "./Graph";
-import { Message } from "./Message";
 import { MethodDetails } from "./MethodDetails";
 import { ChooseGraphViewOptions } from "./Options";
 import { Tree } from "./Tree";

@@ -1,5 +1,5 @@
 import * as React from "react";
-import { BadTypeInfoAndNames } from "../shared-types";
+import { BadTypeInfoAndNames } from "../../shared-types";
 
 type BadTypeInfoDetailsProps = {
   badTypeInfos: BadTypeInfoAndNames[];
