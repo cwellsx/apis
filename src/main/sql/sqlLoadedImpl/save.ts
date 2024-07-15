@@ -1,5 +1,5 @@
 import type { Reflected } from "../../loaded";
-import { badTypeInfo, namedTypeInfo, validateTypeInfo } from "../../loaded";
+import { getBadTypeInfos, isNamedTypeInfo } from "../../loaded";
 import { Tables } from "./tables";
 
 import { log } from "../../log";
@@ -29,22 +29,22 @@ export const save = (reflected: Reflected, table: Tables): void => {
   const allCompilerTypes = new Map<string, Set<number>>();
 
   for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
-    const allTypeInfo = validateTypeInfo(assemblyInfo.types);
+    const namedTypeInfos = assemblyInfo.types.filter(isNamedTypeInfo);
 
     // BadTypeInfo[]
-    const badTypeInfos = badTypeInfo(allTypeInfo);
+    const badTypeInfos = getBadTypeInfos(assemblyInfo.types);
     if (badTypeInfos.length) {
       table.error.insert({ assemblyName, badTypeInfos, badMethodInfos: [] });
     }
 
     // GoodTypeInfo[]
-    const { typeColumns, memberColumns, methodNameColumns } = flattenGoodTypeInfo(assemblyName, allTypeInfo.good);
+    const { typeColumns, memberColumns, methodNameColumns } = flattenGoodTypeInfo(assemblyName, namedTypeInfos);
     table.type.insertMany(typeColumns);
     table.member.insertMany(memberColumns);
     table.methodName.insertMany(methodNameColumns);
 
     // NamedTypeInfo[]
-    const { declaringTypeColumns, typeNameColumns } = flattenNamedTypeInfo(assemblyName, namedTypeInfo(allTypeInfo));
+    const { declaringTypeColumns, typeNameColumns } = flattenNamedTypeInfo(assemblyName, namedTypeInfos);
     table.declaringType.insertMany(declaringTypeColumns);
     table.typeName.insertMany(typeNameColumns);
 

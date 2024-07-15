@@ -10,7 +10,7 @@ import type {
   OnUserEvent,
   Type,
 } from "../shared-types";
-import { isTypeException, nodeIdToText, textToNodeId } from "../shared-types";
+import { nodeIdToText, textToNodeId } from "../shared-types";
 import * as Icon from "./Icons.Microsoft";
 import { icons } from "./checkboxTreeIcons";
 
@@ -35,7 +35,7 @@ const convertException = (exception: Named): CheckboxNode =>
   makeNode(exception, <Icon.SvgExclamationPoint />, "exception");
 const convertAttribute = (attribute: Named): CheckboxNode => makeNode(attribute, <Icon.SvgAttribute />, "attribute");
 
-const getTypeIcon = (access: Access) => {
+const getTypeIcon = (access: Access | undefined) => {
   switch (access) {
     case "public":
       return <Icon.SvgClassPublic />;
@@ -45,6 +45,8 @@ const getTypeIcon = (access: Access) => {
       return <Icon.SvgClassInternal />;
     case "private":
       return <Icon.SvgClassPrivate />;
+    default:
+      return <Icon.SvgClassMissing />;
   }
 };
 
@@ -124,17 +126,16 @@ const convertType = (type: Type): CheckboxNode => {
       .sort((x, y) => x.name.localeCompare(y.name))
       .map((memberInfo) => makeMemberNode(memberInfo, getIcon, className));
 
-  return isTypeException(type)
-    ? makeNode(type, <Icon.SvgExclamationPoint />, "type")
-    : makeNode(type, getTypeIcon(type.access), "type", [
-        ...type.attributes.map(convertAttribute),
-        ...convertTypes(type.subtypes),
-        ...makeMemberNodes(type.members.fieldMembers, getFieldIcon, "field"),
-        ...makeMemberNodes(type.members.propertyMembers, getPropertyIcon, "property"),
-        ...makeMemberNodes(type.members.methodMembers, getMethodIcon, "method"),
-        ...makeMemberNodes(type.members.eventMembers, getEventIcon, "event"),
-        ...makeMemberNodes(type.members.exceptions, () => <Icon.SvgExclamationPoint />, "exception"),
-      ]);
+  return makeNode(type, getTypeIcon(type.access), "type", [
+    ...type.exceptions.map(convertException),
+    ...type.attributes.map(convertAttribute),
+    ...convertTypes(type.subtypes),
+    ...makeMemberNodes(type.members.fieldMembers, getFieldIcon, "field"),
+    ...makeMemberNodes(type.members.propertyMembers, getPropertyIcon, "property"),
+    ...makeMemberNodes(type.members.methodMembers, getMethodIcon, "method"),
+    ...makeMemberNodes(type.members.eventMembers, getEventIcon, "event"),
+    ...makeMemberNodes(type.members.exceptions, () => <Icon.SvgExclamationPoint />, "exception"),
+  ]);
 };
 
 const convertNamespace = (namespace: Namespace): CheckboxNode =>

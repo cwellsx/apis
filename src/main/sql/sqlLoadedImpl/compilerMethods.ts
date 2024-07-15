@@ -1,5 +1,5 @@
 import { methodNodeId, typeNodeId } from "../../../shared-types";
-import { Reflected, validateTypeInfo } from "../../loaded";
+import { getMembers, isNamedTypeInfo, Reflected } from "../../loaded";
 import { log, logJson } from "../../log";
 import { getOrSet } from "../../shared-types";
 import { GetTypeOrMethodName } from "../sqlLoadedApiTypes";
@@ -194,12 +194,13 @@ export const flattenCompilerMethods = (
     assemblyCompilerMethods.set(assemblyName, methods);
     const types = new Set<number>();
     assemblyCompilerTypes.set(assemblyName, types);
-    validateTypeInfo(assemblyInfo.types)
-      .good.filter((typeInfo) => isCompilerType(assemblyName, typeInfo.typeId.metadataToken))
+    assemblyInfo.types
+      .filter(isNamedTypeInfo)
+      .filter((typeInfo) => isCompilerType(assemblyName, typeInfo.typeId.metadataToken))
       // for each good compiler-generated type in the assembly
       .forEach((type) => {
         types.add(type.typeId.metadataToken);
-        type.members.methodMembers?.forEach((methodMember) => {
+        getMembers(type).methodMembers?.forEach((methodMember) => {
           watch.logMethod(assemblyName, type.typeId.metadataToken, methodMember.metadataToken);
           // map each method to a different Compiler instance (some types' methods are called from different methods)
           methods.set(methodMember.metadataToken, { compilerType: type.typeId.metadataToken, owners: new Owners() });

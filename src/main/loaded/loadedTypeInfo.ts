@@ -1,83 +1,56 @@
 import { Access } from "./loadedEnums";
-import { Members } from "./loadedMembers";
+import { MemberException, Members } from "./loadedMembers";
 import { TypeId } from "./loadedTypeId";
 
-export const enum Flag {
+const enum Flag {
   Generic = 1,
   GenericDefinition = 2,
   Nested = 4,
 }
 
-// GoodTypeInfo with TypeId and without exceptions is the usual, happy path
-export type GoodTypeInfo = {
-  typeId: TypeId;
+// this is what's defined in (and what we get from) C# -- with TypeId and without exceptions is the usual, happy path
+export type TypeInfo = {
+  typeId?: TypeId; // normally defined if it's good
   attributes?: string[];
   baseType?: TypeId;
   interfaces?: TypeId[];
   genericTypeParameters?: TypeId[];
-  access: Access;
+  access?: Access; // normally defined if it's good
   flag?: Flag;
-  members: Members;
+  members?: Members; // normally defined if it's good
+  exceptions?: string[]; // normally undefined it it's good
 };
 
 // if an exception is thrown and caught, when reading the TypeInfo
 // then the exceptions field is present and any other fields including the TypeId may be missing
-type AnonTypeInfo = {
-  exceptions: string[];
+export type AnonTypeInfo = Required<Pick<TypeInfo, "exceptions">>;
+export const isAnonTypeInfo = (typeInfo: TypeInfo | BadTypeInfo): typeInfo is AnonTypeInfo =>
+  typeInfo.typeId === undefined;
+
+// if at least the TypeId is present then it's not anonymous and can be useful
+export type NamedTypeInfo = TypeInfo & { typeId: TypeId };
+export const isNamedTypeInfo = (typeInfo: TypeInfo): typeInfo is NamedTypeInfo => typeInfo.typeId !== undefined;
+
+// most of the application assumes non-undefined MemberInfo (SQL layer substitutes empty MemberInfo if necessary)
+export type GoodTypeInfo = NamedTypeInfo & { members: Members };
+
+// not quite the same, contains all exceptions (if any) from a TypeInfo
+export type BadTypeInfo = {
+  typeId?: TypeId;
+  exceptions?: string[];
+  memberExceptions?: MemberException[];
 };
-
-// if an exception is thrown when reading members, then members are missing but at least the TypeId exists
-type PartTypeInfo = {
-  typeId: TypeId;
-  exceptions: string[];
-  // plus some of the optional fields from GoodTypeInfo
-  genericTypeParameters?: TypeId[];
-  attributes?: string[];
-};
-
-// the TypeInfo array may be a micture of good, bad, and very bad (i.e. anonymous) instances
-export type TypeInfo = GoodTypeInfo | PartTypeInfo | AnonTypeInfo;
-
-export type BadTypeInfo = PartTypeInfo | AnonTypeInfo;
-export type NamedTypeInfo = PartTypeInfo | GoodTypeInfo;
-
-function isBadTypeInfo(typeInfo: TypeInfo): typeInfo is AnonTypeInfo | PartTypeInfo {
-  return (typeInfo as AnonTypeInfo).exceptions !== undefined || (typeInfo as PartTypeInfo).exceptions !== undefined;
-}
-
-export function isPartTypeInfo(typeInfo: TypeInfo): typeInfo is PartTypeInfo {
-  return isBadTypeInfo(typeInfo) && (typeInfo as PartTypeInfo).typeId !== undefined;
-}
-
-export type AllTypeInfo = {
-  good: GoodTypeInfo[];
-  part: PartTypeInfo[];
-  anon: AnonTypeInfo[];
-};
-
-export const validateTypeInfo = (types: TypeInfo[]): AllTypeInfo => {
-  const good: GoodTypeInfo[] = [];
-  const part: PartTypeInfo[] = [];
-  const anon: AnonTypeInfo[] = [];
-  types.forEach((type) => {
-    if (!isBadTypeInfo(type)) good.push(type);
-    else if (isPartTypeInfo(type)) part.push(type);
-    else anon.push(type);
+export const getBadTypeInfos = (typeInfos: TypeInfo[]): BadTypeInfo[] => {
+  const result: BadTypeInfo[] = [];
+  typeInfos.forEach((typeInfo) => {
+    if (typeInfo.exceptions || typeInfo.members?.exceptions)
+      result.push({
+        exceptions: typeInfo.exceptions,
+        typeId: typeInfo.typeId,
+        memberExceptions: typeInfo.members?.exceptions,
+      });
   });
-
-  return { good, part, anon };
-};
-
-export const badTypeInfo = (all: AllTypeInfo): BadTypeInfo[] => {
-  const result: (PartTypeInfo | AnonTypeInfo)[] = [];
-  result.push(...all.anon);
-  result.push(...all.part);
   return result;
 };
 
-export const namedTypeInfo = (all: AllTypeInfo): NamedTypeInfo[] => {
-  const result: (PartTypeInfo | GoodTypeInfo)[] = [];
-  result.push(...all.good);
-  result.push(...all.part);
-  return result;
-};
+export const getMembers = (typeInfo: TypeInfo): Members => typeInfo.members ?? {};

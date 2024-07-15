@@ -20,24 +20,13 @@ export type Members = {
   exceptions: MemberInfo[];
 };
 
-export type TypeKnown = Named & {
-  access: Access;
+export type Type = Named & {
+  access?: Access; // normally defined
   attributes: Named[];
   subtypes?: Type[];
   members: Members;
+  exceptions: Named[]; // normally empty
 };
-
-// if there was an exception when reading the type then only display the exception and not other data,
-// because other data (e.g. the Access) might be missing, which would take more effort to handle safely
-export type TypeException = Named & {
-  exceptions: Named[];
-};
-
-export function isTypeException(type: Type): type is TypeException {
-  return (type as TypeException).exceptions !== undefined;
-}
-
-export type Type = TypeKnown | TypeException;
 
 export type Namespace = Named & {
   types: Type[];

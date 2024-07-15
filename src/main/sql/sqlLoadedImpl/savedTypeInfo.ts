@@ -1,4 +1,4 @@
-import { GoodTypeInfo } from "../../loaded";
+import { NamedTypeInfo as GoodTypeInfo } from "../../loaded";
 
 export type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
 

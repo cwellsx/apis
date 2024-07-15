@@ -1,4 +1,4 @@
-import { GoodTypeInfo, Members } from "../../loaded";
+import { getMembers, NamedTypeInfo as GoodTypeInfo, Members } from "../../loaded";
 import { MemberColumns, MethodNameColumns, TypeColumns } from "./columns";
 import { createSavedTypeInfo } from "./savedTypeInfo";
 
@@ -21,7 +21,7 @@ export const flattenGoodTypeInfo = (
 
   for (const type of goodTypeInfos) {
     memberColumns.push(
-      ...Object.entries(type.members)
+      ...Object.entries(getMembers(type))
         .map(([memberType, memberValues]) =>
           memberValues.map((memberInfo) => ({
             assemblyName,
@@ -36,7 +36,7 @@ export const flattenGoodTypeInfo = (
     );
 
     methodNameColumns.push(
-      ...Object.entries(type.members)
+      ...Object.entries(getMembers(type))
         .filter(([memberType]) => (memberType as keyof Members) == "methodMembers")
         .map(([, memberValues]) =>
           memberValues.map((memberInfo) => ({

@@ -11,7 +11,6 @@ import type {
 } from "../shared-types";
 import { artificialNodeIdFactory, metadataNodeId } from "../shared-types";
 import type {
-  AllTypeInfo,
   EventMember,
   FieldMember,
   Members as LoadedMembers,
@@ -19,10 +18,10 @@ import type {
   NamedTypeInfo,
   PropertyMember,
   TypeId,
+  TypeInfo,
 } from "./loaded";
-import { Access as LoadedAccess, isPartTypeInfo } from "./loaded";
+import { getMembers, isAnonTypeInfo, isNamedTypeInfo, Access as LoadedAccess } from "./loaded";
 import { MemberException } from "./loaded/loadedMembers";
-import { namedTypeInfo } from "./loaded/loadedTypeInfo";
 import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "./shared-types";
 
 type Exceptions = Named[];
@@ -90,10 +89,10 @@ const getAccess = (access: LoadedAccess): Access => {
   }
 };
 
-export const convertLoadedToDetailedAssembly = (allTypeInfo: AllTypeInfo, assemblyName: string): DetailedAssembly => {
+export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyName: string): DetailedAssembly => {
   const getArtificialNodeId = artificialNodeIdFactory();
 
-  const getMembers = (members: LoadedMembers): Members => {
+  const createMembers = (members: LoadedMembers): Members => {
     const getFromName = (
       nodeId: NodeId,
       name: string,
@@ -164,9 +163,9 @@ export const convertLoadedToDetailedAssembly = (allTypeInfo: AllTypeInfo, assemb
   const exceptions: Exceptions = [];
   const createExceptions = (exceptions: string[]): Exceptions =>
     exceptions.map((exceptionMessage) => ({ name: exceptionMessage, nodeId: getArtificialNodeId("exception") }));
-  allTypeInfo.anon.forEach((typeInfo) => exceptions.push(...createExceptions(typeInfo.exceptions)));
+  typeInfos.filter(isAnonTypeInfo).forEach((typeInfo) => exceptions.push(...createExceptions(typeInfo.exceptions)));
 
-  const named = namedTypeInfo(allTypeInfo);
+  const named = typeInfos.filter(isNamedTypeInfo);
 
   // use declaringType to nest
   const { rootTypes, getChildren, unwantedTypes } = nestTypes(named);
@@ -189,20 +188,17 @@ export const convertLoadedToDetailedAssembly = (allTypeInfo: AllTypeInfo, assemb
 
   const getType = (typeInfo: NamedTypeInfo): Type => {
     const nested = getChildren(typeInfo.typeId);
-    const typeTextNode: Named = {
-      name: getTypeInfoName(typeInfo),
-      nodeId: { type: "type", assemblyName, metadataToken: typeInfo.typeId.metadataToken },
-    };
-    if (isPartTypeInfo(typeInfo)) return { ...typeTextNode, exceptions: createExceptions(typeInfo.exceptions) };
-
-    const subtypes = nested.length ? nested.filter(isWantedType).map(getType) : undefined;
 
     return {
-      ...typeTextNode,
-      access: getAccess(typeInfo.access),
+      // Named
+      name: getTypeInfoName(typeInfo),
+      nodeId: { type: "type", assemblyName, metadataToken: typeInfo.typeId.metadataToken },
+      // Type
+      access: typeInfo.access ? getAccess(typeInfo.access) : undefined,
       attributes: getAttributes(typeInfo.attributes, getArtificialNodeId),
-      subtypes,
-      members: getMembers(typeInfo.members),
+      subtypes: nested.length ? nested.filter(isWantedType).map(getType) : undefined,
+      members: createMembers(getMembers(typeInfo)),
+      exceptions: typeInfo.exceptions ? createExceptions(typeInfo.exceptions) : [],
     };
   };
 

@@ -1,5 +1,6 @@
 export { default as SvgAttribute } from "./Attribute";
 export { default as SvgClassInternal } from "./ClassInternal";
+export { default as SvgClassMissing } from "./ClassMissing";
 export { default as SvgClassPrivate } from "./ClassPrivate";
 export { default as SvgClassProtected } from "./ClassProtected";
 export { default as SvgClassPublic } from "./ClassPublic";

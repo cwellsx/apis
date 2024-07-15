@@ -7,14 +7,23 @@ import type {
   ErrorsInfo,
   GraphFilter,
   LocalsType,
+  MemberExceptionAndNames,
   MethodNameStrings,
   MethodNodeId,
   NodeId,
   TypeNodeId,
 } from "../../shared-types";
 import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
-import type { AllTypeInfo, AssemblyReferences, BadTypeInfo, GoodTypeInfo, MethodInfo, Reflected } from "../loaded";
-import { isPartTypeInfo, loadedVersion, validateTypeInfo } from "../loaded";
+import type {
+  AnonTypeInfo,
+  AssemblyReferences,
+  BadTypeInfo,
+  GoodTypeInfo,
+  MethodInfo,
+  Reflected,
+  TypeInfo,
+} from "../loaded";
+import { isAnonTypeInfo, loadedVersion } from "../loaded";
 import { log } from "../log";
 import { mapOfMaps } from "../shared-types";
 import type { Call, CommonGraphViewType, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
@@ -54,7 +63,7 @@ export class SqlLoaded {
   shouldReload: (when: string) => boolean;
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
-  readTypes: (assemblyName: string) => AllTypeInfo;
+  readTypeInfos: (assemblyName: string) => TypeInfo[];
   readErrors: () => ErrorsInfo[];
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => Call[];
   readCallStack: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
@@ -125,20 +134,22 @@ export class SqlLoaded {
         return found;
       }, {});
 
-    this.readTypes = (assemblyName: string): AllTypeInfo => {
+    this.readTypeInfos = (assemblyName: string): TypeInfo[] => {
       const where = { assemblyName };
 
       // all the bad types are JSON in a single record
       const errors = table.error.selectWhere(where);
-      const badTypes: BadTypeInfo[] = errors.length > 0 ? errors[0].badTypeInfos : [];
-      const allTypeInfo = validateTypeInfo(badTypes);
+      const badTypeInfos: BadTypeInfo[] = errors.length > 0 ? errors[0].badTypeInfos : [];
+      //const allTypeInfo = validateTypeInfo(badTypes);
+
+      const anonTypeInfos: AnonTypeInfo[] = badTypeInfos.filter(isAnonTypeInfo);
 
       // all the good types are JSON in multiple records
       const savedTypes: SavedTypeInfo[] = table.type.selectWhere(where).map((columns) => columns.typeInfo);
-      allTypeInfo.good = savedTypes.map((type) => ({ ...type, members: {} }));
+      const goodTypeInfos: GoodTypeInfo[] = savedTypes.map((type) => ({ ...type, members: {} }));
 
       const goodTypeDictionary: GoodTypeDictionary = {};
-      allTypeInfo.good.forEach((type) => (goodTypeDictionary[type.typeId.metadataToken] = type));
+      goodTypeInfos.forEach((type) => (goodTypeDictionary[type.typeId.metadataToken] = type));
 
       // all the members are saved separately
       // so read them from a different table and reinsert them into the GoodTypeInfo instances
@@ -148,29 +159,37 @@ export class SqlLoaded {
         type.members[member.memberType]?.push(JSON.parse(member.memberInfo));
       });
 
-      return allTypeInfo;
+      return [...anonTypeInfos, ...goodTypeInfos];
     };
 
     this.readErrors = (): ErrorsInfo[] => {
       const { getTypeName, getMethodName } = this.readNames();
-      const convert = (assemblyName: string, errorColumn: BadMethodInfoAndIds): BadMethodInfoAndNames => {
+
+      const convertBadMethodInfo = (assemblyName: string, errorColumn: BadMethodInfoAndIds): BadMethodInfoAndNames => {
         return {
           ...errorColumn,
           methodMember: getMethodName(methodNodeId(assemblyName, errorColumn.methodId)),
           declaringType: getTypeName(typeNodeId(assemblyName, errorColumn.typeId)),
         };
       };
-      const convertType = (badTypeInfo: BadTypeInfo): BadTypeInfoAndNames => {
-        const typeName = isPartTypeInfo(badTypeInfo)
-          ? getTypeName(typeNodeId(badTypeInfo.typeId.assemblyName, badTypeInfo.typeId.metadataToken))
-          : undefined;
-        return { typeName, exceptions: badTypeInfo.exceptions };
+
+      const convertBadTypeInfo = (badTypeInfo: BadTypeInfo): BadTypeInfoAndNames => {
+        const typeId = badTypeInfo.typeId;
+        const typeName = typeId ? getTypeName(typeNodeId(typeId.assemblyName, typeId.metadataToken)) : undefined;
+        const memberExceptions: MemberExceptionAndNames[] =
+          badTypeInfo.memberExceptions?.map((memberException) => ({
+            exception: memberException.exception,
+            declaringType: typeName ?? "?",
+            methodMember: memberException.name,
+          })) ?? [];
+        return { typeName, exceptions: badTypeInfo.exceptions ?? [], memberExceptions };
       };
+
       return table.error.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
-        badTypeInfos: errorColumns.badTypeInfos.map(convertType),
+        badTypeInfos: errorColumns.badTypeInfos.map(convertBadTypeInfo),
         badMethodInfos: errorColumns.badMethodInfos.map((badMethodInfo) =>
-          convert(errorColumns.assemblyName, badMethodInfo)
+          convertBadMethodInfo(errorColumns.assemblyName, badMethodInfo)
         ),
       }));
     };

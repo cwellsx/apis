@@ -164,8 +164,8 @@ export const createAppWindow = (
             sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
             showReferences();
           } else {
-            const allTypeInfo = sqlLoaded.readTypes(assemblyName);
-            const types = convertLoadedToDetailedAssembly(allTypeInfo, assemblyName);
+            const typeInfos = sqlLoaded.readTypeInfos(assemblyName);
+            const types = convertLoadedToDetailedAssembly(typeInfos, assemblyName);
             renderer.showDetails(types);
           }
           return;
