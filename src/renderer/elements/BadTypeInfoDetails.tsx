@@ -17,6 +17,13 @@ export const BadTypeInfoDetails: React.FunctionComponent<BadTypeInfoDetailsProps
             {badTypeInfo.exceptions.map((exception, index) => (
               <li key={index}>{exception}</li>
             ))}
+            {badTypeInfo.memberExceptions.map((memberException, index) => (
+              <li key={index}>
+                {memberException.memberName}
+                <br />
+                {memberException.exception}
+              </li>
+            ))}
           </ul>
         </li>
       ))}

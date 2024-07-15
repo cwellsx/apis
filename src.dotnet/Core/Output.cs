@@ -221,7 +221,7 @@ namespace Core.Output.Public
             null) { }
         internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType,
             new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<TypeDetails>(),
-            exception.ToString()) { }
+            exception.Message) { }
     }
 
     // a shorter version of CallDetails

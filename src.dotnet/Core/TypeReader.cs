@@ -56,7 +56,7 @@ namespace Core
             }
             catch (Exception ex)
             {
-                _exceptions.Add(ex.ToString());
+                _exceptions.Add(ex.Message);
                 return default(T);
             }
         }
@@ -207,7 +207,7 @@ namespace Core
                 }
                 catch (Exception e)
                 {
-                    exceptions.Add(new MemberException(memberInfo.Name, memberInfo.MetadataToken, e.ToString()));
+                    exceptions.Add(new MemberException(memberInfo.Name, memberInfo.MetadataToken, e.Message));
                 }
             }
             return new Members(
