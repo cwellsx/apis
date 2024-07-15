@@ -1,10 +1,14 @@
 import type { ClusterBy, NodeId } from "../../../shared-types";
-import type { BadMethodInfo, BadTypeInfo, Members, MethodInfo } from "../../loaded";
+import type { BadMethodInfo, MemberException, Members, MethodInfo, TypeId } from "../../loaded";
 import { CommonGraphViewType } from "../sqlLoadedApiTypes";
 import type { SavedTypeInfo } from "./savedTypeInfo";
 
 export type BadMethodInfoAndIds = BadMethodInfo & { methodId: number; typeId: number };
 export type CompilerMethodError = "Multiple Callers" | "No Callers" | null;
+
+// contains all exceptions (if any) from a TypeInfo
+export type BadTypeInfo = { typeId?: TypeId; exceptions?: string[]; memberExceptions?: MemberException[] };
+export type NamedBadTypeInfo = BadTypeInfo & { typeId: TypeId };
 
 /*
   This defines types used by most of the SQL source, and imports types from elsewhere -- avoid circular dependencies

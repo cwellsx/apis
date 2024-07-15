@@ -1,6 +1,7 @@
 export type {
   AssemblyColumns,
   BadMethodInfoAndIds,
+  BadTypeInfo,
   CallColumns,
   CompilerMethodError,
   ErrorColumns,
@@ -8,6 +9,7 @@ export type {
   MemberColumns,
   MethodColumns,
   MethodNameColumns,
+  NamedBadTypeInfo,
   TypeColumns,
   TypeNameColumns,
 } from "./columns";

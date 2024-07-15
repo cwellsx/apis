@@ -7,32 +7,25 @@ import type {
   ErrorsInfo,
   GraphFilter,
   LocalsType,
-  MemberExceptionAndNames,
   MethodNameStrings,
   MethodNodeId,
   NodeId,
   TypeNodeId,
 } from "../../shared-types";
 import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
-import type {
-  AnonTypeInfo,
-  AssemblyReferences,
-  BadTypeInfo,
-  GoodTypeInfo,
-  MethodInfo,
-  Reflected,
-  TypeInfo,
-} from "../loaded";
+import type { AnonTypeInfo, AssemblyReferences, GoodTypeInfo, MethodInfo, Reflected, TypeInfo } from "../loaded";
 import { isAnonTypeInfo, loadedVersion } from "../loaded";
 import { log } from "../log";
 import { mapOfMaps } from "../shared-types";
 import type { Call, CommonGraphViewType, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
 import type {
   BadMethodInfoAndIds,
+  BadTypeInfo,
   CallColumns,
   MemberColumns,
   MethodColumns,
   MethodNameColumns,
+  NamedBadTypeInfo,
   SavedTypeInfo,
   TypeNameColumns,
 } from "./sqlLoadedImpl";
@@ -165,6 +158,12 @@ export class SqlLoaded {
     this.readErrors = (): ErrorsInfo[] => {
       const { getTypeName, getMethodName } = this.readNames();
 
+      const convertAnonTypeInfo = (badTypeInfo: BadTypeInfo): string[] =>
+        (badTypeInfo.typeId ? undefined : badTypeInfo.exceptions) ?? [];
+
+      const isNamedBadTypeInfo = (badTypeInfo: BadTypeInfo): badTypeInfo is NamedBadTypeInfo =>
+        badTypeInfo.typeId !== undefined;
+
       const convertBadMethodInfo = (assemblyName: string, errorColumn: BadMethodInfoAndIds): BadMethodInfoAndNames => {
         return {
           ...errorColumn,
@@ -173,21 +172,20 @@ export class SqlLoaded {
         };
       };
 
-      const convertBadTypeInfo = (badTypeInfo: BadTypeInfo): BadTypeInfoAndNames => {
-        const typeId = badTypeInfo.typeId;
-        const typeName = typeId ? getTypeName(typeNodeId(typeId.assemblyName, typeId.metadataToken)) : undefined;
-        const memberExceptions: MemberExceptionAndNames[] =
+      const convertBadTypeInfo = (badTypeInfo: NamedBadTypeInfo): BadTypeInfoAndNames => ({
+        typeName: getTypeName(typeNodeId(badTypeInfo.typeId.assemblyName, badTypeInfo.typeId.metadataToken)),
+        exceptions: badTypeInfo.exceptions ?? [],
+        memberExceptions:
           badTypeInfo.memberExceptions?.map((memberException) => ({
             exception: memberException.exception,
-            declaringType: typeName ?? "?",
-            methodMember: memberException.name,
-          })) ?? [];
-        return { typeName, exceptions: badTypeInfo.exceptions ?? [], memberExceptions };
-      };
+            memberName: memberException.name,
+          })) ?? [],
+      });
 
       return table.error.selectAll().map((errorColumns) => ({
         assemblyName: errorColumns.assemblyName,
-        badTypeInfos: errorColumns.badTypeInfos.map(convertBadTypeInfo),
+        anonTypeInfos: errorColumns.badTypeInfos.flatMap(convertAnonTypeInfo),
+        badTypeInfos: errorColumns.badTypeInfos.filter(isNamedBadTypeInfo).map(convertBadTypeInfo),
         badMethodInfos: errorColumns.badMethodInfos.map((badMethodInfo) =>
           convertBadMethodInfo(errorColumns.assemblyName, badMethodInfo)
         ),

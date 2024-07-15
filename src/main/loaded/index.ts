@@ -15,6 +15,6 @@ export type {
   PropertyMember,
 } from "./loadedMembers";
 export type { TypeId } from "./loadedTypeId";
-export { getBadTypeInfos, getMembers, isAnonTypeInfo, isNamedTypeInfo } from "./loadedTypeInfo";
-export type { AnonTypeInfo, BadTypeInfo, GoodTypeInfo, NamedTypeInfo, TypeInfo } from "./loadedTypeInfo";
+export { getMembers, isAnonTypeInfo, isNamedTypeInfo } from "./loadedTypeInfo";
+export type { AnonTypeInfo, GoodTypeInfo, NamedTypeInfo, TypeInfo } from "./loadedTypeInfo";
 export { loadedVersion } from "./loadedVersion";

@@ -1,15 +1,14 @@
-import type { Reflected } from "../../loaded";
-import { getBadTypeInfos, isNamedTypeInfo } from "../../loaded";
+import type { Reflected, TypeInfo } from "../../loaded";
+import { isNamedTypeInfo } from "../../loaded";
 import { Tables } from "./tables";
 
 import { log } from "../../log";
 import { uniqueStrings } from "../../shared-types";
 
-import type { CallColumns, ErrorColumns, LocalsTypeColumns } from "./columns";
+import type { BadTypeInfo, CallColumns, ErrorColumns, LocalsTypeColumns } from "./columns";
 import { flattenCompilerMethods } from "./compilerMethods";
-import { flattenGoodTypeInfo } from "./flattenGoodTypeInfo";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
-import { flattenNamedTypeInfo } from "./flattenNamedTypeInfo";
+import { flattenTypeInfo } from "./flattenTypeInfo";
 import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
 import { getTypeAndMethodNames } from "./getTypeAndMethodNames";
 
@@ -23,28 +22,39 @@ import { getTypeAndMethodNames } from "./getTypeAndMethodNames";
   so do all reflected.assemblies to get MapMethodTypes before doing any reflected.assemblyMethods
 */
 
+const getBadTypeInfos = (typeInfos: TypeInfo[]): BadTypeInfo[] => {
+  const result: BadTypeInfo[] = [];
+  typeInfos.forEach((typeInfo) => {
+    if (typeInfo.exceptions || typeInfo.members?.exceptions)
+      result.push({
+        exceptions: typeInfo.exceptions,
+        typeId: typeInfo.typeId,
+        memberExceptions: typeInfo.members?.exceptions,
+      });
+  });
+  return result;
+};
+
 export const save = (reflected: Reflected, table: Tables): void => {
   log("save reflected.assemblies");
 
   const allCompilerTypes = new Map<string, Set<number>>();
 
   for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
-    const namedTypeInfos = assemblyInfo.types.filter(isNamedTypeInfo);
-
     // BadTypeInfo[]
     const badTypeInfos = getBadTypeInfos(assemblyInfo.types);
     if (badTypeInfos.length) {
       table.error.insert({ assemblyName, badTypeInfos, badMethodInfos: [] });
     }
 
-    // GoodTypeInfo[]
-    const { typeColumns, memberColumns, methodNameColumns } = flattenGoodTypeInfo(assemblyName, namedTypeInfos);
+    // NamedTypeInfo[]
+    const { typeColumns, memberColumns, methodNameColumns, declaringTypeColumns, typeNameColumns } = flattenTypeInfo(
+      assemblyName,
+      assemblyInfo.types.filter(isNamedTypeInfo)
+    );
     table.type.insertMany(typeColumns);
     table.member.insertMany(memberColumns);
     table.methodName.insertMany(methodNameColumns);
-
-    // NamedTypeInfo[]
-    const { declaringTypeColumns, typeNameColumns } = flattenNamedTypeInfo(assemblyName, namedTypeInfos);
     table.declaringType.insertMany(declaringTypeColumns);
     table.typeName.insertMany(typeNameColumns);
 

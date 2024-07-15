@@ -2,16 +2,16 @@ import type { BadMethodInfo } from "./loaded";
 import { MethodNameStrings } from "./methodNameStrings";
 
 export type BadMethodInfoAndNames = BadMethodInfo & Omit<MethodNameStrings, "assemblyName">;
-export type MemberExceptionAndNames = { exception: string } & Omit<MethodNameStrings, "assemblyName">;
 
 export type BadTypeInfoAndNames = {
-  typeName?: string;
+  typeName: string;
   exceptions: string[];
-  memberExceptions: MemberExceptionAndNames[];
+  memberExceptions: { memberName: string; exception: string }[];
 };
 
 export type ErrorsInfo = {
   assemblyName: string;
-  badTypeInfos: BadTypeInfoAndNames[];
+  anonTypeInfos: string[]; // exceptions without TypeId
+  badTypeInfos: BadTypeInfoAndNames[]; // exceptions with TypeId
   badMethodInfos: BadMethodInfoAndNames[];
 };

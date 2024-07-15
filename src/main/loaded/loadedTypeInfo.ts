@@ -1,5 +1,5 @@
 import { Access } from "./loadedEnums";
-import { MemberException, Members } from "./loadedMembers";
+import { Members } from "./loadedMembers";
 import { TypeId } from "./loadedTypeId";
 
 const enum Flag {
@@ -24,8 +24,7 @@ export type TypeInfo = {
 // if an exception is thrown and caught, when reading the TypeInfo
 // then the exceptions field is present and any other fields including the TypeId may be missing
 export type AnonTypeInfo = Required<Pick<TypeInfo, "exceptions">>;
-export const isAnonTypeInfo = (typeInfo: TypeInfo | BadTypeInfo): typeInfo is AnonTypeInfo =>
-  typeInfo.typeId === undefined;
+export const isAnonTypeInfo = (typeInfo: TypeInfo): typeInfo is AnonTypeInfo => typeInfo.typeId === undefined;
 
 // if at least the TypeId is present then it's not anonymous and can be useful
 export type NamedTypeInfo = TypeInfo & { typeId: TypeId };
@@ -33,24 +32,4 @@ export const isNamedTypeInfo = (typeInfo: TypeInfo): typeInfo is NamedTypeInfo =
 
 // most of the application assumes non-undefined MemberInfo (SQL layer substitutes empty MemberInfo if necessary)
 export type GoodTypeInfo = NamedTypeInfo & { members: Members };
-
-// not quite the same, contains all exceptions (if any) from a TypeInfo
-export type BadTypeInfo = {
-  typeId?: TypeId;
-  exceptions?: string[];
-  memberExceptions?: MemberException[];
-};
-export const getBadTypeInfos = (typeInfos: TypeInfo[]): BadTypeInfo[] => {
-  const result: BadTypeInfo[] = [];
-  typeInfos.forEach((typeInfo) => {
-    if (typeInfo.exceptions || typeInfo.members?.exceptions)
-      result.push({
-        exceptions: typeInfo.exceptions,
-        typeId: typeInfo.typeId,
-        memberExceptions: typeInfo.members?.exceptions,
-      });
-  });
-  return result;
-};
-
 export const getMembers = (typeInfo: TypeInfo): Members => typeInfo.members ?? {};
