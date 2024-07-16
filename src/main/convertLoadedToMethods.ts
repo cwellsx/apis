@@ -19,23 +19,20 @@ import type { ImageAttribute } from "./createImage";
 import { log } from "./log";
 import { Edges, NodeIdMap } from "./shared-types";
 import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
+import { CallStack } from "./sql/sqlLoadedApiTypes";
 
 /*
   exported
 */
 
 type LeafDictionary = NodeIdMap<TypeAndMethodId, MethodNodeId>;
-type ReadCallStack = (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
 
 type CallstackElements = {
   leafs: LeafDictionary;
   edges: Edges;
 };
 
-export const convertLoadedToCallstack = (
-  readCallStack: ReadCallStack,
-  firstLeaf: TypeAndMethodId
-): CallstackElements => {
+export const convertLoadedToCallstack = (callStack: CallStack): CallstackElements => {
   const called = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
   const caller = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
   const edges = new Edges();
@@ -59,7 +56,7 @@ export const convertLoadedToCallstack = (
     const leafId = methodNodeId(leaf);
     leafDictionary.set(leafId, leaf);
 
-    const allFound = readCallStack(leaf.assemblyName, leaf.methodId, direction);
+    const allFound = callStack.readNext(leaf.assemblyName, leaf.methodId, direction);
 
     for (const found of allFound) {
       const foundId = methodNodeId(found);
@@ -71,8 +68,8 @@ export const convertLoadedToCallstack = (
     }
   };
 
-  [firstLeaf].forEach((called) => findNextLayer(called, "upwards", caller));
-  [firstLeaf].forEach((calledBy) => findNextLayer(calledBy, "downwards", called));
+  [callStack.first].forEach((called) => findNextLayer(called, "upwards", caller));
+  [callStack.first].forEach((calledBy) => findNextLayer(calledBy, "downwards", called));
 
   const combined = called.combine(caller);
 

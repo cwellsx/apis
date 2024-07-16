@@ -3,6 +3,7 @@ export type {
   BadMethodInfoAndIds,
   BadTypeInfo,
   CallColumns,
+  CompilerMethodColumns,
   CompilerMethodError,
   ErrorColumns,
   GraphFilterColumns,
@@ -13,6 +14,7 @@ export type {
   TypeColumns,
   TypeNameColumns,
 } from "./columns";
+export { compilerTransform, compilerTransformDisabled } from "./compilerTransform";
 export { getTypeAndMethodNames } from "./getTypeAndMethodNames";
 export { save } from "./save";
 export type { SavedTypeInfo } from "./savedTypeInfo";

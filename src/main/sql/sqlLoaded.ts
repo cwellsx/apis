@@ -24,20 +24,28 @@ import type {
 } from "../loaded";
 import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../loaded";
 import { log } from "../log";
-import { mapOfMaps } from "../shared-types";
-import type { Call, CommonGraphViewType, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sqlLoadedApiTypes";
+import { mapOfMaps, options } from "../shared-types";
+import type {
+  Call,
+  CallStack,
+  CommonGraphViewType,
+  Direction,
+  GetTypeOrMethodName,
+  TypeAndMethodId,
+} from "./sqlLoadedApiTypes";
 import type {
   BadMethodInfoAndIds,
   BadTypeInfo,
   CallColumns,
+  CompilerMethodColumns,
   MemberColumns,
   MethodColumns,
   NamedBadTypeInfo,
   SavedTypeInfo,
   TypeNameColumns,
 } from "./sqlLoadedImpl";
-import { getTypeAndMethodNames, newTables, save } from "./sqlLoadedImpl";
-import { CompilerMethodColumns } from "./sqlLoadedImpl/columns";
+import { compilerTransform, compilerTransformDisabled, getTypeAndMethodNames, newTables, save } from "./sqlLoadedImpl";
+
 import { ViewState } from "./viewState";
 
 /*
@@ -67,8 +75,9 @@ export class SqlLoaded {
   readErrors: () => ErrorsInfo[];
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => Call[];
 
-  readCallStack: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
-  readCallStackFirst: (nodeId: MethodNodeId) => TypeAndMethodId;
+  readCallStack: (nodeId: MethodNodeId) => CallStack;
+  private readCallStackNext: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
+  private readCallStackFirst: (nodeId: MethodNodeId) => TypeAndMethodId;
 
   // reads data for DetailedMethod
   readMethodDetails: (nodeId: MethodNodeId) => { title: MethodName; asText: string; badMethodCalls?: BadMethodCall[] };
@@ -223,7 +232,7 @@ export class SqlLoaded {
           })
         )
       );
-      return result.map((callColumns) => ({
+      const calls: Call[] = result.map((callColumns) => ({
         from: {
           assemblyName: callColumns.fromAssemblyName,
           namespace: callColumns.fromNamespace,
@@ -237,9 +246,53 @@ export class SqlLoaded {
           methodId: callColumns.toMethodId,
         },
       }));
+      if (options.showCompilerGeneratedTypes) return calls;
+      const { filterCall } = compilerTransform(table.compilerMethod.selectAll());
+      return calls.filter(filterCall);
     };
 
-    this.readCallStack = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
+    this.readCallStack = (methodNodeId: MethodNodeId): CallStack => {
+      const first = this.readCallStackFirst(methodNodeId);
+
+      const { isCompilerMethod, getOwner } = !options.showCompilerGeneratedTypes
+        ? compilerTransform(table.compilerMethod.selectAll())
+        : compilerTransformDisabled;
+
+      const readNext = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
+        const compilerMethods: TypeAndMethodId[] = [];
+        const ordinaryMethods: TypeAndMethodId[] = [];
+
+        const filter = (result: TypeAndMethodId[]): void =>
+          result.forEach((method) => (isCompilerMethod(method) ? compilerMethods : ordinaryMethods).push(method));
+
+        const readMore = (compilerMethods: TypeAndMethodId[]): TypeAndMethodId[] => {
+          switch (direction) {
+            case "downwards": {
+              const results: TypeAndMethodId[] = [];
+              compilerMethods.forEach((found) =>
+                results.push(...this.readCallStackNext(found.assemblyName, found.methodId, direction))
+              );
+              return results;
+            }
+            case "upwards":
+              return compilerMethods.map(getOwner);
+          }
+        };
+
+        const first = this.readCallStackNext(assemblyName, methodId, direction);
+        filter(first);
+        while (compilerMethods.length !== 0) {
+          const more = readMore(compilerMethods);
+          compilerMethods.length = 0;
+          filter(more);
+        }
+
+        return ordinaryMethods;
+      };
+      return { first, readNext };
+    };
+
+    this.readCallStackNext = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
       const { assemblyNameField, methodIdField } = ((): {
         assemblyNameField: keyof CallColumns;
         methodIdField: keyof CallColumns;
@@ -282,19 +335,10 @@ export class SqlLoaded {
       });
     };
 
-    this.readMethodTypeId = (methodNodeId: MethodNodeId): TypeNodeId => {
-      // use MemberColumns to get type Id
-      const { assemblyName, metadataToken } = methodNodeId;
-      const memberKey: Partial<MemberColumns> = { assemblyName, metadataToken };
-      const member = table.member.selectOne(memberKey);
-      if (!member) throw new Error(`Member not found ${JSON.stringify(memberKey)}`);
-      return typeNodeId(assemblyName, member.typeMetadataToken);
-    };
-
     this.readCallStackFirst = (methodNodeId: MethodNodeId): TypeAndMethodId => {
       const typeId = this.readMethodTypeId(methodNodeId);
-      const { assemblyName, metadataToken } = methodNodeId;
-      const typeNamekey: Partial<TypeNameColumns> = typeId;
+      const { assemblyName, metadataToken } = typeId;
+      const typeNamekey: Partial<TypeNameColumns> = { assemblyName, metadataToken };
       const typeNameColumns = table.typeName.selectOne(typeNamekey);
       if (!typeNameColumns) throw new Error(`Type not found ${JSON.stringify(typeNamekey)}`);
 
@@ -302,7 +346,7 @@ export class SqlLoaded {
         assemblyName,
         // TODO check that namespace is correct when the type is nested
         namespace: typeNameColumns.namespace ?? "(no namespace)",
-        methodId: metadataToken,
+        methodId: methodNodeId.metadataToken,
         typeId: typeNameColumns.metadataToken,
       };
     };
@@ -358,7 +402,7 @@ export class SqlLoaded {
 
       const getCallStackFromDirection = (column: CompilerMethodColumns, direction: Direction): MethodName[] => {
         const { assemblyName, compilerType, compilerMethod } = column;
-        const typeAndMethodIds = this.readCallStack(assemblyName, compilerMethod, direction);
+        const typeAndMethodIds = this.readCallStackNext(assemblyName, compilerMethod, direction);
         const isSameType = (typeAndMethodId: TypeAndMethodId): boolean =>
           assemblyName === typeAndMethodId.assemblyName && compilerType === typeAndMethodId.typeId;
         return typeAndMethodIds
@@ -421,6 +465,15 @@ export class SqlLoaded {
         return result;
       });
       return { compilerMethods, localsTypes };
+    };
+
+    this.readMethodTypeId = (methodNodeId: MethodNodeId): TypeNodeId => {
+      // use MemberColumns to get type Id
+      const { assemblyName, metadataToken } = methodNodeId;
+      const memberKey: Partial<MemberColumns> = { assemblyName, metadataToken };
+      const member = table.member.selectOne(memberKey);
+      if (!member) throw new Error(`Member not found ${JSON.stringify(memberKey)}`);
+      return typeNodeId(assemblyName, member.typeMetadataToken);
     };
 
     this.readLeafVisible = (viewType: CommonGraphViewType): NodeId[] => {

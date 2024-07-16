@@ -6,8 +6,8 @@ export const options = {
   ungroupSingle: true,
   shortLeafNames: true,
   noSelfEdges: true,
-  alwaysReload: true,
+  alwaysReload: false,
   showCompilerGeneratedAttributes: true,
-  showCompilerGeneratedTypes: true,
+  showCompilerGeneratedTypes: false,
   logApi: false,
 };

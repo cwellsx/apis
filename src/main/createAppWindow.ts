@@ -196,9 +196,8 @@ export const createAppWindow = (
       log(`showMethods(${methodId ?? ""})`);
 
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const firstLeaf = sqlLoaded.readCallStackFirst(methodId ?? methodViewOptions.methodId);
-      const readCallStack = sqlLoaded.readCallStack.bind(sqlLoaded);
-      const callstack = convertLoadedToCallstack(readCallStack, firstLeaf);
+      const callStack = sqlLoaded.readCallStack(methodId ?? methodViewOptions.methodId);
+      const callstack = convertLoadedToCallstack(callStack);
 
       show.showMessage(undefined, `${callstack.leafs.length()} records`);
 

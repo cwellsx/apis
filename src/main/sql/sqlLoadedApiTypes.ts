@@ -21,3 +21,8 @@ export type GetTypeOrMethodName = {
 export type Direction = "upwards" | "downwards";
 
 export type CommonGraphViewType = Exclude<GraphViewType, "custom">;
+
+export type CallStack = {
+  first: TypeAndMethodId;
+  readNext: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
+};
