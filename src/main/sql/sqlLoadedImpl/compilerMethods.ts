@@ -11,14 +11,14 @@ import { CallColumns, CompilerMethodColumns, LocalsTypeColumns } from "./columns
 
 type Inspected = { assemblyName: string; typeId: number; methodId: number };
 const inspected: Inspected[] = [
-  //
+  { assemblyName: "Core", typeId: 0, methodId: 100663330 },
   // { assemblyName: "Newtonsoft.Json", typeId: 33554886, methodId: 100667314 },
   // { assemblyName: "Newtonsoft.Json", typeId: 33554886, methodId: 100667320 },
   // { assemblyName: "Newtonsoft.Json", typeId: 33554886, methodId: 100667312 },
 ];
 
 type Owner = { fromMethodId: number; fromTypeId: number; fromAssemblyName: string; fromNamespace: string | null };
-type Compiler = { compilerType: number; owners: Owners };
+type Compiler = { typeId: number; isCompilerType: boolean; owners: Owners };
 type IsOwner = (owner: Owner) => boolean;
 
 // this is like a Set<Owner> except is guarantees Owner instance are unique by value, not only by reference,
@@ -144,7 +144,7 @@ const createWatch = (getTypeOrMethodName: GetTypeOrMethodName): Watch => {
 
   const inspectOwners = (message: string, assemblyName: string, methodId: number, compiler: Compiler): void => {
     if (isInspectedMethod(assemblyName, methodId))
-      logOwners(`${message}(${getName(assemblyName, compiler.compilerType, methodId)})`, compiler.owners.all());
+      logOwners(`${message}(${getName(assemblyName, compiler.typeId, methodId)})`, compiler.owners.all());
   };
 
   return {
@@ -165,6 +165,7 @@ export const flattenCompilerMethods = (
   callColumns: CallColumns[],
   localsTypeColumns: LocalsTypeColumns[],
   allCompilerTypes: Map<string, Set<number>>,
+  allCompilerMethods: Map<string, Set<number>>,
   // not really needed but used for debugged
   getTypeOrMethodName: GetTypeOrMethodName
 ): CompilerMethodColumns[] => {
@@ -179,32 +180,42 @@ export const flattenCompilerMethods = (
 
   // create a map of compiler-generated methods in each assembly
   const assemblyCompilerMethods = new Map<string, Map<number, Compiler>>();
-  // and a set of compiler-generated types
-  const assemblyCompilerTypes = new Map<string, Set<number>>();
 
-  const isCompilerType = (assemblyName: string, metadataToken: number): boolean =>
+  const getIsCompilerType = (assemblyName: string, metadataToken: number): boolean =>
     allCompilerTypes.get(assemblyName)?.has(metadataToken) ?? false;
 
-  const getIsOwner = (assemblyName: string, compilerType: number): IsOwner => {
-    return (owner: Owner) => owner.fromTypeId !== compilerType && !isCompilerType(assemblyName, owner.fromTypeId);
+  const getIsCompilerMethod = (assemblyName: string, metadataToken: number): boolean =>
+    allCompilerMethods.get(assemblyName)?.has(metadataToken) ?? false;
+
+  const getIsOwner = (assemblyName: string, compilerMethod: number): IsOwner => {
+    return (owner: Owner) =>
+      !getIsCompilerType(assemblyName, owner.fromTypeId) &&
+      // this is to ignore self-recursive calls
+      owner.fromMethodId !== compilerMethod;
   };
 
   for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
     const methods = new Map<number, Compiler>();
     assemblyCompilerMethods.set(assemblyName, methods);
-    const types = new Set<number>();
-    assemblyCompilerTypes.set(assemblyName, types);
     assemblyInfo.types
       .filter(isNamedTypeInfo)
-      .filter((typeInfo) => isCompilerType(assemblyName, typeInfo.typeId.metadataToken))
+      //.filter((typeInfo) => isCompilerType(assemblyName, typeInfo.typeId.metadataToken))
       // for each good compiler-generated type in the assembly
       .forEach((type) => {
-        types.add(type.typeId.metadataToken);
-        getMembers(type).methodMembers?.forEach((methodMember) => {
-          watch.logMethod(assemblyName, type.typeId.metadataToken, methodMember.metadataToken);
-          // map each method to a different Compiler instance (some types' methods are called from different methods)
-          methods.set(methodMember.metadataToken, { compilerType: type.typeId.metadataToken, owners: new Owners() });
-        });
+        const isCompilerType = getIsCompilerType(assemblyName, type.typeId.metadataToken);
+        getMembers(type)
+          .methodMembers?.filter(
+            (methodMember) => isCompilerType || getIsCompilerMethod(assemblyName, methodMember.metadataToken)
+          )
+          .forEach((methodMember) => {
+            watch.logMethod(assemblyName, type.typeId.metadataToken, methodMember.metadataToken);
+            // map each method to a different Compiler instance (some types' methods are called from different methods)
+            methods.set(methodMember.metadataToken, {
+              typeId: type.typeId.metadataToken,
+              isCompilerType,
+              owners: new Owners(),
+            });
+          });
       });
   }
 
@@ -237,7 +248,7 @@ export const flattenCompilerMethods = (
     if (!methods) throw new Error("Unexpected missing assembly");
     // find all Compiler instances for every method of the compiler type
     [...methods.values()]
-      .filter((compiler) => compiler.compilerType == localsType.compilerType)
+      .filter((compiler) => compiler.typeId == localsType.compilerType)
       .forEach((compiler) => {
         const owner: Owner = {
           fromMethodId: localsType.ownerMethod,
@@ -265,7 +276,7 @@ export const flattenCompilerMethods = (
         if (watch.isInspectedMethod(assemblyName, methodId)) {
           log("resolving watched method"); // put a breakpoint here to step through the resolve method
         }
-        const isOwner = getIsOwner(assemblyName, compiler.compilerType);
+        const isOwner = getIsOwner(assemblyName, methodId);
         if (owners.resolve(methods, isOwner)) {
           watch.inspectOwners("resolved", assemblyName, methodId, compiler);
           result = true;
@@ -284,10 +295,10 @@ export const flattenCompilerMethods = (
       if (watch.isInspectedMethod(assemblyName, methodId)) {
         log("resolving(2) watched method"); // put a breakpoint here to step through the resolve method
       }
-      const isOwner = getIsOwner(assemblyName, compiler.compilerType);
+      const isOwner = getIsOwner(assemblyName, methodId);
       if (compiler.owners.result(isOwner).length > 0) return;
       // get the other methods for this type
-      const others = [...methods.entries()].filter(([, other]) => compiler.compilerType === other.compilerType);
+      const others = [...methods.entries()].filter(([, other]) => compiler.typeId === other.typeId);
       // find the .ctor and its only owner
       const ctor = others.find(([methodId]) => isCtor(assemblyName, methodId));
       if (!ctor) return;
@@ -308,8 +319,11 @@ export const flattenCompilerMethods = (
     compilerMethod: number,
     compiler: Compiler
   ): CompilerMethodColumns => {
-    const { compilerType, owners } = compiler;
-    const isOwner = getIsOwner(assemblyName, compilerType);
+    if (watch.isInspectedMethod(assemblyName, compilerMethod)) {
+      log("resulting watched method"); // put a breakpoint here to step through the resolve method
+    }
+    const { typeId: compilerType, owners } = compiler;
+    const isOwner = getIsOwner(assemblyName, compilerMethod);
     const filtered = owners.result(isOwner);
 
     if (filtered.length > 1) {

@@ -16,7 +16,7 @@ export class ViewState {
     this._cache = new ConfigCache(db);
   }
 
-  onSave(when: string, hashDataSource: string, version: string, exes: string[]) {
+  onSave(when: string, hashDataSource: string, version: string, exes: string[], isSchemaChanged: boolean) {
     this.cachedWhen = when;
     this.hashDataSource = hashDataSource;
     this.loadedVersion = version;
@@ -24,6 +24,11 @@ export class ViewState {
     this.referenceViewOptions = defaultViewOptions.referenceViewOptions;
     this.methodViewOptions = defaultViewOptions.methodViewOptions;
     this.apiViewOptions = defaultViewOptions.apiViewOptions;
+
+    if (isSchemaChanged) {
+      this.viewType = "references";
+      this.compilerViewOptions = defaultViewOptions.compilerViewOptions;
+    }
   }
 
   // this changes when the SQL schema definition changes

@@ -39,6 +39,7 @@ export const save = (reflected: Reflected, table: Tables): void => {
   log("save reflected.assemblies");
 
   const allCompilerTypes = new Map<string, Set<number>>();
+  const allCompilerMethods = new Map<string, Set<number>>();
 
   for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
     // BadTypeInfo[]
@@ -69,6 +70,12 @@ export const save = (reflected: Reflected, table: Tables): void => {
     allCompilerTypes.set(
       assemblyName,
       new Set<number>(typeNameColumns.filter((column) => column.isCompilerType).map((column) => column.metadataToken))
+    );
+    allCompilerMethods.set(
+      assemblyName,
+      new Set<number>(
+        methodNameColumns.filter((column) => column.isCompilerMethod).map((column) => column.metadataToken)
+      )
     );
   }
 
@@ -115,6 +122,7 @@ export const save = (reflected: Reflected, table: Tables): void => {
     allCallColumns,
     allLocalsTypeColumns,
     allCompilerTypes,
+    allCompilerMethods,
     getTypeAndMethodNames(table)
   );
   table.compilerMethod.insertMany(compilerMethodColumns);

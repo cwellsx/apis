@@ -76,6 +76,7 @@ export type MethodNameColumns = {
   assemblyName: string;
   metadataToken: number;
   name: string;
+  isCompilerMethod: 0 | 1;
 };
 
 export type GraphFilterColumns = {

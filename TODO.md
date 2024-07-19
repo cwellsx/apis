@@ -28,7 +28,6 @@ Improve the software first, then the documentation
 
 - `*.ts`
 
-  - Use WantedTypeColumns to process the output
   - Review where nestTypes is used and try to remove it
 
 - `*.cs`

@@ -98,7 +98,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-07-15";
+    const loadedSchemaVersionExpected = "2024-07-18";
 
     this.viewState = new ViewState(db);
 
@@ -121,7 +121,7 @@ export class SqlLoaded {
 
       save(reflected, table);
 
-      this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes);
+      this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes, isSchemaChanged);
 
       this.writeLeafVisible(
         "references",
@@ -261,9 +261,22 @@ export class SqlLoaded {
       const readNext = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
         const compilerMethods: TypeAndMethodId[] = [];
         const ordinaryMethods: TypeAndMethodId[] = [];
+        const finishedMethods: TypeAndMethodId[] = [];
+
+        // this is to avoid inifinite loop on recursive calls
+        const isAlreadyFound = (newMethod: TypeAndMethodId, existing: TypeAndMethodId[]) =>
+          existing.some(
+            (found) => found.assemblyName === newMethod.assemblyName && found.methodId === newMethod.methodId
+          );
 
         const filter = (result: TypeAndMethodId[]): void =>
-          result.forEach((method) => (isCompilerMethod(method) ? compilerMethods : ordinaryMethods).push(method));
+          result.forEach((method) => {
+            if (isCompilerMethod(method)) {
+              if (!isAlreadyFound(method, finishedMethods)) compilerMethods.push(method);
+            } else {
+              if (!isAlreadyFound(method, ordinaryMethods)) ordinaryMethods.push(method);
+            }
+          });
 
         const readMore = (compilerMethods: TypeAndMethodId[]): TypeAndMethodId[] => {
           switch (direction) {
@@ -283,6 +296,7 @@ export class SqlLoaded {
         filter(first);
         while (compilerMethods.length !== 0) {
           const more = readMore(compilerMethods);
+          finishedMethods.push(...compilerMethods);
           compilerMethods.length = 0;
           filter(more);
         }

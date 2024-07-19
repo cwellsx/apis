@@ -108,6 +108,7 @@ export const newTables = (db: Database, isSchemaChanged: boolean): Tables => {
     assemblyName: "foo",
     metadataToken: 0,
     name: "bar",
+    isCompilerMethod: 0,
   });
   const graphFilter = new SqlTable<GraphFilterColumns>(db, "graphFilter", ["viewType", "clusterBy"], () => false, {
     viewType: "references",

@@ -1,4 +1,4 @@
-import { getMembers, Members, NamedTypeInfo } from "../../loaded";
+import { getMembers, Members, MethodMember, NamedTypeInfo } from "../../loaded";
 import { getTypeInfoName } from "../../shared-types";
 import type { DeclaringTypeColumns, MemberColumns, MethodNameColumns, TypeColumns, TypeNameColumns } from "./columns";
 import { createSavedTypeInfo } from "./savedTypeInfo";
@@ -8,6 +8,13 @@ const isCompilerGeneratedAttribute = (attribute: string): boolean =>
 
 const isCompilerGeneratedType = (typeInfo: NamedTypeInfo): boolean =>
   typeInfo.attributes?.some(isCompilerGeneratedAttribute) ?? false;
+
+const isCompilerGeneratedMethod = (nethodInfo: MethodMember): boolean =>
+  // don't use isCompilerGeneratedAttribute because that's also applied to properties which we want to keep as-is
+  nethodInfo.name[0] === "<";
+
+const isMethod = (entry: [string, unknown[]]): entry is ["method", MethodMember[]] =>
+  (entry[0] as keyof Members) == "methodMembers";
 
 export const flattenTypeInfo = (
   assemblyName: string,
@@ -48,16 +55,17 @@ export const flattenTypeInfo = (
         .flat()
     );
 
+    const getMethodNameColumns = (nethodMember: MethodMember): MethodNameColumns => ({
+      assemblyName,
+      name: nethodMember.name,
+      metadataToken: nethodMember.metadataToken,
+      isCompilerMethod: isCompilerGeneratedMethod(nethodMember) ? 1 : 0,
+    });
+
     methodNameColumns.push(
       ...Object.entries(getMembers(type))
-        .filter(([memberType]) => (memberType as keyof Members) == "methodMembers")
-        .map(([, memberValues]) =>
-          memberValues.map((memberInfo) => ({
-            assemblyName,
-            name: memberInfo.name,
-            metadataToken: memberInfo.metadataToken,
-          }))
-        )
+        .filter(isMethod)
+        .map(([, memberValues]) => memberValues.map(getMethodNameColumns))
         .flat()
     );
   }
