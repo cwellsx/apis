@@ -15,17 +15,25 @@ import type {
   ViewOptions,
   ViewType,
 } from "../shared-types";
-import { viewFeatures } from "../shared-types";
 import { convertLoadedToApis } from "./convertLoadedToApis";
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
-import { convertCallstackToImage, convertLoadedToCallstack } from "./convertLoadedToMethods";
+import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
 import { log } from "./log";
 import type { SetViewMenu, ViewMenu, ViewMenuItem } from "./menu";
 import { createSecondMenu } from "./menu";
 import { showAdjacent } from "./onGraphClick";
-import { getClusterNames, isEdgeId, isMethodNodeId, isNameNodeId, removeNodeId, toggleNodeId } from "./shared-types";
+import {
+  getClusterNames,
+  isEdgeId,
+  isMethodNodeId,
+  isNameNodeId,
+  options,
+  removeNodeId,
+  toggleNodeId,
+  viewFeatures,
+} from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sql";
 import { CommonGraphViewType } from "./sql/sqlLoadedApiTypes";
@@ -195,8 +203,12 @@ export const createAppWindow = (
     try {
       log(`showMethods(${methodId ?? ""})`);
 
+      const unknownMethodId = (): MethodNodeId => {
+        throw new Error("Unknown methodId");
+      };
+
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const callStack = sqlLoaded.readCallStack(methodId ?? methodViewOptions.methodId);
+      const callStack = sqlLoaded.readCallStack(methodId ?? methodViewOptions.methodId ?? unknownMethodId());
       const callstack = convertLoadedToCallstack(callStack);
 
       show.showMessage(undefined, `${callstack.leafs.length()} records`);
@@ -252,14 +264,20 @@ export const createAppWindow = (
       apiViewOptions.showInternalCalls ? getClusterNames(graphFilter.groupExpanded, clusterBy) : []
     );
     show.showMessage(undefined, `${calls.length} records`);
-    const viewGraph = convertLoadedToApis(
-      calls,
-      sqlLoaded.readNames(),
-      apiViewOptions,
-      graphFilter,
-      sqlLoaded.viewState.exes
-    );
-    renderer.showView(viewGraph);
+    if (options.reuseCallStack) {
+      const elements = convertLoadedToCalls(calls);
+      const viewGraph = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
+      renderer.showView(viewGraph);
+    } else {
+      const viewGraph = convertLoadedToApis(
+        calls,
+        sqlLoaded.readNames(),
+        apiViewOptions,
+        graphFilter,
+        sqlLoaded.viewState.exes
+      );
+      renderer.showView(viewGraph);
+    }
   };
 
   const showCompiler = (): void => {

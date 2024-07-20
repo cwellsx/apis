@@ -6,3 +6,4 @@ export * from "./nodeIdUtils";
 export { options } from "./options";
 export type { StringPredicate } from "./predicate";
 export { distinctor, getMapped, getOrSet, mapOfMaps, remove, replace, uniqueStrings } from "./remove";
+export { viewFeatures } from "./viewFeatures";

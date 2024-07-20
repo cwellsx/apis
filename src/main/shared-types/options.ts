@@ -10,4 +10,5 @@ export const options = {
   showCompilerGeneratedAttributes: true,
   showCompilerGeneratedTypes: false,
   logApi: false,
+  reuseCallStack: true,
 };

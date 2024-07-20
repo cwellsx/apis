@@ -2,12 +2,12 @@
 
 ## What
 
-This lets you browse the APIs of .NET solutions:
+Browse the APIs of .NET solutions:
 
-- Reads your .NET assemblies, using Reflection
-- Graphs your APIs, between and within assemblies
+- Read .NET assemblies using Reflection
+- Graph APIs between or within assemblies
 
-Its UI lets you customize the view:
+UI to customize the graph view:
 
 - Cluster nodes into groups
 - Hide and show nodes
@@ -16,15 +16,13 @@ Its UI lets you customize the view:
 
 ## Why
 
-The graph shows everything on one page -- both, the architecture and its details.
+The graph shows both the architecture and its details.
 
-Because the display is interactive you can:
+The display is interactive:
 
 - See the top-level architecture
 - Drill down to specific details
 - Extract data e.g. call graphs
-
-So it doesn't have the usual problem of a graphical view -- i.e. showing too much, too little, or the wrong details.
 
 Reflection reverse-engineers your actual, current software architecture:
 

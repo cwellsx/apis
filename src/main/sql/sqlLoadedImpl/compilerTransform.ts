@@ -33,14 +33,22 @@ export const compilerTransform = (compilerColumns: CompilerMethodColumns[]): Com
   const getOwner = (typeAndMethodId: TypeAndMethodId): Owner | undefined =>
     assemblyMethodMap.get(typeAndMethodId.assemblyName)?.get(typeAndMethodId.methodId);
 
+  const assertMethodId = (call: Call): void => {
+    if (!call.from.methodId || !call.to.methodId) {
+      throw new Error("Unexpected zero methodId");
+    }
+  };
+
   const filterCall = (call: Call): boolean => {
+    assertMethodId(call);
     if (getOwner(call.to)) return false;
     const fromOwner = getOwner(call.from);
-    if (fromOwner) {
+    if (fromOwner && fromOwner.methodId) {
       call.from.methodId = fromOwner.methodId;
       call.from.namespace = fromOwner.namespace ?? "";
       call.from.typeId = fromOwner.typeId;
     }
+    assertMethodId(call);
     return true;
   };
 

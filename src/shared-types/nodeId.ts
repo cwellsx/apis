@@ -18,9 +18,14 @@ export type NodeId = NameNodeId | MetadataNodeId | ArtificialNodeId | GroupByNod
 
 // factory methods
 
-const validate = (type: string, name: string): void => {
+const validateName = (type: string, name: string): void => {
   if (!name.length) throw new Error(`Invalid name: ${type} must not be empty`);
   if (name.includes(nodeIdSeparator)) throw new Error(`Invalid name: ${type} must not contain "${nodeIdSeparator}"`);
+};
+const validateToken = (metadataToken: number): void => {
+  if (!metadataToken) {
+    throw new Error(`Invalid token: must not be zero`);
+  }
 };
 
 export type GetArtificialNodeId = (type: ArtificialTypes) => NodeId;
@@ -31,12 +36,13 @@ export const artificialNodeIdFactory = (): GetArtificialNodeId => {
 };
 
 export const nameNodeId = (type: NameTypes, name: string): NameNodeId => {
-  validate(type, name);
+  validateName(type, name);
   return { type, name };
 };
 
 export const metadataNodeId = (type: MetadataTypes, assemblyName: string, metadataToken: number): MetadataNodeId => {
-  validate("assemblyName", assemblyName);
+  validateName("assemblyName", assemblyName);
+  validateToken(metadataToken);
   return {
     type,
     assemblyName,
@@ -45,7 +51,8 @@ export const metadataNodeId = (type: MetadataTypes, assemblyName: string, metada
 };
 
 export const methodNodeId = (assemblyName: string, metadataToken: number): MethodNodeId => {
-  validate("assemblyName", assemblyName);
+  validateName("assemblyName", assemblyName);
+  validateToken(metadataToken);
   return {
     type: "method",
     assemblyName,
@@ -54,7 +61,8 @@ export const methodNodeId = (assemblyName: string, metadataToken: number): Metho
 };
 
 export const typeNodeId = (assemblyName: string, metadataToken: number): TypeNodeId => {
-  validate("assemblyName", assemblyName);
+  validateName("assemblyName", assemblyName);
+  validateToken(metadataToken);
   return {
     type: "type",
     assemblyName,
@@ -63,8 +71,8 @@ export const typeNodeId = (assemblyName: string, metadataToken: number): TypeNod
 };
 
 export const groupByNodeId = (groupBy: string, groupLabel: string): NodeId => {
-  validate("groupBy", groupBy);
-  validate("groupLabel", groupLabel);
+  validateName("groupBy", groupBy);
+  validateName("groupLabel", groupLabel);
   return {
     type: "customGroup",
     groupBy,

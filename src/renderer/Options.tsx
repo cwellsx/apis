@@ -314,14 +314,20 @@ const detailsClosed = (
     log(`open=${element.open}`);
     const isOpen = element.open;
     const detailsClosed = appOptions.detailsClosed;
+    let isChanged = false;
     if (!detailsClosed) {
-      if (!isOpen) appOptions.detailsClosed = [viewType];
+      if (!isOpen) {
+        appOptions.detailsClosed = [viewType];
+        isChanged = true;
+      }
     } else if (isOpen && detailsClosed.includes(viewType)) {
       detailsClosed.splice(detailsClosed.indexOf(viewType), 1);
+      isChanged = true;
     } else if (!isOpen && !detailsClosed.includes(viewType)) {
       detailsClosed.push(viewType);
+      isChanged = true;
     }
-    onAppOptions(appOptions);
+    if (isChanged) onAppOptions(appOptions);
   };
   return { isClosed, onToggle };
 };

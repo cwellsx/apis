@@ -66,7 +66,10 @@ const App: React.FunctionComponent = () => {
   });
 
   const onViewOptions: OnUserEvent<ViewOptions> = (viewOptions) => mainApi.onViewOptions(viewOptions);
-  const onAppOptions: OnUserEvent<AppOptions> = (appOptions) => mainApi.onAppOptions(appOptions);
+  const onAppOptions: OnUserEvent<AppOptions> = (appOptions) => {
+    log("onAppOptions!");
+    mainApi.onAppOptions(appOptions);
+  };
   const onGraphEvent: OnUserEvent<GraphEvent> = (graphEvent) => mainApi.onGraphEvent(graphEvent);
   const onFilterEvent: OnUserEvent<FilterEvent> = (filterEvent) => mainApi.onFilterEvent(filterEvent);
   const onDetailEvent: OnUserEvent<DetailEvent> = (nodeId) => mainApi.onDetailEvent(nodeId);

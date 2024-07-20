@@ -1,10 +1,10 @@
 import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Image, Node, NodeId } from "../shared-types";
-import { edgeIdToText, isParent, nodeIdToText, viewFeatures } from "../shared-types";
+import { edgeIdToText, isParent, nodeIdToText } from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
 import { createImage } from "./createImage";
 import { log } from "./log";
 import type { Edge } from "./shared-types";
-import { Edges, NodeIdMap, NodeIdSet, createLookupNodeId, options } from "./shared-types";
+import { Edges, NodeIdMap, NodeIdSet, createLookupNodeId, options, viewFeatures } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 
 const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] =>

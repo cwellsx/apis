@@ -19,6 +19,5 @@ export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./type
 export { defaultView } from "./view";
 export type { View, ViewCompiler, ViewCustomErrors, ViewErrors, ViewGraph, ViewGreeting, ViewText } from "./view";
 export type { DetailType, DetailedAssembly, DetailedMethod, ViewDetails } from "./viewDetails";
-export { viewFeatures } from "./viewOptions";
 export type { AnyGraphViewOptions, CompilerViewOptions, GraphViewOptions, ViewOptions } from "./viewOptions";
 export type { GraphViewType, ViewType } from "./viewType";

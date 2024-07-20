@@ -5,7 +5,6 @@ import type {
   MethodViewOptions,
   ReferenceViewOptions,
 } from "../../shared-types";
-import { methodNodeId } from "../../shared-types";
 
 type DefaultViewOptions = {
   customViewOptions: CustomViewOptions;
@@ -33,7 +32,7 @@ export const defaultViewOptions: DefaultViewOptions = {
   },
 
   methodViewOptions: {
-    methodId: methodNodeId("?", 0),
+    methodId: undefined,
     viewType: "methods",
     showClustered: {
       clusterBy: "assembly",

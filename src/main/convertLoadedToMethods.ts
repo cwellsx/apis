@@ -1,4 +1,5 @@
 import type {
+  ApiViewOptions,
   GraphFilter,
   Leaf,
   MethodNodeId,
@@ -16,9 +17,8 @@ import {
 } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
-import { log } from "./log";
 import { Edges, NodeIdMap } from "./shared-types";
-import type { Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
+import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
 import { CallStack } from "./sql/sqlLoadedApiTypes";
 
 /*
@@ -32,12 +32,27 @@ type CallstackElements = {
   edges: Edges;
 };
 
+const methodNodeId = (method: TypeAndMethodId): MethodNodeId => getMethodNodeId(method.assemblyName, method.methodId);
+
+export const convertLoadedToCalls = (calls: Call[]): CallstackElements => {
+  const leafs = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
+  const edges = new Edges();
+
+  calls.forEach((call) => {
+    const clientId = methodNodeId(call.from);
+    const serverId = methodNodeId(call.to);
+    edges.add(clientId, serverId, []);
+    leafs.set(clientId, call.from);
+    leafs.set(serverId, call.to);
+  });
+
+  return { leafs, edges };
+};
+
 export const convertLoadedToCallstack = (callStack: CallStack): CallstackElements => {
   const called = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
   const caller = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
   const edges = new Edges();
-
-  const methodNodeId = (method: TypeAndMethodId): MethodNodeId => getMethodNodeId(method.assemblyName, method.methodId);
 
   const getEdge = (
     leafId: MethodNodeId,
@@ -79,7 +94,7 @@ export const convertLoadedToCallstack = (callStack: CallStack): CallstackElement
 export const convertCallstackToImage = (
   callstackElements: CallstackElements,
   typeOrMethodName: GetTypeOrMethodName,
-  graphViewOptions: MethodViewOptions,
+  graphViewOptions: MethodViewOptions | ApiViewOptions,
   graphFilter: GraphFilter | undefined
 ): ViewGraph => {
   const { leafs, edges } = callstackElements;
@@ -171,7 +186,6 @@ export const convertCallstackToImage = (
   };
 
   // convert to Image
-  log("convertToImage");
   const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, imageAttributes);
 
   return { image, graphViewOptions, graphFilter, groups };

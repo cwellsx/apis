@@ -19,7 +19,7 @@ export type MethodViewOptions = {
   viewType: "methods";
   showClustered: ShowClustered;
   showEdgeLabels: ShowEdgeLabels;
-  methodId: MethodNodeId;
+  methodId?: MethodNodeId;
 };
 
 export type ApiViewOptions = {

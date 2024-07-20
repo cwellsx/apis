@@ -9,11 +9,10 @@ import type {
   ViewOptions,
   ViewType,
 } from "../shared-types";
-import { viewFeatures } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
-import { isEdgeId, toggleNodeId } from "./shared-types";
+import { isEdgeId, toggleNodeId, viewFeatures } from "./shared-types";
 import { renderer as createRenderer } from "./show";
 import { SqlConfig, SqlCustom } from "./sql";
 
