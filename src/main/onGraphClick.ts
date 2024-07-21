@@ -1,7 +1,7 @@
 import type { GraphFilter } from "../shared-types";
 import { nameNodeId } from "../shared-types";
 import type { AssemblyReferences } from "./loaded";
-import { isNameNodeId } from "./shared-types";
+import { isAssemblyNodeId } from "./shared-types";
 
 export const showAdjacent = (
   assemblyReferences: AssemblyReferences,
@@ -17,7 +17,7 @@ export const showAdjacent = (
     else if (dependencies.includes(assemblyName)) adjacent.add(assembly);
   });
   leafVisible.forEach((nodeId) => {
-    if (!isNameNodeId(nodeId, "assembly")) throw new Error("Expected assembly Id");
+    if (!isAssemblyNodeId(nodeId)) throw new Error("Expected assembly Id");
     adjacent.add(nodeId.name);
   });
   graphFilter.leafVisible = [...adjacent].map((assemblyName) => nameNodeId("assembly", assemblyName));

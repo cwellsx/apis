@@ -1,12 +1,13 @@
 // types
 
 export type NameTypes = "namespace" | "assembly" | "group" | "customLeaf";
-type MetadataTypes = "method" | "type" | "field" | "event" | "property" | "memberException";
+export type MetadataTypes = "method" | "type" | "field" | "event" | "property" | "memberException";
 type ArtificialTypes = "attribute" | "exception";
 
 export type ClusterBy = "namespace" | "assembly";
 
 export type NameNodeId = { type: NameTypes; name: string };
+export type AssemblyNodeId = { type: "assembly"; name: string };
 export type MetadataNodeId = { type: MetadataTypes; assemblyName: string; metadataToken: number };
 export type MethodNodeId = { type: "method"; assemblyName: string; metadataToken: number };
 export type TypeNodeId = { type: "type"; assemblyName: string; metadataToken: number };

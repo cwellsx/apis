@@ -4,7 +4,6 @@ import type {
   Leaf,
   MethodNodeId,
   MethodViewOptions,
-  NameNodeId,
   NodeId,
   Parent,
   TypeNodeId,
@@ -17,7 +16,8 @@ import {
 } from "../shared-types";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute } from "./createImage";
-import { Edges, NodeIdMap } from "./shared-types";
+import { log } from "./log";
+import { Edges, MetadataNodeIdMap, NameNodeIdMap, NodeIdMap } from "./shared-types";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
 import { CallStack } from "./sql/sqlLoadedApiTypes";
 
@@ -25,7 +25,7 @@ import { CallStack } from "./sql/sqlLoadedApiTypes";
   exported
 */
 
-type LeafDictionary = NodeIdMap<TypeAndMethodId, MethodNodeId>;
+type LeafDictionary = MetadataNodeIdMap<TypeAndMethodId, MethodNodeId>;
 
 type CallstackElements = {
   leafs: LeafDictionary;
@@ -35,7 +35,9 @@ type CallstackElements = {
 const methodNodeId = (method: TypeAndMethodId): MethodNodeId => getMethodNodeId(method.assemblyName, method.methodId);
 
 export const convertLoadedToCalls = (calls: Call[]): CallstackElements => {
-  const leafs = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
+  log("convertLoadedToCalls");
+
+  const leafs = new MetadataNodeIdMap<TypeAndMethodId, MethodNodeId>("method");
   const edges = new Edges();
 
   calls.forEach((call) => {
@@ -50,8 +52,10 @@ export const convertLoadedToCalls = (calls: Call[]): CallstackElements => {
 };
 
 export const convertLoadedToCallstack = (callStack: CallStack): CallstackElements => {
-  const called = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
-  const caller = new NodeIdMap<TypeAndMethodId, MethodNodeId>();
+  log("convertLoadedToCallstack");
+
+  const called = new MetadataNodeIdMap<TypeAndMethodId, MethodNodeId>("method");
+  const caller = new MetadataNodeIdMap<TypeAndMethodId, MethodNodeId>("method");
   const edges = new Edges();
 
   const getEdge = (
@@ -97,8 +101,12 @@ export const convertCallstackToImage = (
   graphViewOptions: MethodViewOptions | ApiViewOptions,
   graphFilter: GraphFilter | undefined
 ): ViewGraph => {
+  log("convertCallstackToImage");
+
   const { leafs, edges } = callstackElements;
   const { getTypeName, getMethodName } = typeOrMethodName;
+
+  const clusterBy = graphViewOptions.showClustered.clusterBy;
 
   // begin to convert to image input format
   const imageAttributes = new NodeIdMap<ImageAttribute>();
@@ -106,10 +114,9 @@ export const convertCallstackToImage = (
   const typeAttributes: ImageAttribute = { shape: "folder", style: "rounded" };
 
   // create nodes now, create image nodes later
-  type TypesAndMethods = NodeIdMap<MethodNodeId[], TypeNodeId>;
-  const topNodes = new NodeIdMap<TypesAndMethods, NameNodeId>();
+  type TypesAndMethods = MetadataNodeIdMap<MethodNodeId[], TypeNodeId>;
+  const topNodes = new NameNodeIdMap<TypesAndMethods>(clusterBy);
 
-  const clusterBy = graphViewOptions.showClustered.clusterBy;
   const getName = (typeAndMethodId: TypeAndMethodId): string => {
     switch (clusterBy) {
       case "assembly":
@@ -118,30 +125,15 @@ export const convertCallstackToImage = (
         return typeAndMethodId.namespace;
     }
   };
-  const getOrAddTopNode = (key: NameNodeId): TypesAndMethods => {
-    let value = topNodes.get(key);
-    if (!value) {
-      value = new NodeIdMap<MethodNodeId[], TypeNodeId>();
-      topNodes.set(key, value);
-    }
-    return value;
-  };
-  const getOrAddTypeNode = (key: TypeNodeId, typeNodes: TypesAndMethods): MethodNodeId[] => {
-    let value = typeNodes.get(key);
-    if (!value) {
-      value = [];
-      typeNodes.set(key, value);
-    }
-    return value;
-  };
+
   leafs.entries().forEach(([methodNodeId, typeAndMethodId]) => {
     // make the NodeId instances
     const nameNodeId = getNameNodeId(clusterBy, getName(typeAndMethodId));
     const typeNodeId = getTypeNodeId(typeAndMethodId.assemblyName, typeAndMethodId.typeId);
 
     // add to the topNodes collection
-    const typeNodes = getOrAddTopNode(nameNodeId);
-    const methodNodes = getOrAddTypeNode(typeNodeId, typeNodes);
+    const typeNodes = topNodes.getOrSet(nameNodeId, () => new MetadataNodeIdMap<MethodNodeId[], TypeNodeId>("type"));
+    const methodNodes = typeNodes.getOrSet(typeNodeId, () => []);
     methodNodes.push(methodNodeId);
 
     // update the imageAttributes

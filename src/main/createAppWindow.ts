@@ -26,9 +26,9 @@ import { createSecondMenu } from "./menu";
 import { showAdjacent } from "./onGraphClick";
 import {
   getClusterNames,
+  isAssemblyNodeId,
   isEdgeId,
   isMethodNodeId,
-  isNameNodeId,
   options,
   removeNodeId,
   toggleNodeId,
@@ -154,7 +154,7 @@ export const createAppWindow = (
           return;
         }
         case "references": {
-          if (!isNameNodeId(nodeId, "assembly")) throw new Error("Expected assembly id");
+          if (!isAssemblyNodeId(nodeId)) throw new Error("Expected assembly id");
           const { name: assemblyName } = nodeId;
           const assemblyReferences = sqlLoaded.readAssemblyReferences();
           if (event.shiftKey) {
