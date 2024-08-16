@@ -11,4 +11,8 @@ export const options = {
   showCompilerGeneratedTypes: false,
   logApi: false,
   reuseCallStack: true,
+  maxImageSize: {
+    nodes: 50,
+    edges: 500,
+  },
 };

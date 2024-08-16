@@ -54,6 +54,11 @@ const nodeIdEquals = (lhs: NodeId, rhs: NodeId): boolean => {
 
 // NodeId[]
 
+export const addNodeId = (array: NodeId[], element: NodeId): void => {
+  const index = array.findIndex((found) => nodeIdEquals(found, element));
+  if (index === -1) array.push(element);
+};
+
 export const toggleNodeId = (array: NodeId[], element: NodeId): void => {
   const index = array.findIndex((found) => nodeIdEquals(found, element));
   if (index === -1) array.push(element);
@@ -361,7 +366,7 @@ const isMetadataNodeId = (key: NodeId): key is MetadataNodeId => isMetadataType(
 
 const nameTypes = new Set<string>(["namespace", "assembly", "group", "customLeaf"]);
 const isNameType = (type: string): type is NameTypes => nameTypes.has(type);
-const isNameNodeId = (key: NodeId): key is NameNodeId => isNameType(key.type);
+export const isNameNodeId = (key: NodeId): key is NameNodeId => isNameType(key.type);
 
 const isGroupByNodeId = (key: NodeId): key is GroupByNodeId => key.type === "customGroup";
 

@@ -11,7 +11,7 @@ const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOption
   viewOptions["showEdgeLabels"] ?? { groups: false, leafs: false };
 
 export function convertToImage(
-  nodes: Node[],
+  roots: Node[],
   edges: Edge[],
   viewOptions: GraphViewOptions,
   graphFilter: GraphFilter,
@@ -30,6 +30,11 @@ export function convertToImage(
   // also take this opportunity to initialize
   const allNodes = new NodeIdMap<Node>();
 
+  // TODO replace this with a call to convertNamesToNodes
+  const sort = (nodes: Node[]): void => {
+    nodes.sort((x, y) => x.label.localeCompare(y.label));
+  };
+
   const assertUnique = (node: Node): void => {
     const stringId = nodeIdToText(node.nodeId);
     if (allNodeIds.has(stringId)) {
@@ -39,6 +44,7 @@ export function convertToImage(
     const nodeId = node.nodeId;
     allNodes.set(nodeId, node);
     if (isParent(node)) {
+      sort(node.children);
       node.children.forEach((child) => {
         assertUnique(child);
         if (child.parent !== node) {
@@ -47,7 +53,8 @@ export function convertToImage(
       });
     }
   };
-  nodes.forEach(assertUnique);
+  sort(roots);
+  roots.forEach(assertUnique);
 
   const allEdgeIds = new Set<string>();
   edges.forEach((edge) => {
@@ -69,7 +76,7 @@ export function convertToImage(
       );
     } else if (isClosedBy) closedBy.set(id, isClosedBy);
   };
-  nodes.forEach((node) => findClosed(node, null));
+  roots.forEach((node) => findClosed(node, null));
 
   const edgeLeafs = new NodeIdSet();
 
@@ -89,7 +96,9 @@ export function convertToImage(
   const metaGroupLabels = [".NET", "3rd-party"];
   const { leafType, details } = viewFeatures[viewOptions.viewType];
 
+  let countImageNodes = 0;
   const toImageNode = (node: Node): ImageNode => {
+    ++countImageNodes;
     const nodeId = node.nodeId;
 
     if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
@@ -141,7 +150,7 @@ export function convertToImage(
 
   const showEdgeLabels = getShowEdgeLabels(viewOptions);
   const imageData: ImageData = {
-    nodes: toImageNodes(nodes),
+    nodes: toImageNodes(roots),
     edges: visibleEdges.values().map((edge) => {
       const labels = uniqueStrings(edge.labels).sort();
       const showLabels = !showEdgeLabels
@@ -160,5 +169,14 @@ export function convertToImage(
     edgeDetails: details.includes("edge"),
   };
 
-  return imageData.edges.length || imageData.nodes.length ? createImage(imageData) : "Empty graph, no nodes to display";
+  if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";
+
+  const tooBig: string[] = [];
+  if (imageData.edges.length > options.maxImageSize.edges)
+    tooBig.push(`edges (actually ${imageData.edges.length} maximum is ${options.maxImageSize.edges})`);
+  if (countImageNodes > options.maxImageSize.nodes)
+    tooBig.push(`nodes (actually ${countImageNodes} maximum is ${options.maxImageSize.nodes})`);
+  if (tooBig.length) return `Too many ${tooBig.join(", and ")}.`;
+
+  return createImage(imageData);
 }

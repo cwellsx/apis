@@ -1,6 +1,5 @@
 import type { Leaf, NameTypes, Node, Parent } from "../shared-types";
 import { isParent, nameNodeId } from "../shared-types";
-import type { StringPredicate } from "./shared-types";
 import { options, remove, replace } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 
@@ -89,7 +88,7 @@ export const convertNamesToNodes = (
   nameType: NameTypes,
   nestedClusters: boolean
 ): Result => {
-  // sort all names -- these names will become leaf nodes -- names many contain duplicate
+  // sort all names -- these names will become leaf nodes -- names may contain duplicate
   names = uniqueStrings(names).sort();
 
   const { leafs, groups } = nestedClusters
@@ -97,7 +96,7 @@ export const convertNamesToNodes = (
     : createFlatClusters(names, nameType);
 
   // create a new root group and move into all subtrees whose label matches the predicate
-  const regroup = (predicate: StringPredicate, label: string, id: string): void => {
+  const regroup = (predicate: (name: string) => boolean, label: string, id: string): void => {
     const found = groups.filter((node) => predicate(node.label));
     const parent = { label, nodeId: nameNodeId("group", id), parent: null, children: found };
     found.forEach((child) => {

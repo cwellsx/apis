@@ -24,7 +24,47 @@ Generally:
 
 ## What's being done now/next
 
-Improve the software first, then the documentation
+Improve the software first, then the documentation.
+
+Now:
+
+- Context menu (Callers, Calls, Source, Show/Hide Siblings)
+- Expand or show source when click on edges
+- Show code details
+- Show subclasses
+- Nest namespaces
+- Add `(+)` to groups in which some children are hidden
+- Use `convertNamesToNodes`
+
+To do in Paris (unsorted):
+
+- Fix the size of the graph (caused by `display: flex` on the `div#graph`)
+- Implement a toolbox with custom cursor
+- Refactor to remove `NodeId` and improve speed
+- Improve display of code view
+- Review the TODO list to remove obsolete/done items
+- Reuse cached nodes when only `GraphFilter` changes
+- Investigate (faster?) replacements for GraphViz
+- Second window instead of right-hand pane
+- Change `GraphFilter` to `leafInvisible`
+- Implement nested clusters of namespaces
+- Find why `selectCustom` and `selectCustomSpecific` use distinct and don't use `Partial<T>`
+
+## Fix anything broken
+
+- Graph doesn't fit within middle pane
+- `Core.exe` generates a warning, if not an error, when decompiling some assemblies
+- Fix the cursor not changing when the `[Ctrl]` key is pressed
+- Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
+- As well as method errors, also show any assembly, type, and member exceptions
+
+## Improve what exists already
+
+### Urgent
+
+-
+
+### Unsorted
 
 - `*.ts`
 
@@ -47,25 +87,11 @@ Improve the software first, then the documentation
   - Make the line-wrapping of source code optional
 
 - `*.md`
+
   - Use the new view to improve the screenshot of `Core.exe` internals
   - Make a section to document this as an example of round-tripping
   - Also improve the format of all screenshots (scale and blockquote)
   - Review whether the screenshots are A-OK
-
-## Fix anything broken
-
-- `Core.exe` generates a warning, if not an error, when decompiling some assemblies
-- Fix the cursor not changing when the `[Ctrl]` key is pressed
-- Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
-- As well as method errors, also show any assembly, type, and member exceptions
-
-## Improve what exists already
-
-### Urgent
-
--
-
-### Unsorted
 
 - Improve the `USER.md`
   - The `USER.md` should be improved with `<details>` and `<summary>` tags
@@ -96,6 +122,12 @@ Improve the software first, then the documentation
   - sqlTables should be split into several files
   - nestTypes and nestMethods are private utilities in this folder
   - package sql implementation into a new src/main/sql folder and limit what it exports in its index.ts
+
+Refactor:
+
+- Remove NodeId from ./shared-types
+  - Instead use `nodeId: string` in `Node`, and `string[]` in `GraphFilter`
+  - New `./nodeId` subfolder in `src/main`
 
 Improve performance:
 
