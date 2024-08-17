@@ -32,6 +32,12 @@ export const getOrSet = <K, V>(map: Map<K, V>, key: K, create: () => V) => {
   return found;
 };
 
+export const getOrThrow = <K, V>(map: Map<K, V>, key: K) => {
+  const found = map.get(key);
+  if (found) return found;
+  throw new Error(`key ${key} not found`);
+};
+
 export const mapOfMaps = <K, K2, V>(records: [K, K2, V][]): Map<K, Map<K2, V>> => {
   const result = new Map<K, Map<K2, V>>();
   records.forEach(([key, key2, value]) => {

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "first",
+    "label": "",
+    "layer": "",
+    "dependencies": [
+      {
+        "id": "second",
+        "foo": true
+      }
+    ]
+  },
+  {
+    "id": "second",
+    "label": "",
+    "layer": "",
+    "dependencies": []
+  }
+]

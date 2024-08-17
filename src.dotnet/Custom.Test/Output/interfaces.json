@@ -1,0 +1,134 @@
+[
+  {
+    "id": "interfaceA",
+    "layer": "foo\\A",
+    "details": [
+      "**interfaceA**",
+      "",
+      "```",
+      "SelectA",
+      "InsertA",
+      "```"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "interfaceB1",
+    "layer": "bar\\B",
+    "details": [
+      "**interfaceB1**",
+      "",
+      "```",
+      "SelectB1",
+      "InsertB1",
+      "```"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "interfaceB2",
+    "layer": "bar\\B",
+    "details": [
+      "**interfaceB2**",
+      "",
+      "```",
+      "SelectB2",
+      "InsertB2",
+      "```"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "interfaceC",
+    "layer": "bar\\C",
+    "details": [
+      "**interfaceC**",
+      "",
+      "```",
+      "SelectC",
+      "InsertC",
+      "```"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "foo\\A",
+    "label": "A",
+    "layer": "foo",
+    "dependencies": [
+      {
+        "id": "interfaceA",
+        "label": "interfaceA",
+        "dependencies": [
+          "**interfaceA**",
+          "",
+          "```",
+          "SelectA",
+          "InsertA",
+          "```"
+        ]
+      },
+      {
+        "id": "interfaceB1",
+        "label": "interfaceB1",
+        "dependencies": [
+          "**interfaceB1**",
+          "",
+          "```",
+          "SelectB1",
+          "InsertB1",
+          "```"
+        ]
+      },
+      {
+        "id": "interfaceB2",
+        "label": "interfaceB2",
+        "dependencies": [
+          "**interfaceB2**",
+          "",
+          "```",
+          "SelectB2",
+          "InsertB2",
+          "```"
+        ]
+      },
+      {
+        "id": "interfaceC",
+        "label": "interfaceC",
+        "dependencies": [
+          "**interfaceC**",
+          "",
+          "```",
+          "SelectC",
+          "InsertC",
+          "```"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bar\\B",
+    "label": "B",
+    "layer": "bar",
+    "dependencies": [
+      {
+        "id": "interfaceC",
+        "label": "interfaceC",
+        "dependencies": [
+          "**interfaceC**",
+          "",
+          "```",
+          "SelectC",
+          "InsertC",
+          "```"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bar\\C",
+    "label": "C",
+    "layer": "bar",
+    "dependencies": []
+  }
+]

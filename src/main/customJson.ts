@@ -9,12 +9,20 @@ type CustomFields = {
   id: string;
   label?: string;
   tags?: string[];
+  layer: string; // new
   dependencies: CustomDependency[];
 };
 
 export type CustomNode = CustomFields & { [key: string]: string | number };
 
-export const isAnyOtherCustomField = (key: string): boolean => !["id", "label", "tags", "dependencies"].includes(key);
+export const isAnyOtherCustomField = (key: string): boolean =>
+  ![
+    "id",
+    "label",
+    "tags",
+    "dependencies",
+    "details", // new
+  ].includes(key);
 
 const isString = (value: unknown): boolean => typeof value === "string";
 const isNumber = (value: unknown): boolean => typeof value === "number";
@@ -39,7 +47,7 @@ const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
   const assertAnyOtherFields = (o: object, isExpected: (value: unknown) => boolean): void =>
     Object.entries(o).forEach(([key, value]) => {
       if (!isAnyOtherCustomField(key) || isExpected(value)) return;
-      error(`Unpexpected non-scalar value type for key ${key}`);
+      error(`Unexpected non-scalar value type for key ${key}`);
       delete element[key];
     });
 

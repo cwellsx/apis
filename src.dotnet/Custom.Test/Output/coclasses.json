@@ -1,0 +1,123 @@
+[
+  {
+    "id": "classA",
+    "layer": "foo\\A",
+    "details": [
+      "**interfaceA**",
+      "",
+      "```",
+      "SelectA",
+      "InsertA",
+      "```"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "classB",
+    "layer": "bar\\B",
+    "details": [
+      "**interfaceB1**",
+      "",
+      "```",
+      "SelectB1",
+      "InsertB1",
+      "```",
+      "",
+      "**interfaceB2**",
+      "",
+      "```",
+      "SelectB2",
+      "InsertB2",
+      "```"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "classC",
+    "layer": "bar\\C",
+    "details": [
+      "**interfaceC**",
+      "",
+      "```",
+      "SelectC",
+      "InsertC",
+      "```"
+    ],
+    "dependencies": []
+  },
+  {
+    "id": "foo\\A",
+    "label": "A",
+    "layer": "foo",
+    "dependencies": [
+      {
+        "id": "classA",
+        "label": "classA",
+        "dependencies": [
+          "**interfaceA**",
+          "",
+          "```",
+          "SelectA",
+          "InsertA",
+          "```"
+        ]
+      },
+      {
+        "id": "classB",
+        "label": "classB",
+        "dependencies": [
+          "**interfaceB1**",
+          "",
+          "```",
+          "SelectB1",
+          "InsertB1",
+          "```",
+          "",
+          "**interfaceB2**",
+          "",
+          "```",
+          "SelectB2",
+          "InsertB2",
+          "```"
+        ]
+      },
+      {
+        "id": "classC",
+        "label": "classC",
+        "dependencies": [
+          "**interfaceC**",
+          "",
+          "```",
+          "SelectC",
+          "InsertC",
+          "```"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bar\\B",
+    "label": "B",
+    "layer": "bar",
+    "dependencies": [
+      {
+        "id": "classC",
+        "label": "classC",
+        "dependencies": [
+          "**interfaceC**",
+          "",
+          "```",
+          "SelectC",
+          "InsertC",
+          "```"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "bar\\C",
+    "label": "C",
+    "layer": "bar",
+    "dependencies": []
+  }
+]
