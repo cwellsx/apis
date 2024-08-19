@@ -29,10 +29,30 @@ export type ApiViewOptions = {
   showInternalCalls: boolean;
 };
 
-export type CustomViewOptions = {
+type CustomViewOptionsBase = {
   viewType: "custom";
-  nodeProperties: string[];
-  clusterBy: string[]; // one element from ShowClustered
   showEdgeLabels: ShowEdgeLabels;
+  // these are extra/random strings in the CustomNode.tags array which can be used to filter which nodes are shown
   tags: { tag: string; shown: boolean }[];
 };
+
+type CustomViewOptionsAuto = CustomViewOptionsBase & {
+  readonly isAutoLayers: true;
+  // these are the names of layers defined in all CustomNode.layer property
+  readonly layers: string[];
+};
+
+// this is used when the JSON is created by hand and contains semi-random properties
+export type CustomViewOptionsManual = CustomViewOptionsBase & {
+  readonly isAutoLayers: false;
+  // these are extra/random properties added to CustomNode, any one of which can be used to specify layers
+  nodeProperties: string[];
+  // this optionally contains one element which the yser select from nodeProperties
+  // it's an array so that if the UI were more complicated then the user could specify more than one level of layering
+  clusterBy: string[];
+};
+
+export const isCustomManual = (viewOptions: CustomViewOptions): viewOptions is CustomViewOptionsManual =>
+  !viewOptions.isAutoLayers;
+
+export type CustomViewOptions = CustomViewOptionsManual | CustomViewOptionsAuto;

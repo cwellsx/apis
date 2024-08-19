@@ -8,7 +8,14 @@ export type { CustomError } from "./customError";
 export type { BadMethodInfoAndNames, BadTypeInfoAndNames, ErrorsInfo } from "./errors";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export type { GraphFilter } from "./graphFilter";
-export type { ApiViewOptions, CustomViewOptions, MethodViewOptions, ReferenceViewOptions } from "./graphViewOptions";
+export { isCustomManual } from "./graphViewOptions";
+export type {
+  ApiViewOptions,
+  CustomViewOptions,
+  CustomViewOptionsManual,
+  MethodViewOptions,
+  ReferenceViewOptions,
+} from "./graphViewOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { BadMethodCall, LoadedMethodError } from "./loaded";
 export type { MethodName } from "./methodName";

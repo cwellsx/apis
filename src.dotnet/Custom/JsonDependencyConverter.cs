@@ -21,7 +21,7 @@ namespace Custom
             }
             if (value.Details != null)
             {
-                writer.WriteStartArray("dependencies");
+                writer.WriteStartArray("details");
                 foreach (var detail in value.Details)
                 {
                     writer.WriteStringValue(detail);

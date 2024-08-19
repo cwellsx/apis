@@ -80,7 +80,7 @@ const getDotFormat = (
       nodes[node.id] = node;
 
       const shape = node?.shape ?? defaultShape(node);
-      const label = node?.shortLabel ?? node.label;
+      const label = (node?.shortLabel ?? node.label).replace("\\", "\\\\");
       if (node?.shortLabel && !node.tooltip) node.tooltip = node.label;
       switch (node.type) {
         case "node":

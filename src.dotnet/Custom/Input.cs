@@ -5,16 +5,17 @@ using System.Linq;
 
 namespace Custom
 {
-    public record Project(string ProjectPath, string[] Dependencies);
+    public record Project(string ProjectPath, ProjectDependency[] Dependencies);
     public record Coclass(string ProjectPath, string CoclassName, Interface[] Interfaces);
     public record Interface(string ProjectPath, string InterfaceName, string[] Details);
+
+    public record ProjectDependency(string CoclassName, string Action);
 
     public static class Input
     {
         public static (Node[] coclassNodes, Node[] interfaceNodes) Convert(Project[] projects, Coclass[] coclasses, Interface[] interfaces)
         {
             var mapCoclasses = coclasses.ToDictionary(coclass => coclass.CoclassName);
-            //var mapInterfaces = interfaces.ToDictionary(@interface => @interface.InterfaceName);
 
             var coclassNodes = coclasses.Select(ToNode)
                 .Concat(projects.Select(project => project.ToNode(CoclassDependencies(project.Dependencies, mapCoclasses))))
@@ -27,28 +28,30 @@ namespace Custom
             return (coclassNodes, interfaceNodes);
         }
 
-        static Dependency[] CoclassDependencies(string[] coclassNames, Dictionary<string, Coclass> mapCoclasses)
+        static Dependency[] CoclassDependencies(ProjectDependency[] dependencies, Dictionary<string, Coclass> mapCoclasses)
         {
-            return coclassNames.Select(coclassName => mapCoclasses[coclassName].ToDependency()).ToArray();
+            return dependencies.Select(dependency => mapCoclasses[dependency.CoclassName].ToDependency(dependency.Action)).ToArray();
         }
 
-        static Dependency[] InterfaceDependencies(string[] coclassNames, Dictionary<string, Coclass> mapCoclasses)
+        static Dependency[] InterfaceDependencies(ProjectDependency[] dependencies, Dictionary<string, Coclass> mapCoclasses)
         {
-            return coclassNames.SelectMany(coclassName => mapCoclasses[coclassName].Interfaces.Select(@interface => @interface.ToDependency())).ToArray();
+            return dependencies.SelectMany(dependency => mapCoclasses[dependency.CoclassName].Interfaces.Select(@interface => @interface.ToDependency(dependency.Action))).ToArray();
         }
 
-        static Dependency ToDependency(this Coclass coclass) => new Dependency(
+        static Dictionary<string, bool> ToProperties(string action) => new Dictionary<string, bool>() { { action, true } };
+
+        static Dependency ToDependency(this Coclass coclass, string Action) => new Dependency(
             Id: coclass.CoclassName,
-            Label: coclass.CoclassName,
+            Label: $"{Action} {coclass.CoclassName}",
             Details: coclass.ToDetails(),
-            Properties: null
+            Properties: ToProperties(Action)
             );
 
-        static Dependency ToDependency(this Interface @interface) => new Dependency(
+        static Dependency ToDependency(this Interface @interface, string Action) => new Dependency(
             Id: @interface.InterfaceName,
             Label: @interface.InterfaceName,
             Details: @interface.ToDetails().ToArray(),
-            Properties: null
+            Properties: ToProperties(Action)
             );
 
         static Node ToNode(Coclass coclass) => new Node(

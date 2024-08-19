@@ -3,7 +3,6 @@ import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } fr
 import { nameNodeId } from "../../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
 import { log } from "../log";
-import { defaultViewOptions } from "./defaultViewOptions";
 import { SqlTable } from "./sqlTable";
 
 type ConfigColumns = {
@@ -19,8 +18,7 @@ export class SqlCustom {
       when: string,
       customSchemaVersion: string,
       nodeIds: NodeId[],
-      nodeProperties: string[],
-      tags: string[]
+      customViewOptions: CustomViewOptions
     ) => void;
     set customViewOptions(viewOptions: CustomViewOptions);
     get customViewOptions(): CustomViewOptions;
@@ -33,11 +31,11 @@ export class SqlCustom {
   readAll: () => CustomNode[];
   close: () => void;
   private readLeafVisible: () => NodeId[];
-  private readGroupExpanded: (clusterBy: string[]) => NodeId[];
   private writeLeafVisible: (leafVisible: NodeId[]) => void;
-  private writeGroupExpanded: (clusterBy: string[], groupExpanded: NodeId[]) => void;
-  readGraphFilter: (clusterBy: string[]) => GraphFilter;
-  writeGraphFilter: (clusterBy: string[], graphFilter: GraphFilter) => void;
+  private readGroupExpanded: (clusterBy: string[] | undefined) => NodeId[];
+  private writeGroupExpanded: (clusterBy: string[] | undefined, groupExpanded: NodeId[]) => void;
+  readGraphFilter: (clusterBy: string[] | undefined) => GraphFilter;
+  writeGraphFilter: (clusterBy: string[] | undefined, graphFilter: GraphFilter) => void;
 
   constructor(db: Database) {
     const customSchemaVersionExpected = "2024-06-05";
@@ -72,12 +70,35 @@ export class SqlCustom {
       const tags = new Set<string>();
       nodes.forEach((node) => node.tags?.forEach((tag) => tags.add(tag)));
 
+      const ids = new Set<string>(nodes.map((node) => node.id));
+      const autoLayers = new Set<string>(
+        nodes.filter((node) => ids.has(node.layer) && node.layer.includes("\\")).map((node) => node.layer)
+      );
+      const isAutoLayers = autoLayers.size > 0;
+
+      const base = {
+        tags: [...tags].sort().map((tag) => ({ tag, shown: true })),
+        showEdgeLabels: {
+          groups: false,
+          leafs: false,
+        },
+      };
+
+      const customViewOptions: CustomViewOptions = isAutoLayers
+        ? { ...base, viewType: "custom", isAutoLayers, layers: [...autoLayers] }
+        : {
+            ...base,
+            viewType: "custom",
+            isAutoLayers,
+            nodeProperties: [...nodeProperties].sort(),
+            clusterBy: [],
+          };
+
       this.viewState.onSave(
         when,
         customSchemaVersionExpected,
         nodes.map((node) => nameNodeId("customLeaf", node.id)),
-        [...nodeProperties],
-        [...tags]
+        customViewOptions
       );
       done();
     };
@@ -99,29 +120,30 @@ export class SqlCustom {
       return JSON.parse(o.value) as CustomNode[];
     };
 
-    const keyGroupExpended = (clusterBy: string[]): string =>
-      "clusterBy" + [clusterBy.length] ? "-" + clusterBy.join("-") : "";
+    const keyGroupExpanded = (clusterBy: string[] | undefined): string =>
+      clusterBy?.length ? "clusterBy-" + clusterBy.join("-") : "clusterBy";
+
     this.readLeafVisible = (): NodeId[] => {
       const found = configTable.selectOne({ name: "leafVisible" });
       if (!found) throw new Error("readLeafVisible nodes not found");
       return JSON.parse(found.value);
     };
-    this.readGroupExpanded = (clusterBy: string[]): NodeId[] => {
-      const found = configTable.selectOne({ name: keyGroupExpended(clusterBy) });
-      if (!found) return []; // not predefined so initially all closed
-      return JSON.parse(found.value);
-    };
     this.writeLeafVisible = (leafVisible: NodeId[]): void => {
       configTable.upsert({ name: "leafVisible", value: JSON.stringify(leafVisible) });
     };
-    this.writeGroupExpanded = (clusterBy: string[], groupExpanded: NodeId[]): void => {
-      configTable.upsert({ name: keyGroupExpended(clusterBy), value: JSON.stringify(groupExpanded) });
+    this.readGroupExpanded = (clusterBy: string[] | undefined): NodeId[] => {
+      const found = configTable.selectOne({ name: keyGroupExpanded(clusterBy) });
+      if (!found) return []; // not predefined so initially all closed
+      return JSON.parse(found.value);
     };
-    this.readGraphFilter = (clusterBy: string[]): GraphFilter => ({
+    this.writeGroupExpanded = (clusterBy: string[] | undefined, groupExpanded: NodeId[]): void => {
+      configTable.upsert({ name: keyGroupExpanded(clusterBy), value: JSON.stringify(groupExpanded) });
+    };
+    this.readGraphFilter = (clusterBy: string[] | undefined): GraphFilter => ({
       leafVisible: this.readLeafVisible(),
       groupExpanded: this.readGroupExpanded(clusterBy),
     });
-    this.writeGraphFilter = (clusterBy: string[], graphFilter: GraphFilter): void => {
+    this.writeGraphFilter = (clusterBy: string[] | undefined, graphFilter: GraphFilter): void => {
       this.writeLeafVisible(graphFilter.leafVisible);
       this.writeGroupExpanded(clusterBy, graphFilter.groupExpanded);
     };
@@ -131,17 +153,12 @@ export class SqlCustom {
         when: string,
         customSchemaVersion: string,
         nodeIds: NodeId[],
-        nodeProperties: string[],
-        tags: string[]
+        customViewOptions: CustomViewOptions
       ): void => {
         configTable.upsert({ name: "when", value: when });
         configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
 
-        this.viewState.customViewOptions = {
-          ...defaultViewOptions.customViewOptions,
-          nodeProperties: nodeProperties.sort(),
-          tags: tags.sort().map((tag) => ({ tag, shown: true })),
-        };
+        this.viewState.customViewOptions = customViewOptions;
 
         this.writeLeafVisible(nodeIds);
       },

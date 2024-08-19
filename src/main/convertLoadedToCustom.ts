@@ -49,14 +49,10 @@ export const convertLoadedToCustom = (
 
   // next do the group
   const groups: Node[] = [];
-  const ids = new Set<string>(nodes.map((node) => node.id));
-  const autoLayers = new Set<string>(
-    nodes.filter((node) => ids.has(node.layer) && node.layer.includes("\\")).map((node) => node.layer)
-  );
 
-  if (autoLayers.size > 0) {
+  if (graphViewOptions.isAutoLayers) {
     const parents = new Map<string, Parent>(
-      [...autoLayers.keys()].map((id) => [
+      graphViewOptions.layers.map((id) => [
         id,
         { label: id, nodeId: nameNodeId("group", id), parent: null, children: [] },
       ])

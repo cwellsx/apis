@@ -1,13 +1,6 @@
-import type {
-  ApiViewOptions,
-  CompilerViewOptions,
-  CustomViewOptions,
-  MethodViewOptions,
-  ReferenceViewOptions,
-} from "../../shared-types";
+import type { ApiViewOptions, CompilerViewOptions, MethodViewOptions, ReferenceViewOptions } from "../../shared-types";
 
 type DefaultViewOptions = {
-  customViewOptions: CustomViewOptions;
   referenceViewOptions: ReferenceViewOptions;
   methodViewOptions: MethodViewOptions;
   apiViewOptions: ApiViewOptions;
@@ -15,17 +8,6 @@ type DefaultViewOptions = {
 };
 
 export const defaultViewOptions: DefaultViewOptions = {
-  customViewOptions: {
-    nodeProperties: [],
-    clusterBy: [],
-    tags: [],
-    viewType: "custom",
-    showEdgeLabels: {
-      groups: false,
-      leafs: false,
-    },
-  },
-
   referenceViewOptions: {
     nestedClusters: true,
     viewType: "references",

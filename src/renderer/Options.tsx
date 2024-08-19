@@ -8,6 +8,7 @@ import type {
   OptionsType,
   ReferenceViewOptions,
 } from "../shared-types";
+import { isCustomManual } from "../shared-types";
 import "./Options.css";
 import { log } from "./log";
 
@@ -177,18 +178,24 @@ const ShowCustom: React.FunctionComponent<ChooseGraphViewOptionsProps> = (props:
   const { viewOptions, onViewOptions } = props;
   if (!isCustomViewOptions(viewOptions)) return <></>;
 
+  const groupBy = isCustomManual(viewOptions) ? (
+    <Select
+      label="Group by"
+      value={viewOptions.clusterBy.length ? viewOptions.clusterBy[0] : undefined}
+      options={viewOptions.nodeProperties}
+      onChange={(newValue: string | undefined) => {
+        viewOptions.clusterBy = !newValue ? [] : [newValue];
+        onViewOptions(viewOptions);
+      }}
+      isOptional={true}
+    />
+  ) : (
+    <></>
+  );
+
   return (
     <p>
-      <Select
-        label="Group by"
-        value={viewOptions.clusterBy.length ? viewOptions.clusterBy[0] : undefined}
-        options={viewOptions.nodeProperties}
-        onChange={(newValue: string | undefined) => {
-          viewOptions.clusterBy = !newValue ? [] : [newValue];
-          onViewOptions(viewOptions);
-        }}
-        isOptional={true}
-      />
+      {groupBy}
       <Checkboxes
         label="Filter by"
         options={viewOptions.tags.map((tag) => ({ checked: tag.shown, label: tag.tag, key: tag.tag }))}

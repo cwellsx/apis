@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-//using Custom;
 
 namespace Custom.Test
 {
@@ -18,10 +17,10 @@ namespace Custom.Test
 
         static void Trivial(string path)
         {
-            var properties = new Dictionary<string, bool>(){ { "foo", true} };
+            var properties = new Dictionary<string, bool>() { { "foo", true } };
             Node[] nodes =
             {
-                new Node(Id: "first", Label: "", Layer: "", Tags: null, Details: null, Dependencies: new[]{new Dependency(Id: "second", Label: null, Details: null, Properties: properties) }),
+                new Node(Id: "first", Label: "", Layer: "", Tags: null, Details: null, Dependencies: new[]{ new Dependency(Id: "second", Label: null, Details: null, Properties: properties) }),
                 new Node(Id: "second", Label: "", Layer: "", Tags: null, Details: null, Dependencies: new Dependency[0])
             };
 
@@ -30,9 +29,15 @@ namespace Custom.Test
 
         static void Input(string coclassesPath, string interfacesPath)
         {
-            Project projectA = new Project(@"foo\A", new string[] { "classA", "classB", "classC" });
-            Project projectB = new Project(@"bar\B", new string[] { "classC" });
-            Project projectC = new Project(@"bar\C", new string[0]);
+            Project projectA = new Project(@"foo\A", new ProjectDependency[]
+            {
+                new ProjectDependency("classA", "creates"),
+                new ProjectDependency("classA", "uses"),
+                new ProjectDependency("classB", "uses"),
+                new ProjectDependency("classC", "uses"),
+            });
+            Project projectB = new Project(@"bar\B", new ProjectDependency[] { new ProjectDependency("classC", "uses") });
+            Project projectC = new Project(@"bar\C", new ProjectDependency[0]);
 
             Interface interfaceA = new Interface(projectA.ProjectPath, "interfaceA", new string[] { "SelectA", "InsertA" });
             Interface interfaceB1 = new Interface(projectB.ProjectPath, "interfaceB1", new string[] { "SelectB1", "InsertB1" });

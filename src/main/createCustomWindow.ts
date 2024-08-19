@@ -9,6 +9,7 @@ import type {
   ViewOptions,
   ViewType,
 } from "../shared-types";
+import { isCustomManual } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
@@ -76,9 +77,10 @@ export const createCustomWindow = (
       if (leafType !== nodeId.type) {
         // this is a group
         const viewOptions = getCustomViewOptions(viewType);
-        const graphFilter = sqlCustom.readGraphFilter(viewOptions.clusterBy);
+        const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
+        const graphFilter = sqlCustom.readGraphFilter(clusterBy);
         toggleNodeId(graphFilter.groupExpanded, nodeId);
-        sqlCustom.writeGraphFilter(viewOptions.clusterBy, graphFilter);
+        sqlCustom.writeGraphFilter(clusterBy, graphFilter);
         setCustomViewOptions(viewOptions);
         showViewType(viewOptions.viewType);
         return;
@@ -92,7 +94,8 @@ export const createCustomWindow = (
       const isCustomViewOptions = (viewOptions: ViewOptions): viewOptions is CustomViewOptions =>
         viewOptions.viewType === "custom";
       if (!isCustomViewOptions(viewOptions)) throw new Error("Unexpected viewType");
-      sqlCustom.writeGraphFilter(viewOptions.clusterBy, graphFilter);
+      const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
+      sqlCustom.writeGraphFilter(clusterBy, graphFilter);
       showCustom();
     },
     onDetailEvent: (detailEvent): void => {
@@ -103,7 +106,8 @@ export const createCustomWindow = (
   const showCustom = (): void => {
     const nodes = sqlCustom.readAll();
     const viewOptions = sqlCustom.viewState.customViewOptions;
-    const graphFilter = sqlCustom.readGraphFilter(viewOptions.clusterBy);
+    const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
+    const graphFilter = sqlCustom.readGraphFilter(clusterBy);
     const viewGraph = convertLoadedToCustom(nodes, viewOptions, graphFilter);
     renderer.showView(viewGraph);
   };

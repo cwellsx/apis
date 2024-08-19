@@ -59,50 +59,67 @@
       {
         "id": "interfaceA",
         "label": "interfaceA",
-        "dependencies": [
+        "details": [
           "**interfaceA**",
           "",
           "```",
           "SelectA",
           "InsertA",
           "```"
-        ]
+        ],
+        "creates": true
+      },
+      {
+        "id": "interfaceA",
+        "label": "interfaceA",
+        "details": [
+          "**interfaceA**",
+          "",
+          "```",
+          "SelectA",
+          "InsertA",
+          "```"
+        ],
+        "uses": true
       },
       {
         "id": "interfaceB1",
         "label": "interfaceB1",
-        "dependencies": [
+        "details": [
           "**interfaceB1**",
           "",
           "```",
           "SelectB1",
           "InsertB1",
           "```"
-        ]
+        ],
+        "uses": true
       },
       {
         "id": "interfaceB2",
         "label": "interfaceB2",
-        "dependencies": [
+        "details": [
           "**interfaceB2**",
           "",
           "```",
           "SelectB2",
           "InsertB2",
           "```"
-        ]
+        ],
+        "uses": true
       },
       {
         "id": "interfaceC",
         "label": "interfaceC",
-        "dependencies": [
+        "details": [
           "**interfaceC**",
           "",
           "```",
           "SelectC",
           "InsertC",
           "```"
-        ]
+        ],
+        "uses": true
       }
     ]
   },
@@ -114,14 +131,15 @@
       {
         "id": "interfaceC",
         "label": "interfaceC",
-        "dependencies": [
+        "details": [
           "**interfaceC**",
           "",
           "```",
           "SelectC",
           "InsertC",
           "```"
-        ]
+        ],
+        "uses": true
       }
     ]
   },
