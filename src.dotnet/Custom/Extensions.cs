@@ -1,11 +1,13 @@
 ﻿using System;
+using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Custom
 {
-    public static class Extensions
+    internal static class Extensions
     {
-        public static void AssertSanity(this Node[] nodes)
+        internal static void AssertSanity(this Node[] nodes)
         {
             var ids = new HashSet<string>();
 
@@ -39,9 +41,33 @@ namespace Custom
             }
         }
 
-        public static void Convert(Project[] projects)
+        internal static void AssertSanity(Project[] projects)
         {
+            var hashSet = new HashSet<string>();
+            foreach (var project in projects)
+            {
+                if (string.IsNullOrEmpty(Path.GetExtension(project.ProjectPath)))
+                {
+                    throw new Exception($"Expected path including project filename: {project.ProjectPath}");
+                }
+                if (!hashSet.Add(project.ProjectDir))
+                {
+                    throw new Exception($"Expected unique project directory: {project.ProjectDir}");
+                }
+            }
+        }
 
+        internal static void AssertSanity(Project[] projects, IEnumerable<string> projectDirs)
+        {
+            var hashSet = projects.Select(project => Path.GetDirectoryName(project.ProjectPath)).ToHashSet();
+
+            foreach (var projectDir in projectDirs)
+            {
+                if (!hashSet.Contains(projectDir))
+                {
+                    throw new Exception($"Expected matching project directory: {projectDir}");
+                }
+            }
         }
     }
 }

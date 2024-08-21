@@ -9,7 +9,9 @@ type CustomFields = {
   id: string;
   label?: string;
   tags?: string[];
-  layer: string; // new
+  layer?: string; // new
+  shape?: string; // new
+  details?: string[]; // new
   dependencies: CustomDependency[];
 };
 

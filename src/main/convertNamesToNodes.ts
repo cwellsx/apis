@@ -21,7 +21,7 @@ const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
   return { groups, leafs };
 };
 
-const createNestedClusters = (names: string[], nameType: NameTypes): Result => {
+export const createNestedClusters = (names: string[], nameType: NameTypes, separator = "."): Result => {
   const groups: Node[] = [];
   const leafs: { [name: string]: Node } = {};
 
@@ -31,9 +31,9 @@ const createNestedClusters = (names: string[], nameType: NameTypes): Result => {
     let nodes = groups;
 
     let parent: Parent | null = null;
-    for (const part of name.split(".")) {
+    for (const part of name.split(separator)) {
       // increase the length of the partial name
-      partial = !partial ? part : `${partial}.${part}`;
+      partial = !partial ? part : `${partial}${separator}${part}`;
       // append the leaf if this is the leaf
       if (partial === name) {
         const newLeaf: Leaf = { label: name, nodeId: nameNodeId(nameType, name), parent };

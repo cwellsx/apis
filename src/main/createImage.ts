@@ -13,7 +13,7 @@ import { showErrorBox } from "./showErrorBox";
   This is implemented using Graphviz; this is the only module which uses (and therefore encapsulates) Graphviz.
 */
 
-type Shape = "folder" | "rect" | "none";
+export type Shape = "folder" | "rect" | "none" | "component";
 
 export type ImageAttribute = {
   // used for leafs and for non-expanded groups
@@ -109,7 +109,7 @@ const getDotFormat = (
   imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
     // use \l instead of \r\n to left-justify labels
     // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
-    const edgeLabel = labels.map((s) => s + "\\l").join();
+    const edgeLabel = labels.map((s) => s + "\\l").join("");
     // use \r\b in tooltips, that's OK in the XML
     const edgeTitle = `${nodes[clientId].label} → ${nodes[serverId]?.label ?? "?"}`;
     const edgeTooltip = [edgeTitle, ...titles].join("\r\n");

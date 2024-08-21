@@ -5,9 +5,15 @@ using System.Linq;
 
 namespace Custom
 {
-    public record Project(string ProjectPath, ProjectDependency[] Dependencies);
-    public record Coclass(string ProjectPath, string CoclassName, Interface[] Interfaces);
-    public record Interface(string ProjectPath, string InterfaceName, string[] Details);
+    public record Project(string ProjectPath, ProjectDependency[] Dependencies)
+    {
+        public string ProjectDir => GetDirectoryName(ProjectPath);
+        public string Layer => ProjectDir;
+
+        static string GetDirectoryName(string path) => Path.GetDirectoryName(path) ?? throw new Exception();
+    }
+    public record Coclass(string ProjectDir, string CoclassName, Interface[] Interfaces);
+    public record Interface(string ProjectDir, string InterfaceName, string[] Details);
 
     public record ProjectDependency(string CoclassName, string Action);
 
@@ -15,6 +21,10 @@ namespace Custom
     {
         public static (Node[] coclassNodes, Node[] interfaceNodes) Convert(Project[] projects, Coclass[] coclasses, Interface[] interfaces)
         {
+            Extensions.AssertSanity(projects);
+            Extensions.AssertSanity(projects, coclasses.Select(coclass => coclass.ProjectDir));
+            Extensions.AssertSanity(projects, interfaces.Select(@interface => @interface.ProjectDir));
+
             var mapCoclasses = coclasses.ToDictionary(coclass => coclass.CoclassName);
 
             var coclassNodes = coclasses.Select(ToNode)
@@ -24,6 +34,9 @@ namespace Custom
             var interfaceNodes = interfaces.Select(ToNode)
                 .Concat(projects.Select(project => project.ToNode(InterfaceDependencies(project.Dependencies, mapCoclasses))))
                 .ToArray();
+
+            Extensions.AssertSanity(coclassNodes);
+            Extensions.AssertSanity(interfaceNodes);
 
             return (coclassNodes, interfaceNodes);
         }
@@ -57,28 +70,31 @@ namespace Custom
         static Node ToNode(Coclass coclass) => new Node(
             Id: coclass.CoclassName,
             Label: null,
-            Layer: coclass.ProjectPath,
+            Layer: coclass.ProjectDir,
             Tags: null,
             Details: coclass.ToDetails(),
-            Dependencies: new Dependency[0]
+            Dependencies: new Dependency[0],
+            Shape: "component"
             );
 
         static Node ToNode(Interface @interface) => new Node(
             Id: @interface.InterfaceName,
             Label: null,
-            Layer: @interface.ProjectPath,
+            Layer: @interface.ProjectDir,
             Tags: null,
             Details: @interface.ToDetails().ToArray(),
-            Dependencies: new Dependency[0]
+            Dependencies: new Dependency[0],
+            Shape: "component"
             );
 
         static Node ToNode(this Project project, Dependency[] dependencies) => new Node(
-            Id: project.ProjectPath,
-            Label: Path.GetFileName(project.ProjectPath),
-            Layer: Path.GetDirectoryName(project.ProjectPath) ?? throw new Exception(),
+            Id: project.ProjectDir,
+            Label: Path.GetFileNameWithoutExtension(project.ProjectPath),
+            Layer: project.Layer,
             Tags: null,
             Details: null,
-            Dependencies: dependencies
+            Dependencies: dependencies,
+            Shape: "folder"
             );
 
         static string[] ToDetails(this Coclass coclass) => coclass.Interfaces.Select(ToDetails).ToArray().JoinDetails();

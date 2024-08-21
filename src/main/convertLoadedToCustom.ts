@@ -1,9 +1,11 @@
 import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent, ViewGraph } from "../shared-types";
-import { groupByNodeId, nameNodeId } from "../shared-types";
+import { groupByNodeId, isParent, nameNodeId } from "../shared-types";
+import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
+import type { ImageAttribute, Shape } from "./createImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
-import { Edges } from "./shared-types";
+import { Edges, NodeIdMap } from "./shared-types";
 import { getOrThrow } from "./shared-types/remove";
 
 export const convertLoadedToCustom = (
@@ -17,16 +19,19 @@ export const convertLoadedToCustom = (
   const leafNodeId = (id: string): NodeId => nameNodeId("customLeaf", id);
   const hiddenNodeIds = new Set<string>();
   const leafs = new Map<string, Leaf>();
+  const imageAttributes = new NodeIdMap<ImageAttribute>();
 
   // do the Leaf[] first to determine which are hidden
   nodes.forEach((node) => {
     if (node.tags?.some((tag) => !tags.get(tag))) hiddenNodeIds.add(node.id);
-    else
-      leafs.set(node.id, {
-        label: node.label ?? node.id,
-        nodeId: leafNodeId(node.id),
-        parent: null,
-      });
+    else {
+      const nodeId = leafNodeId(node.id);
+      leafs.set(node.id, { label: node.label ?? node.id, nodeId, parent: null });
+      if (node.shape) {
+        const shape: Shape = node.shape as Shape;
+        imageAttributes.set(nodeId, { shape });
+      }
+    }
   });
 
   // next do the Edge[]
@@ -51,21 +56,37 @@ export const convertLoadedToCustom = (
   const groups: Node[] = [];
 
   if (graphViewOptions.isAutoLayers) {
-    const parents = new Map<string, Parent>(
-      graphViewOptions.layers.map((id) => [
-        id,
-        { label: id, nodeId: nameNodeId("group", id), parent: null, children: [] },
-      ])
-    );
+    const result = createNestedClusters(graphViewOptions.layers, "group", "\\");
     nodes.forEach((node) => {
-      const leaf = getOrThrow(leafs, node.id);
-      const parent = parents.get(node.layer) ?? parents.get(node.id);
-      if (parent) {
-        leaf.parent = parent;
-        parent.children.push(leaf);
-      } else groups.push(leaf);
+      const leaf = result.leafs[node.layer ?? ""];
+      const convertToParent = (node: Node): Parent => {
+        if (isParent(node)) return node;
+        const parent = leaf as Parent;
+        parent["children"] = [];
+        return parent;
+      };
+      const parent = convertToParent(leaf);
+      const customNode = getOrThrow(leafs, node.id);
+      parent.children.push(customNode);
+      customNode.parent = parent;
     });
-    groups.push(...parents.values());
+    groups.push(...result.groups);
+
+    // const parents = new Map<string, Parent>(
+    //   graphViewOptions.layers.map((id) => [
+    //     id,
+    //     { label: id, nodeId: nameNodeId("group", id), parent: null, children: [] },
+    //   ])
+    // );
+    // nodes.forEach((node) => {
+    //   const leaf = getOrThrow(leafs, node.id);
+    //   const parent = parents.get(node.layer ?? "") ?? parents.get(node.id);
+    //   if (parent) {
+    //     leaf.parent = parent;
+    //     parent.children.push(leaf);
+    //   } else groups.push(leaf);
+    // });
+    // groups.push(...parents.values());
   } else {
     const groupedBy = graphViewOptions.clusterBy.length ? graphViewOptions.clusterBy[0] : undefined;
     if (groupedBy) {
@@ -92,6 +113,6 @@ export const convertLoadedToCustom = (
 
   groups.sort((x, y) => x.label.localeCompare(y.label));
 
-  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, undefined);
+  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, imageAttributes);
   return { groups, image, graphViewOptions, graphFilter };
 };

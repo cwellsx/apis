@@ -71,10 +71,8 @@ export class SqlCustom {
       nodes.forEach((node) => node.tags?.forEach((tag) => tags.add(tag)));
 
       const ids = new Set<string>(nodes.map((node) => node.id));
-      const autoLayers = new Set<string>(
-        nodes.filter((node) => ids.has(node.layer) && node.layer.includes("\\")).map((node) => node.layer)
-      );
-      const isAutoLayers = autoLayers.size > 0;
+      const layers = [...new Set<string>(nodes.map((node) => node.layer ?? ""))];
+      const isAutoLayers = layers.some((layer) => ids.has(layer) && layer.includes("\\"));
 
       const base = {
         tags: [...tags].sort().map((tag) => ({ tag, shown: true })),
@@ -85,7 +83,7 @@ export class SqlCustom {
       };
 
       const customViewOptions: CustomViewOptions = isAutoLayers
-        ? { ...base, viewType: "custom", isAutoLayers, layers: [...autoLayers] }
+        ? { ...base, viewType: "custom", isAutoLayers, layers }
         : {
             ...base,
             viewType: "custom",

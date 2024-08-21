@@ -1,7 +1,7 @@
 [
   {
     "id": "interfaceA",
-    "layer": "foo\\A",
+    "layer": "foo\\foo\\A",
     "details": [
       "**interfaceA**",
       "",
@@ -10,11 +10,12 @@
       "InsertA",
       "```"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "shape": "component"
   },
   {
     "id": "interfaceB1",
-    "layer": "bar\\B",
+    "layer": "foo\\bar\\B",
     "details": [
       "**interfaceB1**",
       "",
@@ -23,11 +24,12 @@
       "InsertB1",
       "```"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "shape": "component"
   },
   {
     "id": "interfaceB2",
-    "layer": "bar\\B",
+    "layer": "foo\\bar\\B",
     "details": [
       "**interfaceB2**",
       "",
@@ -36,11 +38,12 @@
       "InsertB2",
       "```"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "shape": "component"
   },
   {
     "id": "interfaceC",
-    "layer": "bar\\C",
+    "layer": "foo\\bar\\C",
     "details": [
       "**interfaceC**",
       "",
@@ -49,12 +52,13 @@
       "InsertC",
       "```"
     ],
-    "dependencies": []
+    "dependencies": [],
+    "shape": "component"
   },
   {
-    "id": "foo\\A",
+    "id": "foo\\foo\\A",
     "label": "A",
-    "layer": "foo",
+    "layer": "foo\\foo\\A",
     "dependencies": [
       {
         "id": "interfaceA",
@@ -121,12 +125,13 @@
         ],
         "uses": true
       }
-    ]
+    ],
+    "shape": "folder"
   },
   {
-    "id": "bar\\B",
+    "id": "foo\\bar\\B",
     "label": "B",
-    "layer": "bar",
+    "layer": "foo\\bar\\B",
     "dependencies": [
       {
         "id": "interfaceC",
@@ -141,12 +146,35 @@
         ],
         "uses": true
       }
-    ]
+    ],
+    "shape": "folder"
   },
   {
-    "id": "bar\\C",
+    "id": "foo\\bar\\C",
     "label": "C",
-    "layer": "bar",
-    "dependencies": []
+    "layer": "foo\\bar\\C",
+    "dependencies": [],
+    "shape": "folder"
+  },
+  {
+    "id": "foo\\D",
+    "label": "D",
+    "layer": "foo\\D",
+    "dependencies": [
+      {
+        "id": "interfaceA",
+        "label": "interfaceA",
+        "details": [
+          "**interfaceA**",
+          "",
+          "```",
+          "SelectA",
+          "InsertA",
+          "```"
+        ],
+        "uses": true
+      }
+    ],
+    "shape": "folder"
   }
 ]
