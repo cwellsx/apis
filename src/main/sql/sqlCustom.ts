@@ -72,7 +72,7 @@ export class SqlCustom {
 
       const ids = new Set<string>(nodes.map((node) => node.id));
       const layers = [...new Set<string>(nodes.map((node) => node.layer ?? ""))];
-      const isAutoLayers = layers.some((layer) => ids.has(layer) && layer.includes("\\"));
+      const isAutoLayers = layers.some((layer) => ids.has(layer) && layer.includes("/"));
 
       const base = {
         tags: [...tags].sort().map((tag) => ({ tag, shown: true })),

@@ -56,7 +56,7 @@ export const convertLoadedToCustom = (
   const groups: Node[] = [];
 
   if (graphViewOptions.isAutoLayers) {
-    const result = createNestedClusters(graphViewOptions.layers, "group", "\\");
+    const result = createNestedClusters(graphViewOptions.layers.sort(), "group", "/");
     nodes.forEach((node) => {
       const leaf = result.leafs[node.layer ?? ""];
       const convertToParent = (node: Node): Parent => {
@@ -113,6 +113,13 @@ export const convertLoadedToCustom = (
 
   groups.sort((x, y) => x.label.localeCompare(y.label));
 
-  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, imageAttributes);
+  const image = convertToImage(
+    groups,
+    edges.values(),
+    graphViewOptions,
+    graphFilter,
+    graphViewOptions.isAutoLayers,
+    imageAttributes
+  );
   return { groups, image, graphViewOptions, graphFilter };
 };
