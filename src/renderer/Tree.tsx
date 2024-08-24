@@ -11,6 +11,7 @@ type TreeProps = {
   nodes: TreeNode[] | null;
   leafVisible: string[];
   groupExpanded: string[];
+  checkModel: "all" | "leaf";
   setLeafVisible: (names: string[]) => void;
   setGroupExpanded: (names: string[]) => void;
 };
@@ -28,7 +29,7 @@ const convert = (node: TreeNode): CheckboxNode => {
 const getNodes = (nodes: TreeNode[] | null): CheckboxNode[] => (nodes ? nodes.map(convert) : []);
 
 export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
-  const { leafVisible, nodes, groupExpanded } = props;
+  const { leafVisible, nodes, groupExpanded, checkModel } = props;
 
   // use these to round-trip to get a new View
   const onCheck = (value: string[]) => props.setLeafVisible(value);
@@ -36,6 +37,7 @@ export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
 
   return (
     <CheckboxTree
+      checkModel={checkModel}
       nodes={getNodes(nodes)}
       checked={leafVisible}
       expanded={groupExpanded}

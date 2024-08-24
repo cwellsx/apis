@@ -9,7 +9,7 @@ import type {
   ViewOptions,
   ViewType,
 } from "../shared-types";
-import { isCustomManual } from "../shared-types";
+import { isCustomManual, isCustomViewOptions } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
@@ -91,8 +91,6 @@ export const createCustomWindow = (
     },
     onFilterEvent: (filterEvent: FilterEvent): void => {
       const { viewOptions, graphFilter } = filterEvent;
-      const isCustomViewOptions = (viewOptions: ViewOptions): viewOptions is CustomViewOptions =>
-        viewOptions.viewType === "custom";
       if (!isCustomViewOptions(viewOptions)) throw new Error("Unexpected viewType");
       const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
       sqlCustom.writeGraphFilter(clusterBy, graphFilter);

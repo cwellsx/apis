@@ -24,8 +24,9 @@ export const getLeft = (
   appOptions: AppOptions,
   onAppOptions: (appOptions: AppOptions) => void
 ): JSX.Element => {
-  const viewOptions = view.graphViewOptions;
-  const { leafVisible, groupExpanded } = view.graphFilter;
+  const { graphViewOptions: viewOptions, graphFilter } = view;
+  const { leafVisible, groupExpanded, hasParentEdges } = graphFilter;
+  const checkModel = hasParentEdges ? "all" : "leaf";
   return (
     <>
       <ChooseGraphViewOptions
@@ -35,14 +36,15 @@ export const getLeft = (
         onAppOptions={onAppOptions}
       />
       <Tree
+        checkModel={checkModel}
         nodes={view.groups}
         leafVisible={leafVisible.map(nodeIdToText)}
         groupExpanded={groupExpanded.map(nodeIdToText)}
         setLeafVisible={(names) =>
-          onGraphFilter({ viewOptions, graphFilter: { leafVisible: names.map(textToNodeId), groupExpanded } })
+          onGraphFilter({ viewOptions, graphFilter: { ...graphFilter, leafVisible: names.map(textToNodeId) } })
         }
         setGroupExpanded={(names) =>
-          onGraphFilter({ viewOptions, graphFilter: { leafVisible, groupExpanded: names.map(textToNodeId) } })
+          onGraphFilter({ viewOptions, graphFilter: { ...graphFilter, groupExpanded: names.map(textToNodeId) } })
         }
       />
     </>

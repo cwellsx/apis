@@ -36,6 +36,7 @@ const nodeIdEquals = (lhs: NodeId, rhs: NodeId): boolean => {
     case "assembly":
     case "group":
     case "customLeaf":
+    case "customFolder":
       return nameNodeIdEquals(lhs, rhs as NameNodeId);
     case "customGroup":
       return groupByNodeIdEquals(lhs, rhs as GroupByNodeId);
@@ -346,6 +347,7 @@ type Data<TValue> = {
   assembly: NameNodeIdMap<TValue>;
   group: NameNodeIdMap<TValue>;
   customLeaf: NameNodeIdMap<TValue>;
+  customFolder: NameNodeIdMap<TValue>;
 
   customGroup: GroupByNodeIdMap<TValue>;
 
@@ -364,7 +366,7 @@ const metadataTypes = new Set<string>(["method", "type", "field", "event", "prop
 const isMetadataType = (type: string): type is MetadataTypes => metadataTypes.has(type);
 const isMetadataNodeId = (key: NodeId): key is MetadataNodeId => isMetadataType(key.type);
 
-const nameTypes = new Set<string>(["namespace", "assembly", "group", "customLeaf"]);
+const nameTypes = new Set<string>(["namespace", "assembly", "group", "customLeaf", "customFolder"]);
 const isNameType = (type: string): type is NameTypes => nameTypes.has(type);
 export const isNameNodeId = (key: NodeId): key is NameNodeId => isNameType(key.type);
 
@@ -388,6 +390,7 @@ export class NodeIdMap<TValue> {
       assembly: new NameNodeIdMap<TValue>("assembly"),
       group: new NameNodeIdMap<TValue>("group"),
       customLeaf: new NameNodeIdMap<TValue>("customLeaf"),
+      customFolder: new NameNodeIdMap<TValue>("customFolder"),
 
       customGroup: new GroupByNodeIdMap<TValue>(),
 

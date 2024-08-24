@@ -17,3 +17,6 @@ export type CompilerViewOptions = {
 type TextViewOptions = CompilerViewOptions;
 
 export type ViewOptions = GraphViewOptions | TextViewOptions;
+
+export const isCustomViewOptions = (viewOptions: ViewOptions): viewOptions is CustomViewOptions =>
+  viewOptions.viewType === "custom";

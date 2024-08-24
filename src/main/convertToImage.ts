@@ -69,12 +69,15 @@ export function convertToImage(
   const closedBy = new NodeIdMap<{ parent: NodeId; child: NodeId }>();
   const findClosed = (node: Node, isClosedBy: { parent: NodeId; child: NodeId } | null): void => {
     const id = node.nodeId;
+    if (!isParent(node) || graphFilter.hasParentEdges) {
+      if (isClosedBy) closedBy.set(id, isClosedBy);
+    }
     if (isParent(node)) {
       const isClosed = !isClosedBy && !isGroupExpanded(id);
       node.children.forEach((child) =>
         findClosed(child, isClosedBy ?? (isClosed ? { parent: id, child: child.nodeId } : null))
       );
-    } else if (isClosedBy) closedBy.set(id, isClosedBy);
+    }
   };
   roots.forEach((node) => findClosed(node, null));
 
@@ -101,7 +104,8 @@ export function convertToImage(
     ++countImageNodes;
     const nodeId = node.nodeId;
 
-    if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
+    if (!graphFilter.hasParentEdges)
+      if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
 
     const imageAttribute: ImageAttribute = imageAttributes?.get(nodeId) ?? {};
 

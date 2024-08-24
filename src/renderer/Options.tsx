@@ -3,12 +3,11 @@ import type {
   AnyGraphViewOptions,
   AppOptions,
   CompilerViewOptions,
-  CustomViewOptions,
   GraphViewOptions,
   OptionsType,
   ReferenceViewOptions,
 } from "../shared-types";
-import { isCustomManual } from "../shared-types";
+import { isCustomManual, isCustomViewOptions } from "../shared-types";
 import "./Options.css";
 import { log } from "./log";
 
@@ -35,9 +34,6 @@ const getShowInternalCalls = (viewOptions: AnyGraphViewOptions): BooleanState | 
 
 const isReferenceViewOptions = (viewOptions: GraphViewOptions): viewOptions is ReferenceViewOptions =>
   viewOptions.viewType === "references";
-
-const isCustomViewOptions = (viewOptions: GraphViewOptions): viewOptions is CustomViewOptions =>
-  viewOptions.viewType === "custom";
 
 // agnostic/reusable React element groups
 

@@ -1,6 +1,6 @@
 // types
 
-export type NameTypes = "namespace" | "assembly" | "group" | "customLeaf";
+export type NameTypes = "namespace" | "assembly" | "group" | "customLeaf" | "customFolder";
 export type MetadataTypes = "method" | "type" | "field" | "event" | "property" | "memberException";
 type ArtificialTypes = "attribute" | "exception";
 
@@ -110,6 +110,7 @@ export const nodeIdToText = (nodeId: NodeId): string => {
     case "assembly":
     case "group":
     case "customLeaf":
+    case "customFolder":
       return [nodeId.type, nodeId.name].join(nodeIdSeparator);
     case "customGroup":
       return [nodeId.type, nodeId.groupBy, nodeId.groupLabel].join(nodeIdSeparator);
@@ -135,6 +136,7 @@ export const textToNodeId = (text: string): NodeId => {
     case "assembly":
     case "group":
     case "customLeaf":
+    case "customFolder":
       return { type, name: split[1] };
     case "customGroup":
       return { type, groupBy: split[1], groupLabel: split[2] };

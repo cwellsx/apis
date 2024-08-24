@@ -18,7 +18,8 @@ export class SqlCustom {
       when: string,
       customSchemaVersion: string,
       nodeIds: NodeId[],
-      customViewOptions: CustomViewOptions
+      customViewOptions: CustomViewOptions,
+      hasParentEdges: boolean
     ) => void;
     set customViewOptions(viewOptions: CustomViewOptions);
     get customViewOptions(): CustomViewOptions;
@@ -34,6 +35,8 @@ export class SqlCustom {
   private writeLeafVisible: (leafVisible: NodeId[]) => void;
   private readGroupExpanded: (clusterBy: string[] | undefined) => NodeId[];
   private writeGroupExpanded: (clusterBy: string[] | undefined, groupExpanded: NodeId[]) => void;
+  private readHasParentEdges: () => boolean;
+  private writeHasParentEdges: (hasParentEdges: boolean) => void;
   readGraphFilter: (clusterBy: string[] | undefined) => GraphFilter;
   writeGraphFilter: (clusterBy: string[] | undefined, graphFilter: GraphFilter) => void;
 
@@ -82,8 +85,11 @@ export class SqlCustom {
         },
       };
 
+      const isCustomFolders = isAutoLayers;
+      const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
+
       const customViewOptions: CustomViewOptions = isAutoLayers
-        ? { ...base, viewType: "custom", isAutoLayers, layers }
+        ? { ...base, viewType: "custom", isAutoLayers, isCustomFolders: true, layers }
         : {
             ...base,
             viewType: "custom",
@@ -95,8 +101,9 @@ export class SqlCustom {
       this.viewState.onSave(
         when,
         customSchemaVersionExpected,
-        nodes.map((node) => nameNodeId("customLeaf", node.id)),
-        customViewOptions
+        nodes.map((node) => nameNodeId(isCustomFolder(node) ? "customFolder" : "customLeaf", node.id)),
+        customViewOptions,
+        isCustomFolders
       );
       done();
     };
@@ -137,13 +144,23 @@ export class SqlCustom {
     this.writeGroupExpanded = (clusterBy: string[] | undefined, groupExpanded: NodeId[]): void => {
       configTable.upsert({ name: keyGroupExpanded(clusterBy), value: JSON.stringify(groupExpanded) });
     };
+    this.readHasParentEdges = (): boolean => {
+      const found = configTable.selectOne({ name: "hasParentEdges" });
+      if (!found) throw new Error("readHasParentEdges nodes not found");
+      return JSON.parse(found.value);
+    };
+    this.writeHasParentEdges = (hasParentEdges: boolean): void => {
+      configTable.upsert({ name: "hasParentEdges", value: JSON.stringify(hasParentEdges) });
+    };
     this.readGraphFilter = (clusterBy: string[] | undefined): GraphFilter => ({
       leafVisible: this.readLeafVisible(),
       groupExpanded: this.readGroupExpanded(clusterBy),
+      hasParentEdges: this.readHasParentEdges(),
     });
     this.writeGraphFilter = (clusterBy: string[] | undefined, graphFilter: GraphFilter): void => {
       this.writeLeafVisible(graphFilter.leafVisible);
       this.writeGroupExpanded(clusterBy, graphFilter.groupExpanded);
+      this.writeHasParentEdges(graphFilter.hasParentEdges);
     };
 
     this.viewState = {
@@ -151,7 +168,8 @@ export class SqlCustom {
         when: string,
         customSchemaVersion: string,
         nodeIds: NodeId[],
-        customViewOptions: CustomViewOptions
+        customViewOptions: CustomViewOptions,
+        hasParentEdges: boolean
       ): void => {
         configTable.upsert({ name: "when", value: when });
         configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
@@ -159,6 +177,7 @@ export class SqlCustom {
         this.viewState.customViewOptions = customViewOptions;
 
         this.writeLeafVisible(nodeIds);
+        this.writeHasParentEdges(hasParentEdges);
       },
       set customViewOptions(viewOptions: CustomViewOptions) {
         configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });

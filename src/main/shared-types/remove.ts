@@ -23,6 +23,8 @@ export function distinctor<T>(equals: (lhs: T, rhs: T) => boolean) {
 
 export const uniqueStrings = (strings: string[]): string[] => [...new Set<string>(strings)];
 
+export const last = <T>(items: T[]): T => items[items.length - 1]; // throws if the array is empty
+
 export const getOrSet = <K, V>(map: Map<K, V>, key: K, create: () => V) => {
   let found = map.get(key);
   if (!found) {

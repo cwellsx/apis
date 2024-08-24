@@ -1,11 +1,11 @@
 import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent, ViewGraph } from "../shared-types";
-import { groupByNodeId, isParent, nameNodeId } from "../shared-types";
+import { groupByNodeId, isCustomManual, isParent, nameNodeId } from "../shared-types";
 import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import type { ImageAttribute, Shape } from "./createImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
-import { Edges, NodeIdMap } from "./shared-types";
+import { Edges, last, NodeIdMap } from "./shared-types";
 import { getOrThrow } from "./shared-types/remove";
 
 export const convertLoadedToCustom = (
@@ -17,20 +17,26 @@ export const convertLoadedToCustom = (
 
   const tags = new Map<string, boolean>(graphViewOptions.tags.map(({ tag, shown }) => [tag, shown]));
   const leafNodeId = (id: string): NodeId => nameNodeId("customLeaf", id);
+  const isCustomFolders = !isCustomManual(graphViewOptions) && graphViewOptions.isCustomFolders;
+  const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
+  const folderNodeId = (id: string): NodeId => nameNodeId("customFolder", id);
   const hiddenNodeIds = new Set<string>();
-  const leafs = new Map<string, Leaf>();
+  const leafNodes = new Map<string, Leaf>();
   const imageAttributes = new NodeIdMap<ImageAttribute>();
 
   // do the Leaf[] first to determine which are hidden
   nodes.forEach((node) => {
-    if (node.tags?.some((tag) => !tags.get(tag))) hiddenNodeIds.add(node.id);
-    else {
-      const nodeId = leafNodeId(node.id);
-      leafs.set(node.id, { label: node.label ?? node.id, nodeId, parent: null });
-      if (node.shape) {
-        const shape: Shape = node.shape as Shape;
-        imageAttributes.set(nodeId, { shape });
-      }
+    if (node.tags?.some((tag) => !tags.get(tag))) {
+      hiddenNodeIds.add(node.id);
+      return;
+    }
+    const leaf = !isCustomFolder(node)
+      ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id), parent: null }
+      : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id), parent: null };
+    leafNodes.set(node.id, leaf);
+    if (node.shape) {
+      const shape: Shape = node.shape as Shape;
+      imageAttributes.set(leaf.nodeId, { shape, tooltip: node.label });
     }
   });
 
@@ -47,79 +53,70 @@ export const convertLoadedToCustom = (
         });
 
         const label = dependency.label;
-
-        edges.add(leafNodeId(node.id), leafNodeId(dependency.id), label);
+        const clientId = isCustomFolder(node) ? folderNodeId(node.id) : leafNodeId(node.id);
+        edges.add(clientId, leafNodeId(dependency.id), label);
       });
   });
 
   // next do the group
-  const groups: Node[] = [];
+  const roots: Node[] = [];
 
   if (graphViewOptions.isAutoLayers) {
-    const result = createNestedClusters(graphViewOptions.layers.sort(), "group", "/");
+    const { groups, leafs } = createNestedClusters(graphViewOptions.layers.sort(), "group", "/");
     nodes.forEach((node) => {
-      const leaf = result.leafs[node.layer ?? ""];
-      const convertToParent = (node: Node): Parent => {
-        if (isParent(node)) return node;
-        const parent = leaf as Parent;
-        parent["children"] = [];
-        return parent;
-      };
-      const parent = convertToParent(leaf);
-      const customNode = getOrThrow(leafs, node.id);
-      parent.children.push(customNode);
-      customNode.parent = parent;
+      const leaf = leafs[node.layer ?? ""];
+      const customNode = getOrThrow(leafNodes, node.id);
+      if (isCustomFolder(node)) {
+        // don't insert the customNode as a child
+        // instead mutate the container so that it mimics/replaces the customNode
+        leaf.nodeId = customNode.nodeId;
+        leaf.label = customNode.label;
+      } else {
+        const convertToParent = (node: Node): Parent => {
+          if (isParent(node)) return node;
+          const parent = leaf as Parent;
+          parent["children"] = [];
+          return parent;
+        };
+        const parent = convertToParent(leaf);
+        parent.children.push(customNode);
+        customNode.parent = parent;
+      }
     });
-    groups.push(...result.groups);
-
-    // const parents = new Map<string, Parent>(
-    //   graphViewOptions.layers.map((id) => [
-    //     id,
-    //     { label: id, nodeId: nameNodeId("group", id), parent: null, children: [] },
-    //   ])
-    // );
-    // nodes.forEach((node) => {
-    //   const leaf = getOrThrow(leafs, node.id);
-    //   const parent = parents.get(node.layer ?? "") ?? parents.get(node.id);
-    //   if (parent) {
-    //     leaf.parent = parent;
-    //     parent.children.push(leaf);
-    //   } else groups.push(leaf);
-    // });
-    // groups.push(...parents.values());
+    roots.push(...groups);
   } else {
     const groupedBy = graphViewOptions.clusterBy.length ? graphViewOptions.clusterBy[0] : undefined;
     if (groupedBy) {
       const parents: { [id: string]: Parent } = {};
       nodes.forEach((node) => {
         let groupName = node[groupedBy];
-        const leaf = getOrThrow(leafs, node.id);
+        const leaf = getOrThrow(leafNodes, node.id);
         if (!groupName) {
-          groups.push(leaf);
+          roots.push(leaf);
           return;
         }
         groupName = "" + groupName;
         let parent: Parent = parents[groupName];
         if (!parent) {
           parent = { label: groupName, nodeId: groupByNodeId(groupedBy, groupName), parent: null, children: [] };
-          groups.push(parent);
+          roots.push(parent);
           parents[groupName] = parent;
         }
         parent.children.push(leaf);
         leaf.parent = parent;
       });
-    } else groups.push(...Object.values(leafs));
+    } else roots.push(...Object.values(leafNodes));
   }
 
-  groups.sort((x, y) => x.label.localeCompare(y.label));
+  roots.sort((x, y) => x.label.localeCompare(y.label));
 
   const image = convertToImage(
-    groups,
+    roots,
     edges.values(),
     graphViewOptions,
     graphFilter,
     graphViewOptions.isAutoLayers,
     imageAttributes
   );
-  return { groups, image, graphViewOptions, graphFilter };
+  return { groups: roots, image, graphViewOptions, graphFilter };
 };

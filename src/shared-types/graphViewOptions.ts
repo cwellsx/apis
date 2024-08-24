@@ -38,6 +38,7 @@ type CustomViewOptionsBase = {
 
 type CustomViewOptionsAuto = CustomViewOptionsBase & {
   readonly isAutoLayers: true;
+  readonly isCustomFolders: true;
   // these are the names of layers defined in all CustomNode.layer property
   readonly layers: string[];
 };

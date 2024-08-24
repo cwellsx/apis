@@ -175,6 +175,7 @@ export const convertCallstackToImage = (
   graphFilter ??= {
     leafVisible: leafs.keys(),
     groupExpanded: groups.map((parent) => parent.nodeId),
+    hasParentEdges: false,
   };
 
   // convert to Image
