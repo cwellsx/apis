@@ -24,6 +24,13 @@ export type DetailedAssembly = {
   detailType: "assemblyDetails";
 };
 
-export type DetailType = "methodDetails" | "assemblyDetails";
+export type DetailedCustom = {
+  id: string; // the name of the Coclass
+  layer: string; // the path in which the project is contained
+  details: string[]; // the name[s] and method declarations of the Coclass' interface[s]
+  detailType: "customDetails";
+};
 
-export type ViewDetails = DetailedMethod | DetailedAssembly;
+export type DetailType = "methodDetails" | "assemblyDetails" | "customDetails";
+
+export type ViewDetails = DetailedMethod | DetailedAssembly | DetailedCustom;

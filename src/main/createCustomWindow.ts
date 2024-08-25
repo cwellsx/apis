@@ -2,9 +2,11 @@ import { BrowserWindow } from "electron";
 import type {
   AppOptions,
   CustomViewOptions,
+  DetailedCustom,
   FilterEvent,
   GraphEvent,
   MainApi,
+  NodeId,
   ViewCustomErrors,
   ViewOptions,
   ViewType,
@@ -13,7 +15,7 @@ import { isCustomManual, isCustomViewOptions } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
-import { isEdgeId, toggleNodeId, viewFeatures } from "./shared-types";
+import { isEdgeId, isNameNodeId, toggleNodeId, viewFeatures } from "./shared-types";
 import { renderer as createRenderer } from "./show";
 import { SqlConfig, SqlCustom } from "./sql";
 
@@ -59,6 +61,22 @@ export const createCustomWindow = (
     }
   };
 
+  const sendDetails = (nodeId: NodeId): void => {
+    // get all the nodes
+    // they're all stored as one string in SQL so there's no API to get just one node
+    if (!isNameNodeId(nodeId)) throw new Error("Expected nameNodeId");
+    const nodes = sqlCustom.readAll();
+    const node = nodes.find((node) => node.id === nodeId.name);
+    if (!node) throw new Error(`Node not found: ${nodeId}`);
+    const viewDetails: DetailedCustom = {
+      id: node.id,
+      layer: node.layer ?? "",
+      details: node.details ?? [],
+      detailType: "customDetails",
+    };
+    renderer.showDetails(viewDetails);
+  };
+
   // implement the MainApi which will be bound to ipcMain
   const mainApi: MainApi = {
     onViewOptions: (viewOptions: ViewOptions): void => {
@@ -72,7 +90,10 @@ export const createCustomWindow = (
     onGraphEvent: (graphEvent: GraphEvent): void => {
       const { id, viewType, event } = graphEvent;
       const { leafType, details } = viewFeatures[viewType];
-      if (isEdgeId(id)) return;
+      if (isEdgeId(id)) {
+        sendDetails(id.serverId);
+        return;
+      }
       const nodeId = id;
       if (leafType !== nodeId.type) {
         // this is a group
@@ -84,9 +105,10 @@ export const createCustomWindow = (
         setCustomViewOptions(viewOptions);
         showViewType(viewOptions.viewType);
         return;
+      } else {
+        // else this is a leaf
+        sendDetails(nodeId);
       }
-      // else this is a leaf
-      // nothing to do
       return;
     },
     onFilterEvent: (filterEvent: FilterEvent): void => {

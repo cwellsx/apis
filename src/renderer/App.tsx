@@ -97,6 +97,8 @@ const App: React.FunctionComponent = () => {
         return true;
       case "methodDetails":
         return false;
+      case "customDetails":
+        return false;
     }
   })();
 

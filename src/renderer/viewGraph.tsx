@@ -11,6 +11,7 @@ import type {
 } from "../shared-types";
 import { nodeIdToText, textToNodeId } from "../shared-types";
 import { AssemblyDetails } from "./AssemblyDetails";
+import { CustomDetails } from "./CustomDetails";
 import { Message } from "./elements";
 import { Graph } from "./Graph";
 import { MethodDetails } from "./MethodDetails";
@@ -78,5 +79,7 @@ export const getRight = (
       return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
     case "methodDetails":
       return <MethodDetails methodBody={details} />;
+    case "customDetails":
+      return <CustomDetails details={details} />;
   }
 };

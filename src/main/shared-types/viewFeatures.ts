@@ -5,5 +5,5 @@ export const viewFeatures: Record<GraphViewType, { leafType: NodeId["type"]; det
   references: { leafType: "assembly", details: ["leaf"] },
   apis: options.reuseCallStack ? { leafType: "method", details: ["leaf"] } : { leafType: "type", details: ["edge"] },
   methods: { leafType: "method", details: ["leaf"] },
-  custom: { leafType: "customLeaf", details: [] },
+  custom: { leafType: "customLeaf", details: ["edge", "leaf"] },
 };
