@@ -508,7 +508,7 @@ export class SqlLoaded {
     this.readGraphFilter = (viewType: CommonGraphViewType, clusterBy: ClusterBy): GraphFilter => ({
       leafVisible: this.readLeafVisible(viewType),
       groupExpanded: this.readGroupExpanded(viewType, clusterBy),
-      hasParentEdges: false,
+      isCheckModelAll: false,
     });
     this.writeGraphFilter = (viewType: CommonGraphViewType, clusterBy: ClusterBy, graphFilter: GraphFilter): void => {
       this.writeLeafVisible(viewType, graphFilter.leafVisible);

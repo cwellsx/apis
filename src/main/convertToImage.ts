@@ -20,7 +20,7 @@ export function convertToImage(
 ): Image | string {
   log("convertToImage");
 
-  const { leafVisible, groupExpanded } = graphFilter;
+  const { leafVisible, groupExpanded, isCheckModelAll: hasParentEdges } = graphFilter;
   const isLeafVisible = createLookupNodeId(leafVisible);
   const isGroupExpanded = createLookupNodeId(groupExpanded);
 
@@ -69,7 +69,7 @@ export function convertToImage(
   const closedBy = new NodeIdMap<{ parent: NodeId; child: NodeId }>();
   const findClosed = (node: Node, isClosedBy: { parent: NodeId; child: NodeId } | null): void => {
     const id = node.nodeId;
-    if (!isParent(node) || graphFilter.hasParentEdges) {
+    if (!isParent(node) || hasParentEdges) {
       if (isClosedBy) closedBy.set(id, isClosedBy);
     }
     if (isParent(node)) {
@@ -104,7 +104,7 @@ export function convertToImage(
     ++countImageNodes;
     const nodeId = node.nodeId;
 
-    if (!graphFilter.hasParentEdges)
+    if (!hasParentEdges)
       if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
 
     const imageAttribute: ImageAttribute = imageAttributes?.get(nodeId) ?? {};
@@ -146,9 +146,8 @@ export function convertToImage(
 
   // whether a group is visible depends on whether it contains visible leafs
   const isNodeVisible = (node: Node): boolean =>
-    isParent(node)
-      ? node.children.some((child) => isNodeVisible(child))
-      : isLeafVisible(node.nodeId) && edgeLeafs.has(node.nodeId);
+    (isParent(node) && node.children.some((child) => isNodeVisible(child))) ||
+    (isLeafVisible(node.nodeId) && edgeLeafs.has(node.nodeId));
 
   const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isNodeVisible).map(toImageNode);
 
@@ -171,6 +170,7 @@ export function convertToImage(
       };
     }),
     edgeDetails: details.includes("edge"),
+    hasParentEdges,
   };
 
   if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";

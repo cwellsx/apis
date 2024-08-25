@@ -5,7 +5,7 @@ import { convertToImage } from "./convertToImage";
 import type { ImageAttribute, Shape } from "./createImage";
 import { CustomNode } from "./customJson";
 import { log } from "./log";
-import { Edges, last, NodeIdMap } from "./shared-types";
+import { Edges, last, NodeIdMap, options } from "./shared-types";
 import { getOrThrow } from "./shared-types/remove";
 
 export const convertLoadedToCustom = (
@@ -17,7 +17,7 @@ export const convertLoadedToCustom = (
 
   const tags = new Map<string, boolean>(graphViewOptions.tags.map(({ tag, shown }) => [tag, shown]));
   const leafNodeId = (id: string): NodeId => nameNodeId("customLeaf", id);
-  const isCustomFolders = !isCustomManual(graphViewOptions) && graphViewOptions.isCustomFolders;
+  const isCustomFolders = !isCustomManual(graphViewOptions) && graphViewOptions.isAutoLayers && options.customFolders;
   const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
   const folderNodeId = (id: string): NodeId => nameNodeId("customFolder", id);
   const hiddenNodeIds = new Set<string>();

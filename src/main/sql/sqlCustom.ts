@@ -3,6 +3,7 @@ import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } fr
 import { nameNodeId } from "../../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
 import { log } from "../log";
+import { options } from "../shared-types";
 import { SqlTable } from "./sqlTable";
 
 type ConfigColumns = {
@@ -19,7 +20,7 @@ export class SqlCustom {
       customSchemaVersion: string,
       nodeIds: NodeId[],
       customViewOptions: CustomViewOptions,
-      hasParentEdges: boolean
+      isCheckModelAll: boolean
     ) => void;
     set customViewOptions(viewOptions: CustomViewOptions);
     get customViewOptions(): CustomViewOptions;
@@ -35,8 +36,8 @@ export class SqlCustom {
   private writeLeafVisible: (leafVisible: NodeId[]) => void;
   private readGroupExpanded: (clusterBy: string[] | undefined) => NodeId[];
   private writeGroupExpanded: (clusterBy: string[] | undefined, groupExpanded: NodeId[]) => void;
-  private readHasParentEdges: () => boolean;
-  private writeHasParentEdges: (hasParentEdges: boolean) => void;
+  private readIsCheckModelAll: () => boolean;
+  private writeIsCheckModelAll: (isCheckModelAll: boolean) => void;
   readGraphFilter: (clusterBy: string[] | undefined) => GraphFilter;
   writeGraphFilter: (clusterBy: string[] | undefined, graphFilter: GraphFilter) => void;
 
@@ -85,11 +86,11 @@ export class SqlCustom {
         },
       };
 
-      const isCustomFolders = isAutoLayers;
+      const isCustomFolders = isAutoLayers && options.customFolders;
       const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
 
       const customViewOptions: CustomViewOptions = isAutoLayers
-        ? { ...base, viewType: "custom", isAutoLayers, isCustomFolders: true, layers }
+        ? { ...base, viewType: "custom", isAutoLayers, layers }
         : {
             ...base,
             viewType: "custom",
@@ -144,23 +145,23 @@ export class SqlCustom {
     this.writeGroupExpanded = (clusterBy: string[] | undefined, groupExpanded: NodeId[]): void => {
       configTable.upsert({ name: keyGroupExpanded(clusterBy), value: JSON.stringify(groupExpanded) });
     };
-    this.readHasParentEdges = (): boolean => {
-      const found = configTable.selectOne({ name: "hasParentEdges" });
-      if (!found) throw new Error("readHasParentEdges nodes not found");
+    this.readIsCheckModelAll = (): boolean => {
+      const found = configTable.selectOne({ name: "isCheckModelAll" });
+      if (!found) throw new Error("readIsCheckModelAll nodes not found");
       return JSON.parse(found.value);
     };
-    this.writeHasParentEdges = (hasParentEdges: boolean): void => {
-      configTable.upsert({ name: "hasParentEdges", value: JSON.stringify(hasParentEdges) });
+    this.writeIsCheckModelAll = (isCheckModelAll: boolean): void => {
+      configTable.upsert({ name: "isCheckModelAll", value: JSON.stringify(isCheckModelAll) });
     };
     this.readGraphFilter = (clusterBy: string[] | undefined): GraphFilter => ({
       leafVisible: this.readLeafVisible(),
       groupExpanded: this.readGroupExpanded(clusterBy),
-      hasParentEdges: this.readHasParentEdges(),
+      isCheckModelAll: this.readIsCheckModelAll(),
     });
     this.writeGraphFilter = (clusterBy: string[] | undefined, graphFilter: GraphFilter): void => {
       this.writeLeafVisible(graphFilter.leafVisible);
       this.writeGroupExpanded(clusterBy, graphFilter.groupExpanded);
-      this.writeHasParentEdges(graphFilter.hasParentEdges);
+      this.writeIsCheckModelAll(graphFilter.isCheckModelAll);
     };
 
     this.viewState = {
@@ -169,7 +170,7 @@ export class SqlCustom {
         customSchemaVersion: string,
         nodeIds: NodeId[],
         customViewOptions: CustomViewOptions,
-        hasParentEdges: boolean
+        isCheckModelAll: boolean
       ): void => {
         configTable.upsert({ name: "when", value: when });
         configTable.upsert({ name: "customSchemaVersion", value: customSchemaVersion });
@@ -177,7 +178,7 @@ export class SqlCustom {
         this.viewState.customViewOptions = customViewOptions;
 
         this.writeLeafVisible(nodeIds);
-        this.writeHasParentEdges(hasParentEdges);
+        this.writeIsCheckModelAll(isCheckModelAll);
       },
       set customViewOptions(viewOptions: CustomViewOptions) {
         configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });

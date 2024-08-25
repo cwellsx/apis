@@ -7,6 +7,7 @@ import { convertPathToUrl } from "./convertPathToUrl";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { existsSync, getAppFilename, readFileSync, writeFileSync } from "./fs";
 import { log } from "./log";
+import { options } from "./shared-types";
 import { showErrorBox } from "./showErrorBox";
 
 /*
@@ -39,6 +40,7 @@ export type ImageData = {
   nodes: ImageNode[];
   edges: { clientId: string; serverId: string; edgeId: string; labels: string[]; titles: string[] }[];
   edgeDetails: boolean;
+  hasParentEdges: boolean;
 };
 
 const findDotExe = (): string => {
@@ -70,6 +72,8 @@ const getDotFormat = (
   const lines: string[] = [];
   lines.push("digraph SRC {");
   lines.push("  labeljust=l");
+  // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
+  if (imageData.hasParentEdges) lines.push("  compound=true");
 
   const nodes: { [nodeId: string]: ImageNode } = {};
 
@@ -96,6 +100,16 @@ const getDotFormat = (
           lines.push(`${prefix}  id="${node.id}"`);
           lines.push(`${prefix}  href=foo`);
           pushLayer(node.children, level + 1);
+          if (options.verticalClusters) {
+            // invisible edges between nodes to they're aligned vertically
+            // https://forum.graphviz.org/t/positioning-nodes-in-a-subgraph/1065/18
+            const children = node.children.filter((child) => child.type !== "subgraph");
+            for (let i = 0; i < children.length - 1; ++i) {
+              const first = children[i];
+              const second = children[i + 1];
+              lines.push(`${prefix} "${first.id}" -> "${second.id}" [style=invis]`);
+            }
+          }
           lines.push(`}`);
       }
     }
@@ -105,8 +119,29 @@ const getDotFormat = (
   // used to override the title assigned to edge labels
   const edgeTooltips: { [edgeId: string]: string } = {};
 
+  const nodeMap = new Map<string, ImageNode>(Object.values(nodes).map((node) => [node.id, node]));
+
   // push the map of grouped edges
   imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
+    type EdgeAttribute = { key: string; value: string };
+    const edgeAttributes: EdgeAttribute[] = [];
+
+    const adjust = (nodeId: string, key: string): string => {
+      let node = nodeMap.get(nodeId);
+      if (!node) throw new Error("Edge to undefined node");
+      if (node.type !== "subgraph") return nodeId;
+      if (!imageData.hasParentEdges) throw new Error("Unexpected edge to cluster");
+      // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
+      edgeAttributes.push({ key, value: `cluster_${nodeId}` });
+      while (node.type === "subgraph") {
+        node = node.children[0];
+      }
+      return node.id;
+    };
+
+    clientId = adjust(clientId, "ltail");
+    serverId = adjust(serverId, "lhead");
+
     // use \l instead of \r\n to left-justify labels
     // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
     const edgeLabel = labels.map((s) => s + "\\l").join("");
@@ -114,8 +149,20 @@ const getDotFormat = (
     const edgeTitle = `${nodes[clientId].label} → ${nodes[serverId]?.label ?? "?"}`;
     const edgeTooltip = [edgeTitle, ...titles].join("\r\n");
 
-    const labelAttributes = `, label="${edgeLabel}", tooltip="${edgeTooltip}"`;
-    lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
+    edgeAttributes.push(
+      ...[
+        { key: "label", value: edgeLabel },
+        { key: "tooltip", value: edgeTooltip },
+        { key: "id", value: edgeId },
+        { key: "href", value: "foo" },
+      ]
+    );
+
+    const attributes = edgeAttributes.map((attribute) => `${attribute.key}="${attribute.value}"`).join(", ");
+
+    // const labelAttributes = `, label="${edgeLabel}", tooltip="${edgeTooltip}"`;
+    // lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
+    lines.push(`  "${clientId}" -> "${serverId}" [${attributes}]`);
 
     edgeTooltips[edgeId] = edgeTooltip;
   });

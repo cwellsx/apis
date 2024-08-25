@@ -6,13 +6,15 @@ export const options = {
   ungroupSingle: true,
   shortLeafNames: true,
   noSelfEdges: true,
-  alwaysReload: false,
+  alwaysReload: true,
   showCompilerGeneratedAttributes: true,
   showCompilerGeneratedTypes: false,
   logApi: false,
   reuseCallStack: true,
+  verticalClusters: true,
+  customFolders: true, // disable because Graphviz rendering of edge-to-cluster doesn't work well
   maxImageSize: {
-    nodes: 50,
+    nodes: 100,
     edges: 500,
   },
 };

@@ -26,8 +26,8 @@ export const getLeft = (
   onAppOptions: (appOptions: AppOptions) => void
 ): JSX.Element => {
   const { graphViewOptions: viewOptions, graphFilter } = view;
-  const { leafVisible, groupExpanded, hasParentEdges } = graphFilter;
-  const checkModel = hasParentEdges ? "all" : "leaf";
+  const { leafVisible, groupExpanded, isCheckModelAll } = graphFilter;
+  const checkModel = isCheckModelAll ? "all" : "leaf";
   return (
     <>
       <ChooseGraphViewOptions
