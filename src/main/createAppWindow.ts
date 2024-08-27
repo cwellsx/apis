@@ -20,6 +20,7 @@ import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssemb
 import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
+import { createViewGraph } from "./imageDataTypes";
 import { log } from "./log";
 import type { SetViewMenu, ViewMenu, ViewMenuItem } from "./menu";
 import { createSecondMenu } from "./menu";
@@ -199,7 +200,7 @@ export const createAppWindow = (
     },
   };
 
-  const showMethods = (methodId?: MethodNodeId): void => {
+  const showMethods = async (methodId?: MethodNodeId): Promise<void> => {
     try {
       log(`showMethods(${methodId ?? ""})`);
 
@@ -217,31 +218,33 @@ export const createAppWindow = (
         ? undefined
         : sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy);
 
-      const viewGraph = convertCallstackToImage(callstack, sqlLoaded.readNames(), methodViewOptions, graphFilter);
+      const graphData = convertCallstackToImage(callstack, sqlLoaded.readNames(), methodViewOptions, graphFilter);
 
       if (methodId) {
         sqlLoaded.writeGraphFilter(
           methodViewOptions.viewType,
           methodViewOptions.showClustered.clusterBy,
-          viewGraph.graphFilter
+          graphData.graphFilter
         );
         methodViewOptions.methodId = methodId;
         sqlLoaded.viewState.methodViewOptions = methodViewOptions;
       }
 
+      const viewGraph = await createViewGraph(graphData);
       renderer.showView(viewGraph);
     } catch (error) {
       show.showException(error);
     }
   };
 
-  const showReferences = (): void => {
-    const viewGraph = convertLoadedToReferences(
+  const showReferences = async (): Promise<void> => {
+    const graphData = convertLoadedToReferences(
       sqlLoaded.readAssemblyReferences(),
       sqlLoaded.viewState.referenceViewOptions,
       sqlLoaded.readGraphFilter("references", "assembly"),
       sqlLoaded.viewState.exes
     );
+    const viewGraph = await createViewGraph(graphData);
     renderer.showView(viewGraph);
   };
 
@@ -255,7 +258,7 @@ export const createAppWindow = (
     renderer.showView(viewErrors);
   };
 
-  const showApis = (): void => {
+  const showApis = async (): Promise<void> => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
     const clusterBy = apiViewOptions.showClustered.clusterBy;
     const graphFilter = sqlLoaded.readGraphFilter("apis", clusterBy);
@@ -266,16 +269,18 @@ export const createAppWindow = (
     show.showMessage(undefined, `${calls.length} records`);
     if (options.reuseCallStack) {
       const elements = convertLoadedToCalls(calls);
-      const viewGraph = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
+      const graphData = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
+      const viewGraph = await createViewGraph(graphData);
       renderer.showView(viewGraph);
     } else {
-      const viewGraph = convertLoadedToApis(
+      const graphData = convertLoadedToApis(
         calls,
         sqlLoaded.readNames(),
         apiViewOptions,
         graphFilter,
         sqlLoaded.viewState.exes
       );
+      const viewGraph = await createViewGraph(graphData);
       renderer.showView(viewGraph);
     }
   };

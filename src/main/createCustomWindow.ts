@@ -14,6 +14,7 @@ import type {
 import { isCustomManual, isCustomViewOptions } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
+import { createViewGraph } from "./imageDataTypes";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
 import { isEdgeId, isNameNodeId, toggleNodeId, viewFeatures } from "./shared-types";
 import { renderer as createRenderer } from "./show";
@@ -123,12 +124,13 @@ export const createCustomWindow = (
     },
   };
 
-  const showCustom = (): void => {
+  const showCustom = async (): Promise<void> => {
     const nodes = sqlCustom.readAll();
     const viewOptions = sqlCustom.viewState.customViewOptions;
     const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
     const graphFilter = sqlCustom.readGraphFilter(clusterBy);
-    const viewGraph = convertLoadedToCustom(nodes, viewOptions, graphFilter);
+    const graphData = convertLoadedToCustom(nodes, viewOptions, graphFilter);
+    const viewGraph = await createViewGraph(graphData);
     renderer.showView(viewGraph);
   };
 

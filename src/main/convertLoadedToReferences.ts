@@ -1,8 +1,8 @@
-import type { GraphFilter, ReferenceViewOptions, ViewGraph } from "../shared-types";
+import type { GraphFilter, ReferenceViewOptions } from "../shared-types";
 import { nameNodeId } from "../shared-types";
 import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
-import { ImageAttribute } from "./createImage";
+import { GraphData, ImageAttribute } from "./imageDataTypes";
 import type { AssemblyReferences } from "./loaded";
 import { log } from "./log";
 import { NodeIdMap, type Edge } from "./shared-types";
@@ -12,7 +12,7 @@ export const convertLoadedToReferences = (
   graphViewOptions: ReferenceViewOptions,
   graphFilter: GraphFilter,
   exes: string[]
-): ViewGraph => {
+): GraphData => {
   log("convertLoadedToView");
 
   const edges: Edge[] = [];
@@ -41,7 +41,7 @@ export const convertLoadedToReferences = (
   Object.entries(leafs).forEach(([key, node]) => {
     if (!known.includes(key)) imageAttributes.set(node.nodeId, { shape: "none", className: "leaf-none" });
   });
-  const image = convertToImage(
+  const imageData = convertToImage(
     nestedClusters ? groups : Object.values(leafs),
     edges,
     graphViewOptions,
@@ -49,5 +49,5 @@ export const convertLoadedToReferences = (
     nestedClusters,
     imageAttributes
   );
-  return { groups, image, graphViewOptions, graphFilter };
+  return { groups, imageData, graphViewOptions, graphFilter };
 };

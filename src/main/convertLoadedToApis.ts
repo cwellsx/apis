@@ -1,7 +1,8 @@
-import type { ApiViewOptions, GraphFilter, Leaf, TypeNodeId, ViewGraph } from "../shared-types";
+import type { ApiViewOptions, GraphFilter, Leaf, TypeNodeId } from "../shared-types";
 import { Parent, methodNodeId as getMethodNodeId, isParent, typeNodeId } from "../shared-types";
 import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
+import { GraphData } from "./imageDataTypes";
 import { log } from "./log";
 import { Edges, NodeIdMap } from "./shared-types";
 import type { Call, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
@@ -12,7 +13,7 @@ export const convertLoadedToApis = (
   graphViewOptions: ApiViewOptions,
   graphFilter: GraphFilter,
   exes: string[]
-): ViewGraph => {
+): GraphData => {
   log("convertLoadedToApis");
 
   const { getTypeName, getMethodName } = typeOrMethodName;
@@ -85,6 +86,6 @@ export const convertLoadedToApis = (
     parent["children"] = children;
   });
 
-  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, undefined);
-  return { groups, image, graphViewOptions, graphFilter };
+  const imageData = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, undefined);
+  return { groups, imageData, graphViewOptions, graphFilter };
 };

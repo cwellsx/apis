@@ -24,7 +24,16 @@ export type { Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
 export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./types";
 export { defaultView } from "./view";
-export type { View, ViewCompiler, ViewCustomErrors, ViewErrors, ViewGraph, ViewGreeting, ViewText } from "./view";
+export type {
+  View,
+  ViewCompiler,
+  ViewCustomErrors,
+  ViewErrors,
+  ViewGraph,
+  ViewGraphData,
+  ViewGreeting,
+  ViewText,
+} from "./view";
 export type { DetailType, DetailedAssembly, DetailedCustom, DetailedMethod, ViewDetails } from "./viewDetails";
 export { isCustomViewOptions } from "./viewOptions";
 export type { AnyGraphViewOptions, CompilerViewOptions, GraphViewOptions, ViewOptions } from "./viewOptions";

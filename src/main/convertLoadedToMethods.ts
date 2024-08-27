@@ -7,7 +7,6 @@ import type {
   NodeId,
   Parent,
   TypeNodeId,
-  ViewGraph,
 } from "../shared-types";
 import {
   methodNodeId as getMethodNodeId,
@@ -15,7 +14,7 @@ import {
   typeNodeId as getTypeNodeId,
 } from "../shared-types";
 import { convertToImage } from "./convertToImage";
-import type { ImageAttribute } from "./createImage";
+import type { GraphData, ImageAttribute } from "./imageDataTypes";
 import { log } from "./log";
 import { Edges, MetadataNodeIdMap, NameNodeIdMap, NodeIdMap } from "./shared-types";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
@@ -100,7 +99,7 @@ export const convertCallstackToImage = (
   typeOrMethodName: GetTypeOrMethodName,
   graphViewOptions: MethodViewOptions | ApiViewOptions,
   graphFilter: GraphFilter | undefined
-): ViewGraph => {
+): GraphData => {
   log("convertCallstackToImage");
 
   const { leafs, edges } = callstackElements;
@@ -179,7 +178,7 @@ export const convertCallstackToImage = (
   };
 
   // convert to Image
-  const image = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, imageAttributes);
+  const imageData = convertToImage(groups, edges.values(), graphViewOptions, graphFilter, false, imageAttributes);
 
-  return { image, graphViewOptions, graphFilter, groups };
+  return { imageData, graphViewOptions, graphFilter, groups };
 };

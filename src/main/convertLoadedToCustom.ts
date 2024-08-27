@@ -1,9 +1,9 @@
-import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent, ViewGraph } from "../shared-types";
+import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "../shared-types";
 import { groupByNodeId, isCustomManual, isParent, nameNodeId } from "../shared-types";
 import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
-import type { ImageAttribute, Shape } from "./createImage";
 import { CustomNode } from "./customJson";
+import type { GraphData, ImageAttribute, Shape } from "./imageDataTypes";
 import { log } from "./log";
 import { Edges, last, NodeIdMap, options } from "./shared-types";
 import { getOrThrow } from "./shared-types/remove";
@@ -12,7 +12,7 @@ export const convertLoadedToCustom = (
   nodes: CustomNode[],
   graphViewOptions: CustomViewOptions,
   graphFilter: GraphFilter
-): ViewGraph => {
+): GraphData => {
   log("convertLoadedToView");
 
   const tags = new Map<string, boolean>(graphViewOptions.tags.map(({ tag, shown }) => [tag, shown]));
@@ -110,7 +110,7 @@ export const convertLoadedToCustom = (
 
   roots.sort((x, y) => x.label.localeCompare(y.label));
 
-  const image = convertToImage(
+  const imageData = convertToImage(
     roots,
     edges.values(),
     graphViewOptions,
@@ -118,5 +118,5 @@ export const convertLoadedToCustom = (
     graphViewOptions.isAutoLayers,
     imageAttributes
   );
-  return { groups: roots, image, graphViewOptions, graphFilter };
+  return { groups: roots, imageData, graphViewOptions, graphFilter };
 };

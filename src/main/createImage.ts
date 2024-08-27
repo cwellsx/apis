@@ -1,57 +1,17 @@
-import child_process from "child_process";
 import os from "os";
-import path from "path";
-import type { AreaClass, Image } from "../shared-types";
+import type { Image } from "../shared-types";
 import { textIsEdgeId } from "../shared-types";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
-import { existsSync, getAppFilename, readFileSync, writeFileSync } from "./fs";
+import { getAppFilename, readFileSync, writeFileSync } from "./fs";
+import { getVizJsFormats, runDotExe, runVizJs } from "./graphviz";
+import type { ImageData, ImageNode, Shape } from "./imageDataTypes";
 import { log } from "./log";
 import { options } from "./shared-types";
-import { showErrorBox } from "./showErrorBox";
 
 /*
   This is implemented using Graphviz; this is the only module which uses (and therefore encapsulates) Graphviz.
 */
-
-export type Shape = "folder" | "rect" | "none" | "component";
-
-export type ImageAttribute = {
-  // used for leafs and for non-expanded groups
-  shape?: Shape;
-  // used for clusters i.e. for expanded groups -- https://graphviz.org/docs/attr-types/style/
-  style?: "rounded";
-  // if this is defined then this is the label and label is the tooltip
-  shortLabel?: string;
-  tooltip?: string;
-  className?: AreaClass;
-};
-
-export type ImageText = ImageAttribute & {
-  id: string;
-  label: string;
-  className: AreaClass;
-};
-
-type Subgraph = ImageText & { type: "subgraph"; children: ImageNode[] };
-export type ImageNode = (ImageText & { type: "node" | "group" }) | Subgraph;
-
-export type ImageData = {
-  nodes: ImageNode[];
-  edges: { clientId: string; serverId: string; edgeId: string; labels: string[]; titles: string[] }[];
-  edgeDetails: boolean;
-  hasParentEdges: boolean;
-};
-
-const findDotExe = (): string => {
-  const graphvizDirs = [`C:\\Program Files (x86)\\Graphviz\\bin`, `C:\\Program Files\\Graphviz\\bin`];
-  for (const graphvizDir of graphvizDirs) {
-    const dotExe = path.join(graphvizDir, "dot.exe");
-    if (existsSync(dotExe)) return dotExe;
-  }
-  showErrorBox("dot.exe not found", "Install Graphviz before you can use this program");
-  throw new Error("graphviz not found");
-};
 
 const defaultShape = (node: ImageNode): Shape => {
   switch (node.type) {
@@ -80,6 +40,7 @@ const getDotFormat = (
   // push the tree of nodes -- use subgraphs for exapanded groups
   const pushLayer = (layer: ImageNode[], level: number): void => {
     const prefix = " ".repeat(2 * (level + 1));
+
     for (const node of layer) {
       nodes[node.id] = node;
 
@@ -171,29 +132,106 @@ const getDotFormat = (
   return { lines, nodes, edgeTooltips };
 };
 
-export function createImage(imageData: ImageData): Image {
-  log("createImage");
+type UsingGraphViz = "usingJs" | "usingExe" | "usingBoth";
+const usingGraphViz = (): UsingGraphViz => "usingJs"; // "usingBoth";
 
-  // convert to *.dot file format lines
-  const { lines, nodes, edgeTooltips } = getDotFormat(imageData);
-
+const usingBoth = async (
+  dotText: string,
+  getAreaAttributes: (id: string) => ExtraAttributes
+): Promise<Image | string> => {
   // specify all the path ames
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");
   const mapFilename = getAppFilename("assemblies.map");
   // create the *.dot file
-  writeFileSync(dotFilename, lines.join(os.EOL));
+  writeFileSync(dotFilename, dotText);
+
+  const formats = await getVizJsFormats();
+  const svgText = await runVizJs(dotText, "svg");
+  const mapText = await runVizJs(dotText, "cmapx");
+
+  const svgFilename = getAppFilename("assemblies.svg");
+  writeFileSync(svgFilename, svgText);
+  const map2Filename = getAppFilename("assemblies.map2");
+  writeFileSync(map2Filename, mapText);
 
   // launch GraphViz
-  log("launch GraphViz");
-  const dotExe = findDotExe();
-  const args = [dotFilename, "-Tpng", `-o${pngFilename}`, "-Tcmapx", `-o${mapFilename}`, `-Nfontname="Segoe UI"`];
-  const spawned = child_process.spawnSync(dotExe, args);
-  if (spawned.status !== 0) showErrorBox("dot.exe failed", "" + spawned.error);
+  runDotExe(dotFilename, pngFilename, mapFilename);
 
   // read the image *.map file
   log("convertXmlMapToAreas");
   const xml = readFileSync(mapFilename);
+
+  return {
+    imagePath: convertPathToUrl(pngFilename),
+    areas: convertXmlMapToAreas(xml, getAreaAttributes),
+    now: Date.now(),
+  };
+};
+
+const usingJs = async (
+  dotText: string,
+  getAreaAttributes: (id: string) => ExtraAttributes
+): Promise<Image | string> => {
+  const formats = await getVizJsFormats();
+  const svgText = await runVizJs(dotText, "svg");
+  const xml = await runVizJs(dotText, "cmapx");
+
+  const svgFilename = getAppFilename("assemblies.svg");
+  writeFileSync(svgFilename, svgText);
+
+  // read the image *.map file
+  log("convertXmlMapToAreas");
+
+  return {
+    imagePath: convertPathToUrl(svgFilename),
+    areas: convertXmlMapToAreas(xml, getAreaAttributes),
+    now: Date.now(),
+  };
+};
+
+const usingExe = async (
+  dotText: string,
+  getAreaAttributes: (id: string) => ExtraAttributes
+): Promise<Image | string> => {
+  // specify all the path ames
+  const dotFilename = getAppFilename("assemblies.dot");
+  const pngFilename = getAppFilename("assemblies.png");
+  const mapFilename = getAppFilename("assemblies.map");
+  // create the *.dot file
+  writeFileSync(dotFilename, dotText);
+
+  // launch GraphViz
+  runDotExe(dotFilename, pngFilename, mapFilename);
+
+  // read the image *.map file
+  log("convertXmlMapToAreas");
+  const xml = readFileSync(mapFilename);
+
+  return {
+    imagePath: convertPathToUrl(pngFilename),
+    areas: convertXmlMapToAreas(xml, getAreaAttributes),
+    now: Date.now(),
+  };
+};
+
+export const createImage = async (imageData: ImageData): Promise<Image | string> => {
+  log("createImage");
+
+  if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";
+
+  // convert to *.dot file format lines
+  const { lines, nodes, edgeTooltips } = getDotFormat(imageData);
+  const dotText = lines.join(os.EOL);
+
+  const countImageNodes = Object.values(nodes).length;
+
+  const tooBig: string[] = [];
+  if (imageData.edges.length > options.maxImageSize.edges)
+    tooBig.push(`edges (actually ${imageData.edges.length} maximum is ${options.maxImageSize.edges})`);
+  if (countImageNodes > options.maxImageSize.nodes)
+    tooBig.push(`nodes (actually ${countImageNodes} maximum is ${options.maxImageSize.nodes})`);
+  if (tooBig.length) return `Too many ${tooBig.join(", and ")}.`;
 
   const getAreaAttributes = (id: string): ExtraAttributes => {
     if (textIsEdgeId(id)) {
@@ -208,9 +246,12 @@ export function createImage(imageData: ImageData): Image {
     }
   };
 
-  return {
-    imagePath: convertPathToUrl(pngFilename),
-    areas: convertXmlMapToAreas(xml, getAreaAttributes),
-    now: Date.now(),
-  };
-}
+  switch (usingGraphViz()) {
+    case "usingBoth":
+      return await usingBoth(dotText, getAreaAttributes);
+    case "usingExe":
+      return usingExe(dotText, getAreaAttributes);
+    case "usingJs":
+      return await usingJs(dotText, getAreaAttributes);
+  }
+};

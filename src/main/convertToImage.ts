@@ -1,7 +1,6 @@
-import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Image, Node, NodeId } from "../shared-types";
+import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Node, NodeId } from "../shared-types";
 import { edgeIdToText, isParent, nodeIdToText } from "../shared-types";
-import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./createImage";
-import { createImage } from "./createImage";
+import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./imageDataTypes";
 import { log } from "./log";
 import type { Edge } from "./shared-types";
 import { Edges, NodeIdMap, NodeIdSet, createLookupNodeId, options, viewFeatures } from "./shared-types";
@@ -17,7 +16,7 @@ export function convertToImage(
   graphFilter: GraphFilter,
   shortLeafNames: boolean,
   imageAttributes?: NodeIdMap<ImageAttribute>
-): Image | string {
+): ImageData {
   log("convertToImage");
 
   const { leafVisible, groupExpanded, isCheckModelAll: hasParentEdges } = graphFilter;
@@ -99,9 +98,7 @@ export function convertToImage(
   const metaGroupLabels = [".NET", "3rd-party"];
   const { leafType, details } = viewFeatures[viewOptions.viewType];
 
-  let countImageNodes = 0;
   const toImageNode = (node: Node): ImageNode => {
-    ++countImageNodes;
     const nodeId = node.nodeId;
 
     if (!hasParentEdges)
@@ -173,14 +170,5 @@ export function convertToImage(
     hasParentEdges,
   };
 
-  if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";
-
-  const tooBig: string[] = [];
-  if (imageData.edges.length > options.maxImageSize.edges)
-    tooBig.push(`edges (actually ${imageData.edges.length} maximum is ${options.maxImageSize.edges})`);
-  if (countImageNodes > options.maxImageSize.nodes)
-    tooBig.push(`nodes (actually ${countImageNodes} maximum is ${options.maxImageSize.nodes})`);
-  if (tooBig.length) return `Too many ${tooBig.join(", and ")}.`;
-
-  return createImage(imageData);
+  return imageData;
 }
