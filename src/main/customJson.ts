@@ -130,6 +130,16 @@ export const fixCustomJson = (nodes: CustomNode[]): CustomError[] => {
     });
   });
 
+  // avoid backslash which GraphViz sees as escapes
+  nodes.forEach((node) => {
+    const regexp = /\\/g;
+    node.id = node.id.replace(regexp, "/");
+    node.label = node.label?.replace(regexp, "/");
+    node.layer = node.layer?.replace(regexp, "/");
+    node.dependencies.forEach((dependency) => {
+      dependency.id.replace(regexp, "/");
+    });
+  });
   return customErrors;
 };
 

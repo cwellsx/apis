@@ -12,9 +12,9 @@ export const options = {
   logApi: false,
   reuseCallStack: true,
   verticalClusters: true,
-  customFolders: true, // disable because Graphviz rendering of edge-to-cluster doesn't work well
+  customFolders: false, // disable if Graphviz older than v10 then rendering of edge-to-cluster doesn't work well
   maxImageSize: {
-    nodes: 100,
-    edges: 500,
+    nodes: 400,
+    edges: 1000,
   },
 };

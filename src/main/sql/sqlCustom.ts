@@ -87,7 +87,7 @@ export class SqlCustom {
       };
 
       const isCustomFolders = isAutoLayers && options.customFolders;
-      const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
+      const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer && false;
 
       const customViewOptions: CustomViewOptions = isAutoLayers
         ? { ...base, viewType: "custom", isAutoLayers, layers }

@@ -134,6 +134,7 @@ const getDotFormat = (
 
 type UsingGraphViz = "usingJs" | "usingExe" | "usingBoth";
 const usingGraphViz = (): UsingGraphViz => "usingJs"; // "usingBoth";
+const logUsingJs = true;
 
 const usingBoth = async (
   dotText: string,
@@ -159,7 +160,6 @@ const usingBoth = async (
   runDotExe(dotFilename, pngFilename, mapFilename);
 
   // read the image *.map file
-  log("convertXmlMapToAreas");
   const xml = readFileSync(mapFilename);
 
   return {
@@ -180,8 +180,13 @@ const usingJs = async (
   const svgFilename = getAppFilename("assemblies.svg");
   writeFileSync(svgFilename, svgText);
 
-  // read the image *.map file
-  log("convertXmlMapToAreas");
+  // write the image *.map file
+  if (logUsingJs) {
+    const dotFilename = getAppFilename("assemblies.dot");
+    const mapFilename = getAppFilename("assemblies.map");
+    writeFileSync(dotFilename, dotText);
+    writeFileSync(mapFilename, xml);
+  }
 
   return {
     imagePath: convertPathToUrl(svgFilename),
@@ -205,7 +210,6 @@ const usingExe = async (
   runDotExe(dotFilename, pngFilename, mapFilename);
 
   // read the image *.map file
-  log("convertXmlMapToAreas");
   const xml = readFileSync(mapFilename);
 
   return {

@@ -1,5 +1,6 @@
 import { ElementCompact, xml2js } from "xml-js";
 import { Area, AreaClass, makeUniqueEdgeId, textIsEdgeId } from "../shared-types";
+import { log } from "./log";
 
 /*
 Input is a *.map file, created by Graphviz, which has a format like this:
@@ -66,6 +67,8 @@ export type ExtraAttributes = {
 };
 
 export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string) => ExtraAttributes): Area[] {
+  log("convertXmlMapToAreas");
+
   const root: ElementCompact = xml2js(xml, { compact: true });
   const converted: Attributes[] | Attributes = root["map"]["area"];
   const areas: Attributes[] = Array.isArray(converted) ? converted : [converted];
