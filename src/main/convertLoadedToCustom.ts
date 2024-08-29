@@ -64,8 +64,12 @@ export const convertLoadedToCustom = (
   if (graphViewOptions.isAutoLayers) {
     const { groups, leafs } = createNestedClusters(graphViewOptions.layers.sort(), "group", "/");
     nodes.forEach((node) => {
-      const leaf = leafs[node.layer ?? ""];
       const customNode = getOrThrow(leafNodes, node.id);
+      if (!node.layer) {
+        roots.push(customNode);
+        return;
+      }
+      const leaf = leafs[node.layer ?? ""];
       if (isCustomFolder(node)) {
         // don't insert the customNode as a child
         // instead mutate the container so that it mimics/replaces the customNode

@@ -75,7 +75,7 @@ export class SqlCustom {
       nodes.forEach((node) => node.tags?.forEach((tag) => tags.add(tag)));
 
       const ids = new Set<string>(nodes.map((node) => node.id));
-      const layers = [...new Set<string>(nodes.map((node) => node.layer ?? ""))];
+      const layers = [...new Set<string>(nodes.map((node) => node.layer).filter((s) => s != undefined))];
       const isAutoLayers = layers.some((layer) => ids.has(layer) && layer.includes("/"));
 
       const base = {
