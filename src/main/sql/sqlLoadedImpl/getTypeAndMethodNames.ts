@@ -1,4 +1,4 @@
-import { MethodNodeId, TypeNodeId } from "../../../shared-types";
+import { MethodNodeId, TypeNodeId } from "../../nodeIds";
 import { getMapped, mapOfMaps } from "../../shared-types";
 import type { GetTypeOrMethodName } from "../sqlLoadedApiTypes";
 import { DeclaringTypeColumns, MethodNameColumns, TypeNameColumns } from "./columns";

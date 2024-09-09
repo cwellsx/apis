@@ -8,14 +8,13 @@ import type {
   GraphFilter,
   GraphViewOptions,
   MainApi,
-  MethodNodeId,
   ViewCompiler,
   ViewDetails,
   ViewErrors,
   ViewOptions,
   ViewType,
 } from "../shared-types";
-import { convertLoadedToApis } from "./convertLoadedToApis";
+import { MethodViewOptions, nodeIdToText } from "../shared-types";
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
 import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
@@ -24,17 +23,20 @@ import { createViewGraph } from "./imageDataTypes";
 import { log } from "./log";
 import type { SetViewMenu, ViewMenu, ViewMenuItem } from "./menu";
 import { createSecondMenu } from "./menu";
-import { showAdjacent } from "./onGraphClick";
 import {
   getClusterNames,
   isAssemblyNodeId,
   isEdgeId,
   isMethodNodeId,
-  options,
+  MethodNodeId,
   removeNodeId,
+  textToAnyNodeId,
+  toAnyNodeId,
   toggleNodeId,
-  viewFeatures,
-} from "./shared-types";
+  toNodeId,
+} from "./nodeIds";
+import { showAdjacent } from "./onGraphClick";
+import { viewFeatures } from "./shared-types";
 import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sql";
 import { CommonGraphViewType } from "./sql/sqlLoadedApiTypes";
@@ -136,12 +138,13 @@ export const createAppWindow = (
         throw new Error("Edge details not yet implemented");
         return;
       }
-      const nodeId = id;
+      // else it's a node not an edge
+      const nodeId = toAnyNodeId(id);
       if (leafType !== nodeId.type) {
         // this is a group
         const { viewOptions, clusterBy } = getGraphViewOptions(viewType);
         const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
-        toggleNodeId(graphFilter.groupExpanded, nodeId);
+        toggleNodeId(graphFilter.groupExpanded, id);
         sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
         showViewType(viewOptions.viewType);
         return;
@@ -167,7 +170,7 @@ export const createAppWindow = (
           } else if (event.ctrlKey) {
             const { clusterBy } = getGraphViewOptions(viewType);
             const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
-            removeNodeId(graphFilter.leafVisible, nodeId);
+            removeNodeId(graphFilter.leafVisible, id);
             sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
             showReferences();
           } else {
@@ -188,7 +191,8 @@ export const createAppWindow = (
       showViewType(viewType);
     },
     onDetailEvent: (detailEvent: DetailEvent): void => {
-      const { id: nodeId, viewType } = detailEvent;
+      const { id, viewType } = detailEvent;
+      const nodeId = toAnyNodeId(id);
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
       createSecondWindow().then((secondWindow) => {
@@ -204,21 +208,29 @@ export const createAppWindow = (
     try {
       log(`showMethods(${methodId ?? ""})`);
 
-      const unknownMethodId = (): MethodNodeId => {
-        throw new Error("Unknown methodId");
+      const getMethodNodeId = (methodViewOptions: MethodViewOptions): MethodNodeId => {
+        if (!methodViewOptions.methodId) throw new Error("No methodId");
+        const nodeId = textToAnyNodeId(nodeIdToText(methodViewOptions.methodId));
+        if (!isMethodNodeId(nodeId)) throw new Error("Not MethodNodeId");
+        return nodeId;
       };
 
       const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-      const callStack = sqlLoaded.readCallStack(methodId ?? methodViewOptions.methodId ?? unknownMethodId());
-      const callstack = convertLoadedToCallstack(callStack);
+      const callstackIterator = sqlLoaded.readCallstack(methodId ?? getMethodNodeId(methodViewOptions));
+      const callstackElements = convertLoadedToCallstack(callstackIterator);
 
-      show.showMessage(undefined, `${callstack.leafs.length()} records`);
+      show.showMessage(undefined, `${callstackElements.leafs.length()} records`);
 
       const graphFilter: GraphFilter | undefined = methodId
         ? undefined
         : sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy);
 
-      const graphData = convertCallstackToImage(callstack, sqlLoaded.readNames(), methodViewOptions, graphFilter);
+      const graphData = convertCallstackToImage(
+        callstackElements,
+        sqlLoaded.readNames(),
+        methodViewOptions,
+        graphFilter
+      );
 
       if (methodId) {
         sqlLoaded.writeGraphFilter(
@@ -226,7 +238,7 @@ export const createAppWindow = (
           methodViewOptions.showClustered.clusterBy,
           graphData.graphFilter
         );
-        methodViewOptions.methodId = methodId;
+        methodViewOptions.methodId = toNodeId(methodId);
         sqlLoaded.viewState.methodViewOptions = methodViewOptions;
       }
 
@@ -267,22 +279,10 @@ export const createAppWindow = (
       apiViewOptions.showInternalCalls ? getClusterNames(graphFilter.groupExpanded, clusterBy) : []
     );
     show.showMessage(undefined, `${calls.length} records`);
-    if (options.reuseCallStack) {
-      const elements = convertLoadedToCalls(calls);
-      const graphData = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
-      const viewGraph = await createViewGraph(graphData);
-      renderer.showView(viewGraph);
-    } else {
-      const graphData = convertLoadedToApis(
-        calls,
-        sqlLoaded.readNames(),
-        apiViewOptions,
-        graphFilter,
-        sqlLoaded.viewState.exes
-      );
-      const viewGraph = await createViewGraph(graphData);
-      renderer.showView(viewGraph);
-    }
+    const elements = convertLoadedToCalls(calls);
+    const graphData = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
+    const viewGraph = await createViewGraph(graphData);
+    renderer.showView(viewGraph);
   };
 
   const showCompiler = (): void => {

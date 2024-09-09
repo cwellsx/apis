@@ -1,15 +1,4 @@
-import type {
-  Access,
-  DetailedAssembly,
-  GetArtificialNodeId,
-  MemberInfo,
-  Members,
-  Named,
-  Namespace,
-  NodeId,
-  Type,
-} from "../shared-types";
-import { artificialNodeIdFactory, metadataNodeId } from "../shared-types";
+import type { Access, DetailedAssembly, MemberInfo, Members, Named, Namespace, NodeId, Type } from "../shared-types";
 import type {
   EventMember,
   FieldMember,
@@ -22,6 +11,7 @@ import type {
 } from "./loaded";
 import { getMembers, isAnonTypeInfo, isNamedTypeInfo, Access as LoadedAccess } from "./loaded";
 import { MemberException } from "./loaded/loadedMembers";
+import { artificialNodeIdFactory, GetArtificialNodeId, toMetadataNodeId, toNodeId } from "./nodeIds";
 import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "./shared-types";
 
 type Exceptions = Named[];
@@ -111,7 +101,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
 
     const getFieldMember = (fieldMember: FieldMember): MemberInfo =>
       getFromName(
-        metadataNodeId("field", assemblyName, fieldMember.metadataToken),
+        toMetadataNodeId("field", assemblyName, fieldMember.metadataToken),
         fieldMember.name,
         getAttributes(fieldMember.attributes, getArtificialNodeId),
         fieldMember.fieldType,
@@ -119,7 +109,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
       );
     const getEventMember = (eventMember: EventMember): MemberInfo =>
       getFromName(
-        metadataNodeId("event", assemblyName, eventMember.metadataToken),
+        toMetadataNodeId("event", assemblyName, eventMember.metadataToken),
         eventMember.name,
         getAttributes(eventMember.attributes, getArtificialNodeId),
         eventMember.eventHandlerType,
@@ -127,7 +117,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
       );
     const getPropertyMember = (propertyMember: PropertyMember): MemberInfo =>
       getFromName(
-        metadataNodeId("property", assemblyName, propertyMember.metadataToken),
+        toMetadataNodeId("property", assemblyName, propertyMember.metadataToken),
         getPropertyName(propertyMember),
         getAttributes(propertyMember.attributes, getArtificialNodeId),
         propertyMember.propertyType,
@@ -135,7 +125,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
       );
     const getMethodMember = (methodMember: MethodMember): MemberInfo =>
       getFromName(
-        metadataNodeId("method", assemblyName, methodMember.metadataToken),
+        toMetadataNodeId("method", assemblyName, methodMember.metadataToken),
         getMethodName(methodMember),
         getAttributes(methodMember.attributes, getArtificialNodeId),
         methodMember.returnType,
@@ -143,7 +133,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
       );
     const getException = (exception: MemberException): MemberInfo =>
       getFromName(
-        metadataNodeId("memberException", assemblyName, exception.metadataToken),
+        toMetadataNodeId("memberException", assemblyName, exception.metadataToken),
         exception.name,
         [],
         undefined,
@@ -192,7 +182,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
     return {
       // Named
       name: getTypeInfoName(typeInfo),
-      nodeId: { type: "type", assemblyName, metadataToken: typeInfo.typeId.metadataToken },
+      nodeId: toNodeId({ type: "type", assemblyName, metadataToken: typeInfo.typeId.metadataToken }),
       // Type
       access: typeInfo.access ? getAccess(typeInfo.access) : undefined,
       attributes: getAttributes(typeInfo.attributes, getArtificialNodeId),
@@ -204,7 +194,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
 
   const namespaces: Namespace[] = [...grouped.entries()]
     .map(([name, typeInfos]) => {
-      const nodeId: NodeId = { type: "namespace", name };
+      const nodeId: NodeId = toNodeId({ type: "namespace", name });
       return {
         name,
         nodeId,

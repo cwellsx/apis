@@ -16,7 +16,8 @@ import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { AppWindow, appWindows } from "./createBrowserWindow";
 import { createViewGraph } from "./imageDataTypes";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
-import { isEdgeId, isNameNodeId, toggleNodeId, viewFeatures } from "./shared-types";
+import { edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
+import { viewFeatures } from "./shared-types";
 import { renderer as createRenderer } from "./show";
 import { SqlConfig, SqlCustom } from "./sql";
 
@@ -62,9 +63,10 @@ export const createCustomWindow = (
     }
   };
 
-  const sendDetails = (nodeId: NodeId): void => {
+  const sendDetails = (id: NodeId): void => {
     // get all the nodes
     // they're all stored as one string in SQL so there's no API to get just one node
+    const nodeId = toAnyNodeId(id);
     if (!isNameNodeId(nodeId)) throw new Error("Expected nameNodeId");
     const nodes = sqlCustom.readAll();
     const node = nodes.find((node) => node.id === nodeId.name);
@@ -92,23 +94,24 @@ export const createCustomWindow = (
       const { id, viewType, event } = graphEvent;
       const { leafType, details } = viewFeatures[viewType];
       if (isEdgeId(id)) {
-        sendDetails(id.serverId);
+        const { serverId } = edgeIdToNodeIds(id);
+        sendDetails(serverId);
         return;
       }
-      const nodeId = id;
+      const nodeId = toAnyNodeId(id);
       if (leafType !== nodeId.type) {
         // this is a group
         const viewOptions = getCustomViewOptions(viewType);
         const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
         const graphFilter = sqlCustom.readGraphFilter(clusterBy);
-        toggleNodeId(graphFilter.groupExpanded, nodeId);
+        toggleNodeId(graphFilter.groupExpanded, id);
         sqlCustom.writeGraphFilter(clusterBy, graphFilter);
         setCustomViewOptions(viewOptions);
         showViewType(viewOptions.viewType);
         return;
       } else {
         // else this is a leaf
-        sendDetails(nodeId);
+        sendDetails(id);
       }
       return;
     },

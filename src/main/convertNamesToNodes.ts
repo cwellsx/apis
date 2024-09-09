@@ -1,5 +1,6 @@
-import type { Leaf, NameTypes, Node, Parent } from "../shared-types";
-import { isParent, nameNodeId } from "../shared-types";
+import type { Leaf, Node, Parent } from "../shared-types";
+import { isParent } from "../shared-types";
+import { NameTypes, toNameNodeId } from "./nodeIds";
 import { options, remove, replace } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 
@@ -13,7 +14,7 @@ const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
   const leafs: { [name: string]: Node } = {};
 
   for (const name of names) {
-    const newLeaf: Leaf = { label: name, nodeId: nameNodeId(nameType, name), parent: null };
+    const newLeaf: Leaf = { label: name, nodeId: toNameNodeId(nameType, name), parent: null };
     groups.push(newLeaf);
     leafs[name] = newLeaf;
   }
@@ -21,6 +22,7 @@ const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
   return { groups, leafs };
 };
 
+// called from convertLoadedToCustom
 export const createNestedClusters = (names: string[], nameType: NameTypes, separator = "."): Result => {
   const groups: Node[] = [];
   const leafs: { [name: string]: Node } = {};
@@ -36,12 +38,12 @@ export const createNestedClusters = (names: string[], nameType: NameTypes, separ
       partial = !partial ? part : `${partial}${separator}${part}`;
       // append the leaf if this is the leaf
       if (partial === name) {
-        const newLeaf: Leaf = { label: name, nodeId: nameNodeId(nameType, name), parent };
+        const newLeaf: Leaf = { label: name, nodeId: toNameNodeId(nameType, name), parent };
         nodes.push(newLeaf);
         leafs[name] = newLeaf;
       } else {
         // find or create the parent -- if it already exists then it's the last node, because names are sorted
-        const newParent: Parent = { label: partial, nodeId: nameNodeId("group", partial), children: [], parent };
+        const newParent: Parent = { label: partial, nodeId: toNameNodeId("group", partial), children: [], parent };
         if (!nodes.length || nodes[nodes.length - 1].label !== partial) nodes.push(newParent);
         const found = nodes[nodes.length - 1];
         if (isParent(found)) {
@@ -82,6 +84,7 @@ export const createNestedClusters = (names: string[], nameType: NameTypes, separ
   return { groups, leafs };
 };
 
+// called from convertLoadedToReferences
 export const convertNamesToNodes = (
   names: string[],
   exes: string[],
@@ -98,7 +101,7 @@ export const convertNamesToNodes = (
   // create a new root group and move into all subtrees whose label matches the predicate
   const regroup = (predicate: (name: string) => boolean, label: string, id: string): void => {
     const found = groups.filter((node) => predicate(node.label));
-    const parent = { label, nodeId: nameNodeId("group", id), parent: null, children: found };
+    const parent = { label, nodeId: toNameNodeId("group", id), parent: null, children: found };
     found.forEach((child) => {
       child.parent = parent;
       remove(groups, child);

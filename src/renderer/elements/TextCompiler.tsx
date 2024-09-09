@@ -64,7 +64,7 @@ export const TextCompiler: React.FunctionComponent<TextCompilerProps> = (props: 
     compilerMethod.error ? (
       <>
         <ul>
-          {compilerMethod.callStack?.map((methodNameStrings, index) => (
+          {compilerMethod.callstack?.map((methodNameStrings, index) => (
             <li key={index}>
               {methodNameStrings.declaringType}
               <br />

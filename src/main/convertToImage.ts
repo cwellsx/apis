@@ -1,9 +1,9 @@
 import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Node, NodeId } from "../shared-types";
-import { edgeIdToText, isParent, nodeIdToText } from "../shared-types";
+import { isParent, nodeIdToText } from "../shared-types";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./imageDataTypes";
 import { log } from "./log";
-import type { Edge } from "./shared-types";
-import { Edges, NodeIdMap, NodeIdSet, createLookupNodeId, options, viewFeatures } from "./shared-types";
+import { createLookupNodeId, edgeIdToText, Edges, NodeIdMap, NodeIdSet } from "./nodeIds";
+import { options, viewFeatures } from "./shared-types";
 import { uniqueStrings } from "./shared-types/remove";
 
 const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] =>
@@ -11,7 +11,7 @@ const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOption
 
 export function convertToImage(
   roots: Node[],
-  edges: Edge[],
+  edges: Edges,
   viewOptions: GraphViewOptions,
   graphFilter: GraphFilter,
   shortLeafNames: boolean,
@@ -55,12 +55,12 @@ export function convertToImage(
   sort(roots);
   roots.forEach(assertUnique);
 
-  const allEdgeIds = new Set<string>();
-  edges.forEach((edge) => {
-    const edgeId = edgeIdToText(edge.clientId, edge.serverId);
-    if (allEdgeIds.has(edgeId)) throw new Error(`Duplicate edge id: ${edgeId}`);
-    allEdgeIds.add(edgeId);
-  });
+  // const allEdgeIds = new Set<string>();
+  // edges.forEach((edge) => {
+  //   const edgeId = edgeIdToText(edge.clientId, edge.serverId);
+  //   if (allEdgeIds.has(edgeId)) throw new Error(`Duplicate edge id: ${edgeId}`);
+  //   allEdgeIds.add(edgeId);
+  // });
 
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   // parent is the displayed but non-expanded parent
@@ -85,6 +85,7 @@ export function convertToImage(
   // create groups of visible edges
   const visibleEdges = new Edges();
   edges
+    .values()
     .filter((edge) => isLeafVisible(edge.clientId) && isLeafVisible(edge.serverId))
     .forEach((edge) => {
       edgeLeafs.add(edge.clientId);
@@ -92,7 +93,13 @@ export function convertToImage(
       const clientClosedBy = closedBy.get(edge.clientId);
       const serverClosedBy = closedBy.get(edge.serverId);
       const labels = !serverClosedBy ? edge.labels : [allNodes.getOrThrow(serverClosedBy.child).label];
-      visibleEdges.add(clientClosedBy?.parent ?? edge.clientId, serverClosedBy?.parent ?? edge.serverId, labels);
+      const isServerLeaf = !serverClosedBy;
+      visibleEdges.addOrUpdate(
+        clientClosedBy?.parent ?? edge.clientId,
+        serverClosedBy?.parent ?? edge.serverId,
+        labels,
+        isServerLeaf
+      );
     });
 
   const metaGroupLabels = [".NET", "3rd-party"];
@@ -101,8 +108,8 @@ export function convertToImage(
   const toImageNode = (node: Node): ImageNode => {
     const nodeId = node.nodeId;
 
-    if (!hasParentEdges)
-      if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
+    // if (!hasParentEdges)
+    //   if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
 
     const imageAttribute: ImageAttribute = imageAttributes?.get(nodeId) ?? {};
 
@@ -153,15 +160,11 @@ export function convertToImage(
     nodes: toImageNodes(roots),
     edges: visibleEdges.values().map((edge) => {
       const labels = uniqueStrings(edge.labels).sort();
-      const showLabels = !showEdgeLabels
-        ? false
-        : edge.serverId.type === leafType
-        ? showEdgeLabels.leafs
-        : showEdgeLabels.groups;
+      const showLabels = !showEdgeLabels ? false : edge.isServerLeaf ? showEdgeLabels.leafs : showEdgeLabels.groups;
       return {
         clientId: nodeIdToText(edge.clientId),
         serverId: nodeIdToText(edge.serverId),
-        edgeId: edgeIdToText(edge.clientId, edge.serverId),
+        edgeId: edgeIdToText(edge.edgeId),
         labels: showLabels ? labels : [],
         titles: labels,
       };

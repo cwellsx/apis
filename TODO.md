@@ -28,6 +28,8 @@ Improve the software first, then the documentation.
 
 Now:
 
+- Use `nodesInvisible` not `leafsVisible`
+
 - Context menu (Callers, Calls, Source, Show/Hide Siblings)
 - Expand or show source when click on edges
 - Show code details
@@ -40,7 +42,6 @@ To do in Paris (unsorted):
 
 - Fix the size of the graph (caused by `display: flex` on the `div#graph`)
 - Implement a toolbox with custom cursor
-- Refactor to remove `NodeId` and improve speed
 - Improve display of code view
 - Review the TODO list to remove obsolete/done items
 - Reuse cached nodes when only `GraphFilter` changes
@@ -57,6 +58,7 @@ To do in Paris (unsorted):
 - Fix the cursor not changing when the `[Ctrl]` key is pressed
 - Implement blue instead of red for leaf nodes without detail (i.e. which are not green)
 - As well as method errors, also show any assembly, type, and member exceptions
+- Remove compiler types from the View / Assembly references / Details
 
 ## Improve what exists already
 

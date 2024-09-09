@@ -1,8 +1,8 @@
 import { Database } from "better-sqlite3";
 import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../shared-types";
-import { nameNodeId } from "../../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
 import { log } from "../log";
+import { toNameNodeId } from "../nodeIds";
 import { options } from "../shared-types";
 import { SqlTable } from "./sqlTable";
 
@@ -42,7 +42,7 @@ export class SqlCustom {
   writeGraphFilter: (clusterBy: string[] | undefined, graphFilter: GraphFilter) => void;
 
   constructor(db: Database) {
-    const customSchemaVersionExpected = "2024-06-05";
+    const customSchemaVersionExpected = "2024-09-07";
 
     // even though the CustomNode elements each have a unique id
     // don't bother to store the data in normalized tables
@@ -74,8 +74,10 @@ export class SqlCustom {
       const tags = new Set<string>();
       nodes.forEach((node) => node.tags?.forEach((tag) => tags.add(tag)));
 
+      const isDefined = (s: string | undefined): s is string => !!s;
+
       const ids = new Set<string>(nodes.map((node) => node.id));
-      const layers = [...new Set<string>(nodes.map((node) => node.layer).filter((s) => s != undefined))];
+      const layers = [...new Set<string>(nodes.map((node) => node.layer).filter(isDefined))];
       const isAutoLayers = layers.some((layer) => ids.has(layer) && layer.includes("/"));
 
       const base = {
@@ -102,7 +104,7 @@ export class SqlCustom {
       this.viewState.onSave(
         when,
         customSchemaVersionExpected,
-        nodes.map((node) => nameNodeId(isCustomFolder(node) ? "customFolder" : "customLeaf", node.id)),
+        nodes.map((node) => toNameNodeId(isCustomFolder(node) ? "customFolder" : "customLeaf", node.id)),
         customViewOptions,
         isCustomFolders
       );

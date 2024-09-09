@@ -1,4 +1,4 @@
-import type { ClusterBy, MethodNodeId } from "./nodeId";
+import type { ClusterBy, NodeId } from "./nodeId";
 
 type ShowClustered = {
   clusterBy: ClusterBy;
@@ -19,7 +19,7 @@ export type MethodViewOptions = {
   viewType: "methods";
   showClustered: ShowClustered;
   showEdgeLabels: ShowEdgeLabels;
-  methodId?: MethodNodeId;
+  methodId?: NodeId; // should be MethodNodeId but don't want all the nodeIds types shared with the renderer
 };
 
 export type ApiViewOptions = {

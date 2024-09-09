@@ -1,11 +1,12 @@
 import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "../shared-types";
-import { groupByNodeId, isCustomManual, isParent, nameNodeId } from "../shared-types";
+import { isCustomManual, isParent } from "../shared-types";
 import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import type { GraphData, ImageAttribute, Shape } from "./imageDataTypes";
 import { log } from "./log";
-import { Edges, last, NodeIdMap, options } from "./shared-types";
+import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "./nodeIds";
+import { last, options } from "./shared-types";
 import { getOrThrow } from "./shared-types/remove";
 
 export const convertLoadedToCustom = (
@@ -16,10 +17,10 @@ export const convertLoadedToCustom = (
   log("convertLoadedToView");
 
   const tags = new Map<string, boolean>(graphViewOptions.tags.map(({ tag, shown }) => [tag, shown]));
-  const leafNodeId = (id: string): NodeId => nameNodeId("customLeaf", id);
+  const leafNodeId = (id: string): NodeId => toNameNodeId("customLeaf", id);
   const isCustomFolders = !isCustomManual(graphViewOptions) && graphViewOptions.isAutoLayers && options.customFolders;
   const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
-  const folderNodeId = (id: string): NodeId => nameNodeId("customFolder", id);
+  const folderNodeId = (id: string): NodeId => toNameNodeId("customFolder", id);
   const hiddenNodeIds = new Set<string>();
   const leafNodes = new Map<string, Leaf>();
   const imageAttributes = new NodeIdMap<ImageAttribute>();
@@ -54,7 +55,7 @@ export const convertLoadedToCustom = (
 
         const label = dependency.label;
         const clientId = isCustomFolder(node) ? folderNodeId(node.id) : leafNodeId(node.id);
-        edges.add(clientId, leafNodeId(dependency.id), label);
+        edges.addOrUpdate(clientId, leafNodeId(dependency.id), label, true);
       });
   });
 
@@ -102,7 +103,7 @@ export const convertLoadedToCustom = (
         groupName = "" + groupName;
         let parent: Parent = parents[groupName];
         if (!parent) {
-          parent = { label: groupName, nodeId: groupByNodeId(groupedBy, groupName), parent: null, children: [] };
+          parent = { label: groupName, nodeId: toGroupByNodeId(groupedBy, groupName), parent: null, children: [] };
           roots.push(parent);
           parents[groupName] = parent;
         }
@@ -116,7 +117,7 @@ export const convertLoadedToCustom = (
 
   const imageData = convertToImage(
     roots,
-    edges.values(),
+    edges,
     graphViewOptions,
     graphFilter,
     graphViewOptions.isAutoLayers,

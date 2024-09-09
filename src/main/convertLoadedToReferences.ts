@@ -1,11 +1,10 @@
 import type { GraphFilter, ReferenceViewOptions } from "../shared-types";
-import { nameNodeId } from "../shared-types";
 import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import { GraphData, ImageAttribute } from "./imageDataTypes";
 import type { AssemblyReferences } from "./loaded";
 import { log } from "./log";
-import { NodeIdMap, type Edge } from "./shared-types";
+import { Edges, NodeIdMap, toNameNodeId } from "./nodeIds";
 
 export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,
@@ -15,14 +14,11 @@ export const convertLoadedToReferences = (
 ): GraphData => {
   log("convertLoadedToView");
 
-  const edges: Edge[] = [];
+  const edges: Edges = new Edges();
+
   Object.entries(assemblyReferences).forEach(([assembly, dependencies]) => {
     dependencies.forEach((dependency) =>
-      edges.push({
-        clientId: nameNodeId("assembly", assembly),
-        serverId: nameNodeId("assembly", dependency),
-        labels: [],
-      })
+      edges.addOrUpdate(toNameNodeId("assembly", assembly), toNameNodeId("assembly", dependency), [], true)
     );
   });
   // flatten and sort all names -- these names will become leaf nodes

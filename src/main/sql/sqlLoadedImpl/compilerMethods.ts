@@ -1,6 +1,6 @@
-import { methodNodeId, typeNodeId } from "../../../shared-types";
 import { getMembers, isNamedTypeInfo, Reflected } from "../../loaded";
 import { log, logJson } from "../../log";
+import { methodNodeId, typeNodeId } from "../../nodeIds";
 import { getOrSet } from "../../shared-types";
 import { GetTypeOrMethodName } from "../sqlLoadedApiTypes";
 import { CallColumns, CompilerMethodColumns, LocalsTypeColumns } from "./columns";

@@ -8,11 +8,8 @@ import type {
   GraphFilter,
   LocalsType,
   MethodName,
-  MethodNodeId,
   NodeId,
-  TypeNodeId,
 } from "../../shared-types";
-import { methodNodeId, nameNodeId, typeNodeId } from "../../shared-types";
 import type {
   AnonTypeInfo,
   AssemblyReferences,
@@ -24,10 +21,12 @@ import type {
 } from "../loaded";
 import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../loaded";
 import { log } from "../log";
+import type { MethodNodeId, TypeNodeId } from "../nodeIds";
+import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
 import { mapOfMaps, options } from "../shared-types";
 import type {
   Call,
-  CallStack,
+  CallstackIterator,
   CommonGraphViewType,
   Direction,
   GetTypeOrMethodName,
@@ -75,9 +74,9 @@ export class SqlLoaded {
   readErrors: () => ErrorsInfo[];
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => Call[];
 
-  readCallStack: (nodeId: MethodNodeId) => CallStack;
-  private readCallStackNext: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
-  private readCallStackFirst: (nodeId: MethodNodeId) => TypeAndMethodId;
+  readCallstack: (nodeId: MethodNodeId) => CallstackIterator;
+  private readCallstackNext: (assemblyName: string, methodId: number, direction: Direction) => TypeAndMethodId[];
+  private readCallstackFirst: (nodeId: MethodNodeId) => TypeAndMethodId;
 
   // reads data for DetailedMethod
   readMethodDetails: (nodeId: MethodNodeId) => { title: MethodName; asText: string; badMethodCalls?: BadMethodCall[] };
@@ -98,7 +97,7 @@ export class SqlLoaded {
   close: () => void;
 
   constructor(db: Database) {
-    const loadedSchemaVersionExpected = "2024-07-18";
+    const loadedSchemaVersionExpected = "2024-09-07";
 
     this.viewState = new ViewState(db);
 
@@ -125,11 +124,11 @@ export class SqlLoaded {
 
       this.writeLeafVisible(
         "references",
-        Object.keys(reflected.assemblies).map((assemblyName) => nameNodeId("assembly", assemblyName))
+        Object.keys(reflected.assemblies).map((assemblyName) => toNameNodeId("assembly", assemblyName))
       );
-      const assemblyTypeIds: TypeNodeId[] = table.type
+      const assemblyTypeIds: NodeId[] = table.type
         .selectAll()
-        .map((type) => typeNodeId(type.assemblyName, type.metadataToken));
+        .map((type) => toTypeNodeId(type.assemblyName, type.metadataToken));
       this.writeLeafVisible("apis", assemblyTypeIds);
 
       log("save complete");
@@ -251,8 +250,8 @@ export class SqlLoaded {
       return calls.filter(filterCall);
     };
 
-    this.readCallStack = (methodNodeId: MethodNodeId): CallStack => {
-      const first = this.readCallStackFirst(methodNodeId);
+    this.readCallstack = (methodNodeId: MethodNodeId): CallstackIterator => {
+      const first = this.readCallstackFirst(methodNodeId);
 
       const { isCompilerMethod, getOwner } = !options.showCompilerGeneratedTypes
         ? compilerTransform(table.compilerMethod.selectAll())
@@ -283,7 +282,7 @@ export class SqlLoaded {
             case "downwards": {
               const results: TypeAndMethodId[] = [];
               compilerMethods.forEach((found) =>
-                results.push(...this.readCallStackNext(found.assemblyName, found.methodId, direction))
+                results.push(...this.readCallstackNext(found.assemblyName, found.methodId, direction))
               );
               return results;
             }
@@ -292,7 +291,7 @@ export class SqlLoaded {
           }
         };
 
-        const first = this.readCallStackNext(assemblyName, methodId, direction);
+        const first = this.readCallstackNext(assemblyName, methodId, direction);
         filter(first);
         while (compilerMethods.length !== 0) {
           const more = readMore(compilerMethods);
@@ -306,7 +305,7 @@ export class SqlLoaded {
       return { first, readNext };
     };
 
-    this.readCallStackNext = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
+    this.readCallstackNext = (assemblyName: string, methodId: number, direction: Direction): TypeAndMethodId[] => {
       const { assemblyNameField, methodIdField } = ((): {
         assemblyNameField: keyof CallColumns;
         methodIdField: keyof CallColumns;
@@ -349,7 +348,7 @@ export class SqlLoaded {
       });
     };
 
-    this.readCallStackFirst = (methodNodeId: MethodNodeId): TypeAndMethodId => {
+    this.readCallstackFirst = (methodNodeId: MethodNodeId): TypeAndMethodId => {
       const typeId = this.readMethodTypeId(methodNodeId);
       const { assemblyName, metadataToken } = typeId;
       const typeNamekey: Partial<TypeNameColumns> = { assemblyName, metadataToken };
@@ -414,9 +413,9 @@ export class SqlLoaded {
         ])
       );
 
-      const getCallStackFromDirection = (column: CompilerMethodColumns, direction: Direction): MethodName[] => {
+      const getCallstackFromDirection = (column: CompilerMethodColumns, direction: Direction): MethodName[] => {
         const { assemblyName, compilerType, compilerMethod } = column;
-        const typeAndMethodIds = this.readCallStackNext(assemblyName, compilerMethod, direction);
+        const typeAndMethodIds = this.readCallstackNext(assemblyName, compilerMethod, direction);
         const isSameType = (typeAndMethodId: TypeAndMethodId): boolean =>
           assemblyName === typeAndMethodId.assemblyName && compilerType === typeAndMethodId.typeId;
         return typeAndMethodIds
@@ -428,14 +427,14 @@ export class SqlLoaded {
           }));
       };
 
-      const getCallStackFromError = (column: CompilerMethodColumns): MethodName[] | undefined => {
+      const getCallstackFromError = (column: CompilerMethodColumns): MethodName[] | undefined => {
         switch (column.error) {
           case null:
             return undefined;
           case "No Callers":
-            return getCallStackFromDirection(column, "downwards");
+            return getCallstackFromDirection(column, "downwards");
           case "Multiple Callers":
-            return getCallStackFromDirection(column, "upwards");
+            return getCallstackFromDirection(column, "upwards");
         }
       };
 
@@ -454,7 +453,7 @@ export class SqlLoaded {
           ownerType: column.ownerType ? getTypeName(typeNodeId(column.assemblyName, column.ownerType)) : "",
           ownerMethod: column.ownerMethod ? getMethodName(methodNodeId(column.assemblyName, column.ownerMethod)) : "",
           declaringType: declaringType ? getTypeName(declaringType) : "(no declaringType)",
-          callStack: getCallStackFromError(column),
+          callstack: getCallstackFromError(column),
           error: column.error ?? undefined,
           info: column.info ?? undefined,
         };

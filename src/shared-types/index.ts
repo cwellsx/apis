@@ -1,7 +1,6 @@
 export type { MainApi, OnUserEvent, PreloadApis, RendererApi } from "./apis";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, OptionsType } from "./appOptions";
-//export type { AsText, CallStack } from "./callStack";
 export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
@@ -14,7 +13,7 @@ export type {
   CustomViewOptions,
   CustomViewOptionsManual,
   MethodViewOptions,
-  ReferenceViewOptions,
+  ReferenceViewOptions
 } from "./graphViewOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { BadMethodCall, LoadedMethodError } from "./loaded";
@@ -32,9 +31,10 @@ export type {
   ViewGraph,
   ViewGraphData,
   ViewGreeting,
-  ViewText,
+  ViewText
 } from "./view";
 export type { DetailType, DetailedAssembly, DetailedCustom, DetailedMethod, ViewDetails } from "./viewDetails";
 export { isCustomViewOptions } from "./viewOptions";
 export type { AnyGraphViewOptions, CompilerViewOptions, GraphViewOptions, ViewOptions } from "./viewOptions";
 export type { GraphViewType, ViewType } from "./viewType";
+

@@ -12,7 +12,7 @@ export type CompilerMethod = {
   ownerType: string;
   ownerMethod: string;
   declaringType: string; // used to assert that declaringType matches ownerType
-  callStack: MethodName[] | undefined;
+  callstack: MethodName[] | undefined;
   error: string | undefined;
   info: string | undefined;
 };
