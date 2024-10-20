@@ -1,153 +1,21 @@
 ---
-title: Code design
-nav_order: 5
+title: Application data
+nav_order: 3
 layout: home
+parent: Code design
 ---
 
-# Code design
+# Application data
 {: .no_toc }
 
-This Electron application includes these components:
+Hopefully the code is self-explanatory, when you understand the Third-party components listed previously.
+
+So without explaining code, here is some explanation of the application data i.e. the "domain knowledge".
 
 - TOC
 {:toc}
 
----
-
-- [Source directories](#source-directories)
-  - [Introduction](#introduction)
-  - [`src/main`](#srcmain)
-  - [`src/renderer`](#srcrenderer)
-  - [`src/shared-types` and `src/preload`](#srcshared-types-and-srcpreload)
-  - [`src.dotnet/`](#srcdotnet)
-  - [`.vscode`](#vscode)
-- [Third-party components](#third-party-components)
-  - [SQLite](#sqlite)
-  - [Graphviz](#graphviz)
-  - [Electron](#electron)
-  - [Electron CGI](#electron-cgi)
-  - [Electron Forge](#electron-forge)
-  - [React](#react)
-  - [Npm components](#npm-components)
-  - [Icons](#icons)
-- [Application data](#application-data)
-  - [Reading reflection data](#reading-reflection-data)
-  - [Development tools](#development-tools)
-  - [Metadata tokens](#metadata-tokens)
-  - [Decompiling methods](#decompiling-methods)
-  - [Could be simpler](#could-be-simpler)
-  - [Generic methods](#generic-methods)
-  - [Compiler-generated types](#compiler-generated-types)
-  - [Microsoft assemblies](#microsoft-assemblies)
-
-The build derives from the `sqlite` branch of https://github.com/cwellsx/electron_forge_template
-
-## Source directories
-
-### Introduction
-
-| Code in this directory | Uses these technologies                             |
-| ---------------------- | --------------------------------------------------- |
-| `src/main`             | Electron, Node.js, SQLite, Graphviz, Electron CGI   |
-| `src/renderer`         | React                                               |
-| `src.net`              | .NET, `System.Reflection`, `ICSharpCode.Decompiler` |
-| `.vscode`              | VS Code                                             |
-
-### `src/main`
-
-The main process is the controller:
-
-- Uses the Node.js and Electron APIs
-- Launches the src.net process to get reflected data
-- Caches the data in a local SQLite database
-- Loads the data from SQLite
-- Formats the data as a view
-- Launches Graphviz to render the data as an image
-- Passes the data and the image to the renderer for display
-
-UI events from renderer change the view options:
-
-- Save the new options in SQLite
-- Recreate the view with new options
-- Send the new view to the renderer
-
-### `src/renderer`
-
-The renderer process implements the UI (using React and TypeScript).
-
-### `src/shared-types` and `src/preload`
-
-These define the APIs -- the methods and data -- between the renderer and main processes.
-
-### `src.dotnet/`
-
-The .NET process uses the Reflection API, to read the APIs (i.e. the interfaces and classes) and the API calls,
-from the system which you're browsing.
-
-It also uses `ICSharpCode.Decompiler` to decompile all method bodies, in order to list all API calls.
-
-### `.vscode`
-
-This defines a `launch.json` to debug the main process and/or the renderer.
-
-## Third-party components
-
-### SQLite
-
-The SQLite component caches the API data which the .NET component reads.
-It also stores any user-configurable display options.
-
-### Graphviz
-
-The Graphviz process creates image files of the selected APIs, to be displayed by the renderer.
-
-### Electron
-
-This toolkit lets you write code which runs:
-
-- In a window, using a browser engine (e.g. using React, and/or HTML, CSS, JS, etc.)
-- In another 'main' process, which can access the Node API and the local file system etc.
-- Between the two, application-specific APIs to exchange data between the main process and the browser window
-
-### Electron CGI
-
-This package lets you invoke an external process from the Electron application
-and communicate with it via JSON over the standard input and output streams.
-I use it to communicate with the .NET process.
-
-### Electron Forge
-
-This is scripts and config files to build and package an Electron application like this one.
-
-### React
-
-The renderer component uses React.
-
-### Npm components
-
-The renderer code uses these React components from npm:
-
-- `split-pane-react`
-- `react-image-mapper2`
-- `react-checkbox-tree`
-
-The main (i.e. backend) code uses these:
-
-- `better-sqlite3`
-- `xml-js`
-- `electron-cgi`
-
-### Icons
-
-A README in the `./icons` folder lists the provenance of the icons in this application.
-
-## Application data
-
-Hopefully the code is self-explanatory, when you understand the Third-party components listed above.
-
-So without explaining code, here is some explanation of the application data i.e. the "domain knowledge".
-
-### Reading reflection data
+## Reading reflection data
 
 The solution uses a C# application i.e. `src.net/Core` to read metadata from .NET assemblies via reflection.
 
@@ -179,7 +47,7 @@ This is for historical reasons,
 i.e. I started using the traditional `System.Reflection` API,
 and then I used `ICSharpCode.Decompiler`to help decompile method bodies.
 
-### Development tools
+## Development tools
 
 These were useful during development and debugging:
 
@@ -197,7 +65,7 @@ These were useful during development and debugging:
 
 - The "Compiler" view of the application, to inspect detailed error data from the TS `compilerMethods.ts` component
 
-### Metadata tokens
+## Metadata tokens
 
 The compiler creates and uses numeric "Metadata tokens", to identify every type and method in the assembly.
 
@@ -207,7 +75,7 @@ and mapped to another (locally unique) value when it's imported from another ass
 This solution reads these token values with the other reflection data,
 and uses them (with assembly names) as unique keys in the SQLite database tables.
 
-### Decompiling methods
+## Decompiling methods
 
 The whole point of this solution is:
 
@@ -236,7 +104,7 @@ So:
   - Get the method's metadata token from the type reader's data
   - Return the metadata token in the output, to identify the called method
 
-### Could be simpler
+## Could be simpler
 
 The `MethodFinder` implementation is complicated and error-prone:
 
@@ -244,7 +112,7 @@ The `MethodFinder` implementation is complicated and error-prone:
 - Even if I could it might be a local token value, which needs to be converted to token's value in the target assembly
 - Instead of using `ICSharpCode.Decompiler`, perhaps I now know enough to parse the `IL` opcodes and metadata myself
 
-### Generic methods
+## Generic methods
 
 The most complicated part of `MethodFinder` is:
 
@@ -253,7 +121,7 @@ The most complicated part of `MethodFinder` is:
 
 So to find a match, `MethodFinder` substitutes the specific arguments into the generic declarations before comparing.
 
-### Compiler-generated types
+## Compiler-generated types
 
 Another complication -- inherent in the IL and therefore unavoidable -- is that the compiler generates types:
 
@@ -276,7 +144,7 @@ So the code in the `compilerMethods.ts` module finds which user-defined method e
 - Because the user-defined method passes it as an argument e.g. to a method like `Where`
 - Because the user-defined method has it as a local variable
 
-### Microsoft assemblies
+## Microsoft assemblies
 
 The solution avoids reflecting Microsoft assemblies, i.e. the .NET Core or .NET Framework assemblies, because:
 
