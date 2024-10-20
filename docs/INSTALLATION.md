@@ -1,9 +1,20 @@
+---
+title: Installation
+nav_order: 3
+layout: home
+---
+
 # Installation
 
-- [Source code](#source-code)
+{: .no_toc }
+
+- TOC
+  {:toc}
+
+<!-- - [Source code](#source-code)
 - [Build your own executable](#build-your-own-executable)
 - [Prebuilt executables](#prebuilt-executables)
-- [Local certificate error](#local-certificate-error)
+- [Local certificate error](#local-certificate-error) -->
 
 ## Source code
 
