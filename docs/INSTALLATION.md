@@ -5,11 +5,10 @@ layout: home
 ---
 
 # Installation
-
 {: .no_toc }
 
 - TOC
-  {:toc}
+{:toc}
 
 <!-- - [Source code](#source-code)
 - [Build your own executable](#build-your-own-executable)

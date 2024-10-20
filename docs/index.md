@@ -4,6 +4,8 @@ nav_order: 1
 layout: home
 ---
 
+# API Viewer
+
 ## What
 
 Browse the APIs of .NET solutions:

@@ -5,13 +5,12 @@ layout: home
 ---
 
 # Code design
-
 {: .no_toc }
 
 This Electron application includes these components:
 
 - TOC
-  {:toc}
+{:toc}
 
 ---
 
