@@ -18,7 +18,11 @@ It also stores any user-configurable display options.
 
 ## Graphviz
 
-The Graphviz process creates image files of the selected APIs, to be displayed by the renderer.
+Graphviz is used, to create image files of the selected APIs, to be displayed by the renderer.
+
+It also produces an image map, so the elements (i.e. nodes and edges) react to `onClick` and `onHover` events
+
+Graphviz automatically tries to optimize the layout of the graph.
 
 ## Electron
 
@@ -46,15 +50,16 @@ The renderer component uses React.
 
 The renderer code uses these React components from npm:
 
-- `split-pane-react`
-- `react-image-mapper2`
 - `react-checkbox-tree`
+- `react-image-mapper2`
+- `split-pane-react`
 
 The main (i.e. backend) code uses these:
 
+- `@viz-js/viz`
 - `better-sqlite3`
-- `xml-js`
 - `electron-cgi`
+- `xml-js`
 
 ## Icons
 
