@@ -15,7 +15,19 @@ layout: home
 - [Prebuilt executables](#prebuilt-executables)
 - [Local certificate error](#local-certificate-error) -->
 
-## Source code
+
+## Build tool prerequisites
+
+`better-sqlite3` relies on `node-gyp` --
+this needs both Python and C++ build tools on Windows,
+so install both before running `npm install`.
+
+The current verion of `node-gyp` requires a down-level versions of Python i.e. 3.10.
+A way to fix this in future may be to use
+https://www.npmjs.com/package/@electron/node-gyp
+or eventually a later version of Electron.
+
+## Install the source code
 
 Installing the project's source code, to build it locally, should be simple:
 
@@ -24,6 +36,19 @@ git clone https://github.com/cwellsx/apis.git
 cd apis
 npm install
 ```
+
+## Updating prerequisites
+
+There's no automated way to update the Electron Forge dependendies
+so just update them all to the new version.
+
+Before you do this, I recommend you create a scratch version of the newest template:
+
+    npx create-electron-app@latest trash --template=webpack-typescript
+
+Then compare the current version with the new template:
+
+    npm install --save-dev @electron-forge/cli@latest
 
 ## Build your own executable
 

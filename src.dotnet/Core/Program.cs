@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http.Headers;
 
 namespace Core
 {
@@ -11,21 +12,46 @@ namespace Core
     {
         static void Main(string[] args)
         {
-            if (args.Length > 0)
+            switch (args.Length)
             {
-                try
-                {
-                    HandleArgs(args);
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine(e.ToString());
-                }
+                case 0:
+                    // No arguments, run the server
+                    Logger.Log("Core starting");
+                    Listen();
+                    break;
+                case 1:
+                    // One argument, run the self-test or load assemblies
+                    try
+                    {
+                        HandleArgument(args[0]);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.ToString());
+                    }
+                    break;
+                default:
+                    throw new ArgumentException("Expected no arguments in production or one argument for debugging as a standalone program");
             }
-            else
+        }
+
+        static void HandleArgument(string argument)
+        {
+            switch (argument)
             {
-                Logger.Log("Core starting");
-                Listen();
+                case "--selfload":
+                    SelfLoad();
+                    Logger.Log("SelfLoad OK");
+                    break;
+                case "--selftest":
+                    SelfTest();
+                    Logger.Log("SelfTest OK");
+                    break;
+                default:
+                    // Load assemblies from the specified directory
+                    TestLoad(argument);
+                    Logger.Log("TestLoad OK");
+                    break;
             }
         }
 
@@ -79,13 +105,12 @@ namespace Core
                 throw new Exception("New errors found");
             }
 
-            var coreTestDirectory =
-#if DEBUG
-            @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
-#else
-            @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
-#endif
-            allErrors = GetAllErrors(coreTestDirectory);
+            // e.g. C:\Dev\apis\src.dotnet\Core\bin\Release\net8.0
+            var exeDirectory = AppContext.BaseDirectory;
+
+            var exeTestDirectory = exeDirectory.Replace(@"\Core\", @"\Core.Test\");
+
+            allErrors = GetAllErrors(exeTestDirectory);
             if (allErrors.Length > 0)
             {
                 throw new Exception("New errors found");
@@ -99,27 +124,12 @@ namespace Core
             }
         }
 
-        static void HandleArgs(string[] args)
+        static void SelfLoad() => TestLoad(AppContext.BaseDirectory);
+
+        static void TestLoad(string directory)
         {
-            if (args.Length != 1)
-            {
-                throw new Exception("Expect no arguments in production or one argument for debugging as a standalone program");
-            }
-            var directory = args[0];
-
-            if (directory == "--selftest"
-                //|| true
-                )
-            {
-                SelfTest();
-                Logger.Log("SelfTest OK");
-                return;
-            }
-
-            directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Debug\net5.0";
-            directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core\bin\Release\net5.0";
-            // directory = @"C:\Users\Christopher\Source\Repos\apis\src.dotnet\Core.Test\bin\Debug\net5.0";
-
+            // e.g. C:\Dev\apis\src.dotnet\Core\bin\Release\net8.0
+            var exeDirectory = AppContext.BaseDirectory;
             var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
             WriteJsonToFiles(all, assemblyMethodDetails);
         }

@@ -38,7 +38,7 @@ const config: ForgeConfig = {
     }),
     new ResourcePlugin({
       env: "CORE_EXE",
-      path: "./src.dotnet/Core/bin/Release/net5.0/Core.exe",
+      path: "./src.dotnet/Core/bin/Release/net8.0/Core.exe",
       build: {
         command: "dotnet.exe build ./src.dotnet/Core.sln --verbosity normal --configuration Release",
         sources: ["./src.dotnet/", "./src.dotnet/Core"],
