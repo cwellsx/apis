@@ -17,7 +17,28 @@
         "command": "sys-view.helloWorld",
         "title": "Hello World"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "sysViewContainer",
+          "title": "SysView",
+          "icon": "media/graph_3.svg"
+        }
+      ]
+    },
+    "views": {
+      "sysViewContainer": [
+        {
+          "id": "sysViewOne",
+          "name": "System View One"
+        },
+        {
+          "id": "sysViewTwo",
+          "name": "System View Two"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run package",
