@@ -16,8 +16,22 @@
       {
         "command": "sys-view.helloWorld",
         "title": "Hello World"
+      },
+      {
+        "command": "sys-view.selectFolder",
+        "title": "Select Folder",
+        "icon": "$(file-directory)"
       }
     ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "sys-view.selectFolder",
+          "when": "view == sysViewOne",
+          "group": "navigation"
+        }
+      ]
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -38,7 +52,13 @@
           "name": "System View Two"
         }
       ]
-    }
+    },
+    "viewsWelcome": [
+      {
+        "view": "sysViewOne",
+        "contents": "No folder selected.\n[$(file-directory) Select Folder](command:sys-view.selectFolder)"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run package",

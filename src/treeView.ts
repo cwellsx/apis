@@ -6,7 +6,8 @@ class TreeView implements vscode.TreeDataProvider<vscode.TreeItem> {
     }
 
     getChildren(): vscode.ProviderResult<vscode.TreeItem[]> {
-        return [new vscode.TreeItem("Hello World")];
+        //return [new vscode.TreeItem("Hello World")];
+        return [];
     }
 }
 
