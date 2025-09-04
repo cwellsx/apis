@@ -2,7 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
 import { createTreeView } from "./treeView";
-import { selectFolder, helloWorld } from "./command";
+import { selectFolder, helloWorld, openSettings } from "./command";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -16,7 +16,8 @@ export function activate(context: vscode.ExtensionContext) {
   // The commandId parameter must match the command field in package.json
   context.subscriptions.push(
     vscode.commands.registerCommand("sys-view.helloWorld", helloWorld),
-    vscode.commands.registerCommand("sys-view.selectFolder", selectFolder)
+    vscode.commands.registerCommand("sys-view.selectFolder", selectFolder),
+    vscode.commands.registerCommand("sys-view.openSettings", openSettings)
   );
 
   createTreeView(context, "sysViewOne");

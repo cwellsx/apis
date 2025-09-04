@@ -21,14 +21,24 @@
         "command": "sys-view.selectFolder",
         "title": "Select Folder",
         "icon": "$(file-directory)"
+      },
+      {
+        "command": "sys-view.openSettings",
+        "title": "Settings",
+        "icon": "$(gear)"
       }
     ],
     "menus": {
       "view/title": [
         {
+          "command": "sys-view.openSettings",
+          "when": "view == sysViewOne",
+          "group": "navigation@1"
+        },
+        {
           "command": "sys-view.selectFolder",
           "when": "view == sysViewOne",
-          "group": "navigation"
+          "group": "navigation@2"
         }
       ]
     },
@@ -57,6 +67,52 @@
       {
         "view": "sysViewOne",
         "contents": "No folder selected.\n[$(file-directory) Select Folder](command:sys-view.selectFolder)"
+      }
+    ],
+    "configuration": [
+      {
+        "title": "App Options",
+        "properties": {
+          "sysView.zoomPercent": {
+            "type": "number",
+            "default": 100,
+            "description": "Zoom level as a percentage (e.g. 100 for normal size)."
+          },
+          "sysView.fontSize": {
+            "type": "number",
+            "default": 12,
+            "description": "Font size used in the application."
+          },
+          "sysView.detailsClosed": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "viewTypeA",
+                "viewTypeB",
+                "detailTypeA",
+                "detailTypeB",
+                "app"
+              ]
+            },
+            "description": "List of views or details that should be initially closed."
+          },
+          "sysView.showCompilerGeneratedTypes": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show compiler-generated types in the view."
+          },
+          "sysView.showCompilerGeneratedMethod": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show compiler-generated methods in the view."
+          },
+          "sysView.showCompilerGeneratedMenuItem": {
+            "type": "boolean",
+            "default": false,
+            "description": "Show compiler-generated menu items in the view."
+          }
+        }
       }
     ]
   },
