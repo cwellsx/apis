@@ -3,6 +3,7 @@
 import * as vscode from "vscode";
 import { createTreeView } from "./treeView";
 import { selectFolder, helloWorld, openSettings } from "./command";
+import { showGraph } from "./graph";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -22,6 +23,8 @@ export function activate(context: vscode.ExtensionContext) {
 
   createTreeView(context, "sysViewOne");
   createTreeView(context, "sysViewTwo");
+
+  showGraph(context);
 }
 
 // This method is called when your extension is deactivated
