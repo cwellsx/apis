@@ -1,13 +1,14 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
+import { helloWorld, openSettings, selectFolder } from "./command";
 import { createTreeView } from "./treeView";
-import { selectFolder, helloWorld, openSettings } from "./command";
-import { showGraph } from "./graph";
+import { getUris } from "./uris";
+import { showWebview } from "./webview";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-export function activate(context: vscode.ExtensionContext) {
+export const activate = async (context: vscode.ExtensionContext) => {
   // Use the console to output diagnostic information (console.log) and errors (console.error)
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "sys-view" is now active!');
@@ -24,8 +25,10 @@ export function activate(context: vscode.ExtensionContext) {
   createTreeView(context, "sysViewOne");
   createTreeView(context, "sysViewTwo");
 
-  showGraph(context);
-}
+  const uris = getUris(context);
+
+  await showWebview(context, uris);
+};
 
 // This method is called when your extension is deactivated
 export function deactivate() {}
