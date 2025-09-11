@@ -1,5 +1,7 @@
+// this triple-slash reference must be top of the source file, before the import statements
+/// <reference path="../src.webview/ipc.d.ts" />
+
 import * as vscode from "vscode";
-import { WebviewEvent, WebviewUpdate } from "../src.webview/ipc";
 import { Uris } from "./uris";
 
 // this code is derived from https://github.com/microsoft/vscode-extension-samples/blob/main/webview-sample/src/extension.ts
