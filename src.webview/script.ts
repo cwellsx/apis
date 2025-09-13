@@ -12,10 +12,68 @@
     }
   });
 
+  const divId = "svg-container"; // must match the id in webview.html
+
   const updateSvg = (svg: string): void => {
-    const div = document.getElementById("svg-container");
-    if (!div) throw new Error("No svg-container element");
-    div.innerHTML = svg;
+    const divElement = document.getElementById(divId);
+    if (!divElement) throw new Error("No #svg-container element");
+    divElement.innerHTML = svg;
+    const svgElement = divElement.querySelector("svg");
+    if (!svgElement) throw new Error("No <svg> element");
+    enableSvgHoverInteractivity(svgElement);
+    addEventListeners(svgElement);
+  };
+
+  const enableSvgHoverInteractivity = (svgElement: SVGSVGElement) => {
+    const interactiveTags = [
+      "path",
+      "polygon",
+      "rect",
+      "circle",
+      "ellipse",
+      "line",
+      "polyline",
+      "g",
+    ];
+
+    svgElement.querySelectorAll(interactiveTags.join(",")).forEach((el) => {
+      if (!(el instanceof SVGElement)) return;
+
+      // Ensure full-area interactivity
+      el.setAttribute("pointer-events", "all");
+
+      // Changing the fill from "none" to transparent can also help with interactivity
+      // but with pointer-events: all it is not necessary
+    });
+  };
+
+  const addEventListeners = (svgElement: SVGElement): void => {
+    const getTarget = (event: MouseEvent): SVGElement | null => {
+      const target = event.target as SVGElement;
+      if (!target) return null;
+      if (target.tagName === "svg") return null; // or could specify if (target === svgElement)
+      return target;
+    };
+
+    svgElement.addEventListener("click", (event) => {
+      const target = getTarget(event);
+      if (!target) return;
+      postMessage({ type: "click", id: target.id });
+      console.log("Clicked:", target.tagName, target.id);
+    });
+
+    svgElement.addEventListener("mouseover", (event) => {
+      const target = getTarget(event);
+      if (!target) return;
+      target.setAttribute("stroke", "red"); // highlight
+      console.log("Hovered over:", target.tagName, target.id);
+    });
+
+    svgElement.addEventListener("mouseout", (event) => {
+      const target = getTarget(event);
+      if (!target) return;
+      target.setAttribute("stroke", "black"); // reset
+    });
   };
 
   const div = document.getElementById("svg-container");
@@ -25,51 +83,4 @@
   div.innerHTML = "Hello";
 
   window.addEventListener("DOMContentLoaded", () => postMessage("ready"));
-
-  div.addEventListener("click", (event) => {
-    const target = event.target as SVGElement;
-    if (!target) return;
-    console.log("Clicked:", target.tagName, target.id);
-  });
-
-  // function handleClick(event: MouseEvent) {
-  //   const clickedElement = event.target as HTMLElement;
-  //   if (!clickedElement) return;
-
-  //   console.log("Clicked:", clickedElement.tagName, clickedElement.id);
-  // }
-
-  // document.addEventListener("click", (event) => {
-  //   console.log("Clicked:", event.target);
-  // });
-
-  // const poly = document.getElementById("poly");
-  // if (poly) {
-  //   poly.addEventListener("mouseover", () => {
-  //     poly.setAttribute("stroke", "red");
-  //   });
-  //   poly.addEventListener("mouseout", () => {
-  //     poly.setAttribute("stroke", "black");
-  //   });
-  // }
-
-  // const svg = document.getElementById("poly");
-  // if (svg) {
-  //   svg.addEventListener("mouseover", (event) => {
-  //     const el = event.target as HTMLElement;
-  //     if (!el) return;
-
-  //     if (el.tagName === "polygon" || el.tagName === "rect") {
-  //       el.setAttribute("stroke", "red");
-  //     }
-  //   });
-
-  //   svg.addEventListener("mouseout", (event) => {
-  //     const el = event.target as HTMLElement;
-  //     if (!el) return;
-
-  //     if (el.tagName === "polygon" || el.tagName === "rect") {
-  //       el.setAttribute("stroke", "black");
-  //     }
-  //   });
 })();
