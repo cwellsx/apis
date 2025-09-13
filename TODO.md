@@ -1,5 +1,17 @@
 # To do
 
+- [Introduction/Theory](#introductiontheory)
+- [What's being done now/next](#whats-being-done-nownext)
+- [Fix anything broken](#fix-anything-broken)
+- [Improve what exists already](#improve-what-exists-already)
+  - [Urgent](#urgent)
+  - [Unsorted](#unsorted)
+  - [Not now](#not-now)
+- [Start new features](#start-new-features)
+- [Technical perfection](#technical-perfection)
+
+## Introduction/Theory
+
 This may be out-of-date and updated occasionally.
 
 The priorities are:
@@ -24,14 +36,18 @@ Generally:
 
 ## What's being done now/next
 
-Improve the software first, then the documentation.
-
-Now:
-
-- Use `nodesInvisible` not `leafsVisible`
-- Fix the cursor not changing when the `[Ctrl]` key is pressed
+Current branch is to implement this as a VS Code extension, as well as as an Electron application.
 
 ## Fix anything broken
+
+The following are postponed, interrupted by the VS Code feature:
+
+>Improve the software first, then the documentation.
+>
+>Now:
+>
+>- Use `nodesInvisible` not `leafsVisible`
+>- Fix the cursor not changing when the `[Ctrl]` key is pressed
 
 ## Improve what exists already
 
