@@ -1,0 +1,18 @@
+<map id="SRC" name="SRC">
+<area shape="rect" id="assembly|ElectronCgi.DotNet" href="foo" title="ElectronCgi.DotNet" alt="" coords="130,162,302,210"/>
+<area shape="rect" id="assembly|Newtonsoft.Json" href="foo" title="Newtonsoft.Json" alt="" coords="131,258,277,306"/>
+<area shape="poly" id="assembly|ElectronCgi.DotNet||assembly|Newtonsoft.Json" href="foo" title="ElectronCgi.DotNet → Newtonsoft.Json" alt="" coords="224,211,220,243,215,243,218,210"/>
+<area shape="rect" id="group|Serilog" href="foo" title="Serilog" alt="" coords="185,354,260,402"/>
+<area shape="poly" id="assembly|ElectronCgi.DotNet||group|Serilog" href="foo" title="ElectronCgi.DotNet → Serilog
+Serilog
+Serilog.Sinks.File" alt="" coords="252,209,274,230,292,257,298,282,292,307,281,327,266,345,262,342,276,324,287,305,293,282,287,259,270,233,248,212"/>
+<area shape="poly" id="group|Serilog||group|Serilog" href="foo" title="Serilog → Serilog
+Serilog
+Serilog.Extensions.Logging" alt="" coords="261,358,279,362,285,369,287,378,284,389,277,395,273,391,280,386,282,378,280,371,276,367,260,363"/>
+<area shape="rect" id="assembly|Core" href="foo" title="*" alt="" coords="27,60,99,108"/>
+<area shape="poly" id="assembly|Core||assembly|ElectronCgi.DotNet" href="foo" title="Core → ElectronCgi.DotNet" alt="" coords="101,106,116,116,170,151,167,156,113,121,98,111"/>
+<area shape="rect" id="assembly|Core.IL" href="foo" title="*.IL" alt="" coords="27,162,99,210"/>
+<area shape="poly" id="assembly|Core||assembly|Core.IL" href="foo" title="Core → Core.IL" alt="" coords="73,108,74,147,69,147,68,108"/>
+<area shape="rect" id="group|!3rd-party" href="foo" title="3rd&#45;party" alt="" coords="120,118,315,413"/>
+<area shape="rect" id="group|Core" href="foo" title="Core" alt="" coords="16,16,109,221"/>
+</map>
