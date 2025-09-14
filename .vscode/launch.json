@@ -1,43 +1,20 @@
+// A launch configuration that compiles the extension and then opens it inside a new window
+// Use IntelliSense to learn about possible attributes.
+// Hover to view descriptions of existing attributes.
+// For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+
+// What was previously ${workspaceFolder} when this was a standalong project
+// is e.g. ${workspaceFolder}/packages/vscode-ext now that this is a monorepo.
 {
-  // Use IntelliSense to learn about possible attributes.
-  // Hover to view descriptions of existing attributes.
-  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Launch via NPM",
+      "name": "Run Extension",
+      "type": "extensionHost",
       "request": "launch",
-      "runtimeArgs": ["run-script", "unit-test-1"],
-      "runtimeExecutable": "npm",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node"
-    },
-    {
-      "type": "node",
-      "request": "launch",
-      "name": "Electron Main",
-      "runtimeExecutable": "${workspaceFolder}/node_modules/@electron-forge/cli/script/vscode.sh",
-      "windows": {
-        "runtimeExecutable": "${workspaceFolder}/node_modules/@electron-forge/cli/script/vscode.cmd"
-      },
-      // runtimeArgs will be passed directly to your Electron application
-      "runtimeArgs": ["--remote-debugging-port=9222"],
-      "cwd": "${workspaceFolder}",
-      "console": "integratedTerminal"
-    },
-    {
-      "name": "Electron Renderer",
-      "type": "chrome",
-      "request": "attach",
-      "port": 9222,
-      "webRoot": "${workspaceFolder}",
-      "timeout": 120000
-    }
-  ],
-  "compounds": [
-    {
-      "name": "Electron All",
-      "configurations": ["Electron Main", "Electron Renderer"]
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-ext"],
+      "outFiles": ["${workspaceFolder}/packages/vscode-ext/dist/**/*.js"],
+      "preLaunchTask": "vscode-ext: watch"
     }
   ]
 }
