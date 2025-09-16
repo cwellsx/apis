@@ -12,7 +12,8 @@
     "lint": "eslint --ext .ts,.tsx .",
     "unit-test": "glob -c \"ts-node\" \"./tests/**/*tests.ts\"",
     "unit-test-1": "ts-node ./tests/customNodes.tests.ts",
-    "watch": "tsc --noEmit --watch"
+    "watch": "tsc --noEmit --watch",
+    "electron-rebuild": "electron-rebuild"
   },
   "keywords": [
     ".NET",
@@ -41,6 +42,7 @@
     "css-loader": "^6.0.0",
     "electron": "28.1.0",
     "electron-forge-resource-plugin": "^1.0.0-alpha.8",
+    "electron-rebuild": "^3.2.9",
     "eslint": "^8.0.1",
     "eslint-plugin-import": "^2.25.0",
     "eslint-plugin-react-hooks": "^4.6.0",

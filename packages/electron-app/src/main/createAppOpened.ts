@@ -5,7 +5,7 @@ import { createCustomWindow } from "./createCustomWindow";
 import { DotNetApi } from "./createDotNetApi";
 import type { CustomNode } from "./customJson";
 import { fixCustomJson, isCustomJson } from "./customJson";
-import { getAppFilename, pathJoin, readJsonT, whenFile, writeFileSync } from "./fs";
+import { existsSync, getAppFilename, pathJoin, readJsonT, whenFile, writeFileSync } from "./fs";
 import { hash } from "./hash";
 import type { Reflected } from "./loaded";
 import { isReflected } from "./loaded";
@@ -132,7 +132,11 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   };
 
   const openJsonPath = async (filters: FileFilter[], defaultPath?: string): Promise<string | undefined> => {
-    const paths = dialog.showOpenDialogSync(mainWindow, { properties: ["openFile"], filters, defaultPath });
+    const paths = dialog.showOpenDialogSync(mainWindow, {
+      properties: ["openFile"],
+      filters,
+      defaultPath,
+    });
     if (!paths) return;
     return paths[0];
   };
@@ -173,7 +177,11 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   );
 
   if (sqlConfig.dataSource) {
-    await openDataSource(sqlConfig.dataSource);
+    if (existsSync(sqlConfig.dataSource.path)) {
+      await openDataSource(sqlConfig.dataSource);
+    } else {
+      show(mainWindow).showMessage("Not found", "Use the File menu, to open a data source.");
+    }
   } else {
     show(mainWindow).showMessage("No data", "Use the File menu, to open a data source.");
   }

@@ -16,6 +16,8 @@ import { log, logApi } from "./log";
 
 declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
+log(`cwd is ${process.cwd()}`);
+log(`script path is ${__dirname}`);
 
 export function createApplication(mainWindow: BrowserWindow): void {
   registerFileProtocol();

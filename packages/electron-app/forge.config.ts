@@ -40,7 +40,8 @@ const config: ForgeConfig = {
       env: "CORE_EXE",
       path: "./src.dotnet/Core/bin/Release/net8.0/Core.exe",
       build: {
-        command: "dotnet.exe build ./src.dotnet/Core.sln --verbosity normal --configuration Release",
+        command:
+          "dotnet.exe build ./src.dotnet/Core.sln --verbosity normal --configuration Release",
         sources: ["./src.dotnet/", "./src.dotnet/Core"],
       },
       package: {
