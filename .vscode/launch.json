@@ -59,8 +59,30 @@
       "type": "chrome",
       "request": "attach",
       "port": 9222,
-      "webRoot": "${workspaceFolder}/packages/electron-app",
-      "timeout": 120000
+      "webRoot": "${workspaceFolder}/packages/electron-app/src/renderer",
+      "timeout": 120000,
+      "sourceMapPathOverrides": {
+        "webpack:///*": "${webRoot}/*",
+        "webpack://src/*": "${webRoot}/*",
+        "webpack:///./*": "${workspaceFolder}/packages/electron-app/*"
+      }
+    },
+    // This was the unit-tests of the Electron app,
+    // not currently supported
+    // and not yet converted to monorepo paths
+    {
+      "name": "Electron Unit Tests",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run-script", "unit-test-1"],
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Electron All",
+      "configurations": ["Electron Main", "Electron Renderer"]
     }
   ]
 }

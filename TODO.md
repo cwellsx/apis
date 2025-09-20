@@ -38,16 +38,23 @@ Generally:
 
 Current branch is to implement this as a VS Code extension, as well as as an Electron application.
 
+TODO
+
+- Merge the 3 `build*.md` into the docs folder
+  - BUILDING.md
+  - packages\electron-app\BUILD.md
+  - packages\vscode-ext\BUILD.md
+
 ## Fix anything broken
 
 The following are postponed, interrupted by the VS Code feature:
 
->Improve the software first, then the documentation.
+> Improve the software first, then the documentation.
 >
->Now:
+> Now:
 >
->- Use `nodesInvisible` not `leafsVisible`
->- Fix the cursor not changing when the `[Ctrl]` key is pressed
+> - Use `nodesInvisible` not `leafsVisible`
+> - Fix the cursor not changing when the `[Ctrl]` key is pressed
 
 ## Improve what exists already
 
@@ -58,15 +65,12 @@ The following are postponed, interrupted by the VS Code feature:
 ### Unsorted
 
 - `*.ts`
-
   - Review where nestTypes is used and try to remove it
 
 - `*.cs`
-
   - Fix the use case where the generic declaringType is in a Microsoft assembly
 
 - `*.ts`
-
   - Remove compiler-types from the list of types
   - Rename the "method" view to "callstack"
   - Support typeNodeId as well as methodNodeId in the convertLoadedToMethods implementation
@@ -74,18 +78,15 @@ The following are postponed, interrupted by the VS Code feature:
   - Show subclasses nested inside their superclasses and interfaces
 
 - `*.tsx`
-
   - Make the line-wrapping of source code optional
 
 - `*.md`
-
   - Use the new view to improve the screenshot of `Core.exe` internals
   - Make a section to document this as an example of round-tripping
   - Also improve the format of all screenshots (scale and blockquote)
   - Review whether the screenshots are A-OK
 
 - Improve the `USER.md`
-
   - The `USER.md` should be improved with `<details>` and `<summary>` tags
   - Remove the "TO DO" messages from the current `USER.md`
   - Add namespaces to `Core.exe` and recapture screenshots
