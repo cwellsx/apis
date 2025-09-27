@@ -13,7 +13,7 @@
     "unit-test": "glob -c \"ts-node\" \"./tests/**/*tests.ts\"",
     "unit-test-1": "ts-node ./tests/customNodes.tests.ts",
     "watch": "tsc --noEmit --watch",
-    "electron-rebuild": "electron-rebuild"
+    "postinstall": "electron-rebuild"
   },
   "keywords": [
     ".NET",
@@ -33,6 +33,7 @@
     "@electron-forge/maker-zip": "^7.2.0",
     "@electron-forge/plugin-auto-unpack-natives": "^7.2.0",
     "@electron-forge/plugin-webpack": "^7.2.0",
+    "@electron/rebuild": "^4.0.1",
     "@types/better-sqlite3": "^7.6.2",
     "@types/react": "^18.0.18",
     "@types/react-dom": "^18.0.6",
@@ -42,7 +43,6 @@
     "css-loader": "^6.0.0",
     "electron": "28.1.0",
     "electron-forge-resource-plugin": "^1.0.0-alpha.8",
-    "electron-rebuild": "^3.2.9",
     "eslint": "^8.0.1",
     "eslint-plugin-import": "^2.25.0",
     "eslint-plugin-react-hooks": "^4.6.0",
