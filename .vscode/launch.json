@@ -16,7 +16,10 @@
       "request": "launch",
       "args": ["--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-ext"],
       "outFiles": ["${workspaceFolder}/packages/vscode-ext/dist/**/*.js"],
-      "preLaunchTask": "vscode-ext: watch"
+      "preLaunchTask": "vscode-ext: watch",
+      "sourceMapPathOverrides": {
+        "webpack://sys-view/*": "${workspaceFolder}/packages/vscode-ext/*"
+      }
     },
     // This configuration is for debugging the test suite of the extension
     // It launches a new VS Code instance with the extension loaded and the test runner configured to run the tests once the window opens
