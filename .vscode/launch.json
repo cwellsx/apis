@@ -52,19 +52,19 @@
       // runtimeArgs will be passed directly to your Electron application
       "runtimeArgs": ["--remote-debugging-port=9222"],
       "cwd": "${workspaceFolder}/packages/electron-app",
-      "console": "integratedTerminal"
+      "console": "integratedTerminal",
+      "sourceMapPathOverrides": {
+        "webpack://apis/*": "${workspaceFolder}/packages/electron-app/*"
+      }
     },
     {
       "name": "Electron Renderer",
       "type": "chrome",
       "request": "attach",
       "port": 9222,
-      "webRoot": "${workspaceFolder}/packages/electron-app/src/renderer",
       "timeout": 120000,
       "sourceMapPathOverrides": {
-        "webpack:///*": "${webRoot}/*",
-        "webpack://src/*": "${webRoot}/*",
-        "webpack:///./*": "${workspaceFolder}/packages/electron-app/*"
+        "webpack://apis/*": "${workspaceFolder}/packages/electron-app/*"
       }
     },
     // This was the unit-tests of the Electron app,

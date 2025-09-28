@@ -23,8 +23,4 @@ export const rendererConfig: Configuration = {
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".sass", ".scss"],
   },
-  output: {
-    // force every module to appear under a single, consistent “webpack://electron-app/…” namespace in the .map file
-    devtoolModuleFilenameTemplate: (info) => `webpack://electron-app/${info.resourcePath.replace(/\\/g, "/")}`,
-  },
 };
