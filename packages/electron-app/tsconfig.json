@@ -12,10 +12,12 @@
     "resolveJsonModule": true,
     "strict": true,
     "paths": {
+      "shared": ["../shared/src/index.ts"],
+      "shared/*": ["../shared/src/*"],
       "*": ["node_modules/*"]
     },
     "jsx": "react",
     "target": "es6"
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*", "../shared/src"]
 }

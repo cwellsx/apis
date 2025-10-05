@@ -4,6 +4,13 @@
     "es6": true,
     "node": true
   },
+  "settings": {
+    "import/resolver": {
+      "typescript": {
+        "project": "./packages/electron-app/tsconfig.json"
+      }
+    }
+  },
   "extends": [
     "eslint:recommended",
     "plugin:@typescript-eslint/eslint-recommended",

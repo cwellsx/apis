@@ -26,12 +26,16 @@ const extensionConfig = {
   resolve: {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: [".ts", ".js"],
+    alias: {
+      shared: path.resolve(__dirname, "../shared/src"),
+    },
   },
   module: {
     rules: [
       {
         test: /\.ts$/,
         exclude: [/node_modules/, path.resolve(__dirname, "src.webview")],
+        include: [path.resolve(__dirname, "src"), path.resolve(__dirname, "../shared/src")],
         use: [
           {
             loader: "ts-loader",

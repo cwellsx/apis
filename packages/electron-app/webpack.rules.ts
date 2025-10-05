@@ -1,3 +1,4 @@
+import path from "path";
 import type { ModuleOptions } from "webpack";
 
 export const rules: Required<ModuleOptions>["rules"] = [
@@ -21,6 +22,7 @@ export const rules: Required<ModuleOptions>["rules"] = [
   {
     test: /\.tsx?$/,
     exclude: /(node_modules|\.webpack)/,
+    include: [path.resolve(__dirname, "src"), path.resolve(__dirname, "../shared/src")],
     use: {
       loader: "ts-loader",
       options: {

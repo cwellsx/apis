@@ -1,11 +1,11 @@
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
+import { hello } from "shared";
 import type { MainApi } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
 import { appWindows } from "./createBrowserWindow";
 import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { log, logApi } from "./log";
-
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
   So other modules export data and function definitions, but don't invoke functions when they're imported.
@@ -18,6 +18,8 @@ declare const CORE_EXE: string;
 log(`CORE_EXE is ${CORE_EXE}`);
 log(`cwd is ${process.cwd()}`);
 log(`script path is ${__dirname}`);
+const helloMessage = hello();
+log(helloMessage);
 
 export function createApplication(mainWindow: BrowserWindow): void {
   registerFileProtocol();

@@ -1,0 +1,21 @@
+// packages/shared/tsconfig.json
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "emitDeclarationOnly": false,
+    "outDir": "dist",
+    "module": "Node16",
+    "target": "es2020",
+    // "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "sourceMap": true,
+    "inlineSources": true,
+    "strict": true,
+    "rootDir": "src"
+  },
+  "include": ["src"],
+  "references": []
+}

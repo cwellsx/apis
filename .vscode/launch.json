@@ -18,7 +18,8 @@
       "outFiles": ["${workspaceFolder}/packages/vscode-ext/dist/**/*.js"],
       "preLaunchTask": "vscode-ext: watch",
       "sourceMapPathOverrides": {
-        "webpack://sys-view/*": "${workspaceFolder}/packages/vscode-ext/*"
+        "webpack://sys-view/../shared/src/*": "${workspaceFolder}/packages/shared/src/*",
+        "webpack://sys-view/./src/*": "${workspaceFolder}/packages/vscode-ext/src/*"
       }
     },
     // This configuration is for debugging the test suite of the extension

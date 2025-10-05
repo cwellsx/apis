@@ -3,6 +3,18 @@
   "displayName": "SysView",
   "description": "View system's call graphs and dependencies",
   "version": "0.0.1",
+  "scripts": {
+    "build-shared": "npm run build --prefix ../shared",
+    "vscode:prepublish": "npm run package",
+    "compile": "webpack",
+    "watch": "webpack --watch",
+    "package": "webpack --mode production --devtool hidden-source-map",
+    "compile-tests": "tsc -p . --outDir out",
+    "watch-tests": "tsc -p . -w --outDir out",
+    "pretest": "npm run compile-tests && npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test"
+  },
   "engines": {
     "vscode": "^1.103.0"
   },
@@ -115,17 +127,6 @@
         }
       }
     ]
-  },
-  "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "webpack",
-    "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
