@@ -20,6 +20,7 @@ log(`cwd is ${process.cwd()}`);
 log(`script path is ${__dirname}`);
 const helloMessage = hello();
 log(helloMessage);
+log(`electron version is ${process.versions.electron}`);
 
 export function createApplication(mainWindow: BrowserWindow): void {
   registerFileProtocol();

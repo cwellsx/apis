@@ -13,7 +13,7 @@
     "unit-test": "glob -c \"ts-node\" \"./tests/**/*tests.ts\"",
     "unit-test-1": "ts-node ./tests/customNodes.tests.ts",
     "watch": "tsc --noEmit --watch",
-    "rebuild": "electron-rebuild"
+    "rebuild": "electron-rebuild -v 37.6.0 -f -w better-sqlite3"
   },
   "keywords": [
     ".NET",
@@ -41,7 +41,7 @@
     "@typescript-eslint/parser": "^5.0.0",
     "@vercel/webpack-asset-relocator-loader": "1.7.3",
     "css-loader": "^6.0.0",
-    "electron": "28.1.0",
+    "electron": "^37.6.0",
     "electron-forge-resource-plugin": "^1.0.0-alpha.8",
     "eslint": "^8.0.1",
     "eslint-import-resolver-typescript": "^4.4.4",
