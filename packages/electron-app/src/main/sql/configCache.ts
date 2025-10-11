@@ -1,5 +1,4 @@
-import { Database } from "better-sqlite3";
-import { SqlTable } from "./sqlTable";
+import { SqlDatabase } from "./../sqlio";
 
 type ConfigColumns = {
   name: string;
@@ -10,8 +9,8 @@ class SqlConfigTable {
   getConfig: () => ConfigColumns[];
   setConfig: (config: ConfigColumns) => void;
 
-  constructor(db: Database) {
-    const configTable = new SqlTable<ConfigColumns>(db, "config", "name", () => false, {
+  constructor(db: SqlDatabase) {
+    const configTable = db.newSqlTable<ConfigColumns>("config", "name", () => false, {
       name: "dataSource",
       value: "bar",
     });
@@ -29,7 +28,7 @@ export class ConfigCache {
   private _sqlConfig: SqlConfigTable;
   private _values: IValues = {};
 
-  constructor(db: Database) {
+  constructor(db: SqlDatabase) {
     this._sqlConfig = new SqlConfigTable(db);
     const pairs = this._sqlConfig.getConfig();
     for (const pair of pairs) this._values[pair.name] = pair.value;

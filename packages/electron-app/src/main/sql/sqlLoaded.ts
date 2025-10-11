@@ -1,4 +1,3 @@
-import { Database } from "better-sqlite3";
 import type {
   BadMethodInfoAndNames,
   BadTypeInfoAndNames,
@@ -24,6 +23,7 @@ import { log } from "../log";
 import type { MethodNodeId, TypeNodeId } from "../nodeIds";
 import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
 import { mapOfMaps, options } from "../shared-types";
+import { SqlDatabase } from "./../sqlio";
 import type {
   Call,
   CallstackIterator,
@@ -96,7 +96,7 @@ export class SqlLoaded {
 
   close: () => void;
 
-  constructor(db: Database) {
+  constructor(db: SqlDatabase) {
     const loadedSchemaVersionExpected = "2024-09-07";
 
     this.viewState = new ViewState(db);
@@ -110,10 +110,6 @@ export class SqlLoaded {
       this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
-    const done = () => {
-      const result = db.pragma("wal_checkpoint(TRUNCATE)");
-      log(`wal_checkpoint: ${JSON.stringify(result)}`);
-    };
 
     this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
       table.deleteAll();
@@ -132,7 +128,7 @@ export class SqlLoaded {
       this.writeLeafVisible("apis", assemblyTypeIds);
 
       log("save complete");
-      done();
+      db.done();
       log("save done");
     };
 
@@ -515,7 +511,7 @@ export class SqlLoaded {
     };
 
     this.close = () => {
-      done();
+      db.done();
       db.close();
     };
   }

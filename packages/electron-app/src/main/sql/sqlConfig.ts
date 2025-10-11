@@ -1,8 +1,7 @@
-import { Database } from "better-sqlite3";
 import { AppOptions, defaultAppOptions } from "../../shared-types";
 import { log } from "../log";
+import { SqlDatabase } from "./../sqlio";
 import { ConfigCache } from "./configCache";
-import { SqlTable } from "./sqlTable";
 
 export type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";
 
@@ -20,15 +19,15 @@ type RecentColumns = {
 
 export class SqlConfig {
   private _cache: ConfigCache;
-  private _db: Database;
+  private _db: SqlDatabase;
   recent: () => RecentColumns[];
   private upsertRecent: (recentColumns: RecentColumns) => void;
 
-  constructor(db: Database) {
+  constructor(db: SqlDatabase) {
     this._cache = new ConfigCache(db);
     this._db = db;
 
-    const recentTable = new SqlTable<RecentColumns>(db, "recent", "path", () => false, {
+    const recentTable = db.newSqlTable<RecentColumns>("recent", "path", () => false, {
       path: "foo",
       type: "loadedAssemblies",
       when: 0,
@@ -57,7 +56,7 @@ export class SqlConfig {
   }
 
   close() {
-    const result = this._db.pragma("wal_checkpoint(TRUNCATE)");
+    const result = this._db.done();
     log(`wal_checkpoint: ${JSON.stringify(result)}`);
     this._db.close();
   }

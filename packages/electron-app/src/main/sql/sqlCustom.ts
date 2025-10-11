@@ -1,10 +1,8 @@
-import { Database } from "better-sqlite3";
 import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
-import { log } from "../log";
 import { toNameNodeId } from "../nodeIds";
 import { options } from "../shared-types";
-import { SqlTable } from "./sqlTable";
+import { SqlDatabase } from "./../sqlio";
 
 type ConfigColumns = {
   name: string;
@@ -41,24 +39,19 @@ export class SqlCustom {
   readGraphFilter: (clusterBy: string[] | undefined) => GraphFilter;
   writeGraphFilter: (clusterBy: string[] | undefined, graphFilter: GraphFilter) => void;
 
-  constructor(db: Database) {
+  constructor(db: SqlDatabase) {
     const customSchemaVersionExpected = "2024-09-07";
 
     // even though the CustomNode elements each have a unique id
     // don't bother to store the data in normalized tables
     // because there isn't much of the data (it's hand-written)
     // also a schema mismatch doesn't drop and recreate the table
-    const configTable = new SqlTable<ConfigColumns>(db, "configCustom", "name", () => false, {
+    const configTable = db.newSqlTable<ConfigColumns>("configCustom", "name", () => false, {
       name: "foo",
       value: "bar",
     });
 
     configTable.deleteAll();
-
-    const done = () => {
-      const result = db.pragma("wal_checkpoint(TRUNCATE)");
-      log(`wal_checkpoint: ${JSON.stringify(result)}`);
-    };
 
     this.save = (nodes: CustomNode[], errors: CustomError[], when: string): void => {
       configTable.insert({ name: "nodes", value: JSON.stringify(nodes) });
@@ -108,7 +101,7 @@ export class SqlCustom {
         customViewOptions,
         isCustomFolders
       );
-      done();
+      db.done();
     };
 
     this.shouldReload = (when: string): boolean =>
@@ -211,7 +204,7 @@ export class SqlCustom {
     };
 
     this.close = () => {
-      done();
+      db.done();
       db.close();
     };
   }

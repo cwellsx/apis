@@ -1,4 +1,3 @@
-import { Database } from "better-sqlite3";
 import {
   ApiViewOptions,
   CompilerViewOptions,
@@ -6,13 +5,14 @@ import {
   ReferenceViewOptions,
   ViewType,
 } from "../../shared-types";
+import { SqlDatabase } from "./../sqlio";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
 
 export class ViewState {
   private _cache: ConfigCache;
 
-  constructor(db: Database) {
+  constructor(db: SqlDatabase) {
     this._cache = new ConfigCache(db);
   }
 

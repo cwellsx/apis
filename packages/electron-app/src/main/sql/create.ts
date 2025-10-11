@@ -1,9 +1,9 @@
 import { getAppFilename } from "../fs";
 import { log } from "../log";
+import { createSqlDatabase } from "./../sqlio";
 import type { DataSource } from "./sqlConfig";
 import { SqlConfig } from "./sqlConfig";
 import { SqlCustom } from "./sqlCustom";
-import { createSqlDatabase } from "./sqlDatabase";
 import { SqlLoaded } from "./sqlLoaded";
 
 export function createSqlLoaded(dataSource: DataSource): SqlLoaded {
