@@ -1,6 +1,6 @@
+import { SqlDatabase } from "sqlio";
 import { AppOptions, defaultAppOptions } from "../../shared-types";
 import { log } from "../log";
-import { SqlDatabase } from "./../sqlio";
 import { ConfigCache } from "./configCache";
 
 export type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";

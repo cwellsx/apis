@@ -1,3 +1,4 @@
+import { SqlDatabase } from "sqlio";
 import {
   ApiViewOptions,
   CompilerViewOptions,
@@ -5,7 +6,6 @@ import {
   ReferenceViewOptions,
   ViewType,
 } from "../../shared-types";
-import { SqlDatabase } from "./../sqlio";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
 

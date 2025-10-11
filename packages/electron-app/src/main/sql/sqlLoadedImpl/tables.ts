@@ -1,5 +1,5 @@
+import { SqlDatabase, SqlTable } from "sqlio";
 import type { MethodInfo } from "../../loaded";
-import { SqlDatabase, SqlTable } from "./../../sqlio";
 import {
   AssemblyColumns,
   CallColumns,

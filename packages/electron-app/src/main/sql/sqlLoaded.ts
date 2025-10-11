@@ -1,3 +1,4 @@
+import { SqlDatabase } from "sqlio";
 import type {
   BadMethodInfoAndNames,
   BadTypeInfoAndNames,
@@ -23,7 +24,6 @@ import { log } from "../log";
 import type { MethodNodeId, TypeNodeId } from "../nodeIds";
 import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
 import { mapOfMaps, options } from "../shared-types";
-import { SqlDatabase } from "./../sqlio";
 import type {
   Call,
   CallstackIterator,

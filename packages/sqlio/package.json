@@ -1,5 +1,5 @@
 {
-  "name": "@cwellsx/shared",
+  "name": "sqlio",
   "version": "0.0.1",
   "private": true,
   "main": "dist/index.js",
@@ -8,9 +8,14 @@
     "build": "tsc -b",
     "watch": "tsc -b --watch",
     "clean": "rimraf dist",
-    "prepublishOnly": "echo \"This package is private\" && exit 1"
+    "prepublishOnly": "echo \"This package is private\" && exit 1",
+    "rebuild": "electron-rebuild -v 37.6.0 -f -w better-sqlite3"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "typescript": "^5.9.2"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.2.0"
   }
 }

@@ -1,4 +1,4 @@
-import { SqlDatabase } from "./../sqlio";
+import { SqlDatabase } from "sqlio";
 
 type ConfigColumns = {
   name: string;

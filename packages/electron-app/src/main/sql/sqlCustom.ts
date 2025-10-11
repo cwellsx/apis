@@ -1,8 +1,8 @@
+import { SqlDatabase } from "sqlio";
 import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
 import { toNameNodeId } from "../nodeIds";
 import { options } from "../shared-types";
-import { SqlDatabase } from "./../sqlio";
 
 type ConfigColumns = {
   name: string;
