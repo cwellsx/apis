@@ -1,6 +1,5 @@
 import sqlite, { Database } from "better-sqlite3";
 import fs from "fs";
-import path from "path";
 import { SqlTable } from "./sqlTable";
 
 // https://github.com/electron-userland/electron-forge/issues/1224#issuecomment-606649565
@@ -44,14 +43,23 @@ export class SqlDatabase {
   close: () => void;
 }
 
-export function createSqlDatabase(filename: string): SqlDatabase {
+export function createSqlDatabase(filename: string, nativeBinding: string): SqlDatabase {
   // specify location of better_sqlite3.node -- https://github.com/electron/forge/issues/3052
-  const nativeBinding = path.join(process.cwd(), ".webpack\\main\\native_modules\\build\\Release\\better_sqlite3.node");
-  const options: sqlite.Options | undefined = fs.existsSync(nativeBinding)
-    ? {
-        nativeBinding,
-      }
-    : undefined;
+  // const nativeBinding = path.join(process.cwd(), ".webpack\\main\\native_modules\\build\\Release\\better_sqlite3.node");
+  // const options: sqlite.Options | undefined = fs.existsSync(nativeBinding)
+  //   ? {
+  //       nativeBinding,
+  //     }
+  //   : undefined;
+
+  let options: sqlite.Options | undefined = undefined;
+
+  if (nativeBinding) {
+    if (!fs.existsSync(nativeBinding)) {
+      throw new Error(`Native binding for better-sqlite3 not found at path: ${nativeBinding}`);
+    }
+    options = { nativeBinding };
+  }
 
   const db = sqlite(filename, options);
   db.pragma("locking_mode = EXCLUSIVE");

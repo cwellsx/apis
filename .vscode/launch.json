@@ -19,6 +19,7 @@
       "preLaunchTask": "vscode-ext: watch",
       "sourceMapPathOverrides": {
         "webpack://sys-view/../shared/src/*": "${workspaceFolder}/packages/shared/src/*",
+        "webpack://sys-view/../sqlio/dist/*": "${workspaceFolder}/packages/sqlio/dist/*",
         "webpack://sys-view/./src/*": "${workspaceFolder}/packages/vscode-ext/src/*"
       }
     },

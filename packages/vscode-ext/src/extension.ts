@@ -2,6 +2,7 @@
 // Import the module and reference it with the alias vscode in your code below
 import { hello } from "shared";
 import * as vscode from "vscode";
+import { createAdaptor } from "./adapter";
 import { helloWorld, openSettings, selectFolder } from "./command";
 import { createTreeView } from "./treeView";
 import { getUris } from "./uris";
@@ -32,6 +33,8 @@ export const activate = async (context: vscode.ExtensionContext) => {
   const uris = getUris(context);
 
   await showWebview(context, uris);
+
+  createAdaptor(context);
 };
 
 // This method is called when your extension is deactivated

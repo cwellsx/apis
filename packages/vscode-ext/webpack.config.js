@@ -3,6 +3,7 @@
 "use strict";
 
 const path = require("path");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -30,6 +31,16 @@ const extensionConfig = {
       shared: path.resolve(__dirname, "../shared/src"),
     },
   },
+  plugins: [
+    new CopyWebpackPlugin({
+      patterns: [
+        {
+          from: path.resolve(__dirname, "../../node_modules/better-sqlite3/build/Release/better_sqlite3.node"),
+          to: path.resolve(__dirname, "native/"),
+        },
+      ],
+    }),
+  ],
   module: {
     rules: [
       {

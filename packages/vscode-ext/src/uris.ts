@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import * as vscode from "vscode";
 
 // this contains method to return Uri values
@@ -14,6 +16,9 @@ export const getUris = (context: vscode.ExtensionContext): Uris => {
   const mediaUri = vscode.Uri.joinPath(context.extensionUri, "media");
 
   const joinMediaUri = (filename: string): vscode.Uri => {
+    if (!fs.existsSync(path.join(context.extensionPath, "media", filename))) {
+      throw new Error(`Media file not found: ${filename}`);
+    }
     return vscode.Uri.joinPath(context.extensionUri, "media", filename);
   };
 
