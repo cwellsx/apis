@@ -13,7 +13,10 @@
     "watch-tests": "tsc -p . -w --outDir out",
     "pretest": "npm run compile-tests && npm run compile && npm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "precompile": "cmd /c src.webview\\compile.cmd",
+    "prewatch": "cmd /c src.webview\\compile.cmd",
+    "prepackage": "cmd /c src.webview\\compile.cmd"
   },
   "engines": {
     "vscode": "^1.103.0"

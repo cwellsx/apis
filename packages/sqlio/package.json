@@ -9,7 +9,8 @@
     "watch": "tsc -b --watch",
     "clean": "rimraf dist",
     "prepublishOnly": "echo \"This package is private\" && exit 1",
-    "rebuild": "electron-rebuild -v 37.6.0 -f -w better-sqlite3"
+    "rebuild": "electron-rebuild -v 37.6.0 -f -w better-sqlite3",
+    "postinstall": "npm run rebuild && npm run build"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",
