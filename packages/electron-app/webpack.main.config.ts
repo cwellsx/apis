@@ -1,6 +1,7 @@
 import { rules } from "./webpack.rules";
 
 import path from "path";
+import { TsconfigPathsPlugin } from "tsconfig-paths-webpack-plugin";
 import type { Configuration } from "webpack";
 import { plugins } from "./webpack.plugins";
 
@@ -20,5 +21,6 @@ export const mainConfig: Configuration = {
     alias: {
       shared: path.resolve(__dirname, "../shared/src"),
     },
+    plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, "tsconfig.json") })],
   },
 };

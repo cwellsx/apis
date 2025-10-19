@@ -1,5 +1,5 @@
+import { hello } from "backend/hello";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
-import { hello } from "shared";
 import type { MainApi } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";

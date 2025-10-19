@@ -4,14 +4,14 @@
     "target": "ES2022",
     "lib": ["ES2022"],
     "sourceMap": true,
-    "rootDirs": ["src", "../shared/src"],
+    "rootDirs": ["src", "../backend/src"],
     "strict": true,
     "baseUrl": ".", // needed when paths is specified
     "paths": {
-      "shared": ["../shared/src/index.ts"],
-      "shared/*": ["../shared/src/*"]
+      //"backend": ["../backend/src/index.ts"],
+      "backend/*": ["../backend/src/*"]
     }
   },
   "exclude": ["src.webview"],
-  "include": ["src", "../shared/src"]
+  "include": ["src", "../backend/src"]
 }

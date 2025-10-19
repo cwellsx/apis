@@ -4,6 +4,9 @@
 
 const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
+//const TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const _TsconfigPathsPlugin = require("tsconfig-paths-webpack-plugin");
+const TsconfigPathsPlugin = _TsconfigPathsPlugin.default || _TsconfigPathsPlugin;
 
 //@ts-check
 /** @typedef {import('webpack').Configuration} WebpackConfig **/
@@ -30,6 +33,7 @@ const extensionConfig = {
     alias: {
       shared: path.resolve(__dirname, "../shared/src"),
     },
+    plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, "tsconfig.json") })],
   },
   plugins: [
     new CopyWebpackPlugin({
