@@ -28,7 +28,7 @@ export function createApplication(mainWindow: BrowserWindow): void {
   // instantiate the DotNetApi
   const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
 
-  const on = (event: IpcMainEvent): MainApi | undefined => appWindows.find(event)?.mainApi;
+  const on = (event: IpcMainEvent): MainApi | undefined => appWindows.find(event);
 
   ipcMain.on("onViewOptions", (event, viewOptions) => {
     logApi("on", "onViewOptions", viewOptions);

@@ -12,7 +12,7 @@ import { isReflected } from "./loaded";
 import { log } from "./log";
 import { createAppMenu } from "./menu";
 import { options } from "./shared-types";
-import { show } from "./show";
+import { createDisplay } from "./show";
 import { SqlCustom, SqlLoaded, createSqlConfig, createSqlCustom, createSqlLoaded, type DataSource } from "./sql";
 
 declare const CORE_EXE: string;
@@ -24,6 +24,8 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   // not yet the DataSource SQL
   let sqlLoaded: SqlLoaded | undefined;
   let sqlCustom: SqlCustom | undefined;
+
+  const display = createDisplay(mainWindow);
 
   const closeAll = (): void => {
     if (sqlLoaded) {
@@ -68,8 +70,10 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
         sqlLoaded.save(reflected, when, dataSource.hash);
       } else log("!getLoaded");
-      const appWindow = createAppWindow(mainWindow, sqlLoaded, sqlConfig, dataSource.path, setViewMenu);
-      appWindow.openViewType();
+      const appWindow = createAppWindow(display, sqlLoaded, sqlConfig, dataSource.path, setViewMenu, {
+        kind: "openViewType",
+      });
+      appWindows.add(appWindow, mainWindow);
     };
 
     const openSqlCustom = async (when: string, getCustom: (path: string) => Promise<CustomNode[]>): Promise<void> => {
@@ -79,8 +83,8 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
         const errors = fixCustomJson(nodes);
         sqlCustom.save(nodes, errors, when);
       }
-      const customWindow = createCustomWindow(mainWindow, sqlCustom, sqlConfig, dataSource.path, setViewMenu);
-      customWindow.openViewType();
+      const customWindow = createCustomWindow(display, sqlCustom, sqlConfig, dataSource.path, setViewMenu);
+      appWindows.add(customWindow, mainWindow);
     };
 
     const readDotNetApi = async (path: string): Promise<Reflected> => {
@@ -100,7 +104,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     try {
       log("openDataSource");
       const path = dataSource.path;
-      show(mainWindow).showMessage(`Loading ${path}`, "Loading...");
+      display.showMessage(`Loading ${path}`, "Loading...");
       switch (dataSource.type) {
         case "loadedAssemblies":
           await openSqlLoaded(await dotNetApi.getWhen(dataSource.path), readDotNetApi);
@@ -115,7 +119,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
       // remember as most-recently-opened iff it opens successfully
       sqlConfig.dataSource = dataSource;
     } catch (error: unknown | Error) {
-      show(mainWindow).showException(error);
+      display.showException(error);
     }
   };
 
@@ -180,9 +184,9 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     if (existsSync(sqlConfig.dataSource.path)) {
       await openDataSource(sqlConfig.dataSource);
     } else {
-      show(mainWindow).showMessage("Not found", "Use the File menu, to open a data source.");
+      display.showMessage("Not found", "Use the File menu, to open a data source.");
     }
   } else {
-    show(mainWindow).showMessage("No data", "Use the File menu, to open a data source.");
+    display.showMessage("No data", "Use the File menu, to open a data source.");
   }
 };

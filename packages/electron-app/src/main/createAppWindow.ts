@@ -1,8 +1,8 @@
-import { BrowserWindow } from "electron";
 import type {
   AppOptions,
   ClusterBy,
   DetailEvent,
+  DisplayApi,
   FilterEvent,
   GraphEvent,
   GraphFilter,
@@ -18,11 +18,10 @@ import { MethodViewOptions, nodeIdToText } from "../shared-types";
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
 import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
-import { AppWindow, appWindows, createSecondWindow } from "./createBrowserWindow";
+import { createSecondWindow } from "./createBrowserWindow";
 import { createViewGraph } from "./imageDataTypes";
 import { log } from "./log";
 import type { SetViewMenu, ViewMenu, ViewMenuItem } from "./menu";
-import { createSecondMenu } from "./menu";
 import {
   getClusterNames,
   isAssemblyNodeId,
@@ -37,20 +36,19 @@ import {
 } from "./nodeIds";
 import { showAdjacent } from "./onGraphClick";
 import { viewFeatures } from "./shared-types";
-import { renderer as createRenderer, show as createShow } from "./show";
 import { SqlConfig, SqlLoaded } from "./sql";
 import { CommonGraphViewType } from "./sql/sqlLoadedApiTypes";
 
+type OnOpen = { kind: "openViewType" } | { kind: "showMethods"; nodeId: MethodNodeId };
+
 export const createAppWindow = (
-  window: BrowserWindow,
+  display: DisplayApi,
   sqlLoaded: SqlLoaded,
   sqlConfig: SqlConfig,
   dataSourcePath: string,
-  setViewMenu: SetViewMenu
-): AppWindow & { showMethods: (methodId?: MethodNodeId) => void } => {
-  const show = createShow(window);
-  const renderer = createRenderer(window);
-
+  setViewMenu: SetViewMenu,
+  onOpen: OnOpen
+): MainApi => {
   const createViewMenu = (): void => {
     // initialize ViewMenu before the menu is recreated
     const menuItems: ViewMenuItem[] = [
@@ -127,7 +125,7 @@ export const createAppWindow = (
     onAppOptions: (appOptions: AppOptions): void => {
       sqlConfig.appOptions = appOptions;
       createViewMenu(); // because change appOptions might affect the View menu
-      renderer.showAppOptions(appOptions);
+      display.showAppOptions(appOptions);
     },
     onGraphEvent: (graphEvent: GraphEvent): void => {
       const { id, viewType, event } = graphEvent;
@@ -154,7 +152,7 @@ export const createAppWindow = (
         case "methods": {
           if (!isMethodNodeId(nodeId)) throw new Error("Expected method id");
           const viewDetails: ViewDetails = { ...sqlLoaded.readMethodDetails(nodeId), detailType: "methodDetails" };
-          renderer.showDetails(viewDetails);
+          display.showDetails(viewDetails);
           return;
         }
         case "references": {
@@ -176,7 +174,7 @@ export const createAppWindow = (
           } else {
             const typeInfos = sqlLoaded.readTypeInfos(assemblyName);
             const types = convertLoadedToDetailedAssembly(typeInfos, assemblyName);
-            renderer.showDetails(types);
+            display.showDetails(types);
           }
           return;
         }
@@ -195,12 +193,9 @@ export const createAppWindow = (
       const nodeId = toAnyNodeId(id);
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
-      createSecondWindow().then((secondWindow) => {
-        const { setViewMenu } = createSecondMenu(secondWindow);
-        const appWindow = createAppWindow(secondWindow, sqlLoaded, sqlConfig, dataSourcePath, setViewMenu);
-        secondWindow.setTitle(`Method — ${dataSourcePath}`);
-        appWindow.showMethods(nodeId);
-      });
+      createSecondWindow((display: DisplayApi, setViewMenu: SetViewMenu) =>
+        createAppWindow(display, sqlLoaded, sqlConfig, dataSourcePath, setViewMenu, { kind: "showMethods", nodeId })
+      );
     },
   };
 
@@ -219,7 +214,7 @@ export const createAppWindow = (
       const callstackIterator = sqlLoaded.readCallstack(methodId ?? getMethodNodeId(methodViewOptions));
       const callstackElements = convertLoadedToCallstack(callstackIterator);
 
-      show.showMessage(undefined, `${callstackElements.leafs.length()} records`);
+      display.showMessage(undefined, `${callstackElements.leafs.length()} records`);
 
       const graphFilter: GraphFilter | undefined = methodId
         ? undefined
@@ -243,9 +238,9 @@ export const createAppWindow = (
       }
 
       const viewGraph = await createViewGraph(graphData);
-      renderer.showView(viewGraph);
+      display.showView(viewGraph);
     } catch (error) {
-      show.showException(error);
+      display.showException(error);
     }
   };
 
@@ -257,7 +252,7 @@ export const createAppWindow = (
       sqlLoaded.viewState.exes
     );
     const viewGraph = await createViewGraph(graphData);
-    renderer.showView(viewGraph);
+    display.showView(viewGraph);
   };
 
   const showErrors = (): void => {
@@ -267,7 +262,7 @@ export const createAppWindow = (
       errors,
       viewType: "errors",
     };
-    renderer.showView(viewErrors);
+    display.showView(viewErrors);
   };
 
   const showApis = async (): Promise<void> => {
@@ -278,11 +273,11 @@ export const createAppWindow = (
       clusterBy,
       apiViewOptions.showInternalCalls ? getClusterNames(graphFilter.groupExpanded, clusterBy) : []
     );
-    show.showMessage(undefined, `${calls.length} records`);
+    display.showMessage(undefined, `${calls.length} records`);
     const elements = convertLoadedToCalls(calls);
     const graphData = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
     const viewGraph = await createViewGraph(graphData);
-    renderer.showView(viewGraph);
+    display.showView(viewGraph);
   };
 
   const showCompiler = (): void => {
@@ -294,7 +289,7 @@ export const createAppWindow = (
       viewType: "compiler",
       textViewOptions: compilerViewOptions,
     };
-    renderer.showView(viewCompiler);
+    display.showView(viewCompiler);
   };
 
   const showViewType = (viewType: ViewType): void => {
@@ -325,18 +320,18 @@ export const createAppWindow = (
     else viewType = sqlLoaded.viewState.viewType;
     switch (viewType) {
       case "references":
-        window.setTitle(`References — ${dataSourcePath}`);
+        display.setTitle(`References — ${dataSourcePath}`);
         break;
       case "methods":
         throw new Error("Expect this to be opened only in a second window");
       case "errors":
-        window.setTitle(`Errors — ${dataSourcePath}`);
+        display.setTitle(`Errors — ${dataSourcePath}`);
         break;
       case "apis":
-        window.setTitle(`APIs — ${dataSourcePath}`);
+        display.setTitle(`APIs — ${dataSourcePath}`);
         break;
       case "compiler":
-        window.setTitle(`Compiler methods — ${dataSourcePath}`);
+        display.setTitle(`Compiler methods — ${dataSourcePath}`);
         break;
       default:
         throw new Error("ViewType not implemented");
@@ -344,9 +339,17 @@ export const createAppWindow = (
     showViewType(viewType);
   };
 
-  renderer.showAppOptions(sqlConfig.appOptions);
+  display.showAppOptions(sqlConfig.appOptions);
 
-  const self = { mainApi, window, openViewType, showMethods };
-  appWindows.add(self);
-  return self;
+  switch (onOpen.kind) {
+    case "openViewType":
+      openViewType();
+      break;
+    case "showMethods":
+      showMethods(onOpen.nodeId);
+      display.setTitle(`Method — ${dataSourcePath}`);
+      break;
+  }
+
+  return mainApi;
 };

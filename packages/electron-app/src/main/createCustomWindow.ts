@@ -1,8 +1,8 @@
-import { BrowserWindow } from "electron";
 import type {
   AppOptions,
   CustomViewOptions,
   DetailedCustom,
+  DisplayApi,
   FilterEvent,
   GraphEvent,
   MainApi,
@@ -13,24 +13,21 @@ import type {
 } from "../shared-types";
 import { isCustomManual, isCustomViewOptions } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
-import { AppWindow, appWindows } from "./createBrowserWindow";
 import { createViewGraph } from "./imageDataTypes";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
 import { edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
 import { viewFeatures } from "./shared-types";
-import { renderer as createRenderer } from "./show";
 import { SqlConfig, SqlCustom } from "./sql";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = (
-  window: BrowserWindow,
+  display: DisplayApi,
   sqlCustom: SqlCustom,
   sqlConfig: SqlConfig,
   dataSourcePath: string,
   setViewMenu: SetViewMenu
-): AppWindow => {
-  const renderer = createRenderer(window);
-  renderer.showAppOptions(sqlConfig.appOptions);
+): MainApi => {
+  display.showAppOptions(sqlConfig.appOptions);
 
   const createViewMenu = (): void => {
     const menuItems: ViewMenuItem[] = [{ label: "Custom JSON", viewType: "custom" }];
@@ -77,7 +74,7 @@ export const createCustomWindow = (
       details: node.details ?? [],
       detailType: "customDetails",
     };
-    renderer.showDetails(viewDetails);
+    display.showDetails(viewDetails);
   };
 
   // implement the MainApi which will be bound to ipcMain
@@ -88,7 +85,7 @@ export const createCustomWindow = (
     },
     onAppOptions: (appOptions: AppOptions): void => {
       sqlConfig.appOptions = appOptions;
-      renderer.showAppOptions(appOptions);
+      display.showAppOptions(appOptions);
     },
     onGraphEvent: (graphEvent: GraphEvent): void => {
       const { id, viewType, event } = graphEvent;
@@ -134,7 +131,7 @@ export const createCustomWindow = (
     const graphFilter = sqlCustom.readGraphFilter(clusterBy);
     const graphData = convertLoadedToCustom(nodes, viewOptions, graphFilter);
     const viewGraph = await createViewGraph(graphData);
-    renderer.showView(viewGraph);
+    display.showView(viewGraph);
   };
 
   const showErrors = (): void => {
@@ -144,7 +141,7 @@ export const createCustomWindow = (
       customErrors,
       viewType: "customErrors",
     };
-    renderer.showView(viewErrors);
+    display.showView(viewErrors);
   };
 
   const showViewType = (viewType: ViewType): void => {
@@ -165,10 +162,10 @@ export const createCustomWindow = (
     else viewType = sqlCustom.viewState.viewType;
     switch (viewType) {
       case "custom":
-        window.setTitle(`${dataSourcePath}`);
+        display.setTitle(`${dataSourcePath}`);
         break;
       case "errors":
-        window.setTitle(`Errors — ${dataSourcePath}`);
+        display.setTitle(`Errors — ${dataSourcePath}`);
         break;
       default:
         throw new Error("ViewType not implemented");
@@ -176,7 +173,7 @@ export const createCustomWindow = (
     showViewType(viewType);
   };
 
-  const self = { mainApi, window, openViewType };
-  appWindows.add(self);
-  return self;
+  openViewType();
+
+  return mainApi;
 };

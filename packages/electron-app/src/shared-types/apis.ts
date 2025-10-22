@@ -31,6 +31,13 @@ export type RendererApi = {
   showAppOptions: (appOptions: AppOptions) => void;
 };
 
+// this extends RendererApi without additional preloaded IPC methods
+export type DisplayApi = RendererApi & {
+  showException: (error: unknown) => void;
+  showMessage: (title: string | undefined, message: string) => void;
+  setTitle: (title: string) => void;
+};
+
 export type PreloadApis = {
   mainApi: MainApi;
   bindIpc: (rendererApi: RendererApi) => void;

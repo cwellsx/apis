@@ -1,14 +1,9 @@
 import type { BrowserWindow } from "electron";
-import type { AppOptions, RendererApi, View, ViewDetails, ViewGreeting } from "../shared-types";
+import type { AppOptions, DisplayApi, View, ViewDetails, ViewGreeting } from "../shared-types";
 import { getErrorString } from "./error";
 import { log, logApi } from "./log";
 
-export type Show = {
-  showException: (error: unknown) => void;
-  showMessage: (title: string | undefined, message: string) => void;
-};
-
-export const show = (mainWindow: BrowserWindow): Show => {
+export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
   const webContents = mainWindow.webContents;
 
   const showGreeting = (greeting: string): void => {
@@ -28,11 +23,9 @@ export const show = (mainWindow: BrowserWindow): Show => {
     showGreeting(message);
   };
 
-  return { showException, showMessage };
-};
-
-export const renderer = (mainWindow: BrowserWindow): RendererApi => {
-  const webContents = mainWindow.webContents;
+  const setTitle = (title: string): void => {
+    mainWindow.setTitle(title);
+  };
 
   const showView = (view: View): void => {
     logApi("send", "showView", view);
@@ -49,5 +42,5 @@ export const renderer = (mainWindow: BrowserWindow): RendererApi => {
     webContents.send("showAppOptions", appOptions);
   };
 
-  return { showView, showDetails, showAppOptions };
+  return { showView, showDetails, setTitle, showAppOptions, showException, showMessage };
 };
