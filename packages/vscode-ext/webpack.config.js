@@ -31,7 +31,7 @@ const extensionConfig = {
     // support reading TypeScript and JavaScript files, 📖 -> https://github.com/TypeStrong/ts-loader
     extensions: [".ts", ".js"],
     alias: {
-      shared: path.resolve(__dirname, "../shared/src"),
+      shared: path.resolve(__dirname, "../backend/src"),
     },
     plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, "tsconfig.json") })],
   },
@@ -50,7 +50,7 @@ const extensionConfig = {
       {
         test: /\.ts$/,
         exclude: [/node_modules/, path.resolve(__dirname, "src.webview")],
-        include: [path.resolve(__dirname, "src"), path.resolve(__dirname, "../shared/src")],
+        include: [path.resolve(__dirname, "src"), path.resolve(__dirname, "../backend/src")],
         use: [
           {
             loader: "ts-loader",

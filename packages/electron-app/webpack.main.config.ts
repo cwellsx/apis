@@ -19,7 +19,7 @@ export const mainConfig: Configuration = {
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".json"],
     alias: {
-      shared: path.resolve(__dirname, "../shared/src"),
+      shared: path.resolve(__dirname, "../backend/src"),
     },
     plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, "tsconfig.json") })],
   },
