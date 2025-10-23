@@ -1,10 +1,11 @@
+import { DotNetApi, createDotNetApi } from "backend/createDotNetApi";
 import { hello } from "backend/hello";
-import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
+import { BrowserWindow, IpcMainEvent, app, ipcMain } from "electron";
 import type { MainApi } from "../shared-types";
+import { setAppDataPath } from "./appDataPath";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
 import { appWindows } from "./createBrowserWindow";
-import { DotNetApi, createDotNetApi } from "./createDotNetApi";
 import { log, logApi } from "./log";
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
@@ -23,6 +24,8 @@ log(helloMessage);
 log(`electron version is ${process.versions.electron}`);
 
 export function createApplication(mainWindow: BrowserWindow): void {
+  setAppDataPath(app.getPath("userData"));
+
   registerFileProtocol();
 
   // instantiate the DotNetApi

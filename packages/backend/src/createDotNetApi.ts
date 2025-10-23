@@ -1,5 +1,5 @@
 import { ConnectionBuilder } from "electron-cgi";
-import { log } from "./log";
+import { log } from "../../electron-app/src/main/log";
 
 // this API is implemented by the C#
 export interface DotNetApi {

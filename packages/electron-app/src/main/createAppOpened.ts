@@ -1,19 +1,12 @@
+import { DotNetApi } from "backend/createDotNetApi";
 import { FileFilter, dialog, type BrowserWindow } from "electron";
-import { createAppWindow } from "./createAppWindow";
 import { appWindows } from "./createBrowserWindow";
-import { createCustomWindow } from "./createCustomWindow";
-import { DotNetApi } from "./createDotNetApi";
-import type { CustomNode } from "./customJson";
-import { fixCustomJson, isCustomJson } from "./customJson";
-import { existsSync, getAppFilename, pathJoin, readJsonT, whenFile, writeFileSync } from "./fs";
+import { existsSync, pathJoin } from "./fs";
 import { hash } from "./hash";
-import type { Reflected } from "./loaded";
-import { isReflected } from "./loaded";
-import { log } from "./log";
 import { createAppMenu } from "./menu";
-import { options } from "./shared-types";
+import { openDataSource } from "./openDataSource";
 import { createDisplay } from "./show";
-import { SqlCustom, SqlLoaded, createSqlConfig, createSqlCustom, createSqlLoaded, type DataSource } from "./sql";
+import { createSqlConfig, type DataSource } from "./sql";
 
 declare const CORE_EXE: string;
 
@@ -21,106 +14,12 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   // instantiate the Config SQL
   const sqlConfig = createSqlConfig("config.db");
 
-  // not yet the DataSource SQL
-  let sqlLoaded: SqlLoaded | undefined;
-  let sqlCustom: SqlCustom | undefined;
-
   const display = createDisplay(mainWindow);
 
-  const closeAll = (): void => {
-    if (sqlLoaded) {
-      sqlLoaded.close();
-      sqlLoaded = undefined;
-    }
-    if (sqlCustom) {
-      sqlCustom.close();
-      sqlCustom = undefined;
-    }
+  const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
     appWindows.closeAll(mainWindow);
-  };
-
-  const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
-    log("changeSqlLoaded");
-    closeAll();
-    return createSqlLoaded(dataSource);
-  };
-
-  const changeSqlCustom = (dataSource: DataSource): SqlCustom => {
-    log("changeSqlCustom");
-    closeAll();
-    return createSqlCustom(dataSource);
-  };
-
-  /*
-    openDataSource to open any and all types of DataSource
-  */
-
-  const openDataSource = async (dataSource: DataSource): Promise<void> => {
-    /*
-      subroutines
-    */
-    const openSqlLoaded = async (when: string, getReflected: (path: string) => Promise<Reflected>): Promise<void> => {
-      sqlLoaded = changeSqlLoaded(dataSource);
-      if (options.alwaysReload || sqlLoaded.shouldReload(when)) {
-        log("getLoaded");
-        const reflected = await getReflected(dataSource.path);
-        // save Reflected
-        const jsonPath = getAppFilename(`Reflected.${dataSource.hash}.json`);
-        log(`writeFileSync(${jsonPath})`);
-        writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
-        sqlLoaded.save(reflected, when, dataSource.hash);
-      } else log("!getLoaded");
-      const appWindow = createAppWindow(display, sqlLoaded, sqlConfig, dataSource.path, setViewMenu, {
-        kind: "openViewType",
-      });
-      appWindows.add(appWindow, mainWindow);
-    };
-
-    const openSqlCustom = async (when: string, getCustom: (path: string) => Promise<CustomNode[]>): Promise<void> => {
-      sqlCustom = changeSqlCustom(dataSource);
-      if (options.alwaysReload || sqlCustom.shouldReload(when)) {
-        const nodes = await getCustom(dataSource.path);
-        const errors = fixCustomJson(nodes);
-        sqlCustom.save(nodes, errors, when);
-      }
-      const customWindow = createCustomWindow(display, sqlCustom, sqlConfig, dataSource.path, setViewMenu);
-      appWindows.add(customWindow, mainWindow);
-    };
-
-    const readDotNetApi = async (path: string): Promise<Reflected> => {
-      const json = await dotNetApi.getJson(path);
-      const reflected = JSON.parse(json);
-      return reflected;
-    };
-
-    const readCoreJson = async (path: string): Promise<Reflected> => await readJsonT(path, isReflected);
-
-    const readCustomJson = async (path: string): Promise<CustomNode[]> => await readJsonT(path, isCustomJson);
-
-    /*
-      statements wrapped in a try/catch handler
-    */
-
-    try {
-      log("openDataSource");
-      const path = dataSource.path;
-      display.showMessage(`Loading ${path}`, "Loading...");
-      switch (dataSource.type) {
-        case "loadedAssemblies":
-          await openSqlLoaded(await dotNetApi.getWhen(dataSource.path), readDotNetApi);
-          break;
-        case "coreJson":
-          await openSqlLoaded(await whenFile(dataSource.path), readCoreJson);
-          break;
-        case "customJson":
-          await openSqlCustom(await whenFile(dataSource.path), readCustomJson);
-          break;
-      }
-      // remember as most-recently-opened iff it opens successfully
-      sqlConfig.dataSource = dataSource;
-    } catch (error: unknown | Error) {
-      display.showException(error);
-    }
+    const mainApi = await openDataSource(dataSource, display, dotNetApi, setViewMenu, sqlConfig);
+    if (mainApi) appWindows.add(mainApi, mainWindow);
   };
 
   /*
@@ -132,7 +31,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     if (!paths) return;
     const path = paths[0];
     const dataSource: DataSource = { path, type: "loadedAssemblies", hash: hash(path) };
-    await openDataSource(dataSource);
+    await reopenDataSource(dataSource);
   };
 
   const openJsonPath = async (filters: FileFilter[], defaultPath?: string): Promise<string | undefined> => {
@@ -149,21 +48,21 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     const path = await openJsonPath([{ name: "Core", extensions: ["json"] }], pathJoin(CORE_EXE, "Core.json"));
     if (!path) return;
     const dataSource: DataSource = { path, type: "coreJson", hash: hash(path) };
-    await openDataSource(dataSource);
+    await reopenDataSource(dataSource);
   };
 
   const openCustomJson = async (): Promise<void> => {
     const path = await openJsonPath([{ name: "*", extensions: ["json"] }]);
     if (!path) return;
     const dataSource: DataSource = { path, type: "customJson", hash: hash(path) };
-    await openDataSource(dataSource);
+    await reopenDataSource(dataSource);
   };
 
   const openRecent = async (path: string): Promise<void> => {
     const type = sqlConfig.recent().find((it) => it.path === path)?.type;
     if (!type) throw new Error("Unknown recent path");
     const dataSource: DataSource = { path, type, hash: hash(path) };
-    await openDataSource(dataSource);
+    await reopenDataSource(dataSource);
   };
 
   const getRecent = (): string[] => {
@@ -171,6 +70,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     recent.sort((x, y) => -(x.when - y.when)); // reverse chronological
     return recent.map((it) => it.path);
   };
+
   const { setViewMenu } = createAppMenu(
     mainWindow,
     openAssemblies,
@@ -182,7 +82,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
 
   if (sqlConfig.dataSource) {
     if (existsSync(sqlConfig.dataSource.path)) {
-      await openDataSource(sqlConfig.dataSource);
+      await reopenDataSource(sqlConfig.dataSource);
     } else {
       display.showMessage("Not found", "Use the File menu, to open a data source.");
     }

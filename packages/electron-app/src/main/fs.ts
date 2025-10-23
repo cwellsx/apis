@@ -1,14 +1,14 @@
-import { app } from "electron";
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
+import { getAppDataPath } from "./appDataPath";
 
 export const pathJoin = (directory: string, filename: string): string => path.join(directory, filename);
 
 export const getAppFilename = (filename: string): string => {
   // beware https://www.electronjs.org/docs/latest/api/app#appgetpathname
   // says that, "it is not recommended to write large files here"
-  const dir = path.join(app.getPath("userData"), "app_data");
+  const dir = getAppDataPath();
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return path.join(dir, filename);
 };
@@ -16,7 +16,7 @@ export const getAppFilename = (filename: string): string => {
 export const getLogFilename = (filename: string): string => {
   // beware https://www.electronjs.org/docs/latest/api/app#appgetpathname
   // says that, "it is not recommended to write large files here"
-  const dir = path.join(app.getPath("userData"), "app_data", "log");
+  const dir = path.join(getAppDataPath(), "log");
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   return path.join(dir, filename);
 };
