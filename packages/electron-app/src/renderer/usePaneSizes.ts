@@ -56,7 +56,7 @@ export const usePaneSizes = (inputs: Input[], padding: number): [DefaultSizes, S
   // becuase now it can depend on refSizes instead of on sizes
   const refSizes = React.useRef(sizes);
 
-  const wrapSetSize = (sizes: DefaultSizes, who: string): void => {
+  const wrapSetSize = (sizes: DefaultSizes /* , who: string */): void => {
     // log whether setSize is called internally and/or from the onChange event of the SplitPane component
     // log(who, sizes);
     setSizes(sizes);

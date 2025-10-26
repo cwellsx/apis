@@ -4,7 +4,7 @@ import { textIsEdgeId } from "../shared-types";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { getAppFilename, readFileSync, writeFileSync } from "./fs";
-import { getVizJsFormats, runDotExe, runVizJs } from "./graphviz";
+import { runDotExe, runVizJs } from "./graphviz";
 import type { ImageData, ImageNode, Shape } from "./imageDataTypes";
 import { log } from "./log";
 import { options } from "./shared-types";
@@ -147,7 +147,7 @@ const usingBoth = async (
   // create the *.dot file
   writeFileSync(dotFilename, dotText);
 
-  const formats = await getVizJsFormats();
+  //const formats = await getVizJsFormats();
   const svgText = await runVizJs(dotText, "svg");
   const mapText = await runVizJs(dotText, "cmapx");
 
@@ -173,7 +173,7 @@ const usingJs = async (
   dotText: string,
   getAreaAttributes: (id: string) => ExtraAttributes
 ): Promise<Image | string> => {
-  const formats = await getVizJsFormats();
+  //const formats = await getVizJsFormats();
   const svgText = await runVizJs(dotText, "svg");
   const xml = await runVizJs(dotText, "cmapx");
 

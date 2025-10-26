@@ -88,8 +88,8 @@ export const createCustomWindow = (
       display.showAppOptions(appOptions);
     },
     onGraphEvent: (graphEvent: GraphEvent): void => {
-      const { id, viewType, event } = graphEvent;
-      const { leafType, details } = viewFeatures[viewType];
+      const { id, viewType } = graphEvent;
+      const { leafType } = viewFeatures[viewType];
       if (isEdgeId(id)) {
         const { serverId } = edgeIdToNodeIds(id);
         sendDetails(serverId);
@@ -119,7 +119,7 @@ export const createCustomWindow = (
       sqlCustom.writeGraphFilter(clusterBy, graphFilter);
       showCustom();
     },
-    onDetailEvent: (detailEvent): void => {
+    onDetailEvent: (/* detailEvent */): void => {
       // unexpected
     },
   };

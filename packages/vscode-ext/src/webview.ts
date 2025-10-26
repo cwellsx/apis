@@ -1,4 +1,5 @@
 // this triple-slash reference must be top of the source file, before the import statements
+// eslint-disable-next-line @typescript-eslint/triple-slash-reference
 /// <reference path="../src.webview/ipc.d.ts" />
 
 import * as vscode from "vscode";
@@ -92,9 +93,7 @@ export const showWebview = async (context: vscode.ExtensionContext, uris: Uris) 
 
   const onDidReceiveMessage = createEventHandler(uris, panel.webview);
 
-  const listener = panel.webview.onDidReceiveMessage(
-    async (message) => await onDidReceiveMessage(message)
-  );
+  const listener = panel.webview.onDidReceiveMessage(async (message) => await onDidReceiveMessage(message));
 
   context.subscriptions.push(panel, listener);
 };

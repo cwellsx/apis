@@ -103,7 +103,7 @@ export function convertToImage(
     });
 
   const metaGroupLabels = [".NET", "3rd-party"];
-  const { leafType, details } = viewFeatures[viewOptions.viewType];
+  const { details } = viewFeatures[viewOptions.viewType];
 
   const toImageNode = (node: Node): ImageNode => {
     const nodeId = node.nodeId;
@@ -117,13 +117,13 @@ export function convertToImage(
       id: nodeIdToText(nodeId),
       label: node.label,
       className:
-        imageAttribute.className ?? isParent(node)
+        (imageAttribute.className ?? isParent(node))
           ? isGroupExpanded(nodeId)
             ? "expanded"
             : "closed"
           : details.includes("leaf")
-          ? "leaf-details"
-          : "leaf-none",
+            ? "leaf-details"
+            : "leaf-none",
       ...imageAttribute,
     };
 
@@ -144,8 +144,8 @@ export function convertToImage(
     return !isParent(node)
       ? { type: "node", ...textNode }
       : !isGroupExpanded(nodeId)
-      ? { type: "group", ...textNode }
-      : { type: "subgraph", ...textNode, children: toImageNodes(node.children) };
+        ? { type: "group", ...textNode }
+        : { type: "subgraph", ...textNode, children: toImageNodes(node.children) };
   };
 
   // whether a group is visible depends on whether it contains visible leafs

@@ -189,7 +189,7 @@ export const createAppWindow = (
       showViewType(viewType);
     },
     onDetailEvent: (detailEvent: DetailEvent): void => {
-      const { id, viewType } = detailEvent;
+      const { id } = detailEvent;
       const nodeId = toAnyNodeId(id);
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window

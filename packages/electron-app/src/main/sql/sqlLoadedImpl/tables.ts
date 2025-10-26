@@ -140,7 +140,7 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
   const localsType = db.newSqlTable<LocalsTypeColumns>(
     "localsType",
     ["assemblyName", "ownerMethod", "compilerType"],
-    (key) => false,
+    (/* key */) => false,
     {
       assemblyName: "references",
       ownerType: 0,

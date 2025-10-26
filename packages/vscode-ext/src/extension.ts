@@ -15,7 +15,7 @@ export const activate = async (context: vscode.ExtensionContext) => {
   // This line of code will only be executed once when your extension is activated
   console.log('Congratulations, your extension "sys-view" is now active');
 
-  var helloMessage = hello();
+  const helloMessage = hello();
   console.log(helloMessage);
 
   // The command has been defined in the package.json file

@@ -3,8 +3,10 @@ import { createApplication, createBrowserWindow, loadURL } from "./main";
 import { getErrorString } from "./main/error";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
-if (require("electron-squirrel-startup")) {
-  // eslint-disable-line global-require
+if (
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  require("electron-squirrel-startup")
+) {
   app.quit();
 }
 

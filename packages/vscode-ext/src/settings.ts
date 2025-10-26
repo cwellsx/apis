@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 
-const getAppSettings = () => {
+export const getAppSettings = () => {
   const config = vscode.workspace.getConfiguration("sysView");
 
   const zoomPercent = config.get<number>("zoomPercent");
