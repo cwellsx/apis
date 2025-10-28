@@ -2,7 +2,7 @@ import { SqlDatabase } from "sqlio";
 import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../shared-types";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
 import { toNameNodeId } from "../nodeIds";
-import { options } from "../shared-types";
+import { jsonParse, options } from "../shared-types";
 
 type ConfigColumns = {
   name: string;
@@ -127,7 +127,7 @@ export class SqlCustom {
     this.readLeafVisible = (): NodeId[] => {
       const found = configTable.selectOne({ name: "leafVisible" });
       if (!found) throw new Error("readLeafVisible nodes not found");
-      return JSON.parse(found.value);
+      return jsonParse(found.value);
     };
     this.writeLeafVisible = (leafVisible: NodeId[]): void => {
       configTable.upsert({ name: "leafVisible", value: JSON.stringify(leafVisible) });
@@ -135,7 +135,7 @@ export class SqlCustom {
     this.readGroupExpanded = (clusterBy: string[] | undefined): NodeId[] => {
       const found = configTable.selectOne({ name: keyGroupExpanded(clusterBy) });
       if (!found) return []; // not predefined so initially all closed
-      return JSON.parse(found.value);
+      return jsonParse(found.value);
     };
     this.writeGroupExpanded = (clusterBy: string[] | undefined, groupExpanded: NodeId[]): void => {
       configTable.upsert({ name: keyGroupExpanded(clusterBy), value: JSON.stringify(groupExpanded) });
@@ -143,7 +143,7 @@ export class SqlCustom {
     this.readIsCheckModelAll = (): boolean => {
       const found = configTable.selectOne({ name: "isCheckModelAll" });
       if (!found) throw new Error("readIsCheckModelAll nodes not found");
-      return JSON.parse(found.value);
+      return jsonParse(found.value);
     };
     this.writeIsCheckModelAll = (isCheckModelAll: boolean): void => {
       configTable.upsert({ name: "isCheckModelAll", value: JSON.stringify(isCheckModelAll) });

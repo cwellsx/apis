@@ -5,7 +5,7 @@ import type {
   DisplayApi,
   FilterEvent,
   GraphEvent,
-  MainApi,
+  MainApiAsync,
   NodeId,
   ViewCustomErrors,
   ViewOptions,
@@ -15,18 +15,18 @@ import { isCustomManual, isCustomViewOptions } from "../shared-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { createViewGraph } from "./imageDataTypes";
 import type { SetViewMenu, ViewMenuItem } from "./menu";
-import { edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
+import { anyNodeIdToText, edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
 import { viewFeatures } from "./shared-types";
 import { SqlConfig, SqlCustom } from "./sql";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
-export const createCustomWindow = (
+export const createCustomWindow = async (
   display: DisplayApi,
   sqlCustom: SqlCustom,
   sqlConfig: SqlConfig,
   dataSourcePath: string,
   setViewMenu: SetViewMenu
-): MainApi => {
+): Promise<MainApiAsync> => {
   display.showAppOptions(sqlConfig.appOptions);
 
   const createViewMenu = (): void => {
@@ -35,7 +35,7 @@ export const createCustomWindow = (
     const viewMenu = {
       menuItems,
       currentViewType: sqlCustom.viewState.viewType,
-      showViewType: (viewType: ViewType): void => openViewType(viewType),
+      showViewType: async (viewType: ViewType): Promise<void> => await openViewType(viewType),
     };
     setViewMenu(viewMenu);
   };
@@ -67,7 +67,7 @@ export const createCustomWindow = (
     if (!isNameNodeId(nodeId)) throw new Error("Expected nameNodeId");
     const nodes = sqlCustom.readAll();
     const node = nodes.find((node) => node.id === nodeId.name);
-    if (!node) throw new Error(`Node not found: ${nodeId}`);
+    if (!node) throw new Error(`Node not found: ${anyNodeIdToText(nodeId)}`);
     const viewDetails: DetailedCustom = {
       id: node.id,
       layer: node.layer ?? "",
@@ -77,17 +77,17 @@ export const createCustomWindow = (
     display.showDetails(viewDetails);
   };
 
-  // implement the MainApi which will be bound to ipcMain
-  const mainApi: MainApi = {
-    onViewOptions: (viewOptions: ViewOptions): void => {
+  // implement the MainApiAsync which will be bound to ipcMain
+  const mainApi: MainApiAsync = {
+    onViewOptions: async (viewOptions: ViewOptions): Promise<void> => {
       setCustomViewOptions(viewOptions);
-      showViewType(viewOptions.viewType);
+      await showViewType(viewOptions.viewType);
     },
     onAppOptions: (appOptions: AppOptions): void => {
       sqlConfig.appOptions = appOptions;
       display.showAppOptions(appOptions);
     },
-    onGraphEvent: (graphEvent: GraphEvent): void => {
+    onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
       const { id, viewType } = graphEvent;
       const { leafType } = viewFeatures[viewType];
       if (isEdgeId(id)) {
@@ -104,7 +104,7 @@ export const createCustomWindow = (
         toggleNodeId(graphFilter.groupExpanded, id);
         sqlCustom.writeGraphFilter(clusterBy, graphFilter);
         setCustomViewOptions(viewOptions);
-        showViewType(viewOptions.viewType);
+        await showViewType(viewOptions.viewType);
         return;
       } else {
         // else this is a leaf
@@ -112,16 +112,17 @@ export const createCustomWindow = (
       }
       return;
     },
-    onFilterEvent: (filterEvent: FilterEvent): void => {
+    onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
       const { viewOptions, graphFilter } = filterEvent;
       if (!isCustomViewOptions(viewOptions)) throw new Error("Unexpected viewType");
       const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
       sqlCustom.writeGraphFilter(clusterBy, graphFilter);
-      showCustom();
+      await showCustom();
     },
-    onDetailEvent: (/* detailEvent */): void => {
-      // unexpected
+    onDetailEvent: (/* detailEvent */): Promise<void> => {
+      throw Error("Not implemented");
     },
+    showException: (error: unknown): void => display.showException(error),
   };
 
   const showCustom = async (): Promise<void> => {
@@ -144,10 +145,10 @@ export const createCustomWindow = (
     display.showView(viewErrors);
   };
 
-  const showViewType = (viewType: ViewType): void => {
+  const showViewType = async (viewType: ViewType): Promise<void> => {
     switch (viewType) {
       case "custom":
-        showCustom();
+        await showCustom();
         break;
       case "errors":
         showErrors();
@@ -157,7 +158,7 @@ export const createCustomWindow = (
     }
   };
 
-  const openViewType = (viewType?: ViewType): void => {
+  const openViewType = async (viewType?: ViewType): Promise<void> => {
     if (viewType) sqlCustom.viewState.viewType = viewType;
     else viewType = sqlCustom.viewState.viewType;
     switch (viewType) {
@@ -170,10 +171,10 @@ export const createCustomWindow = (
       default:
         throw new Error("ViewType not implemented");
     }
-    showViewType(viewType);
+    await showViewType(viewType);
   };
 
-  openViewType();
+  await openViewType();
 
   return mainApi;
 };

@@ -7,7 +7,7 @@ import type {
   GraphEvent,
   GraphFilter,
   GraphViewOptions,
-  MainApi,
+  MainApiAsync,
   ViewCompiler,
   ViewDetails,
   ViewErrors,
@@ -23,6 +23,7 @@ import { createViewGraph } from "./imageDataTypes";
 import { log } from "./log";
 import type { SetViewMenu, ViewMenu, ViewMenuItem } from "./menu";
 import {
+  anyNodeIdToText,
   getClusterNames,
   isAssemblyNodeId,
   isEdgeId,
@@ -41,14 +42,14 @@ import { CommonGraphViewType } from "./sql/sqlLoadedApiTypes";
 
 type OnOpen = { kind: "openViewType" } | { kind: "showMethods"; nodeId: MethodNodeId };
 
-export const createAppWindow = (
+export const createAppWindow = async (
   display: DisplayApi,
   sqlLoaded: SqlLoaded,
   sqlConfig: SqlConfig,
   dataSourcePath: string,
   setViewMenu: SetViewMenu,
   onOpen: OnOpen
-): MainApi => {
+): Promise<MainApiAsync> => {
   const createViewMenu = (): void => {
     // initialize ViewMenu before the menu is recreated
     const menuItems: ViewMenuItem[] = [
@@ -61,7 +62,7 @@ export const createAppWindow = (
     const viewMenu: ViewMenu = {
       menuItems,
       currentViewType: sqlLoaded.viewState.viewType,
-      showViewType: (viewType: ViewType): void => openViewType(viewType),
+      showViewType: async (viewType: ViewType): Promise<void> => await openViewType(viewType),
     };
     setViewMenu(viewMenu);
   };
@@ -116,18 +117,18 @@ export const createAppWindow = (
     }
   };
 
-  // implement the MainApi which will be bound to ipcMain
-  const mainApi: MainApi = {
-    onViewOptions: (viewOptions: ViewOptions): void => {
+  // implement the MainApiAsync which will be bound to ipcMain
+  const mainApi: MainApiAsync = {
+    onViewOptions: async (viewOptions: ViewOptions): Promise<void> => {
       setViewOptions(viewOptions);
-      showViewType(viewOptions.viewType);
+      await showViewType(viewOptions.viewType);
     },
     onAppOptions: (appOptions: AppOptions): void => {
       sqlConfig.appOptions = appOptions;
       createViewMenu(); // because change appOptions might affect the View menu
       display.showAppOptions(appOptions);
     },
-    onGraphEvent: (graphEvent: GraphEvent): void => {
+    onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
       const { id, viewType, event } = graphEvent;
       if (viewType === "custom") throw new Error("Unexpected viewType");
       const { leafType, details } = viewFeatures[viewType];
@@ -144,7 +145,7 @@ export const createAppWindow = (
         const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
         toggleNodeId(graphFilter.groupExpanded, id);
         sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-        showViewType(viewOptions.viewType);
+        await showViewType(viewOptions.viewType);
         return;
       }
       // else this is a leaf
@@ -164,13 +165,13 @@ export const createAppWindow = (
             const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
             showAdjacent(assemblyReferences, graphFilter, assemblyName);
             sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-            showReferences();
+            await showReferences();
           } else if (event.ctrlKey) {
             const { clusterBy } = getGraphViewOptions(viewType);
             const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
             removeNodeId(graphFilter.leafVisible, id);
             sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-            showReferences();
+            await showReferences();
           } else {
             const typeInfos = sqlLoaded.readTypeInfos(assemblyName);
             const types = convertLoadedToDetailedAssembly(typeInfos, assemblyName);
@@ -180,28 +181,29 @@ export const createAppWindow = (
         }
       }
     },
-    onFilterEvent: (filterEvent: FilterEvent): void => {
+    onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
       const { viewOptions, graphFilter } = filterEvent;
       const viewType = viewOptions.viewType;
       if (viewType === "custom") throw new Error("Unexpected viewType");
       const clusterBy = getClusterBy(viewOptions);
       sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-      showViewType(viewType);
+      await showViewType(viewType);
     },
-    onDetailEvent: (detailEvent: DetailEvent): void => {
+    onDetailEvent: async (detailEvent: DetailEvent): Promise<void> => {
       const { id } = detailEvent;
       const nodeId = toAnyNodeId(id);
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
-      createSecondWindow((display: DisplayApi, setViewMenu: SetViewMenu) =>
+      await createSecondWindow((display: DisplayApi, setViewMenu: SetViewMenu) =>
         createAppWindow(display, sqlLoaded, sqlConfig, dataSourcePath, setViewMenu, { kind: "showMethods", nodeId })
       );
     },
+    showException: (error: unknown): void => display.showException(error),
   };
 
   const showMethods = async (methodId?: MethodNodeId): Promise<void> => {
     try {
-      log(`showMethods(${methodId ?? ""})`);
+      log(`showMethods(${methodId ? anyNodeIdToText(methodId) : ""})`);
 
       const getMethodNodeId = (methodViewOptions: MethodViewOptions): MethodNodeId => {
         if (!methodViewOptions.methodId) throw new Error("No methodId");
@@ -292,20 +294,20 @@ export const createAppWindow = (
     display.showView(viewCompiler);
   };
 
-  const showViewType = (viewType: ViewType): void => {
+  const showViewType = async (viewType: ViewType): Promise<void> => {
     log(`showViewType(${viewType})`);
     switch (viewType) {
       case "references":
-        showReferences();
+        await showReferences();
         break;
       case "methods":
-        showMethods();
+        await showMethods();
         break;
       case "errors":
         showErrors();
         break;
       case "apis":
-        showApis();
+        await showApis();
         break;
       case "compiler":
         showCompiler();
@@ -315,7 +317,7 @@ export const createAppWindow = (
     }
   };
 
-  const openViewType = (viewType?: ViewType): void => {
+  const openViewType = async (viewType?: ViewType): Promise<void> => {
     if (viewType) sqlLoaded.viewState.viewType = viewType;
     else viewType = sqlLoaded.viewState.viewType;
     switch (viewType) {
@@ -336,17 +338,17 @@ export const createAppWindow = (
       default:
         throw new Error("ViewType not implemented");
     }
-    showViewType(viewType);
+    await showViewType(viewType);
   };
 
   display.showAppOptions(sqlConfig.appOptions);
 
   switch (onOpen.kind) {
     case "openViewType":
-      openViewType();
+      await openViewType();
       break;
     case "showMethods":
-      showMethods(onOpen.nodeId);
+      await showMethods(onOpen.nodeId);
       display.setTitle(`Method — ${dataSourcePath}`);
       break;
   }

@@ -47,7 +47,7 @@ export function convertToImage(
       node.children.forEach((child) => {
         assertUnique(child);
         if (child.parent !== node) {
-          throw new Error(`Unexpected parent of: ${nodeId}`);
+          throw new Error(`Unexpected parent of: ${stringId}`);
         }
       });
     }

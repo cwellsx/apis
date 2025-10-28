@@ -1,75 +1,16 @@
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
 import { ViewType } from "../shared-types";
+import { createDisplay } from "./show";
 
 export type ViewMenuItem = { label: string; viewType: ViewType };
 
 export type ViewMenu = {
   menuItems: ViewMenuItem[];
   currentViewType: ViewType | undefined;
-  showViewType: (viewType: ViewType) => void;
+  showViewType: (viewType: ViewType) => Promise<void>;
 };
 
 export type SetViewMenu = (viewMenu: ViewMenu) => void;
-
-const getFileSubmenu = (
-  openAssemblies: () => Promise<void>,
-  openCustomJson: () => Promise<void>,
-  openCoreJson: () => Promise<void>,
-  resetViewMenu: () => void,
-  updateRecent: () => void
-): MenuItemConstructorOptions[] => [
-  {
-    label: "Directory containing binary .NET assemblies",
-    click: async () => {
-      resetViewMenu();
-      await openAssemblies();
-      updateRecent();
-    },
-  },
-  {
-    label: "JSON file containing `id` and `dependencies`",
-    click: async () => {
-      resetViewMenu();
-      await openCustomJson();
-      updateRecent();
-    },
-  },
-  {
-    label: "Core.json file created by running Core.exe",
-    click: async () => {
-      resetViewMenu();
-      await openCoreJson();
-      updateRecent();
-    },
-  },
-];
-
-const getRecentSubmenu = (
-  recent: string[],
-  openRecent: (path: string) => Promise<void>,
-  resetViewMenu: () => void,
-  updateRecent: () => void
-): MenuItemConstructorOptions[] =>
-  recent.map((path) => ({
-    label: path,
-    click: async () => {
-      resetViewMenu();
-      await openRecent(path);
-      updateRecent();
-    },
-  }));
-
-const getViewSubmenu = (
-  menuItems: ViewMenuItem[],
-  currentViewType: ViewType | undefined,
-  showViewType: (viewType: ViewType) => void
-): MenuItemConstructorOptions[] =>
-  menuItems.map(({ label, viewType }) => ({
-    label,
-    type: "checkbox",
-    checked: viewType === currentViewType,
-    click: viewType === currentViewType ? undefined : async () => showViewType(viewType),
-  }));
 
 const getMenu = (
   fileSubmenu: MenuItemConstructorOptions[],
@@ -112,6 +53,7 @@ export const createAppMenu = (
   openRecent: (path: string) => Promise<void>,
   getRecent: () => string[]
 ): { setViewMenu: SetViewMenu } => {
+  // this creates and assigns the menu and returns a setView<enu to update the View submenu
   // could call getRecent() every time we need it, but it's a database select so might as well cache it
   let recent = getRecent();
 
@@ -119,7 +61,7 @@ export const createAppMenu = (
   let viewSubmenu: MenuItemConstructorOptions[] | undefined = undefined;
 
   const setMenu = (): void => {
-    const recentSubmenu = getRecentSubmenu(recent, openRecent, resetViewMenu, updateRecent);
+    const recentSubmenu = getRecentSubmenu();
     const menuTemplate = getMenu(fileSubmenu, recentSubmenu, viewSubmenu);
     const menu = Menu.buildFromTemplate(menuTemplate);
     window.setMenu(menu);
@@ -134,19 +76,62 @@ export const createAppMenu = (
     setMenu();
   };
 
+  const display = createDisplay(window);
+
+  const invoke = (func: () => Promise<void>): (() => void) => {
+    return () => {
+      resetViewMenu();
+      func()
+        .then(() => {
+          updateRecent();
+        })
+        .catch((error) => {
+          display.showException(error);
+        });
+    };
+  };
+
   // these items never change
-  const fileSubmenu = getFileSubmenu(openAssemblies, openCustomJson, openCoreJson, resetViewMenu, updateRecent);
+  const fileSubmenu: MenuItemConstructorOptions[] = [
+    {
+      label: "Directory containing binary .NET assemblies",
+      click: invoke(openAssemblies),
+    },
+    {
+      label: "JSON file containing `id` and `dependencies`",
+      click: invoke(openCustomJson),
+    },
+    {
+      label: "Core.json file created by running Core.exe",
+      click: invoke(openCoreJson),
+    },
+  ];
+
+  const getRecentSubmenu = (): MenuItemConstructorOptions[] =>
+    recent.map((path) => ({
+      label: path,
+      click: invoke(async () => openRecent(path)),
+    }));
 
   const setViewMenu: SetViewMenu = (viewMenu: ViewMenu) => {
     const { menuItems, currentViewType, showViewType } = viewMenu;
-    const setViewType = (viewType: ViewType) => {
+    const setViewType = async (newViewType: ViewType) => {
       // update the view
-      showViewType(viewType);
+      await showViewType(newViewType);
       // update this menu
-      editMenu(viewType);
+      editMenu(newViewType);
     };
-    const editMenu = (viewType: ViewType | undefined): void => {
-      viewSubmenu = getViewSubmenu(menuItems, viewType, setViewType);
+    const editMenu = (newViewType: ViewType | undefined): void => {
+      //viewSubmenu = getViewSubmenu(menuItems, viewType, setViewType);
+      viewSubmenu = menuItems.map(({ label, viewType }) => ({
+        label,
+        type: "checkbox",
+        checked: viewType === newViewType,
+        click:
+          viewType === newViewType
+            ? undefined
+            : () => setViewType(viewType).catch((error) => display.showException(error)),
+      }));
       setMenu();
     };
     editMenu(currentViewType);

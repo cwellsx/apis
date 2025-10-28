@@ -1,5 +1,5 @@
 import { DotNetApi } from "backend/createDotNetApi";
-import { DisplayApi, MainApi } from "../shared-types";
+import { DisplayApi, MainApiAsync } from "../shared-types";
 import { createAppWindow } from "./createAppWindow";
 import { createCustomWindow } from "./createCustomWindow";
 import type { CustomNode } from "./customJson";
@@ -9,7 +9,7 @@ import type { Reflected } from "./loaded";
 import { isReflected } from "./loaded";
 import { log } from "./log";
 import { SetViewMenu } from "./menu";
-import { options } from "./shared-types";
+import { jsonParse, options } from "./shared-types";
 import { createSqlCustom, createSqlLoaded, SqlConfig, SqlCustom, SqlLoaded, type DataSource } from "./sql";
 
 // not yet the DataSource SQL
@@ -49,8 +49,11 @@ export const openDataSource = async (
   dotNetApi: DotNetApi,
   setViewMenu: SetViewMenu,
   sqlConfig: SqlConfig
-): Promise<MainApi | undefined> => {
-  const openSqlLoaded = async (when: string, getReflected: (path: string) => Promise<Reflected>): Promise<MainApi> => {
+): Promise<MainApiAsync | undefined> => {
+  const openSqlLoaded = async (
+    when: string,
+    getReflected: (path: string) => Promise<Reflected>
+  ): Promise<MainApiAsync> => {
     sqlLoaded = changeSqlLoaded(dataSource);
     if (options.alwaysReload || sqlLoaded.shouldReload(when)) {
       log("getLoaded");
@@ -66,7 +69,10 @@ export const openDataSource = async (
     });
   };
 
-  const openSqlCustom = async (when: string, getCustom: (path: string) => Promise<CustomNode[]>): Promise<MainApi> => {
+  const openSqlCustom = async (
+    when: string,
+    getCustom: (path: string) => Promise<CustomNode[]>
+  ): Promise<MainApiAsync> => {
     sqlCustom = changeSqlCustom(dataSource);
     if (options.alwaysReload || sqlCustom.shouldReload(when)) {
       const nodes = await getCustom(dataSource.path);
@@ -78,7 +84,7 @@ export const openDataSource = async (
 
   const readDotNetApi = async (path: string): Promise<Reflected> => {
     const json = await dotNetApi.getJson(path);
-    const reflected = JSON.parse(json);
+    const reflected = jsonParse<Reflected>(json);
     return reflected;
   };
 
@@ -94,7 +100,7 @@ export const openDataSource = async (
     log("openDataSource");
     const path = dataSource.path;
     display.showMessage(`Loading ${path}`, "Loading...");
-    let result: MainApi;
+    let result: MainApiAsync;
     switch (dataSource.type) {
       case "loadedAssemblies":
         result = await openSqlLoaded(await dotNetApi.getWhen(dataSource.path), readDotNetApi);
@@ -109,7 +115,7 @@ export const openDataSource = async (
     // remember as most-recently-opened iff it opens successfully
     sqlConfig.dataSource = dataSource;
     return result;
-  } catch (error: unknown | Error) {
+  } catch (error: unknown) {
     display.showException(error);
     return undefined;
   }

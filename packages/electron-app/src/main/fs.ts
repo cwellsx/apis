@@ -42,7 +42,7 @@ export const whenFile = async (path: string): Promise<string> => {
 type TypeGuard<T> = (json: unknown) => json is T;
 
 const parseJsonT = <T>(text: string, typeGuard: TypeGuard<T>): T => {
-  const json = JSON.parse(text);
+  const json = JSON.parse(text) as unknown;
   if (typeGuard(json)) return json;
   throw new Error("Unexpected"); // the type guard should return true or throw an explicit exception
 };

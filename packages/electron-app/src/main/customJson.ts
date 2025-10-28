@@ -147,7 +147,7 @@ export const isCustomJson = (json: unknown): json is CustomNode[] => {
   if (!json) throw new Error("Expect json is truthy");
   if (!Array.isArray(json)) throw new Error("Expect json is array");
   if (!json.length) throw new Error("Expect json array is not empty");
-  const first = json[0];
+  const first = json[0] as unknown;
   if (!precondition(first)) throw new Error("Expect json array of objects");
 
   // do the validation is two stages

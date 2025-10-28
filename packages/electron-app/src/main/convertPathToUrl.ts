@@ -28,7 +28,7 @@ export function registerFileProtocol() {
     try {
       return callback(path);
     } catch (error) {
-      console.error(`ERROR: registerFileProtocol: Could not get file path: error: ${error}, path: ${path}`);
+      console.error("ERROR: registerFileProtocol: Could not get file path", { error, path });
     }
   });
 }

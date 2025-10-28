@@ -23,7 +23,7 @@ import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../loaded";
 import { log } from "../log";
 import type { MethodNodeId, TypeNodeId } from "../nodeIds";
 import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
-import { mapOfMaps, options } from "../shared-types";
+import { jsonParse, mapOfMaps, options } from "../shared-types";
 import type {
   Call,
   CallstackIterator,
@@ -166,7 +166,7 @@ export class SqlLoaded {
       table.member.selectWhere(where).forEach((member) => {
         const type = goodTypeDictionary[member.typeMetadataToken];
         if (!type.members[member.memberType]) type.members[member.memberType] = [];
-        type.members[member.memberType]?.push(JSON.parse(member.memberInfo));
+        type.members[member.memberType]?.push(jsonParse(member.memberInfo));
       });
 
       return [...anonTypeInfos, ...goodTypeInfos];

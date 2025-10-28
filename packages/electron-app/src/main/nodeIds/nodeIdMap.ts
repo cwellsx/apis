@@ -1,7 +1,7 @@
 import type { ClusterBy, NodeId } from "../../shared-types";
 import { nodeIdToText, textToNodeId } from "../../shared-types";
 import { getOrSet } from "../shared-types";
-import { isClusterNodeId, NameNodeId, toAnyNodeId } from "./nodeIdTypes";
+import { isClusterNodeId, toAnyNodeId } from "./nodeIdTypes";
 
 export class NodeIdMap<TValue> {
   // private array: { key: NodeId; value: TValue }[] = [];
@@ -24,7 +24,7 @@ export class NodeIdMap<TValue> {
     this.getOrThrow = (key: NodeId): TValue => {
       const value = this.get(key);
       if (value) return value;
-      throw new Error(`NodeIdMap not found ${key}`);
+      throw new Error(`NodeIdMap not found ${nodeIdToText(key)}`);
     };
     this.getOrSet = (key: NodeId, getValue: () => TValue): TValue => getOrSet(this.data, nodeIdToText(key), getValue);
     this.has = (key: NodeId): boolean => this.data.has(nodeIdToText(key));
@@ -81,4 +81,4 @@ export const getClusterNames = (array: NodeId[], clusterBy: ClusterBy): string[]
   array
     .map(toAnyNodeId)
     .filter((nodeId) => isClusterNodeId(nodeId, clusterBy))
-    .map((nodeId) => (nodeId as NameNodeId).name);
+    .map((nodeId) => nodeId.name);

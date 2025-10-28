@@ -6,6 +6,7 @@ import {
   ReferenceViewOptions,
   ViewType,
 } from "../../shared-types";
+import { jsonParse } from "../shared-types";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
 
@@ -66,7 +67,7 @@ export class ViewState {
   get referenceViewOptions(): ReferenceViewOptions {
     const value = this._cache.getValue("referenceViewOptions");
     return value
-      ? { ...defaultViewOptions.referenceViewOptions, ...JSON.parse(value) }
+      ? { ...defaultViewOptions.referenceViewOptions, ...jsonParse(value) }
       : defaultViewOptions.referenceViewOptions;
   }
 
@@ -76,7 +77,7 @@ export class ViewState {
   get methodViewOptions(): MethodViewOptions {
     const value = this._cache.getValue("methodViewOptions");
     return value
-      ? { ...defaultViewOptions.methodViewOptions, ...JSON.parse(value) }
+      ? { ...defaultViewOptions.methodViewOptions, ...jsonParse(value) }
       : defaultViewOptions.methodViewOptions;
   }
 
@@ -85,7 +86,7 @@ export class ViewState {
   }
   get apiViewOptions(): ApiViewOptions {
     const value = this._cache.getValue("apiViewOptions");
-    return value ? { ...defaultViewOptions.apiViewOptions, ...JSON.parse(value) } : defaultViewOptions.apiViewOptions;
+    return value ? { ...defaultViewOptions.apiViewOptions, ...jsonParse(value) } : defaultViewOptions.apiViewOptions;
   }
 
   set compilerViewOptions(viewOptions: CompilerViewOptions) {
@@ -94,7 +95,7 @@ export class ViewState {
   get compilerViewOptions(): CompilerViewOptions {
     const value = this._cache.getValue("compilerViewOptions");
     return value
-      ? { ...defaultViewOptions.compilerViewOptions, ...JSON.parse(value) }
+      ? { ...defaultViewOptions.compilerViewOptions, ...jsonParse(value) }
       : defaultViewOptions.compilerViewOptions;
   }
 
@@ -103,7 +104,7 @@ export class ViewState {
   }
   get exes(): string[] {
     const value = this._cache.getValue("exes");
-    return value ? JSON.parse(value) : [];
+    return value ? jsonParse(value) : [];
   }
 
   get viewType(): ViewType {

@@ -1,6 +1,7 @@
 import { SqlDatabase } from "sqlio";
 import { AppOptions, defaultAppOptions } from "../../shared-types";
 import { log } from "../log";
+import { jsonParse } from "../shared-types";
 import { ConfigCache } from "./configCache";
 
 export type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";
@@ -39,7 +40,7 @@ export class SqlConfig {
 
   get dataSource(): DataSource | undefined {
     const value = this._cache.getValue("dataSource");
-    return value ? JSON.parse(value) : undefined;
+    return value ? jsonParse<DataSource>(value) : undefined;
   }
 
   set dataSource(value: DataSource | undefined) {
@@ -52,7 +53,7 @@ export class SqlConfig {
   }
   get appOptions(): AppOptions {
     const value = this._cache.getValue("appOptions");
-    return value ? { defaultAppOptions, ...JSON.parse(value) } : defaultAppOptions;
+    return value ? { ...defaultAppOptions, ...jsonParse(value) } : defaultAppOptions;
   }
 
   close() {

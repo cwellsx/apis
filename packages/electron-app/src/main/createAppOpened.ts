@@ -34,7 +34,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     await reopenDataSource(dataSource);
   };
 
-  const openJsonPath = async (filters: FileFilter[], defaultPath?: string): Promise<string | undefined> => {
+  const openJsonPath = (filters: FileFilter[], defaultPath?: string): string | undefined => {
     const paths = dialog.showOpenDialogSync(mainWindow, {
       properties: ["openFile"],
       filters,
@@ -45,14 +45,14 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   };
 
   const openCoreJson = async (): Promise<void> => {
-    const path = await openJsonPath([{ name: "Core", extensions: ["json"] }], pathJoin(CORE_EXE, "Core.json"));
+    const path = openJsonPath([{ name: "Core", extensions: ["json"] }], pathJoin(CORE_EXE, "Core.json"));
     if (!path) return;
     const dataSource: DataSource = { path, type: "coreJson", hash: hash(path) };
     await reopenDataSource(dataSource);
   };
 
   const openCustomJson = async (): Promise<void> => {
-    const path = await openJsonPath([{ name: "*", extensions: ["json"] }]);
+    const path = openJsonPath([{ name: "*", extensions: ["json"] }]);
     if (!path) return;
     const dataSource: DataSource = { path, type: "customJson", hash: hash(path) };
     await reopenDataSource(dataSource);

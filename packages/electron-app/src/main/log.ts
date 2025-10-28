@@ -2,11 +2,17 @@ import * as process from "process";
 import { appendFileSync, getAppFilename, getLogFilename } from "./fs";
 import { options } from "./shared-types";
 
-const logFilePath = getAppFilename("!all.log");
+const getLogFilePath = (() => {
+  let cached: string | undefined;
+  return (): string => {
+    if (cached === undefined) cached = getAppFilename("!all.log");
+    return cached;
+  };
+})();
 
 const logMessage = (message: string): void => {
   console.log(message);
-  appendFileSync(logFilePath, message + "\r\n");
+  appendFileSync(getLogFilePath(), message + "\r\n");
 };
 
 export function log(message: string) {

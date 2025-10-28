@@ -110,7 +110,7 @@ export const convertLoadedToCustom = (
         parent.children.push(leaf);
         leaf.parent = parent;
       });
-    } else roots.push(...Object.values(leafNodes));
+     } else roots.push(...leafNodes.values());
   }
 
   roots.sort((x, y) => x.label.localeCompare(y.label));

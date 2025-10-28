@@ -1,9 +1,9 @@
-import { log } from "./log";
+// this is called from fs which is called from log
+// so don't import log to avoid circular dependency
 
 let appDataPath: string | undefined;
 
 export const setAppDataPath = (value: string): void => {
-  log(`appDataPath=${value}`);
   appDataPath = value;
 };
 

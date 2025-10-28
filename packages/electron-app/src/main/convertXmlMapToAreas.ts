@@ -71,6 +71,7 @@ export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string
   log("convertXmlMapToAreas");
 
   const root: ElementCompact = xml2js(xml, { compact: true });
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
   const converted: Attributes[] | Attributes = root["map"]["area"];
   const areas: Attributes[] = Array.isArray(converted) ? converted : [converted];
 

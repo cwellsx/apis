@@ -93,7 +93,7 @@ export const showWebview = async (context: vscode.ExtensionContext, uris: Uris) 
 
   const onDidReceiveMessage = createEventHandler(uris, panel.webview);
 
-  const listener = panel.webview.onDidReceiveMessage(async (message) => await onDidReceiveMessage(message));
+  const listener = panel.webview.onDidReceiveMessage((message: WebviewEvent) => onDidReceiveMessage(message));
 
   context.subscriptions.push(panel, listener);
 };

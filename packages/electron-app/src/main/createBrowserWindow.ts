@@ -1,5 +1,5 @@
 import { BrowserWindow, IpcMainEvent } from "electron";
-import type { DisplayApi, MainApi } from "../shared-types";
+import type { DisplayApi, MainApiAsync } from "../shared-types";
 import { createSecondMenu, SetViewMenu } from "./menu";
 import { createDisplay } from "./show";
 
@@ -20,30 +20,29 @@ export const createBrowserWindow = (): BrowserWindow =>
   });
 
 // and load the index.html of the app.
-export const loadURL = (window: BrowserWindow) => window.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+export const loadURL = async (window: BrowserWindow): Promise<void> => {
+  await window.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
+  window.maximize();
+};
 
-type CreateWindow = (display: DisplayApi, setViewMenu: SetViewMenu) => MainApi;
+type CreateWindow = (display: DisplayApi, setViewMenu: SetViewMenu) => Promise<MainApiAsync>;
 
-export const createSecondWindow = (delegate: CreateWindow): void => {
+export const createSecondWindow = async (delegate: CreateWindow): Promise<void> => {
   const window = createBrowserWindow();
   // and load the index.html of the window
-  loadURL(window);
-  //window.webContents.openDevTools();
-  window.maximize();
-  window.webContents.once("did-finish-load", () => {
-    const display = createDisplay(window);
-    const { setViewMenu } = createSecondMenu(window);
-    const appWindow = delegate(display, setViewMenu);
-    appWindows.add(appWindow, window);
-  });
+  await loadURL(window);
+  const display = createDisplay(window);
+  const { setViewMenu } = createSecondMenu(window);
+  const appWindow = await delegate(display, setViewMenu);
+  appWindows.add(appWindow, window);
 };
 
 export const appWindows = (() => {
-  type AppWindow = { mainApi: MainApi; window: BrowserWindow };
+  type AppWindow = { mainApi: MainApiAsync; window: BrowserWindow };
   const instances: { [index: number]: AppWindow } = {};
 
-  const find = (event: IpcMainEvent): MainApi | undefined => instances[event.sender.id]?.mainApi;
-  const add = (mainApi: MainApi, window: BrowserWindow): void => {
+  const find = (event: IpcMainEvent): MainApiAsync | undefined => instances[event.sender.id]?.mainApi;
+  const add = (mainApi: MainApiAsync, window: BrowserWindow): void => {
     const id = window.webContents.id;
     instances[id] = { mainApi, window };
     window.on("closed", () => {

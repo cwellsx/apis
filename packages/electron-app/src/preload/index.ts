@@ -7,6 +7,8 @@ import type {
   MainApi,
   PreloadApis,
   RendererApi,
+  View,
+  ViewDetails,
   ViewOptions,
 } from "../shared-types";
 
@@ -19,9 +21,9 @@ const mainApiProxy: MainApi = {
 };
 
 const bindIpcRenderer = (rendererApi: RendererApi): void => {
-  ipcRenderer.on("showView", (event, view) => rendererApi.showView(view));
-  ipcRenderer.on("showDetails", (event, details) => rendererApi.showDetails(details));
-  ipcRenderer.on("showAppOptions", (event, appOptions) => rendererApi.showAppOptions(appOptions));
+  ipcRenderer.on("showView", (event, view: View) => rendererApi.showView(view));
+  ipcRenderer.on("showDetails", (event, details: ViewDetails) => rendererApi.showDetails(details));
+  ipcRenderer.on("showAppOptions", (event, appOptions: AppOptions) => rendererApi.showAppOptions(appOptions));
 };
 
 const preloadApis: PreloadApis = {

@@ -195,10 +195,7 @@ const usingJs = async (
   };
 };
 
-const usingExe = async (
-  dotText: string,
-  getAreaAttributes: (id: string) => ExtraAttributes
-): Promise<Image | string> => {
+const usingExe = (dotText: string, getAreaAttributes: (id: string) => ExtraAttributes): Image | string => {
   // specify all the path ames
   const dotFilename = getAppFilename("assemblies.dot");
   const pngFilename = getAppFilename("assemblies.png");
