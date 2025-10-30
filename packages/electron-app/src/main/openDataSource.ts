@@ -100,6 +100,7 @@ export const openDataSource = async (
     log("openDataSource");
     const path = dataSource.path;
     display.showMessage(`Loading ${path}`, "Loading...");
+    log(`openDataSource: ${path}`);
     let result: MainApiAsync;
     switch (dataSource.type) {
       case "loadedAssemblies":

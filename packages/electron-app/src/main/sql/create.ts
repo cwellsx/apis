@@ -9,16 +9,19 @@ import { SqlLoaded } from "./sqlLoaded";
 const nativeBinding = pathJoin(process.cwd(), ".webpack\\main\\native_modules\\build\\Release\\better_sqlite3.node");
 
 export function createSqlLoaded(dataSource: DataSource): SqlLoaded {
-  log("createSqlLoaded");
-  return new SqlLoaded(createSqlDatabase(getAppFilename(`${dataSource.type}-${dataSource.hash}.db`), nativeBinding));
+  const filename = getAppFilename(`${dataSource.type}-${dataSource.hash}.db`);
+  log("createSqlLoaded: " + filename);
+  return new SqlLoaded(createSqlDatabase(filename, nativeBinding));
 }
 
 export function createSqlCustom(dataSource: DataSource): SqlCustom {
-  log("createSqlCustom");
-  return new SqlCustom(createSqlDatabase(getAppFilename(`${dataSource.type}-${dataSource.hash}.db`), nativeBinding));
+  const filename = getAppFilename(`${dataSource.type}-${dataSource.hash}.db`);
+  log("createSqlCustom: " + filename);
+  return new SqlCustom(createSqlDatabase(filename, nativeBinding));
 }
 
 export function createSqlConfig(filename: string): SqlConfig {
-  log("createSqlConfig");
-  return new SqlConfig(createSqlDatabase(getAppFilename(filename), nativeBinding));
+  filename = getAppFilename(filename);
+  log("createSqlConfig: " + filename);
+  return new SqlConfig(createSqlDatabase(filename, nativeBinding));
 }
