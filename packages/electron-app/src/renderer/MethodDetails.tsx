@@ -1,5 +1,5 @@
+import { DetailedMethod } from "backend/shared-types";
 import * as React from "react";
-import { DetailedMethod } from "../shared-types";
 import { BadMethodCallsDetails, MethodTitle } from "./elements";
 import "./MethodDetails.css";
 import "./MethodDetails.scss";

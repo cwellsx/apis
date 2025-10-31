@@ -1,5 +1,5 @@
+import { DetailedCustom } from "backend/shared-types";
 import * as React from "react";
-import { DetailedCustom } from "../shared-types";
 import "./MethodDetails.css";
 import "./MethodDetails.scss";
 

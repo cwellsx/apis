@@ -1,12 +1,12 @@
 import { DotNetApi } from "backend/createDotNetApi";
+import { existsSync, pathJoin } from "backend/fs";
+import { hash } from "backend/hash";
+import { openDataSource } from "backend/openDataSource";
+import { createSqlConfig, type DataSource } from "backend/sql";
 import { FileFilter, dialog, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
-import { existsSync, pathJoin } from "./fs";
-import { hash } from "./hash";
 import { createAppMenu } from "./menu";
-import { openDataSource } from "./openDataSource";
 import { createDisplay } from "./show";
-import { createSqlConfig, type DataSource } from "./sql";
 
 declare const CORE_EXE: string;
 

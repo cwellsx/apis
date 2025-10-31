@@ -1,7 +1,7 @@
+import { getErrorString } from "backend/error";
+import { log, logApi } from "backend/log";
+import type { AppOptions, DisplayApi, View, ViewDetails, ViewGreeting } from "backend/shared-types";
 import type { BrowserWindow } from "electron";
-import type { AppOptions, DisplayApi, View, ViewDetails, ViewGreeting } from "../shared-types";
-import { getErrorString } from "./error";
-import { log, logApi } from "./log";
 
 export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
   const webContents = mainWindow.webContents;

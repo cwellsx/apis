@@ -1,6 +1,6 @@
+import type { GraphEvent, GraphViewType, Area as MyArea, OnUserEvent } from "backend/shared-types";
+import { textToNodeOrEdgeId } from "backend/shared-types";
 import * as React from "react";
-import type { GraphEvent, GraphViewType, Area as MyArea, OnUserEvent } from "../shared-types";
-import { textToNodeOrEdgeId } from "../shared-types";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 import "./Graph.css";
 import { log } from "./log";
@@ -123,8 +123,8 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
           ? "shiftKey ctrlKey"
           : "shiftKey"
         : ctrlKey
-        ? "ctrlKey"
-        : undefined;
+          ? "ctrlKey"
+          : undefined;
       setClassName(newClassName);
       log(`setClassName(${newClassName})`);
     };

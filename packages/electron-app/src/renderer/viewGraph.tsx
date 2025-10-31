@@ -1,4 +1,3 @@
-import * as React from "react";
 import type {
   AppOptions,
   DetailEvent,
@@ -8,8 +7,9 @@ import type {
   ViewDetails,
   ViewGraph,
   ViewOptions,
-} from "../shared-types";
-import { nodeIdToText, textToNodeId } from "../shared-types";
+} from "backend/shared-types";
+import { nodeIdToText, textToNodeId } from "backend/shared-types";
+import * as React from "react";
 import { AssemblyDetails } from "./AssemblyDetails";
 import { CustomDetails } from "./CustomDetails";
 import { Message } from "./elements";

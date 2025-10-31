@@ -1,5 +1,5 @@
+import { ViewCustomErrors } from "backend/shared-types";
 import * as React from "react";
-import { ViewCustomErrors } from "../../shared-types";
 
 type TextCustomErrorsProps = {
   view: ViewCustomErrors;

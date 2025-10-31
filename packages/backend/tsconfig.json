@@ -1,0 +1,35 @@
+// This is not required by the build -- run make will succeed if this is deleted
+// e.g. because electron-app/tsconfig.json specifies this
+//
+// ```
+// "include": ["src/**/*", "../backend/src", "../backend/shared-types"]
+// ```
+//
+// However this is required by eslint
+// Instead of this you could try adding to eslint.config.mjs like this
+//
+// ```
+// {
+//   files: ["**/*.ts", "**/*.tsx"],
+//   languageOptions: {
+//     parserOptions: {
+//       // point to the tsconfig that includes ../backend/src
+//       project: [path.resolve(__dirname, "tsconfig.json")]
+//     }
+//   }
+// }
+// ```
+//
+
+{
+  "compilerOptions": {
+    "composite": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "dist",
+    "target": "ES2022",
+    "module": "Node16",
+    "strict": true
+  },
+  "include": ["src/**/*"]
+}

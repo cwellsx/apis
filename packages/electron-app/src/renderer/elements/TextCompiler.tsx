@@ -1,5 +1,5 @@
+import { CompilerMethod, LocalsType, ViewCompiler } from "backend/shared-types";
 import * as React from "react";
-import { CompilerMethod, LocalsType, ViewCompiler } from "../../shared-types";
 
 type TextCompilerProps = {
   view: ViewCompiler;

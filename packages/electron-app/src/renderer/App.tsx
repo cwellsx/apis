@@ -1,4 +1,3 @@
-import * as React from "react";
 import type {
   AppOptions,
   DetailEvent,
@@ -10,8 +9,9 @@ import type {
   ViewDetails,
   ViewGraph,
   ViewOptions,
-} from "../shared-types";
-import { defaultAppOptions, defaultView } from "../shared-types";
+} from "backend/shared-types";
+import { defaultAppOptions, defaultView } from "backend/shared-types";
+import * as React from "react";
 import { ChooseAppOptions } from "./Options";
 import { Panes } from "./Panes";
 import { TextView } from "./TextView";

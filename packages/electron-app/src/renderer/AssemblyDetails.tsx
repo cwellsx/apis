@@ -1,5 +1,3 @@
-import * as React from "react";
-import CheckboxTree, { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
 import type {
   Access,
   DetailedAssembly,
@@ -9,8 +7,10 @@ import type {
   Namespace,
   OnUserEvent,
   Type,
-} from "../shared-types";
-import { nodeIdToText, textToNodeId } from "../shared-types";
+} from "backend/shared-types";
+import { nodeIdToText, textToNodeId } from "backend/shared-types";
+import * as React from "react";
+import CheckboxTree, { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
 import * as Icon from "./Icons.Microsoft";
 import { icons } from "./checkboxTreeIcons";
 

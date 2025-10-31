@@ -1,5 +1,5 @@
+import { ViewType } from "backend/shared-types";
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
-import { ViewType } from "../shared-types";
 import { createDisplay } from "./show";
 
 export type ViewMenuItem = { label: string; viewType: ViewType };

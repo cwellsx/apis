@@ -1,5 +1,5 @@
+import { BadMethodInfoAndNames, ErrorsInfo, MethodName, ViewErrors } from "backend/shared-types";
 import * as React from "react";
-import { BadMethodInfoAndNames, ErrorsInfo, MethodName, ViewErrors } from "../../shared-types";
 import { BadMethodCallsDetails, BadMethodException } from "./BadMethodCallsDetails";
 import { BadTypeInfoDetails } from "./BadTypeInfoDetails";
 

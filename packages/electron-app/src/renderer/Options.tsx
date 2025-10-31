@@ -1,4 +1,3 @@
-import * as React from "react";
 import type {
   AnyGraphViewOptions,
   AppOptions,
@@ -6,8 +5,9 @@ import type {
   GraphViewOptions,
   OptionsType,
   ReferenceViewOptions,
-} from "../shared-types";
-import { isCustomManual, isCustomViewOptions } from "../shared-types";
+} from "backend/shared-types";
+import { isCustomManual, isCustomViewOptions } from "backend/shared-types";
+import * as React from "react";
 import "./Options.css";
 import { log } from "./log";
 

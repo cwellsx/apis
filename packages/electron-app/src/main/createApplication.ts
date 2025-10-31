@@ -1,11 +1,11 @@
 import { DotNetApi, createDotNetApi } from "backend/createDotNetApi";
 import { hello } from "backend/hello";
+import { log, logApi } from "backend/log";
+import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, MainApiAsync, ViewOptions } from "backend/shared-types";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
-import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, MainApiAsync, ViewOptions } from "../shared-types";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
 import { appWindows, loadURL } from "./createBrowserWindow";
-import { log, logApi } from "./log";
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
   So other modules export data and function definitions, but don't invoke functions when they're imported.

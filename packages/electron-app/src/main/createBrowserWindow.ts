@@ -1,5 +1,5 @@
+import type { DisplayApi, MainApiAsync } from "backend/shared-types";
 import { BrowserWindow, IpcMainEvent } from "electron";
-import type { DisplayApi, MainApiAsync } from "../shared-types";
 import { createSecondMenu, SetViewMenu } from "./menu";
 import { createDisplay } from "./show";
 

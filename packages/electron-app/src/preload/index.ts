@@ -1,4 +1,3 @@
-import { contextBridge, ipcRenderer } from "electron";
 import type {
   AppOptions,
   DetailEvent,
@@ -10,7 +9,8 @@ import type {
   View,
   ViewDetails,
   ViewOptions,
-} from "../shared-types";
+} from "backend/shared-types";
+import { contextBridge, ipcRenderer } from "electron";
 
 const mainApiProxy: MainApi = {
   onViewOptions: (viewOptions: ViewOptions) => ipcRenderer.send("onViewOptions", viewOptions),

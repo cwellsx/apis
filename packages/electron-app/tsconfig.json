@@ -18,5 +18,5 @@
     "jsx": "react",
     "target": "es6"
   },
-  "include": ["src/**/*", "../backend/src"]
+  "include": ["src/**/*", "../backend/src", "../backend/shared-types"]
 }

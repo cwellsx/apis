@@ -7,6 +7,8 @@ const ignorePaths = [
   "eslint.config.mjs",
   // don't lint 3rd-party source code
   "packages/electron-app/src/renderer/3rd-party/**",
+  // won't lint the webpack config files
+  "packages/electron-app/webpack.*.config.ts",
 ];
 
 export default defineConfig([

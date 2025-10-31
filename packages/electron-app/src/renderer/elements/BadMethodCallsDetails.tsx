@@ -1,5 +1,5 @@
+import { BadMethodCall, LoadedMethodError, MethodName } from "backend/shared-types";
 import * as React from "react";
-import { BadMethodCall, LoadedMethodError, MethodName } from "../../shared-types";
 import { makeRow, MethodTitle } from "./MethodTitle";
 
 const toJson = (o: object) => <pre className="json">{JSON.stringify(o, null, " ")}</pre>;
