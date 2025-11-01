@@ -13,6 +13,7 @@
     "unit-test": "glob -c \"ts-node\" \"./tests/**/*tests.ts\"",
     "unit-test-1": "ts-node ./tests/customNodes.tests.ts",
     "watch": "tsc --noEmit --watch",
+    "type-check": "tsc --noEmit",
     "show-abi": "electron --abi"
   },
   "keywords": [

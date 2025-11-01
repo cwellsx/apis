@@ -1,6 +1,6 @@
 import * as process from "process";
 import { appendFileSync, getAppFilename, getLogFilename } from "./fs";
-import { options } from "./utils";
+import { options } from "./options";
 
 const getLogFilePath = (() => {
   let cached: string | undefined;

@@ -1,13 +1,11 @@
 import os from "os";
 import { convertPathToUrl } from "../../electron-app/src/main/convertPathToUrl";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
-import { getAppFilename, readFileSync, writeFileSync } from "./fs";
 import { runDotExe, runVizJs } from "./graphviz";
 import type { ImageData, ImageNode, Shape } from "./imageDataTypes";
-import { log } from "./log";
 import type { Image } from "./shared-types";
 import { textIsEdgeId } from "./shared-types";
-import { options } from "./utils";
+import { getAppFilename, log, options, readFileSync, writeFileSync } from "./utils";
 
 /*
   This is implemented using Graphviz; this is the only module which uses (and therefore encapsulates) Graphviz.

@@ -1,9 +1,8 @@
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./imageDataTypes";
-import { log } from "./log";
 import { createLookupNodeId, edgeIdToText, Edges, NodeIdMap, NodeIdSet } from "./nodeIds";
 import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Node, NodeId } from "./shared-types";
 import { isParent, nodeIdToText } from "./shared-types";
-import { options, viewFeatures } from "./utils";
+import { log, options, viewFeatures } from "./utils";
 import { uniqueStrings } from "./utils/remove";
 
 const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] =>

@@ -1,16 +1,15 @@
-import { SetViewMenu } from "../../electron-app/src/main/menu";
+import type { DisplayApi } from "./app-types";
+import { SetViewMenu } from "./app-types";
 import { createAppWindow } from "./createAppWindow";
 import { createCustomWindow } from "./createCustomWindow";
 import { DotNetApi } from "./createDotNetApi";
 import type { CustomNode } from "./customJson";
 import { fixCustomJson, isCustomJson } from "./customJson";
-import { getAppFilename, readJsonT, whenFile, writeFileSync } from "./fs";
 import type { Reflected } from "./loaded";
 import { isReflected } from "./loaded";
-import { log } from "./log";
-import { DisplayApi, MainApiAsync } from "./shared-types";
 import { createSqlCustom, createSqlLoaded, SqlConfig, SqlCustom, SqlLoaded, type DataSource } from "./sql";
-import { jsonParse, options } from "./utils";
+import type { MainApiAsync } from "./types";
+import { getAppFilename, jsonParse, log, options, readJsonT, whenFile, writeFileSync } from "./utils";
 
 // not yet the DataSource SQL
 let sqlLoaded: SqlLoaded | undefined;

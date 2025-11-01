@@ -1,16 +1,7 @@
+import { SetViewMenu, ViewMenu } from "backend-api";
 import { ViewType } from "backend/shared-types";
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
 import { createDisplay } from "./show";
-
-export type ViewMenuItem = { label: string; viewType: ViewType };
-
-export type ViewMenu = {
-  menuItems: ViewMenuItem[];
-  currentViewType: ViewType | undefined;
-  showViewType: (viewType: ViewType) => Promise<void>;
-};
-
-export type SetViewMenu = (viewMenu: ViewMenu) => void;
 
 const getMenu = (
   fileSubmenu: MenuItemConstructorOptions[],

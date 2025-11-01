@@ -14,7 +14,6 @@ import type { ViewOptions } from "./viewOptions";
 */
 
 export type OnUserEvent<T> = (event: T) => void;
-type OnUserEventAsync<T> = (event: T) => Promise<void>;
 
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {
@@ -25,32 +24,11 @@ export type MainApi = {
   onDetailEvent: OnUserEvent<DetailEvent>;
 };
 
-// this Api is implemented in the backend
-// SQLite method as quick and synchronous,
-// but rendering the Graph in graphViz.ts is slow and asynchronous
-export type MainApiAsync = {
-  onViewOptions: OnUserEventAsync<ViewOptions>;
-  onAppOptions: OnUserEvent<AppOptions>;
-  onGraphEvent: OnUserEventAsync<GraphEvent>;
-  onFilterEvent: OnUserEventAsync<FilterEvent>;
-  onDetailEvent: OnUserEventAsync<DetailEvent>;
-  // MainApiAsync is implemented and returned by createAppWindow which contains a DisplayApi
-  // so this method can be used by the caller if any methods throw an error
-  showException: (error: unknown) => void;
-};
-
 // this Api is available to the main process and its functions are all void
 export type RendererApi = {
   showView: (view: View) => void;
   showDetails: (details: ViewDetails) => void;
   showAppOptions: (appOptions: AppOptions) => void;
-};
-
-// this extends RendererApi without additional preloaded IPC methods
-export type DisplayApi = RendererApi & {
-  showException: (error: unknown) => void;
-  showMessage: (title: string | undefined, message: string) => void;
-  setTitle: (title: string) => void;
 };
 
 export type PreloadApis = {

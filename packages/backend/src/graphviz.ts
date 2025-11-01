@@ -1,9 +1,7 @@
 import { instance, Viz } from "@viz-js/viz";
 import child_process from "child_process";
 import path from "path";
-import { showErrorBox } from "../../electron-app/src/main/showErrorBox";
-import { existsSync } from "./fs";
-import { log } from "./log";
+import { existsSync, log } from "./utils";
 
 const findDotExe = (): string => {
   const graphvizDirs = [`C:\\Program Files (x86)\\Graphviz\\bin`, `C:\\Program Files\\Graphviz\\bin`];
@@ -11,8 +9,7 @@ const findDotExe = (): string => {
     const dotExe = path.join(graphvizDir, "dot.exe");
     if (existsSync(dotExe)) return dotExe;
   }
-  showErrorBox("dot.exe not found", "Install Graphviz before you can use this program");
-  throw new Error("graphviz not found");
+  throw new Error("Graphviz dot.exe not found. Please install Graphviz before you can use this program.");
 };
 
 export const runDotExe = (dotFilename: string, pngFilename: string, mapFilename: string): void => {

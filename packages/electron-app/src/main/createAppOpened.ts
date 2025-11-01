@@ -1,6 +1,5 @@
+import { existsSync, hash, pathJoin } from "backend-utils";
 import { DotNetApi } from "backend/createDotNetApi";
-import { existsSync, pathJoin } from "backend/fs";
-import { hash } from "backend/hash";
 import { openDataSource } from "backend/openDataSource";
 import { createSqlConfig, type DataSource } from "backend/sql";
 import { FileFilter, dialog, type BrowserWindow } from "electron";

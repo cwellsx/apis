@@ -1,4 +1,4 @@
-export type { DisplayApi, MainApi, MainApiAsync, OnUserEvent, PreloadApis, RendererApi } from "./apis";
+export type { MainApi, OnUserEvent, PreloadApis, RendererApi } from "./apis";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, OptionsType } from "./appOptions";
 export type { CompilerMethod, LocalsType } from "./compilerMethod";

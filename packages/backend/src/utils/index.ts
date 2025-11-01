@@ -1,4 +1,9 @@
+export * from "./appDataPath";
+export * from "./error";
+export * from "./fs";
+export * from "./hash";
 export { jsonParse } from "./jsonParse";
+export * from "./log";
 export * from "./memberNames";
 export { nestTypes } from "./nestTypes";
 export { options } from "./options";

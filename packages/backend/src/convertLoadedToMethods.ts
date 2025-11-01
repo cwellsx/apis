@@ -1,11 +1,10 @@
 import { convertToImage } from "./convertToImage";
 import type { GraphData, ImageAttribute } from "./imageDataTypes";
-import { log } from "./log";
 import { Edges, methodNodeId, NodeIdMap, toMethodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "./nodeIds";
 import type { ApiViewOptions, GraphFilter, Leaf, MethodViewOptions, NodeId, Parent } from "./shared-types";
 import type { Call, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
 import { CallstackIterator } from "./sql/sqlLoadedApiTypes";
-import { getOrSet } from "./utils";
+import { getOrSet, log } from "./utils";
 
 /*
   exported

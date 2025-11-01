@@ -1,6 +1,5 @@
 import { createSqlDatabase } from "sqlio";
-import { getAppFilename, pathJoin } from "../fs";
-import { log } from "../log";
+import { getAppFilename, log, pathJoin } from "../utils";
 import type { DataSource } from "./sqlConfig";
 import { SqlConfig } from "./sqlConfig";
 import { SqlCustom } from "./sqlCustom";

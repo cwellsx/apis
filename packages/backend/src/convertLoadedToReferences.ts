@@ -2,9 +2,9 @@ import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import { GraphData, ImageAttribute } from "./imageDataTypes";
 import type { AssemblyReferences } from "./loaded";
-import { log } from "./log";
 import { Edges, NodeIdMap, toNameNodeId } from "./nodeIds";
 import type { GraphFilter, ReferenceViewOptions } from "./shared-types";
+import { log } from "./utils";
 
 export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,

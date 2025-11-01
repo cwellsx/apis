@@ -9,7 +9,6 @@ import type {
   TypeInfo,
 } from "../loaded";
 import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../loaded";
-import { log } from "../log";
 import type { MethodNodeId, TypeNodeId } from "../nodeIds";
 import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
 import type {
@@ -23,7 +22,7 @@ import type {
   MethodName,
   NodeId,
 } from "../shared-types";
-import { jsonParse, mapOfMaps, options } from "../utils";
+import { jsonParse, log, mapOfMaps, options } from "../utils";
 import type {
   Call,
   CallstackIterator,

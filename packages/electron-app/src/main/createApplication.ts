@@ -1,11 +1,12 @@
-import { DotNetApi, createDotNetApi } from "backend/createDotNetApi";
+import { DotNetApi, MainApiAsync, createDotNetApi } from "backend-api";
+import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-types";
+import { log, logApi } from "backend-utils";
 import { hello } from "backend/hello";
-import { log, logApi } from "backend/log";
-import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, MainApiAsync, ViewOptions } from "backend/shared-types";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
 import { appWindows, loadURL } from "./createBrowserWindow";
+
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
   So other modules export data and function definitions, but don't invoke functions when they're imported.
@@ -31,57 +32,41 @@ export const createApplication = async (mainWindow: BrowserWindow): Promise<void
 
   const on = (event: IpcMainEvent): MainApiAsync | undefined => appWindows.find(event);
 
+  type Invoke<T> = (api: MainApiAsync, arg: T) => Promise<void>;
+
+  const invoke = <T extends object>(
+    channel: string,
+    event: Electron.IpcMainEvent,
+    handler: Invoke<T>,
+    argument: T
+  ): void => {
+    logApi("on", channel, argument);
+    const api = on(event);
+    if (!api) return;
+    try {
+      const result = handler(api, argument);
+      result.catch((error) => api.showException(error));
+    } catch (error) {
+      api.showException(error);
+    }
+  };
+
   // the following event handlers are a bit verbose and repetitive,
   // but it's clearer to see each one explicitly than to abstract them
   ipcMain.on("onViewOptions", (event, viewOptions: ViewOptions) => {
-    logApi("on", "onViewOptions", viewOptions);
-    const api = on(event);
-    if (!api) return;
-    try {
-      api.onViewOptions(viewOptions).catch((error) => api.showException(error));
-    } catch (error) {
-      api.showException(error);
-    }
+    invoke("onViewOptions", event, (api, arg) => api.onViewOptions(arg), viewOptions);
   });
   ipcMain.on("onAppOptions", (event, appOptions: AppOptions) => {
-    logApi("on", "onAppOptions", appOptions);
-    const api = on(event);
-    if (!api) return;
-    try {
-      api.onAppOptions(appOptions);
-    } catch (error) {
-      api.showException(error);
-    }
+    invoke("onAppOptions", event, (api, arg) => api.onAppOptions(arg), appOptions);
   });
   ipcMain.on("onGraphClick", (event, graphEvent: GraphEvent) => {
-    logApi("on", "onGraphClick", graphEvent);
-    const api = on(event);
-    if (!api) return;
-    try {
-      api.onGraphEvent(graphEvent).catch((error) => api.showException(error));
-    } catch (error) {
-      api.showException(error);
-    }
+    invoke("onGraphClick", event, (api, arg) => api.onGraphEvent(arg), graphEvent);
   });
   ipcMain.on("onGraphFilter", (event, filterEvent: FilterEvent) => {
-    logApi("on", "onGraphFilter", filterEvent);
-    const api = on(event);
-    if (!api) return;
-    try {
-      api.onFilterEvent(filterEvent).catch((error) => api.showException(error));
-    } catch (error) {
-      api.showException(error);
-    }
+    invoke("onGraphFilter", event, (api, arg) => api.onFilterEvent(arg), filterEvent);
   });
   ipcMain.on("onDetailClick", (event, detailEvent: DetailEvent) => {
-    logApi("on", "onDetailClick", detailEvent);
-    const api = on(event);
-    if (!api) return;
-    try {
-      api.onDetailEvent(detailEvent).catch((error) => api.showException(error));
-    } catch (error) {
-      api.showException(error);
-    }
+    invoke("onDetailClick", event, (api, arg) => api.onDetailEvent(arg), detailEvent);
   });
 
   await loadURL(mainWindow);

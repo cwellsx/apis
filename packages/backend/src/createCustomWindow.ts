@@ -1,4 +1,4 @@
-import type { SetViewMenu, ViewMenuItem } from "../../electron-app/src/main/menu";
+import type { DisplayApi, SetViewMenu, ViewMenuItem } from "./app-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { createViewGraph } from "./imageDataTypes";
 import { anyNodeIdToText, edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
@@ -6,10 +6,8 @@ import type {
   AppOptions,
   CustomViewOptions,
   DetailedCustom,
-  DisplayApi,
   FilterEvent,
   GraphEvent,
-  MainApiAsync,
   NodeId,
   ViewCustomErrors,
   ViewOptions,
@@ -17,6 +15,7 @@ import type {
 } from "./shared-types";
 import { isCustomManual, isCustomViewOptions } from "./shared-types";
 import { SqlConfig, SqlCustom } from "./sql";
+import type { MainApiAsync } from "./types";
 import { viewFeatures } from "./utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
@@ -83,7 +82,8 @@ export const createCustomWindow = async (
       setCustomViewOptions(viewOptions);
       await showViewType(viewOptions.viewType);
     },
-    onAppOptions: (appOptions: AppOptions): void => {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    onAppOptions: async (appOptions: AppOptions): Promise<void> => {
       sqlConfig.appOptions = appOptions;
       display.showAppOptions(appOptions);
     },

@@ -2,8 +2,7 @@ import type { Reflected, TypeInfo } from "../../loaded";
 import { isNamedTypeInfo } from "../../loaded";
 import { Tables } from "./tables";
 
-import { log } from "../../log";
-import { uniqueStrings } from "../../utils";
+import { log, uniqueStrings } from "../../utils";
 
 import type { BadTypeInfo, CallColumns, ErrorColumns, LocalsTypeColumns } from "./columns";
 import { flattenCompilerMethods } from "./compilerMethods";

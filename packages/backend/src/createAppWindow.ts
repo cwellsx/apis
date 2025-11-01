@@ -1,10 +1,8 @@
-import { createSecondWindow } from "../../electron-app/src/main/createBrowserWindow";
-import type { SetViewMenu, ViewMenu, ViewMenuItem } from "../../electron-app/src/main/menu";
+import type { DisplayApi, SetViewMenu, ViewMenu, ViewMenuItem } from "./app-types";
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
 import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
 import { createViewGraph } from "./imageDataTypes";
-import { log } from "./log";
 import {
   anyNodeIdToText,
   getClusterNames,
@@ -23,12 +21,10 @@ import type {
   AppOptions,
   ClusterBy,
   DetailEvent,
-  DisplayApi,
   FilterEvent,
   GraphEvent,
   GraphFilter,
   GraphViewOptions,
-  MainApiAsync,
   ViewCompiler,
   ViewDetails,
   ViewErrors,
@@ -38,7 +34,8 @@ import type {
 import { MethodViewOptions, nodeIdToText } from "./shared-types";
 import { SqlConfig, SqlLoaded } from "./sql";
 import { CommonGraphViewType } from "./sql/sqlLoadedApiTypes";
-import { viewFeatures } from "./utils";
+import type { MainApiAsync } from "./types";
+import { log, viewFeatures } from "./utils";
 
 type OnOpen = { kind: "openViewType" } | { kind: "showMethods"; nodeId: MethodNodeId };
 
@@ -123,7 +120,8 @@ export const createAppWindow = async (
       setViewOptions(viewOptions);
       await showViewType(viewOptions.viewType);
     },
-    onAppOptions: (appOptions: AppOptions): void => {
+    // eslint-disable-next-line @typescript-eslint/require-await
+    onAppOptions: async (appOptions: AppOptions): Promise<void> => {
       sqlConfig.appOptions = appOptions;
       createViewMenu(); // because change appOptions might affect the View menu
       display.showAppOptions(appOptions);
@@ -194,7 +192,7 @@ export const createAppWindow = async (
       const nodeId = toAnyNodeId(id);
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
-      await createSecondWindow((display: DisplayApi, setViewMenu: SetViewMenu) =>
+      await display.createSecondWindow((display: DisplayApi, setViewMenu: SetViewMenu) =>
         createAppWindow(display, sqlLoaded, sqlConfig, dataSourcePath, setViewMenu, { kind: "showMethods", nodeId })
       );
     },

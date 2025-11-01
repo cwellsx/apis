@@ -2,11 +2,10 @@ import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 import { CustomNode } from "./customJson";
 import type { GraphData, ImageAttribute, Shape } from "./imageDataTypes";
-import { log } from "./log";
 import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "./nodeIds";
 import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "./shared-types";
 import { isCustomManual, isParent } from "./shared-types";
-import { last, options } from "./utils";
+import { last, log, options } from "./utils";
 import { getOrThrow } from "./utils/remove";
 
 export const convertLoadedToCustom = (

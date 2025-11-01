@@ -13,10 +13,13 @@
     "strict": true,
     "paths": {
       "backend/*": ["../backend/src/*"],
+      "backend-api": ["../backend/src/index.ts"],
+      "backend-types": ["../backend/src/shared-types/index.ts"],
+      "backend-utils": ["../backend/src/utils/index.ts"],
       "*": ["node_modules/*"]
     },
     "jsx": "react",
     "target": "es6"
   },
-  "include": ["src/**/*", "../backend/src", "../backend/shared-types"]
+  "include": ["src/**/*", "../backend/src"]
 }

@@ -1,7 +1,9 @@
-import { getErrorString } from "backend/error";
-import { log, logApi } from "backend/log";
-import type { AppOptions, DisplayApi, View, ViewDetails, ViewGreeting } from "backend/shared-types";
+import type { CreateWindow, DisplayApi } from "backend-api";
+import type { AppOptions, View, ViewDetails, ViewGreeting } from "backend-types";
+import { getErrorString, log, logApi } from "backend-utils";
 import type { BrowserWindow } from "electron";
+import { appWindows, createBrowserWindow, loadURL } from "./createBrowserWindow";
+import { createSecondMenu } from "./menu";
 
 export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
   const webContents = mainWindow.webContents;
@@ -42,5 +44,15 @@ export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
     webContents.send("showAppOptions", appOptions);
   };
 
-  return { showView, showDetails, setTitle, showAppOptions, showException, showMessage };
+  const createSecondWindow = async (delegate: CreateWindow): Promise<void> => {
+    const window = createBrowserWindow();
+    // and load the index.html of the window
+    await loadURL(window);
+    const display = createDisplay(window);
+    const { setViewMenu } = createSecondMenu(window);
+    const appWindow = await delegate(display, setViewMenu);
+    appWindows.add(appWindow, window);
+  };
+
+  return { showView, showDetails, setTitle, showAppOptions, showException, showMessage, createSecondWindow };
 };
