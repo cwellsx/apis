@@ -1,5 +1,5 @@
-import type { GraphEvent, GraphViewType, Area as MyArea, OnUserEvent } from "backend/shared-types";
-import { textToNodeOrEdgeId } from "backend/shared-types";
+import type { GraphEvent, GraphViewType, Area as MyArea, OnUserEvent } from "backend-types";
+import { textToNodeOrEdgeId } from "backend-types";
 import * as React from "react";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
 import "./Graph.css";

@@ -9,8 +9,8 @@ import type {
   ViewDetails,
   ViewGraph,
   ViewOptions,
-} from "backend/shared-types";
-import { defaultAppOptions, defaultView } from "backend/shared-types";
+} from "backend-types";
+import { defaultAppOptions, defaultView } from "backend-types";
 import * as React from "react";
 import { ChooseAppOptions } from "./Options";
 import { Panes } from "./Panes";

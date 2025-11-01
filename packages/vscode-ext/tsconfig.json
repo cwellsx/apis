@@ -8,8 +8,9 @@
     "strict": true,
     "baseUrl": ".", // needed when paths is specified
     "paths": {
-      //"backend": ["../backend/src/index.ts"],
-      "backend/*": ["../backend/src/*"]
+      "backend-api": ["../backend/src/index.ts"],
+      "backend-types": ["../backend/src/shared-types/index.ts"],
+      "backend-utils": ["../backend/src/utils/index.ts"]
     }
   },
   "exclude": ["src.webview"],

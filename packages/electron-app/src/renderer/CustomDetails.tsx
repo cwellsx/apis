@@ -1,4 +1,4 @@
-import { DetailedCustom } from "backend/shared-types";
+import { DetailedCustom } from "backend-types";
 import * as React from "react";
 import "./MethodDetails.css";
 import "./MethodDetails.scss";

@@ -1,5 +1,5 @@
-import type { Node as TreeNode } from "backend/shared-types";
-import { isParent, nodeIdToText } from "backend/shared-types";
+import type { Node as TreeNode } from "backend-types";
+import { isParent, nodeIdToText } from "backend-types";
 import * as React from "react";
 import CheckboxTree, { Node as CheckboxNode } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";

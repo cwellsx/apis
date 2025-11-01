@@ -1,4 +1,4 @@
-import { AppOptions, OnUserEvent, ViewOptions, ViewText } from "backend/shared-types";
+import { AppOptions, OnUserEvent, ViewOptions, ViewText } from "backend-types";
 import * as React from "react";
 import { Message, TextCompiler, TextCustomErrors, TextErrors } from "./elements";
 import { ChooseCompilerViewOptions } from "./Options";

@@ -1,7 +1,5 @@
+import { DotNetApi, createSqlConfig, openDataSource, type DataSource } from "backend-api";
 import { existsSync, hash, pathJoin } from "backend-utils";
-import { DotNetApi } from "backend/createDotNetApi";
-import { openDataSource } from "backend/openDataSource";
-import { createSqlConfig, type DataSource } from "backend/sql";
 import { FileFilter, dialog, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";

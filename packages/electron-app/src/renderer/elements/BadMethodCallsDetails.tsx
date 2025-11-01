@@ -1,4 +1,4 @@
-import { BadMethodCall, LoadedMethodError, MethodName } from "backend/shared-types";
+import { BadMethodCall, LoadedMethodError, MethodName } from "backend-types";
 import * as React from "react";
 import { makeRow, MethodTitle } from "./MethodTitle";
 

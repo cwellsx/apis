@@ -12,11 +12,9 @@
     "resolveJsonModule": true,
     "strict": true,
     "paths": {
-      "backend/*": ["../backend/src/*"],
       "backend-api": ["../backend/src/index.ts"],
       "backend-types": ["../backend/src/shared-types/index.ts"],
-      "backend-utils": ["../backend/src/utils/index.ts"],
-      "*": ["node_modules/*"]
+      "backend-utils": ["../backend/src/utils/index.ts"]
     },
     "jsx": "react",
     "target": "es6"

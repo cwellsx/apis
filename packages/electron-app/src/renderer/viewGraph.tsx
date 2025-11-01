@@ -7,8 +7,8 @@ import type {
   ViewDetails,
   ViewGraph,
   ViewOptions,
-} from "backend/shared-types";
-import { nodeIdToText, textToNodeId } from "backend/shared-types";
+} from "backend-types";
+import { nodeIdToText, textToNodeId } from "backend-types";
 import * as React from "react";
 import { AssemblyDetails } from "./AssemblyDetails";
 import { CustomDetails } from "./CustomDetails";

@@ -1,4 +1,4 @@
-import { MethodName } from "backend/shared-types";
+import { MethodName } from "backend-types";
 import * as React from "react";
 
 export const makeRow = (first: string, second: JSX.Element | string) => (

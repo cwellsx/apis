@@ -1,6 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import { hello } from "backend/hello";
+import { hello } from "backend-api";
 import * as vscode from "vscode";
 import { createAdaptor } from "./adapter";
 import { helloWorld, openSettings, selectFolder } from "./command";

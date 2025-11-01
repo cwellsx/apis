@@ -5,8 +5,8 @@ import type {
   GraphViewOptions,
   OptionsType,
   ReferenceViewOptions,
-} from "backend/shared-types";
-import { isCustomManual, isCustomViewOptions } from "backend/shared-types";
+} from "backend-types";
+import { isCustomManual, isCustomViewOptions } from "backend-types";
 import * as React from "react";
 import "./Options.css";
 import { log } from "./log";
