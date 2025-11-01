@@ -54,6 +54,9 @@ const extensionConfig = {
         use: [
           {
             loader: "ts-loader",
+            options: {
+              transpileOnly: true,
+            },
           },
         ],
       },

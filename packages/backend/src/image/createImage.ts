@@ -5,7 +5,8 @@ import type { Image, ViewGraph } from "../shared-types";
 import { textIsEdgeId } from "../shared-types";
 import { getAppFilename, log, options, readFileSync, writeFileSync } from "../utils";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
-import { runDotExe, runVizJs } from "./graphviz";
+import { runDotExe } from "./graphviz";
+import { runVizJs } from "./viz-js";
 
 /*
   This is implemented using Graphviz; this is the only module which uses (and therefore encapsulates) Graphviz.
