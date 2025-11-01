@@ -1,6 +1,6 @@
 import type { DisplayApi, SetViewMenu, ViewMenuItem } from "./app-types";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
-import { createViewGraph } from "./imageDataTypes";
+import { bindImage } from "./image";
 import { anyNodeIdToText, edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
 import type {
   AppOptions,
@@ -75,6 +75,8 @@ export const createCustomWindow = async (
     };
     display.showDetails(viewDetails);
   };
+
+  const createViewGraph = bindImage(display.convertPathToUrl);
 
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {

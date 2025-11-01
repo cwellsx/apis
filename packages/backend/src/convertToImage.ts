@@ -2,8 +2,7 @@ import type { ImageAttribute, ImageData, ImageNode, ImageText } from "./imageDat
 import { createLookupNodeId, edgeIdToText, Edges, NodeIdMap, NodeIdSet } from "./nodeIds";
 import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Node, NodeId } from "./shared-types";
 import { isParent, nodeIdToText } from "./shared-types";
-import { log, options, viewFeatures } from "./utils";
-import { uniqueStrings } from "./utils/remove";
+import { log, options, uniqueStrings, viewFeatures } from "./utils";
 
 const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] =>
   viewOptions["showEdgeLabels"] ?? { groups: false, leafs: false };

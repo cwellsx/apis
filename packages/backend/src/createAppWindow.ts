@@ -2,7 +2,7 @@ import type { DisplayApi, SetViewMenu, ViewMenu, ViewMenuItem } from "./app-type
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
 import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
-import { createViewGraph } from "./imageDataTypes";
+import { bindImage } from "./image";
 import {
   anyNodeIdToText,
   getClusterNames,
@@ -113,6 +113,8 @@ export const createAppWindow = async (
         throw new Error("Unexpected viewType");
     }
   };
+
+  const createViewGraph = bindImage(display.convertPathToUrl);
 
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {

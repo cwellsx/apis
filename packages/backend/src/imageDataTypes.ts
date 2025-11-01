@@ -1,4 +1,3 @@
-import { createImage } from "./createImage";
 import type { AreaClass, ViewGraph, ViewGraphData } from "./shared-types";
 
 export type Shape = "folder" | "rect" | "none" | "component";
@@ -35,8 +34,4 @@ export type GraphData = ViewGraphData & {
   imageData: ImageData;
 };
 
-export const createViewGraph = async (graphData: GraphData): Promise<ViewGraph> => {
-  const { imageData, groups, graphFilter, graphViewOptions } = graphData;
-  const image = await createImage(imageData);
-  return { image, groups, graphFilter, graphViewOptions };
-};
+export type CreateViewGraph = (graphData: GraphData) => Promise<ViewGraph>;

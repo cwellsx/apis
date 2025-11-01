@@ -1,7 +1,7 @@
 import { ElementCompact, xml2js } from "xml-js";
-import { makeUniqueEdgeId } from "./nodeIds";
-import { Area, AreaClass, textIsEdgeId } from "./shared-types";
-import { log } from "./utils";
+import { makeUniqueEdgeId } from "../nodeIds";
+import { Area, AreaClass, textIsEdgeId } from "../shared-types";
+import { log } from "../utils";
 
 /*
 Input is a *.map file, created by Graphviz, which has a format like this:

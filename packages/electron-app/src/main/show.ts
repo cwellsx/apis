@@ -2,6 +2,7 @@ import type { CreateWindow, DisplayApi } from "backend-api";
 import type { AppOptions, View, ViewDetails, ViewGreeting } from "backend-types";
 import { getErrorString, log, logApi } from "backend-utils";
 import type { BrowserWindow } from "electron";
+import { convertPathToUrl } from "./convertPathToUrl";
 import { appWindows, createBrowserWindow, loadURL } from "./createBrowserWindow";
 import { createSecondMenu } from "./menu";
 
@@ -54,5 +55,14 @@ export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
     appWindows.add(appWindow, window);
   };
 
-  return { showView, showDetails, setTitle, showAppOptions, showException, showMessage, createSecondWindow };
+  return {
+    showView,
+    showDetails,
+    setTitle,
+    showAppOptions,
+    showException,
+    showMessage,
+    createSecondWindow,
+    convertPathToUrl,
+  };
 };

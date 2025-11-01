@@ -1,7 +1,7 @@
 import { instance, Viz } from "@viz-js/viz";
 import child_process from "child_process";
 import path from "path";
-import { existsSync, log } from "./utils";
+import { existsSync, log } from "../utils";
 
 const findDotExe = (): string => {
   const graphvizDirs = [`C:\\Program Files (x86)\\Graphviz\\bin`, `C:\\Program Files\\Graphviz\\bin`];

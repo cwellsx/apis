@@ -1,5 +1,3 @@
-Fix imports like "../../electron-app/src/main/menu"
-
 Remove "backend/\*" from paths
 
 Use eslint to sanitize barrel files -- see "Evaluating ESLint configuration opt.txt"

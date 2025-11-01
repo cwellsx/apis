@@ -15,9 +15,12 @@ export type SetViewMenu = (viewMenu: ViewMenu) => void;
 
 export type CreateWindow = (display: DisplayApi, setViewMenu: SetViewMenu) => Promise<MainApiAsync>;
 
+export type ConvertPathToUrl = (urlPath: string) => string;
+
 export type DisplayApi = RendererApi & {
   showException: (error: unknown) => void;
   showMessage: (title: string | undefined, message: string) => void;
   setTitle: (title: string) => void;
   createSecondWindow: (delegate: CreateWindow) => Promise<void>;
+  convertPathToUrl: ConvertPathToUrl;
 };
