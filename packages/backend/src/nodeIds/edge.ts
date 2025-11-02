@@ -1,4 +1,4 @@
-import { EdgeId, edgeIdSeparator, NodeId, nodeIdToText, textToEdgeId, textToNodeId } from "../shared-types";
+import { EdgeId, edgeIdSeparator, NodeId, nodeIdToText, textToEdgeId, textToNodeId } from "../contracts-ui";
 
 // this defines the edges displayed on a graph
 // Node (including but not only NodeId) is shared with the render, but Edge is only used within the main process

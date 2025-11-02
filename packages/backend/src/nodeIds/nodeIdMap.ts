@@ -1,5 +1,5 @@
-import type { ClusterBy, NodeId } from "../shared-types";
-import { nodeIdToText, textToNodeId } from "../shared-types";
+import type { ClusterBy, NodeId } from "../contracts-ui";
+import { nodeIdToText, textToNodeId } from "../contracts-ui";
 import { getOrSet } from "../utils";
 import { isClusterNodeId, toAnyNodeId } from "./nodeIdTypes";
 

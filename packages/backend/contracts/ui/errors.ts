@@ -1,4 +1,5 @@
-import type { BadMethodInfo } from "../loaded/loadedCalls"; // not loaded/index to avoid circular dependency
+//import type { BadMethodInfo } from "../dotnet/loadedCalls"; // not dotnet/index to avoid circular dependency
+import type { BadMethodInfo } from "../dotnet"; // not dotnet/index to avoid circular dependency
 import { MethodName } from "./methodName";
 
 export type BadMethodInfoAndNames = BadMethodInfo & Omit<MethodName, "assemblyName">;

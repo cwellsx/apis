@@ -1,4 +1,4 @@
-export type { BadMethodCall, BadMethodInfo, Error as LoadedMethodError } from "../loaded";
+export type { BadMethodCall, BadMethodInfo, Error as LoadedMethodError } from "../dotnet";
 
 // this is the only place where a module in shared-types does an import from outside itself
 // beware not to create cyclic dependencies by doing this

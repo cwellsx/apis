@@ -1,8 +1,8 @@
 import os from "os";
 import { ConvertPathToUrl } from "../app-types";
 import type { CreateViewGraph, GraphData, ImageData, ImageNode, Shape } from "../imageDataTypes";
-import type { Image, ViewGraph } from "../shared-types";
-import { textIsEdgeId } from "../shared-types";
+import type { Image, ViewGraph } from "../contracts-ui";
+import { textIsEdgeId } from "../contracts-ui";
 import { getAppFilename, log, options, readFileSync, writeFileSync } from "../utils";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { runDotExe } from "./graphviz";

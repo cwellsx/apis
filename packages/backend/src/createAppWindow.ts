@@ -30,8 +30,8 @@ import type {
   ViewErrors,
   ViewOptions,
   ViewType,
-} from "./shared-types";
-import { MethodViewOptions, nodeIdToText } from "./shared-types";
+} from "./contracts-ui";
+import { MethodViewOptions, nodeIdToText } from "./contracts-ui";
 import type { CommonGraphViewType, SqlConfig, SqlLoaded } from "./sql";
 import type { MainApiAsync } from "./types";
 import { log, viewFeatures } from "./utils";

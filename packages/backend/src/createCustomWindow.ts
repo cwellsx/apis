@@ -12,8 +12,8 @@ import type {
   ViewCustomErrors,
   ViewOptions,
   ViewType,
-} from "./shared-types";
-import { isCustomManual, isCustomViewOptions } from "./shared-types";
+} from "./contracts-ui";
+import { isCustomManual, isCustomViewOptions } from "./contracts-ui";
 import { SqlConfig, SqlCustom } from "./sql";
 import type { MainApiAsync } from "./types";
 import { viewFeatures } from "./utils";

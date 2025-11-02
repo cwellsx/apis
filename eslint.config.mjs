@@ -41,6 +41,8 @@ export default defineConfig([
             "**/3rd-party/**",
             // react
             "react-dom/client",
+            // src/contracts-*.ts are facade modules
+            "**/contracts/**",
           ],
         },
       ],

@@ -1,5 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import { AppOptions, defaultAppOptions } from "../shared-types";
+import { AppOptions, defaultAppOptions } from "../contracts-ui";
 import { jsonParse, log } from "../utils";
 import { ConfigCache } from "./configCache";
 

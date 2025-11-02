@@ -1,4 +1,4 @@
-import { ClusterBy, NodeId, nodeIdToText, textIsEdgeId, textToNodeId } from "../shared-types";
+import { ClusterBy, NodeId, nodeIdToText, textIsEdgeId, textToNodeId } from "../contracts-ui";
 
 // types
 

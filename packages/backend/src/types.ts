@@ -1,4 +1,4 @@
-import { MainApi } from "./shared-types";
+import { MainApi } from "./contracts-ui";
 
 // utility type to convert all void methods to Promise<void>
 type PromiseifyVoidMethods<T> = {

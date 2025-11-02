@@ -1,5 +1,5 @@
-import type { MethodDictionary } from "../../loaded";
-import { validateMethodInfo } from "../../loaded";
+import type { MethodDictionary } from "../../contracts-dotnet";
+import { validateMethodInfo } from "../../contracts-dotnet";
 import { distinctor } from "../../utils";
 import { BadMethodInfoAndIds, CallColumns, LocalsTypeColumns, MethodColumns } from "./columns";
 import { GetTypeId } from "./getMethodTypeId";

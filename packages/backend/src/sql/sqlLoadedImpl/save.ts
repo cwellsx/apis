@@ -1,5 +1,5 @@
-import type { Reflected, TypeInfo } from "../../loaded";
-import { isNamedTypeInfo } from "../../loaded";
+import type { Reflected, TypeInfo } from "../../contracts-dotnet";
+import { isNamedTypeInfo } from "../../contracts-dotnet";
 import { Tables } from "./tables";
 
 import { log, uniqueStrings } from "../../utils";

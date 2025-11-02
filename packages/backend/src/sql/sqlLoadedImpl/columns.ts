@@ -1,5 +1,5 @@
-import type { BadMethodInfo, MemberException, Members, MethodInfo, TypeId } from "../../loaded";
-import type { ClusterBy, NodeId } from "../../shared-types";
+import type { BadMethodInfo, MemberException, Members, MethodInfo, TypeId } from "../../contracts-dotnet";
+import type { ClusterBy, NodeId } from "../../contracts-ui";
 import { CommonGraphViewType } from "../sqlLoadedApiTypes";
 import type { SavedTypeInfo } from "./savedTypeInfo";
 

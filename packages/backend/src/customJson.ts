@@ -1,6 +1,6 @@
 import { randomUUID } from "crypto";
 import os from "os";
-import { CustomError } from "./shared-types";
+import { CustomError } from "./contracts-ui";
 import { remove } from "./utils";
 
 type CustomDependency = { id: string; label: string } & { [key: string]: boolean };

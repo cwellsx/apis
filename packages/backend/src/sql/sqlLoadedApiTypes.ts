@@ -1,5 +1,5 @@
 import { MethodNodeId, TypeNodeId } from "../nodeIds";
-import { GraphViewType } from "../shared-types";
+import { GraphViewType } from "../contracts-ui";
 
 export type TypeAndMethodId = {
   // TODO use Branded types instead of primitive string and number

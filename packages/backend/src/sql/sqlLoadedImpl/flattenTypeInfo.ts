@@ -1,4 +1,4 @@
-import { getMembers, Members, MethodMember, NamedTypeInfo } from "../../loaded";
+import { getMembers, Members, MethodMember, NamedTypeInfo } from "../../contracts-dotnet";
 import { getTypeInfoName } from "../../utils";
 import type { DeclaringTypeColumns, MemberColumns, MethodNameColumns, TypeColumns, TypeNameColumns } from "./columns";
 import { createSavedTypeInfo } from "./savedTypeInfo";

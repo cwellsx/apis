@@ -7,11 +7,16 @@ import type {
   PropertyMember,
   TypeId,
   TypeInfo,
-} from "./loaded";
-import { getMembers, isAnonTypeInfo, isNamedTypeInfo, Access as LoadedAccess } from "./loaded";
-import { MemberException } from "./loaded/loadedMembers";
+} from "./contracts-dotnet";
+import {
+  getMembers,
+  isAnonTypeInfo,
+  isNamedTypeInfo,
+  Access as LoadedAccess,
+  MemberException,
+} from "./contracts-dotnet";
+import type { Access, DetailedAssembly, MemberInfo, Members, Named, Namespace, NodeId, Type } from "./contracts-ui";
 import { artificialNodeIdFactory, GetArtificialNodeId, toMetadataNodeId, toNodeId } from "./nodeIds";
-import type { Access, DetailedAssembly, MemberInfo, Members, Named, Namespace, NodeId, Type } from "./shared-types";
 import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "./utils";
 
 type Exceptions = Named[];

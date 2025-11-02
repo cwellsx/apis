@@ -1,6 +1,6 @@
-import type { AssemblyReferences } from "./loaded";
+import type { AssemblyReferences } from "./contracts-dotnet";
 import { isAssemblyNodeId, toAnyNodeId, toNameNodeId } from "./nodeIds";
-import type { GraphFilter } from "./shared-types";
+import type { GraphFilter } from "./contracts-ui";
 
 export const showAdjacent = (
   assemblyReferences: AssemblyReferences,

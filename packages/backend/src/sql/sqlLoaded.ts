@@ -7,8 +7,8 @@ import type {
   MethodInfo,
   Reflected,
   TypeInfo,
-} from "../loaded";
-import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../loaded";
+} from "../contracts-dotnet";
+import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../contracts-dotnet";
 import type { MethodNodeId, TypeNodeId } from "../nodeIds";
 import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
 import type {
@@ -21,7 +21,7 @@ import type {
   LocalsType,
   MethodName,
   NodeId,
-} from "../shared-types";
+} from "../contracts-ui";
 import { jsonParse, log, mapOfMaps, options } from "../utils";
 import type {
   Call,

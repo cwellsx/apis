@@ -1,4 +1,4 @@
-import { NamedTypeInfo, TypeId } from "../loaded";
+import { NamedTypeInfo, TypeId } from "../contracts-dotnet";
 
 const getUnwantedTypes = <T extends { typeId: TypeId; attributes?: string[] }>(
   allTypes: T[],

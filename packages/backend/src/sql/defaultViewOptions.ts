@@ -1,4 +1,4 @@
-import type { ApiViewOptions, CompilerViewOptions, MethodViewOptions, ReferenceViewOptions } from "../shared-types";
+import type { ApiViewOptions, CompilerViewOptions, MethodViewOptions, ReferenceViewOptions } from "../contracts-ui";
 
 type DefaultViewOptions = {
   referenceViewOptions: ReferenceViewOptions;

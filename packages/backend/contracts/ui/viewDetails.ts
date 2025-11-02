@@ -1,4 +1,4 @@
-import { BadMethodCall } from "./loaded";
+import { BadMethodCall } from "./dotnet";
 import { MethodName } from "./methodName";
 import { Named, Namespace } from "./types";
 

@@ -1,6 +1,6 @@
 import { NameTypes, toNameNodeId } from "./nodeIds";
-import type { Leaf, Node, Parent } from "./shared-types";
-import { isParent } from "./shared-types";
+import type { Leaf, Node, Parent } from "./contracts-ui";
+import { isParent } from "./contracts-ui";
 import { options, remove, replace, uniqueStrings } from "./utils";
 
 type Result = {

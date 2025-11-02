@@ -50,7 +50,11 @@ const extensionConfig = {
       {
         test: /\.ts$/,
         exclude: [/node_modules/, path.resolve(__dirname, "src.webview")],
-        include: [path.resolve(__dirname, "src"), path.resolve(__dirname, "../backend/src")],
+        include: [
+          path.resolve(__dirname, "src"),
+          path.resolve(__dirname, "../backend/src"),
+          path.resolve(__dirname, "../backend/contracts"),
+        ],
         use: [
           {
             loader: "ts-loader",

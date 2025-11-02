@@ -22,7 +22,11 @@ export const rules: Required<ModuleOptions>["rules"] = [
   {
     test: /\.tsx?$/,
     exclude: /(node_modules|\.webpack)/,
-    include: [path.resolve(__dirname, "src"), path.resolve(__dirname, "../backend/src")],
+    include: [
+      path.resolve(__dirname, "src"),
+      path.resolve(__dirname, "../backend/src"),
+      path.resolve(__dirname, "../backend/contracts"),
+    ],
     use: {
       loader: "ts-loader",
       options: {

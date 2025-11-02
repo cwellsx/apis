@@ -4,6 +4,7 @@ export type { AppOptions, OptionsType } from "./appOptions";
 export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
+export type { BadMethodCall, LoadedMethodError } from "./dotnet";
 export type { BadMethodInfoAndNames, BadTypeInfoAndNames, ErrorsInfo } from "./errors";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export type { GraphFilter } from "./graphFilter";
@@ -16,7 +17,6 @@ export type {
   ReferenceViewOptions,
 } from "./graphViewOptions";
 export type { Area, AreaClass, Image } from "./image";
-export type { BadMethodCall, LoadedMethodError } from "./loaded";
 export type { MethodName } from "./methodName";
 export { isParent } from "./node";
 export type { Leaf, Node, Parent } from "./node";

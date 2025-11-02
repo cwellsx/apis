@@ -1,7 +1,7 @@
 import { SqlDatabase } from "sqlio";
 import { isAnyOtherCustomField, type CustomNode } from "../customJson";
 import { toNameNodeId } from "../nodeIds";
-import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../shared-types";
+import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../contracts-ui";
 import { jsonParse, options } from "../utils";
 
 type ConfigColumns = {

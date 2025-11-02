@@ -1,4 +1,4 @@
-import { getMembers, isNamedTypeInfo, Reflected } from "../../loaded";
+import { getMembers, isNamedTypeInfo, Reflected } from "../../contracts-dotnet";
 import { methodNodeId, typeNodeId } from "../../nodeIds";
 import { getOrSet, log, logJson } from "../../utils";
 import { GetTypeOrMethodName } from "../sqlLoadedApiTypes";

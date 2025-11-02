@@ -1,4 +1,4 @@
-import type { AreaClass, ViewGraph, ViewGraphData } from "./shared-types";
+import type { AreaClass, ViewGraph, ViewGraphData } from "./contracts-ui";
 
 export type Shape = "folder" | "rect" | "none" | "component";
 

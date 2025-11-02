@@ -1,12 +1,14 @@
 Use eslint to sanitize barrel files -- see "Evaluating ESLint configuration opt.txt"
 
+Don't export DotNetApi nor createDotNetApi -- instead pass CORE_EXE into setAppDataPath
+
 Move convert\* etc. to ./output
 
 Keep the factory module i.e. openDataSource in the ./
 
 Move the remainer to ./api
 
-Keep the name "shared-types"
+Keep the name "contracts-ui"
 
 Extract "loaded-types" from "loaded"
 

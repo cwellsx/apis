@@ -1,4 +1,4 @@
-import type { MethodMember, NamedTypeInfo, Parameter, PropertyMember, TypeId } from "../loaded";
+import type { MethodMember, NamedTypeInfo, Parameter, PropertyMember, TypeId } from "../contracts-dotnet";
 
 const getTypeName = (name: string, generic?: TypeId[]): string => {
   if (!generic) return name;

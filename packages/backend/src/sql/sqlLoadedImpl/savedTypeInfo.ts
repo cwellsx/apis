@@ -1,4 +1,4 @@
-import { NamedTypeInfo as GoodTypeInfo } from "../../loaded";
+import { NamedTypeInfo as GoodTypeInfo } from "../../contracts-dotnet";
 
 export type SavedTypeInfo = Omit<GoodTypeInfo, "members">;
 
