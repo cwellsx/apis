@@ -9,7 +9,7 @@ import type {
   View,
   ViewDetails,
   ViewOptions,
-} from "backend-types";
+} from "backend-ui";
 import { contextBridge, ipcRenderer } from "electron";
 
 const mainApiProxy: MainApi = {

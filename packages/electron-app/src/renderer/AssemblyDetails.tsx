@@ -7,8 +7,8 @@ import type {
   Namespace,
   OnUserEvent,
   Type,
-} from "backend-types";
-import { nodeIdToText, textToNodeId } from "backend-types";
+} from "backend-ui";
+import { nodeIdToText, textToNodeId } from "backend-ui";
 import * as React from "react";
 import CheckboxTree, { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
 import * as Icon from "./Icons.Microsoft";

@@ -1,14 +1,13 @@
-import type { DisplayApi } from "./app-types";
-import { SetViewMenu } from "./app-types";
+import type { DisplayApi, MainApiAsync } from "./contracts-app";
+import { SetViewMenu } from "./contracts-app";
+import type { Reflected } from "./contracts-dotnet";
+import { isReflected } from "./contracts-dotnet";
 import { createAppWindow } from "./createAppWindow";
 import { createCustomWindow } from "./createCustomWindow";
 import { DotNetApi } from "./createDotNetApi";
 import type { CustomNode } from "./customJson";
 import { fixCustomJson, isCustomJson } from "./customJson";
-import type { Reflected } from "./contracts-dotnet";
-import { isReflected } from "./contracts-dotnet";
 import { createSqlCustom, createSqlLoaded, SqlConfig, SqlCustom, SqlLoaded, type DataSource } from "./sql";
-import type { MainApiAsync } from "./types";
 import { getAppFilename, jsonParse, log, options, readJsonT, whenFile, writeFileSync } from "./utils";
 
 // not yet the DataSource SQL

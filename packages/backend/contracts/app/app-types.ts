@@ -1,4 +1,4 @@
-import { RendererApi, ViewType } from "./contracts-ui";
+import { RendererApi, ViewType } from "../ui";
 import { MainApiAsync } from "./types";
 
 export type ViewMenuItem = { label: string; viewType: ViewType };

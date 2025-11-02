@@ -1,4 +1,19 @@
-import type { DisplayApi, SetViewMenu, ViewMenu, ViewMenuItem } from "./app-types";
+import type { DisplayApi, MainApiAsync, SetViewMenu, ViewMenu, ViewMenuItem } from "./contracts-app";
+import type {
+  AppOptions,
+  ClusterBy,
+  DetailEvent,
+  FilterEvent,
+  GraphEvent,
+  GraphFilter,
+  GraphViewOptions,
+  ViewCompiler,
+  ViewDetails,
+  ViewErrors,
+  ViewOptions,
+  ViewType,
+} from "./contracts-ui";
+import { MethodViewOptions, nodeIdToText } from "./contracts-ui";
 import { convertLoadedToDetailedAssembly } from "./convertLoadedToDetailedAssembly";
 import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "./convertLoadedToMethods";
 import { convertLoadedToReferences } from "./convertLoadedToReferences";
@@ -17,23 +32,7 @@ import {
   toNodeId,
 } from "./nodeIds";
 import { showAdjacent } from "./onGraphClick";
-import type {
-  AppOptions,
-  ClusterBy,
-  DetailEvent,
-  FilterEvent,
-  GraphEvent,
-  GraphFilter,
-  GraphViewOptions,
-  ViewCompiler,
-  ViewDetails,
-  ViewErrors,
-  ViewOptions,
-  ViewType,
-} from "./contracts-ui";
-import { MethodViewOptions, nodeIdToText } from "./contracts-ui";
 import type { CommonGraphViewType, SqlConfig, SqlLoaded } from "./sql";
-import type { MainApiAsync } from "./types";
 import { log, viewFeatures } from "./utils";
 
 type OnOpen = { kind: "openViewType" } | { kind: "showMethods"; nodeId: MethodNodeId };

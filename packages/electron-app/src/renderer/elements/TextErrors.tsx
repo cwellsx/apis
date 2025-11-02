@@ -1,4 +1,4 @@
-import { BadMethodInfoAndNames, ErrorsInfo, MethodName, ViewErrors } from "backend-types";
+import { BadMethodInfoAndNames, ErrorsInfo, MethodName, ViewErrors } from "backend-ui";
 import * as React from "react";
 import { BadMethodCallsDetails, BadMethodException } from "./BadMethodCallsDetails";
 import { BadTypeInfoDetails } from "./BadTypeInfoDetails";

@@ -1,5 +1,6 @@
-import { DotNetApi, MainApiAsync, createDotNetApi, hello } from "backend-api";
-import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-types";
+import { DotNetApi, createDotNetApi, hello } from "backend-api";
+import type { MainApiAsync } from "backend-app";
+import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-ui";
 import { log, logApi } from "backend-utils";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
 import { registerFileProtocol } from "./convertPathToUrl";

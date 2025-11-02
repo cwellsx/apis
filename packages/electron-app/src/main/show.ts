@@ -1,5 +1,5 @@
-import type { CreateWindow, DisplayApi } from "backend-api";
-import type { AppOptions, View, ViewDetails, ViewGreeting } from "backend-types";
+import type { CreateWindow, DisplayApi } from "backend-app";
+import type { AppOptions, View, ViewDetails, ViewGreeting } from "backend-ui";
 import { getErrorString, log, logApi } from "backend-utils";
 import type { BrowserWindow } from "electron";
 import { convertPathToUrl } from "./convertPathToUrl";

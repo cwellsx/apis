@@ -9,7 +9,7 @@
     "baseUrl": ".", // needed when paths is specified
     "paths": {
       "backend-api": ["../backend/src/index.ts"],
-      "backend-types": ["../backend/contracts/ui/index.ts"],
+      "backend-ui": ["../backend/contracts/ui/index.ts"],
       "backend-utils": ["../backend/src/utils/index.ts"]
     }
   },

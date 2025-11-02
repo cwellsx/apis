@@ -1,4 +1,4 @@
-import { CompilerMethod, LocalsType, ViewCompiler } from "backend-types";
+import { CompilerMethod, LocalsType, ViewCompiler } from "backend-ui";
 import * as React from "react";
 
 type TextCompilerProps = {

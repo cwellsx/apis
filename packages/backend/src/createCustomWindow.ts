@@ -1,7 +1,4 @@
-import type { DisplayApi, SetViewMenu, ViewMenuItem } from "./app-types";
-import { convertLoadedToCustom } from "./convertLoadedToCustom";
-import { bindImage } from "./image";
-import { anyNodeIdToText, edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
+import type { DisplayApi, MainApiAsync, SetViewMenu, ViewMenuItem } from "./contracts-app";
 import type {
   AppOptions,
   CustomViewOptions,
@@ -14,8 +11,10 @@ import type {
   ViewType,
 } from "./contracts-ui";
 import { isCustomManual, isCustomViewOptions } from "./contracts-ui";
+import { convertLoadedToCustom } from "./convertLoadedToCustom";
+import { bindImage } from "./image";
+import { anyNodeIdToText, edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
 import { SqlConfig, SqlCustom } from "./sql";
-import type { MainApiAsync } from "./types";
 import { viewFeatures } from "./utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded

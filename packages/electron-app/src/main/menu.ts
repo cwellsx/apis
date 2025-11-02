@@ -1,5 +1,5 @@
-import { SetViewMenu, ViewMenu } from "backend-api";
-import { ViewType } from "backend-types";
+import { SetViewMenu, ViewMenu } from "backend-app";
+import { ViewType } from "backend-ui";
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
 import { createDisplay } from "./show";
 

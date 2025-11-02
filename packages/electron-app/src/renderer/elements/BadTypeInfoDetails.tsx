@@ -1,4 +1,4 @@
-import { BadTypeInfoAndNames } from "backend-types";
+import { BadTypeInfoAndNames } from "backend-ui";
 import * as React from "react";
 
 type BadTypeInfoDetailsProps = {

@@ -1,4 +1,4 @@
-import { MethodName } from "backend-types";
+import { MethodName } from "backend-ui";
 import * as React from "react";
 
 export const makeRow = (first: string, second: JSX.Element | string) => (

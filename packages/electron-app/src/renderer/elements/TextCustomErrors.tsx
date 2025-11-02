@@ -1,4 +1,4 @@
-import { ViewCustomErrors } from "backend-types";
+import { ViewCustomErrors } from "backend-ui";
 import * as React from "react";
 
 type TextCustomErrorsProps = {
