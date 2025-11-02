@@ -9,8 +9,6 @@ import type {
   TypeInfo,
 } from "../contracts-dotnet";
 import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../contracts-dotnet";
-import type { MethodNodeId, TypeNodeId } from "../nodeIds";
-import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
 import type {
   BadMethodInfoAndNames,
   BadTypeInfoAndNames,
@@ -22,6 +20,8 @@ import type {
   MethodName,
   NodeId,
 } from "../contracts-ui";
+import type { MethodNodeId, TypeNodeId } from "../nodeIds";
+import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../nodeIds";
 import { jsonParse, log, mapOfMaps, options } from "../utils";
 import type {
   Call,
@@ -65,7 +65,7 @@ type GoodTypeDictionary = {
 };
 
 export class SqlLoaded {
-  save: (reflected: Reflected, when: string, hashDataSource: string) => void;
+  save: (reflected: Reflected, when: string) => void;
   shouldReload: (when: string) => boolean;
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
@@ -110,12 +110,12 @@ export class SqlLoaded {
       this.viewState.cachedWhen = ""; // force a reload of the data
     }
 
-    this.save = (reflected: Reflected, when: string, hashDataSource: string) => {
+    this.save = (reflected: Reflected, when: string) => {
       table.deleteAll();
 
       save(reflected, table);
 
-      this.viewState.onSave(when, hashDataSource, reflected.version, reflected.exes, isSchemaChanged);
+      this.viewState.onSave(when, reflected.version, reflected.exes, isSchemaChanged);
 
       this.writeLeafVisible(
         "references",

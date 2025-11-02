@@ -1,7 +1,7 @@
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
-import { getAppDataPath } from "./appDataPath";
+import { getAppDataPath } from "./paths";
 
 export const pathJoin = (directory: string, filename: string): string => path.join(directory, filename);
 

@@ -1,4 +1,4 @@
-import { DotNetApi, createDotNetApi, hello } from "backend-api";
+import { hello, setPaths } from "backend-api";
 import type { MainApiAsync } from "backend-app";
 import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-ui";
 import { log, logApi } from "backend-utils";
@@ -17,7 +17,9 @@ import { appWindows, loadURL } from "./createBrowserWindow";
 
 declare const CORE_EXE: string;
 
-export const createApplication = async (mainWindow: BrowserWindow): Promise<void> => {
+export const createApplication = async (mainWindow: BrowserWindow, appDataPath: string): Promise<void> => {
+  setPaths({ appDataPath, coreExePath: CORE_EXE });
+
   log(`CORE_EXE is ${CORE_EXE}`);
   log(`cwd is ${process.cwd()}`);
   log(`script path is ${__dirname}`);
@@ -26,9 +28,6 @@ export const createApplication = async (mainWindow: BrowserWindow): Promise<void
   log(`electron version is ${process.versions.electron}`);
 
   registerFileProtocol();
-
-  // instantiate the DotNetApi
-  const dotNetApi: DotNetApi = createDotNetApi(CORE_EXE);
 
   const on = (event: IpcMainEvent): MainApiAsync | undefined => appWindows.find(event);
 
@@ -71,5 +70,5 @@ export const createApplication = async (mainWindow: BrowserWindow): Promise<void
 
   await loadURL(mainWindow);
   log("onRendererLoaded");
-  await createAppOpened(mainWindow, dotNetApi);
+  await createAppOpened(mainWindow);
 };

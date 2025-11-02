@@ -17,9 +17,8 @@ export class ViewState {
     this._cache = new ConfigCache(db);
   }
 
-  onSave(when: string, hashDataSource: string, version: string, exes: string[], isSchemaChanged: boolean) {
+  onSave(when: string, version: string, exes: string[], isSchemaChanged: boolean) {
     this.cachedWhen = when;
-    this.hashDataSource = hashDataSource;
     this.loadedVersion = version;
     this.exes = exes;
     this.referenceViewOptions = defaultViewOptions.referenceViewOptions;
@@ -52,13 +51,6 @@ export class ViewState {
   }
   set cachedWhen(value: string) {
     this._cache.setValue("cachedWhen", value);
-  }
-  // this identifies the DataSource
-  get hashDataSource(): string {
-    return this._cache.getValue("hashDataSource") ?? "";
-  }
-  set hashDataSource(value: string) {
-    this._cache.setValue("hashDataSource", value);
   }
 
   set referenceViewOptions(viewOptions: ReferenceViewOptions) {

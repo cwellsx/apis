@@ -1,41 +1,16 @@
 import type { AppConfig, DataSource, DisplayApi, MainApiAsync } from "./contracts-app";
 import { SetViewMenu } from "./contracts-app";
-import type { Reflected } from "./contracts-dotnet";
-import { isReflected } from "./contracts-dotnet";
 import { createAppWindow } from "./createAppWindow";
 import { createCustomWindow } from "./createCustomWindow";
-import { DotNetApi } from "./createDotNetApi";
-import type { CustomNode } from "./customJson";
-import { fixCustomJson, isCustomJson } from "./customJson";
-import { createSqlCustom, createSqlLoaded, SqlCustom, SqlLoaded } from "./sql";
-import { getAppFilename, jsonParse, log, options, readJsonT, whenFile, writeFileSync } from "./utils";
-
-// not yet the DataSource SQL
-let sqlLoaded: SqlLoaded | undefined;
-let sqlCustom: SqlCustom | undefined;
-
-const closeAll = (): void => {
-  if (sqlLoaded) {
-    sqlLoaded.close();
-    sqlLoaded = undefined;
-  }
-  if (sqlCustom) {
-    sqlCustom.close();
-    sqlCustom = undefined;
-  }
-};
-
-const changeSqlLoaded = (dataSource: DataSource): SqlLoaded => {
-  log("changeSqlLoaded");
-  closeAll();
-  return createSqlLoaded(dataSource);
-};
-
-const changeSqlCustom = (dataSource: DataSource): SqlCustom => {
-  log("changeSqlCustom");
-  closeAll();
-  return createSqlCustom(dataSource);
-};
+import { createDotNetApi } from "./createDotNetApi";
+import {
+  createSqlCustomFromJson,
+  createSqlLoadedFromCoreJson,
+  createSqlLoadedFromDotNet,
+  SqlCustom,
+  SqlLoaded,
+} from "./sql";
+import { getCoreExePath, log } from "./utils";
 
 /*
   openDataSource to open any and all types of DataSource
@@ -44,71 +19,43 @@ const changeSqlCustom = (dataSource: DataSource): SqlCustom => {
 export const openDataSource = async (
   dataSource: DataSource,
   display: DisplayApi,
-  dotNetApi: DotNetApi,
+  // dotNetApi: DotNetApi,
   setViewMenu: SetViewMenu,
   appConfig: AppConfig
 ): Promise<MainApiAsync | undefined> => {
-  const openSqlLoaded = async (
-    when: string,
-    getReflected: (path: string) => Promise<Reflected>
-  ): Promise<MainApiAsync> => {
-    sqlLoaded = changeSqlLoaded(dataSource);
-    if (options.alwaysReload || sqlLoaded.shouldReload(when)) {
-      log("getLoaded");
-      const reflected = await getReflected(dataSource.path);
-      // save Reflected
-      const jsonPath = getAppFilename(`Reflected.${dataSource.hash}.json`);
-      log(`writeFileSync(${jsonPath})`);
-      writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
-      sqlLoaded.save(reflected, when, dataSource.hash);
-    } else log("!getLoaded");
-    return createAppWindow(display, sqlLoaded, appConfig, dataSource.path, setViewMenu, {
-      kind: "openViewType",
-    });
-  };
-
-  const openSqlCustom = async (
-    when: string,
-    getCustom: (path: string) => Promise<CustomNode[]>
-  ): Promise<MainApiAsync> => {
-    sqlCustom = changeSqlCustom(dataSource);
-    if (options.alwaysReload || sqlCustom.shouldReload(when)) {
-      const nodes = await getCustom(dataSource.path);
-      const errors = fixCustomJson(nodes);
-      sqlCustom.save(nodes, errors, when);
-    }
-    return createCustomWindow(display, sqlCustom, appConfig, dataSource.path, setViewMenu);
-  };
-
-  const readDotNetApi = async (path: string): Promise<Reflected> => {
-    const json = await dotNetApi.getJson(path);
-    const reflected = jsonParse<Reflected>(json);
-    return reflected;
-  };
-
-  const readCoreJson = async (path: string): Promise<Reflected> => await readJsonT(path, isReflected);
-
-  const readCustomJson = async (path: string): Promise<CustomNode[]> => await readJsonT(path, isCustomJson);
+  const coreExePath = getCoreExePath();
+  const dotNetApi = createDotNetApi(coreExePath);
 
   /*
-      statements wrapped in a try/catch handler
-    */
+    statements wrapped in a try/catch handler
+  */
+
+  const openAppWindow = async (sqlLoaded: SqlLoaded): Promise<MainApiAsync> =>
+    await createAppWindow(display, sqlLoaded, appConfig, dataSource.path, setViewMenu, {
+      kind: "openViewType",
+    });
+
+  const openCustomWindow = async (sqlCustom: SqlCustom): Promise<MainApiAsync> =>
+    await createCustomWindow(display, sqlCustom, appConfig, dataSource.path, setViewMenu);
 
   try {
     log("openDataSource");
     const path = dataSource.path;
     display.showMessage(`Loading ${path}`, "Loading...");
     log(`openDataSource: ${path}`);
+
     let result: MainApiAsync;
     switch (dataSource.type) {
       case "loadedAssemblies":
-        result = await openSqlLoaded(await dotNetApi.getWhen(dataSource.path), readDotNetApi);
+        result = await openAppWindow(await createSqlLoadedFromDotNet(dataSource, dotNetApi));
         break;
+
       case "coreJson":
-        result = await openSqlLoaded(await whenFile(dataSource.path), readCoreJson);
+        result = await openAppWindow(await createSqlLoadedFromCoreJson(dataSource));
         break;
+
       case "customJson":
-        result = await openSqlCustom(await whenFile(dataSource.path), readCustomJson);
+        result = await openCustomWindow(await createSqlCustomFromJson(dataSource));
         break;
     }
     // remember as most-recently-opened iff it opens successfully

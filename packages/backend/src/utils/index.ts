@@ -1,12 +1,11 @@
-export * from "./appDataPath";
 export * from "./error";
 export * from "./fs";
-export * from "./hash";
 export { jsonParse } from "./jsonParse";
 export * from "./log";
 export * from "./memberNames";
 export { nestTypes } from "./nestTypes";
 export { options } from "./options";
+export * from "./paths";
 export * from "./remove";
 export { distinctor, getMapped, getOrSet, last, mapOfMaps, remove, replace, uniqueStrings } from "./remove";
 export { viewFeatures } from "./viewFeatures";

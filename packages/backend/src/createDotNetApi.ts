@@ -7,11 +7,11 @@ export interface DotNetApi {
   getJson: (directory: string) => Promise<string>;
 }
 
-export function createDotNetApi(command: string, ...args: string[]): DotNetApi {
+export function createDotNetApi(coreExePath: string): DotNetApi {
   log("createDotNetApi");
 
   // instantiate the Connection instance
-  const connection = new ConnectionBuilder().connectTo(command, ...args).build();
+  const connection = new ConnectionBuilder().connectTo(coreExePath).build();
 
   // use the connection instance to implement the API
   const dotNetApi = {

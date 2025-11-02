@@ -1,6 +1,6 @@
-import { DotNetApi, createSqlConfig, openDataSource } from "backend-api";
+import { createSqlConfig, openDataSource } from "backend-api";
 import type { DataSource } from "backend-app";
-import { existsSync, hash, pathJoin } from "backend-utils";
+import { existsSync, pathJoin } from "backend-utils";
 import { FileFilter, dialog, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";
@@ -8,7 +8,7 @@ import { createDisplay } from "./show";
 
 declare const CORE_EXE: string;
 
-export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotNetApi): Promise<void> => {
+export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> => {
   // instantiate the Config SQL
   const appConfig = createSqlConfig("config.db");
 
@@ -16,7 +16,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
 
   const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
     appWindows.closeAll(mainWindow);
-    const mainApi = await openDataSource(dataSource, display, dotNetApi, setViewMenu, appConfig);
+    const mainApi = await openDataSource(dataSource, display, setViewMenu, appConfig);
     if (mainApi) appWindows.add(mainApi, mainWindow);
   };
 
@@ -28,7 +28,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     const paths = dialog.showOpenDialogSync(mainWindow, { properties: ["openDirectory"] });
     if (!paths) return;
     const path = paths[0];
-    const dataSource: DataSource = { path, type: "loadedAssemblies", hash: hash(path) };
+    const dataSource: DataSource = { path, type: "loadedAssemblies" };
     await reopenDataSource(dataSource);
   };
 
@@ -45,21 +45,21 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   const openCoreJson = async (): Promise<void> => {
     const path = openJsonPath([{ name: "Core", extensions: ["json"] }], pathJoin(CORE_EXE, "Core.json"));
     if (!path) return;
-    const dataSource: DataSource = { path, type: "coreJson", hash: hash(path) };
+    const dataSource: DataSource = { path, type: "coreJson" };
     await reopenDataSource(dataSource);
   };
 
   const openCustomJson = async (): Promise<void> => {
     const path = openJsonPath([{ name: "*", extensions: ["json"] }]);
     if (!path) return;
-    const dataSource: DataSource = { path, type: "customJson", hash: hash(path) };
+    const dataSource: DataSource = { path, type: "customJson" };
     await reopenDataSource(dataSource);
   };
 
   const openRecent = async (path: string): Promise<void> => {
     const type = appConfig.recent().find((it) => it.path === path)?.type;
     if (!type) throw new Error("Unknown recent path");
-    const dataSource: DataSource = { path, type, hash: hash(path) };
+    const dataSource: DataSource = { path, type };
     await reopenDataSource(dataSource);
   };
 
