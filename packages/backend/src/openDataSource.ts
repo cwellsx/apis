@@ -1,4 +1,4 @@
-import type { DisplayApi, MainApiAsync } from "./contracts-app";
+import type { AppConfig, DataSource, DisplayApi, MainApiAsync } from "./contracts-app";
 import { SetViewMenu } from "./contracts-app";
 import type { Reflected } from "./contracts-dotnet";
 import { isReflected } from "./contracts-dotnet";
@@ -7,7 +7,7 @@ import { createCustomWindow } from "./createCustomWindow";
 import { DotNetApi } from "./createDotNetApi";
 import type { CustomNode } from "./customJson";
 import { fixCustomJson, isCustomJson } from "./customJson";
-import { createSqlCustom, createSqlLoaded, SqlConfig, SqlCustom, SqlLoaded, type DataSource } from "./sql";
+import { createSqlCustom, createSqlLoaded, SqlCustom, SqlLoaded } from "./sql";
 import { getAppFilename, jsonParse, log, options, readJsonT, whenFile, writeFileSync } from "./utils";
 
 // not yet the DataSource SQL
@@ -46,7 +46,7 @@ export const openDataSource = async (
   display: DisplayApi,
   dotNetApi: DotNetApi,
   setViewMenu: SetViewMenu,
-  sqlConfig: SqlConfig
+  appConfig: AppConfig
 ): Promise<MainApiAsync | undefined> => {
   const openSqlLoaded = async (
     when: string,
@@ -62,7 +62,7 @@ export const openDataSource = async (
       writeFileSync(jsonPath, JSON.stringify(reflected, null, " "));
       sqlLoaded.save(reflected, when, dataSource.hash);
     } else log("!getLoaded");
-    return createAppWindow(display, sqlLoaded, sqlConfig, dataSource.path, setViewMenu, {
+    return createAppWindow(display, sqlLoaded, appConfig, dataSource.path, setViewMenu, {
       kind: "openViewType",
     });
   };
@@ -77,7 +77,7 @@ export const openDataSource = async (
       const errors = fixCustomJson(nodes);
       sqlCustom.save(nodes, errors, when);
     }
-    return createCustomWindow(display, sqlCustom, sqlConfig, dataSource.path, setViewMenu);
+    return createCustomWindow(display, sqlCustom, appConfig, dataSource.path, setViewMenu);
   };
 
   const readDotNetApi = async (path: string): Promise<Reflected> => {
@@ -112,7 +112,7 @@ export const openDataSource = async (
         break;
     }
     // remember as most-recently-opened iff it opens successfully
-    sqlConfig.dataSource = dataSource;
+    appConfig.dataSource = dataSource;
     return result;
   } catch (error: unknown) {
     display.showException(error);

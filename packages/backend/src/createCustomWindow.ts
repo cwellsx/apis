@@ -1,4 +1,4 @@
-import type { DisplayApi, MainApiAsync, SetViewMenu, ViewMenuItem } from "./contracts-app";
+import type { AppConfig, DisplayApi, MainApiAsync, SetViewMenu, ViewMenuItem } from "./contracts-app";
 import type {
   AppOptions,
   CustomViewOptions,
@@ -14,18 +14,18 @@ import { isCustomManual, isCustomViewOptions } from "./contracts-ui";
 import { convertLoadedToCustom } from "./convertLoadedToCustom";
 import { bindImage } from "./image";
 import { anyNodeIdToText, edgeIdToNodeIds, isEdgeId, isNameNodeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
-import { SqlConfig, SqlCustom } from "./sql";
+import { SqlCustom } from "./sql";
 import { viewFeatures } from "./utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = async (
   display: DisplayApi,
   sqlCustom: SqlCustom,
-  sqlConfig: SqlConfig,
+  appConfig: AppConfig,
   dataSourcePath: string,
   setViewMenu: SetViewMenu
 ): Promise<MainApiAsync> => {
-  display.showAppOptions(sqlConfig.appOptions);
+  display.showAppOptions(appConfig.appOptions);
 
   const createViewMenu = (): void => {
     const menuItems: ViewMenuItem[] = [{ label: "Custom JSON", viewType: "custom" }];
@@ -85,7 +85,7 @@ export const createCustomWindow = async (
     },
     // eslint-disable-next-line @typescript-eslint/require-await
     onAppOptions: async (appOptions: AppOptions): Promise<void> => {
-      sqlConfig.appOptions = appOptions;
+      appConfig.appOptions = appOptions;
       display.showAppOptions(appOptions);
     },
     onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {

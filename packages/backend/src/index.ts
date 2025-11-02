@@ -1,4 +1,4 @@
 export * from "./createDotNetApi"; // factory exported by this package
-export * from "./hello";
-export * from "./openDataSource"; // factory exported by this package
-export { createSqlConfig, type DataSource } from "./sql";
+export { hello } from "./hello";
+export { openDataSource } from "./openDataSource"; // factory exported by this package
+export { createSqlConfig } from "./sql";

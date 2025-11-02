@@ -1,6 +1,6 @@
 import { createSqlDatabase } from "sqlio";
+import type { AppConfig, DataSource } from "../contracts-app";
 import { getAppFilename, log, pathJoin } from "../utils";
-import type { DataSource } from "./sqlConfig";
 import { SqlConfig } from "./sqlConfig";
 import { SqlCustom } from "./sqlCustom";
 import { SqlLoaded } from "./sqlLoaded";
@@ -19,7 +19,7 @@ export function createSqlCustom(dataSource: DataSource): SqlCustom {
   return new SqlCustom(createSqlDatabase(filename, nativeBinding));
 }
 
-export function createSqlConfig(filename: string): SqlConfig {
+export function createSqlConfig(filename: string): AppConfig {
   filename = getAppFilename(filename);
   log("createSqlConfig: " + filename);
   return new SqlConfig(createSqlDatabase(filename, nativeBinding));

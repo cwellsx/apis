@@ -1,4 +1,5 @@
-import { DotNetApi, createSqlConfig, openDataSource, type DataSource } from "backend-api";
+import { DotNetApi, createSqlConfig, openDataSource } from "backend-api";
+import type { DataSource } from "backend-app";
 import { existsSync, hash, pathJoin } from "backend-utils";
 import { FileFilter, dialog, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
@@ -9,13 +10,13 @@ declare const CORE_EXE: string;
 
 export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotNetApi): Promise<void> => {
   // instantiate the Config SQL
-  const sqlConfig = createSqlConfig("config.db");
+  const appConfig = createSqlConfig("config.db");
 
   const display = createDisplay(mainWindow);
 
   const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
     appWindows.closeAll(mainWindow);
-    const mainApi = await openDataSource(dataSource, display, dotNetApi, setViewMenu, sqlConfig);
+    const mainApi = await openDataSource(dataSource, display, dotNetApi, setViewMenu, appConfig);
     if (mainApi) appWindows.add(mainApi, mainWindow);
   };
 
@@ -56,14 +57,14 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
   };
 
   const openRecent = async (path: string): Promise<void> => {
-    const type = sqlConfig.recent().find((it) => it.path === path)?.type;
+    const type = appConfig.recent().find((it) => it.path === path)?.type;
     if (!type) throw new Error("Unknown recent path");
     const dataSource: DataSource = { path, type, hash: hash(path) };
     await reopenDataSource(dataSource);
   };
 
   const getRecent = (): string[] => {
-    const recent = sqlConfig.recent();
+    const recent = appConfig.recent();
     recent.sort((x, y) => -(x.when - y.when)); // reverse chronological
     return recent.map((it) => it.path);
   };
@@ -77,9 +78,9 @@ export const createAppOpened = async (mainWindow: BrowserWindow, dotNetApi: DotN
     getRecent
   );
 
-  if (sqlConfig.dataSource) {
-    if (existsSync(sqlConfig.dataSource.path)) {
-      await reopenDataSource(sqlConfig.dataSource);
+  if (appConfig.dataSource) {
+    if (existsSync(appConfig.dataSource.path)) {
+      await reopenDataSource(appConfig.dataSource);
     } else {
       display.showMessage("Not found", "Use the File menu, to open a data source.");
     }

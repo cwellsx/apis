@@ -1,15 +1,6 @@
-import { RendererApi, ViewType } from "../ui";
-import { MainApiAsync } from "./types";
-
-export type ViewMenuItem = { label: string; viewType: ViewType };
-
-export type ViewMenu = {
-  menuItems: ViewMenuItem[];
-  currentViewType: ViewType | undefined;
-  showViewType: (viewType: ViewType) => Promise<void>;
-};
-
-export type SetViewMenu = (viewMenu: ViewMenu) => void;
+import { RendererApi } from "../ui";
+import { MainApiAsync } from "./mainApi";
+import { SetViewMenu } from "./setViewMenu";
 
 // this extends RendererApi without additional preloaded IPC methods
 

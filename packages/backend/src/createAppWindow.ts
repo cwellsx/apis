@@ -1,4 +1,4 @@
-import type { DisplayApi, MainApiAsync, SetViewMenu, ViewMenu, ViewMenuItem } from "./contracts-app";
+import type { AppConfig, DisplayApi, MainApiAsync, SetViewMenu, ViewMenu, ViewMenuItem } from "./contracts-app";
 import type {
   AppOptions,
   ClusterBy,
@@ -32,7 +32,7 @@ import {
   toNodeId,
 } from "./nodeIds";
 import { showAdjacent } from "./onGraphClick";
-import type { CommonGraphViewType, SqlConfig, SqlLoaded } from "./sql";
+import type { CommonGraphViewType, SqlLoaded } from "./sql";
 import { log, viewFeatures } from "./utils";
 
 type OnOpen = { kind: "openViewType" } | { kind: "showMethods"; nodeId: MethodNodeId };
@@ -40,7 +40,7 @@ type OnOpen = { kind: "openViewType" } | { kind: "showMethods"; nodeId: MethodNo
 export const createAppWindow = async (
   display: DisplayApi,
   sqlLoaded: SqlLoaded,
-  sqlConfig: SqlConfig,
+  appConfig: AppConfig,
   dataSourcePath: string,
   setViewMenu: SetViewMenu,
   onOpen: OnOpen
@@ -52,7 +52,7 @@ export const createAppWindow = async (
       { label: "APIs", viewType: "apis" },
     ];
     if (sqlLoaded.readErrors().length !== 0) menuItems.push({ label: ".NET reflection errors", viewType: "errors" });
-    if (sqlConfig.appOptions.showCompilerGeneratedMenuItem)
+    if (appConfig.appOptions.showCompilerGeneratedMenuItem)
       menuItems.push({ label: "Compiler-generated types", viewType: "compiler" });
     const viewMenu: ViewMenu = {
       menuItems,
@@ -122,7 +122,7 @@ export const createAppWindow = async (
     },
     // eslint-disable-next-line @typescript-eslint/require-await
     onAppOptions: async (appOptions: AppOptions): Promise<void> => {
-      sqlConfig.appOptions = appOptions;
+      appConfig.appOptions = appOptions;
       createViewMenu(); // because change appOptions might affect the View menu
       display.showAppOptions(appOptions);
     },
@@ -193,7 +193,7 @@ export const createAppWindow = async (
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
       await display.createSecondWindow((display: DisplayApi, setViewMenu: SetViewMenu) =>
-        createAppWindow(display, sqlLoaded, sqlConfig, dataSourcePath, setViewMenu, { kind: "showMethods", nodeId })
+        createAppWindow(display, sqlLoaded, appConfig, dataSourcePath, setViewMenu, { kind: "showMethods", nodeId })
       );
     },
     showException: (error: unknown): void => display.showException(error),
@@ -339,7 +339,7 @@ export const createAppWindow = async (
     await showViewType(viewType);
   };
 
-  display.showAppOptions(sqlConfig.appOptions);
+  display.showAppOptions(appConfig.appOptions);
 
   switch (onOpen.kind) {
     case "openViewType":

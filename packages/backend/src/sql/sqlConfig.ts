@@ -1,23 +1,10 @@
 import { SqlDatabase } from "sqlio";
+import type { AppConfig, DataSource, RecentColumns } from "../contracts-app";
 import { AppOptions, defaultAppOptions } from "../contracts-ui";
 import { jsonParse, log } from "../utils";
 import { ConfigCache } from "./configCache";
 
-export type DataSourceType = "loadedAssemblies" | "customJson" | "coreJson";
-
-export type DataSource = {
-  path: string;
-  type: DataSourceType;
-  hash: string;
-};
-
-type RecentColumns = {
-  path: string;
-  type: DataSourceType;
-  when: number;
-};
-
-export class SqlConfig {
+export class SqlConfig implements AppConfig {
   private _cache: ConfigCache;
   private _db: SqlDatabase;
   recent: () => RecentColumns[];
