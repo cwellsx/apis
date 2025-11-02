@@ -5,8 +5,7 @@ import type { GraphData, ImageAttribute, Shape } from "./imageDataTypes";
 import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "./nodeIds";
 import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "./shared-types";
 import { isCustomManual, isParent } from "./shared-types";
-import { last, log, options } from "./utils";
-import { getOrThrow } from "./utils/remove";
+import { getOrThrow, last, log, options } from "./utils";
 
 export const convertLoadedToCustom = (
   nodes: CustomNode[],

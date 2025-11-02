@@ -32,8 +32,7 @@ import type {
   ViewType,
 } from "./shared-types";
 import { MethodViewOptions, nodeIdToText } from "./shared-types";
-import { SqlConfig, SqlLoaded } from "./sql";
-import { CommonGraphViewType } from "./sql/sqlLoadedApiTypes";
+import type { CommonGraphViewType, SqlConfig, SqlLoaded } from "./sql";
 import type { MainApiAsync } from "./types";
 import { log, viewFeatures } from "./utils";
 

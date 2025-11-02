@@ -7,5 +7,6 @@ export * from "./log";
 export * from "./memberNames";
 export { nestTypes } from "./nestTypes";
 export { options } from "./options";
+export * from "./remove";
 export { distinctor, getMapped, getOrSet, last, mapOfMaps, remove, replace, uniqueStrings } from "./remove";
 export { viewFeatures } from "./viewFeatures";

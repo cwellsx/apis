@@ -1,8 +1,7 @@
 import { NameTypes, toNameNodeId } from "./nodeIds";
 import type { Leaf, Node, Parent } from "./shared-types";
 import { isParent } from "./shared-types";
-import { options, remove, replace } from "./utils";
-import { uniqueStrings } from "./utils/remove";
+import { options, remove, replace, uniqueStrings } from "./utils";
 
 type Result = {
   leafs: { [id: string]: Node };

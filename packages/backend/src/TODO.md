@@ -1,8 +1,4 @@
-Remove "backend/\*" from paths
-
 Use eslint to sanitize barrel files -- see "Evaluating ESLint configuration opt.txt"
-
-Move small modules like fs to ./utils
 
 Move convert\* etc. to ./output
 
