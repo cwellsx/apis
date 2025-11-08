@@ -4,7 +4,7 @@ export type ViewMenuItem = { label: string; viewType: ViewType };
 
 export type ViewMenu = {
   menuItems: ViewMenuItem[];
-  currentViewType: ViewType | undefined;
+  currentViewType: ViewType;
   showViewType: (viewType: ViewType) => Promise<void>;
 };
 

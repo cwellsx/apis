@@ -2,8 +2,8 @@ import { createSqlDatabase } from "sqlio";
 import type { AppConfig, DataSource } from "../contracts-app";
 import type { Reflected } from "../contracts-dotnet";
 import { isReflected } from "../contracts-dotnet";
-import { DotNetApi } from "../createDotNetApi";
 import { fixCustomJson, isCustomJson } from "../customJson";
+import * as dotNetApi from "../dotNetApi";
 import { getAppFilename, jsonParse, log, options, pathJoin, readJsonT, whenFile, writeFileSync } from "../utils";
 import { hash } from "./hash";
 import { SqlConfig } from "./sqlConfig";
@@ -57,7 +57,7 @@ const createSqlLoaded = async (
   return sqlLoaded;
 };
 
-export const createSqlLoadedFromDotNet = async (dataSource: DataSource, dotNetApi: DotNetApi): Promise<SqlLoaded> => {
+export const createSqlLoadedFromDotNet = async (dataSource: DataSource): Promise<SqlLoaded> => {
   const getWhen: GetWhen = async (dataSource: DataSource) => {
     return dotNetApi.getWhen(dataSource.path);
   };

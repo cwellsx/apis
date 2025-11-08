@@ -112,8 +112,7 @@ export const createAppMenu = (
       // update this menu
       editMenu(newViewType);
     };
-    const editMenu = (newViewType: ViewType | undefined): void => {
-      //viewSubmenu = getViewSubmenu(menuItems, viewType, setViewType);
+    const editMenu = (newViewType: ViewType): void => {
       viewSubmenu = menuItems.map(({ label, viewType }) => ({
         label,
         type: "checkbox",

@@ -1,4 +1,5 @@
-The ui contracts depend on the dotnet contracts to some extent but not vice versa.
+No cyclic dependencies:
 
-- The .NET contracts don't depend on the UI
-- The UI depends on a few of the .NET types because it displays that data
+1. dotnet - no dependencies
+2. ui - depends on dotnet because some of those types are displayed
+3. app - depends on ui because the ui displays some types used in the app api

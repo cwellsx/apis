@@ -1,16 +1,27 @@
-Use eslint to sanitize barrel files -- see "Evaluating ESLint configuration opt.txt"
+Add openViewType to MainApiAsync
 
-Don't export DotNetApi nor createDotNetApi -- instead pass CORE_EXE into setAppDataPath
+Refactor ./sql to contain factory, tables, read, write, and filter
+Refactor to extract filter into a separate database.
+
+Nove createViewMenu i.e. call setViewMenu within openDataSource
+
+Don't try/catch in createAppWindow and createCustomWindow
+
+rename createAppWindow to openReflected and createCustomWindow to openCustom and move these to main-api/
+
+rename customJson to isCustomJson, move it to istype/ togather with isRfeflected
+
+use wrapApi to invoke logApi
+
+avoid importing backend-utils
 
 Move convert\* etc. to ./output
+
+Sanitize try/catch handling - search for random try and replace then, probably in wrapApi and openDataSource
 
 Keep the factory module i.e. openDataSource in the ./
 
 Move the remainer to ./api
-
-Keep the name "contracts-ui"
-
-Extract "loaded-types" from "loaded"
 
 Naming:
 

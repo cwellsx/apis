@@ -2,7 +2,6 @@ import type { AppConfig, DataSource, DisplayApi, MainApiAsync } from "./contract
 import { SetViewMenu } from "./contracts-app";
 import { createAppWindow } from "./createAppWindow";
 import { createCustomWindow } from "./createCustomWindow";
-import { createDotNetApi } from "./createDotNetApi";
 import {
   createSqlCustomFromJson,
   createSqlLoadedFromCoreJson,
@@ -10,7 +9,7 @@ import {
   SqlCustom,
   SqlLoaded,
 } from "./sql";
-import { getCoreExePath, log } from "./utils";
+import { log } from "./utils";
 
 /*
   openDataSource to open any and all types of DataSource
@@ -19,13 +18,9 @@ import { getCoreExePath, log } from "./utils";
 export const openDataSource = async (
   dataSource: DataSource,
   display: DisplayApi,
-  // dotNetApi: DotNetApi,
   setViewMenu: SetViewMenu,
   appConfig: AppConfig
 ): Promise<MainApiAsync | undefined> => {
-  const coreExePath = getCoreExePath();
-  const dotNetApi = createDotNetApi(coreExePath);
-
   /*
     statements wrapped in a try/catch handler
   */
@@ -47,7 +42,7 @@ export const openDataSource = async (
     let result: MainApiAsync;
     switch (dataSource.type) {
       case "loadedAssemblies":
-        result = await openAppWindow(await createSqlLoadedFromDotNet(dataSource, dotNetApi));
+        result = await openAppWindow(await createSqlLoadedFromDotNet(dataSource));
         break;
 
       case "coreJson":
