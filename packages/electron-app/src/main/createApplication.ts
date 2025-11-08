@@ -1,7 +1,7 @@
 import { hello, setPaths } from "backend-api";
 import type { MainApiAsync } from "backend-app";
 import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-ui";
-import { log, logApi } from "backend-utils";
+import { log } from "backend-utils";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
@@ -33,13 +33,7 @@ export const createApplication = async (mainWindow: BrowserWindow, appDataPath: 
 
   type Invoke<T> = (api: MainApiAsync, arg: T) => Promise<void>;
 
-  const invoke = <T extends object>(
-    channel: string,
-    event: Electron.IpcMainEvent,
-    handler: Invoke<T>,
-    argument: T
-  ): void => {
-    logApi("on", channel, argument);
+  const invoke = <T extends object>(event: Electron.IpcMainEvent, handler: Invoke<T>, argument: T): void => {
     const api = on(event);
     if (!api) return;
     try {
@@ -53,19 +47,19 @@ export const createApplication = async (mainWindow: BrowserWindow, appDataPath: 
   // the following event handlers are a bit verbose and repetitive,
   // but it's clearer to see each one explicitly than to abstract them
   ipcMain.on("onViewOptions", (event, viewOptions: ViewOptions) => {
-    invoke("onViewOptions", event, (api, arg) => api.onViewOptions(arg), viewOptions);
+    invoke(event, (api, arg) => api.onViewOptions(arg), viewOptions);
   });
   ipcMain.on("onAppOptions", (event, appOptions: AppOptions) => {
-    invoke("onAppOptions", event, (api, arg) => api.onAppOptions(arg), appOptions);
+    invoke(event, (api, arg) => api.onAppOptions(arg), appOptions);
   });
   ipcMain.on("onGraphClick", (event, graphEvent: GraphEvent) => {
-    invoke("onGraphClick", event, (api, arg) => api.onGraphEvent(arg), graphEvent);
+    invoke(event, (api, arg) => api.onGraphEvent(arg), graphEvent);
   });
   ipcMain.on("onGraphFilter", (event, filterEvent: FilterEvent) => {
-    invoke("onGraphFilter", event, (api, arg) => api.onFilterEvent(arg), filterEvent);
+    invoke(event, (api, arg) => api.onFilterEvent(arg), filterEvent);
   });
   ipcMain.on("onDetailClick", (event, detailEvent: DetailEvent) => {
-    invoke("onDetailClick", event, (api, arg) => api.onDetailEvent(arg), detailEvent);
+    invoke(event, (api, arg) => api.onDetailEvent(arg), detailEvent);
   });
 
   await loadURL(mainWindow);

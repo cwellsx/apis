@@ -11,8 +11,6 @@ rename createAppWindow to openReflected and createCustomWindow to openCustom and
 
 rename customJson to isCustomJson, move it to istype/ togather with isRfeflected
 
-use wrapApi to invoke logApi
-
 avoid importing backend-utils
 
 Move convert\* etc. to ./output

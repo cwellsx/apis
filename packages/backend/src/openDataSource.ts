@@ -9,7 +9,7 @@ import {
   SqlCustom,
   SqlLoaded,
 } from "./sql";
-import { log } from "./utils";
+import { log, options, wrapApi } from "./utils";
 
 /*
   openDataSource to open any and all types of DataSource
@@ -33,6 +33,9 @@ export const openDataSource = async (
   const openCustomWindow = async (sqlCustom: SqlCustom): Promise<MainApiAsync> =>
     await createCustomWindow(display, sqlCustom, appConfig, dataSource.path, setViewMenu);
 
+  // log the API
+  if (options.logApi) display = wrapApi("send", display);
+
   try {
     log("openDataSource");
     const path = dataSource.path;
@@ -53,6 +56,10 @@ export const openDataSource = async (
         result = await openCustomWindow(await createSqlCustomFromJson(dataSource));
         break;
     }
+
+    // log the API
+    if (options.logApi) result = wrapApi("on", result);
+
     // remember as most-recently-opened iff it opens successfully
     appConfig.dataSource = dataSource;
     return result;

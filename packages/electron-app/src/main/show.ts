@@ -1,6 +1,6 @@
 import type { CreateWindow, DisplayApi } from "backend-app";
 import type { AppOptions, View, ViewDetails, ViewGreeting } from "backend-ui";
-import { getErrorString, log, logApi } from "backend-utils";
+import { getErrorString, log } from "backend-utils";
 import type { BrowserWindow } from "electron";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { appWindows, createBrowserWindow, loadURL } from "./createBrowserWindow";
@@ -30,20 +30,11 @@ export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
     mainWindow.setTitle(title);
   };
 
-  const showView = (view: View): void => {
-    logApi("send", "showView", view);
-    webContents.send("showView", view);
-  };
+  const showView = (view: View): void => webContents.send("showView", view);
 
-  const showDetails = (details: ViewDetails): void => {
-    logApi("send", "showDetails", details);
-    webContents.send("showDetails", details);
-  };
+  const showDetails = (details: ViewDetails): void => webContents.send("showDetails", details);
 
-  const showAppOptions = (appOptions: AppOptions): void => {
-    logApi("send", "showAppOptions", appOptions);
-    webContents.send("showAppOptions", appOptions);
-  };
+  const showAppOptions = (appOptions: AppOptions): void => webContents.send("showAppOptions", appOptions);
 
   const createSecondWindow = async (delegate: CreateWindow): Promise<void> => {
     const window = createBrowserWindow();

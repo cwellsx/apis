@@ -9,3 +9,4 @@ export * from "./paths";
 export * from "./remove";
 export { distinctor, getMapped, getOrSet, last, mapOfMaps, remove, replace, uniqueStrings } from "./remove";
 export { viewFeatures } from "./viewFeatures";
+export { wrapApi } from "./wrapApi";
