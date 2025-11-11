@@ -16,8 +16,12 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
 
   const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
     appWindows.closeAll(mainWindow);
-    const mainApi = await openDataSource(dataSource, display, setViewMenu, appConfig);
-    if (mainApi) appWindows.add(mainApi, mainWindow);
+    try {
+      const mainApi = await openDataSource(dataSource, display, setViewMenu, appConfig);
+      if (mainApi) appWindows.add(mainApi, mainWindow);
+    } catch (error) {
+      display.showException(error);
+    }
   };
 
   /*
@@ -33,11 +37,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
   };
 
   const openJsonPath = (filters: FileFilter[], defaultPath?: string): string | undefined => {
-    const paths = dialog.showOpenDialogSync(mainWindow, {
-      properties: ["openFile"],
-      filters,
-      defaultPath,
-    });
+    const paths = dialog.showOpenDialogSync(mainWindow, { properties: ["openFile"], filters, defaultPath });
     if (!paths) return;
     return paths[0];
   };

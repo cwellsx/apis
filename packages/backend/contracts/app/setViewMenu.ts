@@ -1,6 +1,6 @@
 import { ViewType } from "../ui";
 
-export type ViewMenuItem = { label: string; viewType: ViewType };
+export type ViewMenuItem = { menuLabel: string; viewType: ViewType };
 
 export type ViewMenu = {
   menuItems: ViewMenuItem[];

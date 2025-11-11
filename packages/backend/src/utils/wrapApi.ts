@@ -1,6 +1,3 @@
-// /* eslint-disable @typescript-eslint/no-unsafe-return */
-// /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-// /* eslint-disable @typescript-eslint/no-explicit-any */
 import { appendFileSync, getLogFilename } from "./fs";
 import { log } from "./log";
 
@@ -60,4 +57,21 @@ export function wrapApi<T extends Record<string, AnyFunc>>(event: Event, api: T)
   }
 
   return out;
+}
+
+type MethodOf<T, K extends keyof T> = T[K] extends (...args: infer A) => unknown ? (...args: A) => void : never;
+
+export function hookMethod<T, K extends keyof T>(api: T, key: K, hook: MethodOf<T, K>): void {
+  const fn = api[key] as MethodOf<T, K>;
+
+  const wrapper = (...args: unknown[]) => {
+    //logMethodName(event, methodName, args);
+    // forward to original; local cast because TS can't infer apply safety here
+    const result = fn.apply(api, args);
+    hook(args);
+    return result;
+  };
+
+  // cast wrapper to the precise property type T[typeof k]
+  api[key] = wrapper as unknown as T[typeof key];
 }

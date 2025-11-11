@@ -12,23 +12,12 @@ const getMenu = (
     label: "File",
     submenu: !recentSubmenu.length ? fileSubmenu : [...fileSubmenu, { type: "separator" }, ...recentSubmenu],
   },
-  {
-    label: "View",
-    submenu: viewSubmenu,
-  },
-  {
-    label: "Inspect",
-    role: "toggleDevTools",
-  },
+  { label: "View", submenu: viewSubmenu },
+  { label: "Inspect", role: "toggleDevTools" },
 ];
 
 export const createSecondMenu = (window: BrowserWindow): { setViewMenu: SetViewMenu } => {
-  const menu = Menu.buildFromTemplate([
-    {
-      label: "Inspect",
-      role: "toggleDevTools",
-    },
-  ]);
+  const menu = Menu.buildFromTemplate([{ label: "Inspect", role: "toggleDevTools" }]);
   window.setMenu(menu);
   const setViewMenu: SetViewMenu = () => {
     // do nothing
@@ -84,25 +73,13 @@ export const createAppMenu = (
 
   // these items never change
   const fileSubmenu: MenuItemConstructorOptions[] = [
-    {
-      label: "Directory containing binary .NET assemblies",
-      click: invoke(openAssemblies),
-    },
-    {
-      label: "JSON file containing `id` and `dependencies`",
-      click: invoke(openCustomJson),
-    },
-    {
-      label: "Core.json file created by running Core.exe",
-      click: invoke(openCoreJson),
-    },
+    { label: "Directory containing binary .NET assemblies", click: invoke(openAssemblies) },
+    { label: "JSON file containing `id` and `dependencies`", click: invoke(openCustomJson) },
+    { label: "Core.json file created by running Core.exe", click: invoke(openCoreJson) },
   ];
 
   const getRecentSubmenu = (): MenuItemConstructorOptions[] =>
-    recent.map((path) => ({
-      label: path,
-      click: invoke(async () => openRecent(path)),
-    }));
+    recent.map((path) => ({ label: path, click: invoke(async () => openRecent(path)) }));
 
   const setViewMenu: SetViewMenu = (viewMenu: ViewMenu) => {
     const { menuItems, currentViewType, showViewType } = viewMenu;
@@ -113,8 +90,8 @@ export const createAppMenu = (
       editMenu(newViewType);
     };
     const editMenu = (newViewType: ViewType): void => {
-      viewSubmenu = menuItems.map(({ label, viewType }) => ({
-        label,
+      viewSubmenu = menuItems.map(({ menuLabel, viewType }) => ({
+        label: menuLabel,
         type: "checkbox",
         checked: viewType === newViewType,
         click:
