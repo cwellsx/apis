@@ -1,53 +1,94 @@
 # API Viewer
 
-## What
+**Inspect a codebase’s runtime structure: call stacks, entry points, and API relationships.**
 
-Browse the APIs of .NET solutions:
+Views include call stacks and entry points, so you can see who calls what, why, and where. Use it to explore a codebase architecture, and to guide refactoring. It's an interactive, always‑current map of your code that complements source and design docs.
 
-- Read .NET assemblies using Reflection
-- Graph APIs between or within assemblies
+- Show API context, callers and callees
+- Identify entry points, event handlers, and network endpoints
+- Interactive views: cluster, hide, inspect nodes and connectors
+- Always up‑to‑date: model is derived from assemblies (including decompiled dependencies)
 
-UI to customize the graph view:
+**Status:** Pre‑alpha. See `/docs` for installation, usage, and design details.
 
-- Cluster nodes into groups
-- Hide and show nodes
-- Labels and tooltips
-- Click on nodes and connectors to view details
+## What you'll see
 
-## Why
+### Call stacks
 
-The graph shows both the architecture and its details.
+Source files are two-dimensional and static; they show lines of code, contained in methods, types, and packages.
 
-The display is interactive:
+Call stacks add the runtime dimension. They show:
 
-- See the top-level architecture
-- Drill down to specific details
-- Extract data e.g. call graphs
+- **Why** an API exists
+- **How** it is implemented (calls to subroutines)
+- **Context**: what calls an API
+- **Connections**: where components are linked
 
-Reflection reverse-engineers your actual, current software architecture:
+API Viewer makes the map of callers and callees explicit.
 
-- Automatically evolves, it's "documentation" which doesn't become outdated
-- Truthful, one-to-one mapping between the graphical architecture and the source code
-- Decompiles everything, including assemblies which are packaged from other repositories
+### Entry points
 
-<!-- Decompiling all method bodies:
+- In programs that run to completion -- call stacks originate in `Main`.
+- In long‑running processes -- `Main` instantiates event handlers, and most call stacks start in those handlers.
+- In network processes -- endpoints are event handlers or callback functions, which implement a network API.
 
-- Therefore it knows where every method is called from
-- So it can show a tree of synthetic call stacks for any method:
-  - From where is it called?
-  - What are its subroutines?
-  - Not just for one level but for all, top to bottom, another interactive graph -->
+## How it's implemented
 
-## How
+### Model
 
-For details, see:
+It builds a model of the software:
 
-- [Installation](./docs/INSTALLATION.md)
-- [User interface](./docs/USER.md)
-- [Code design](./docs/DESIGN.md)
+1. **Parses** software in a build or installation folder.
+2. **Tokenizes** code elements: packages, namespaces, types, methods.
+3. **Models** the software as a token tree; method calls are token pairs (`from → to`).
+4. **Indexes** tokens by ID for fast lookup.
 
-## More
+### Views
 
-This is a pre-release version:
+The UI renders multiple view types from the model:
 
-- [To do](./TODO.md)
+- Expand groups, hide or select nodes
+- Open multiple windows
+- Inspect labels, tooltips, and details
+
+## Use cases
+
+- Explore a new codebase
+- Document or summarize an existing codebase
+- Refactor or analyze work in progress
+
+## Advantages over traditional documentation
+
+- **Interactive**
+- **High‑level and code‑level** views
+- **Always up‑to‑date** — one‑to‑one mapping with source
+
+## Notes
+
+<details>
+<summary>Privacy</summary>
+
+The tool runs locally; model data stays on your machine and no network connection is used.
+
+</details>
+
+<details>
+<summary>Status ⛔</summary>
+
+Pre‑alpha: incomplete and unreleased.
+
+</details>
+
+<details>
+<summary>Languages</summary>
+
+Current version supports **.NET** only. Other languages (for example TypeScript) may be added later.
+
+</details>
+<details>
+<summary>Implementation</summary>
+- Parsing -- System.Reflection and ILSpy
+- Storage -- SQLite
+- Graphic -- GraphViz
+- Packaged -- a VS Code extension; or a standalone Electron app
+</details>
