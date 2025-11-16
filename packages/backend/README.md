@@ -1,8 +1,8 @@
 ## What
 
 This folder has no package.json of its own.
-Therefore it has not build of its own.
-Instead these source files are included in the build of projects which use them.
+Therefore it has no build of its own.
+Instead these source files are included in the builds of projects which use them.
 
 ## How
 

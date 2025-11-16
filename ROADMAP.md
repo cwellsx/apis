@@ -115,16 +115,21 @@ This refactoring is more-or-less complete now:
 Proof-of-concept for the VS Code extension to de-risk it:
 
 - Build and use the SQLite dependency
-- Implement a Webview to display an SVG
-- TypeScript in the Webview to make it interactive
-- Two-ways APIs between the Webview and the extension
+- Implement a WebView to display an SVG
+- TypeScript in the WebView to make it interactive
+- Two-ways APIs between the WebView and the extension
 </details>
 
 <details><summary>Refactoring -- still TODO</summary>
 
-The public backend/contracts are in place.
-The internal backend/src APIs need further improvement.
+The public `backend/contracts` are in place.
+The internal `backend/src` APIs need further improvement.
 These are related to several of the other issues below.
+
+When this refactoring is finished:
+
+- This should be deleted -- [TODO](./packages/backend/src/TODO.md)
+- This should be merged into to the README in the folder above it -- [OVERVIEW](./packages/backend/src/OVERVIEW.md)
 
 </details>
 
@@ -162,9 +167,9 @@ This must be changed:
 
 </details>
 
-<details><summary>Refactor sql module</summary>
+<details><summary>Refactor SQL module</summary>
 
-I haven't review the sql module since last year:
+I haven't yet reviewed the `sql` module since last year:
 
 - Check that it still makes sense
 - Create abstract contract types to export instead of implementation
@@ -252,6 +257,20 @@ There's already code to implement this:
 
 </details>
 
+<details><summary>Investigate Roslyn</summary>
+
+A different and more normal way to parse .NET is with the Roslyn APIs to parse source code.
+
+Investigate this to see whether it might be significantly better than -- or an alternative to -- the current solution which parses compiled assemblies.
+
+- This is e.g. `Microsoft.CodeAnalysis.CSharp` reference
+- It produces a `CSharpSyntaxTree` which might be what I need
+- Create a `CSharpCompilation` and call `GetSemanticModel` to get type information
+
+If this is desirable but not necessary then consider moving it to do "Later".
+
+</details>
+
 <details><summary>Tighter ILSpy integration</summary>
 
 The `src.dotnet/Core` project currently use two dependencies in their implementation:
@@ -273,7 +292,21 @@ Perhaps this should be changed:
 
 </details>
 
-<details><summary>More? -- TBD</summary>
+<details><summary>More TODO</summary>
+
+There's an older TODO file here:
+
+- [TODO](./docs//unknown.old/TODO.md)
+
+Careful -- there are many items in this list
+
+- Some may be obsolete
+- Many are details of the Electron app UI, which is deprecated for now with focus on the VS Code Extension instead
+- Some are already mentioned in this roadmap
+- Some of these items may still be valid
+
+This TODO should be reviewed and integrated into this ROADMAP.
+
 </details>
 
 ## Next -- Integrate in VS Code Extension
@@ -383,6 +416,19 @@ A feature I already foresee is highlighted in the README, i.e. endpoints and eve
 - They may already be findable in the model, or might be found earlier and inserted into the model
 
 Endpoints include e.g. gRPC client and server endpoints initially.
+
+</details>
+
+<details><summary>Subclasses</summary>
+
+Using dependency injection software often calls abstract interfaces instead of calling implementations.
+
+- It may be know what implementation is called at run-time but you can often guess
+- There may be only one implementation of interface, with a virtual interface to enable mocking in the unit-tests
+
+When chasing a call chain, the API Viewer should substitute the implementation of the method in the subclass, instead of the abstract method in the interface.
+
+A similar use case for this is in network endpoints, e.g. the server endpoint of an API is abstract base class with abstract methods to be implemented by the server.
 
 </details>
 

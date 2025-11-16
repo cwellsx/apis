@@ -6,7 +6,7 @@ Some of the targets in `.vscode/launch.json` are to debug this:
 - Electron All -- debug the backend and front-end
 
 The front-end can be debugged using VS Code like this,
-and/or using the Chrome DebTools.
+and/or using the Chrome DevTools.
 
 The two are more-or-less as good -- both can set breakpoints in TypeScript source.
 
