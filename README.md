@@ -1,21 +1,18 @@
 # API Viewer
 
-**Inspect a codebase’s runtime structure: call stacks, entry points, and API relationships.**
+**Inspect a codebase’s runtime structure:**
 
-Views include call stacks and entry points, so you can see who calls what, why, and where. Use it to explore a codebase architecture, and to guide refactoring. It's an interactive, always‑current map of your code that complements source and design docs.
+- Views include call stacks and entry points.
+- Use it to explore a codebase architecture, and to guide refactoring.
+- It's an interactive, always‑current map of your code that complements source and design docs.
 
-- Show API context, callers and callees
-- Identify entry points, event handlers, and network endpoints
-- Interactive views: cluster, hide, inspect nodes and connectors
-- Always up‑to‑date: model is derived from assemblies (including decompiled dependencies)
-
-**Status:** Pre‑alpha. See `/docs` for installation, usage, and design details.
+**Status:** Pre‑alpha.
 
 ## What you'll see
 
 ### Call stacks
 
-Source files are two-dimensional and static; they show lines of code, contained in methods, types, and packages.
+Source files are two-dimensional and static; they show lines of code contained in methods, types, and packages.
 
 Call stacks add the runtime dimension. They show:
 
@@ -63,32 +60,39 @@ The UI renders multiple view types from the model:
 - **High‑level and code‑level** views
 - **Always up‑to‑date** — one‑to‑one mapping with source
 
+## Privacy
+
+- API Viewer runs locally.
+- Model data stays on your machine.
+- No network connection is used.
+
 ## Notes
 
-<details>
-<summary>Privacy</summary>
-
-The tool runs locally; model data stays on your machine and no network connection is used.
-
-</details>
-
-<details>
-<summary>Status ⛔</summary>
+<details><summary>Status ⛔</summary>
 
 Pre‑alpha: incomplete and unreleased.
 
 </details>
 
-<details>
-<summary>Languages</summary>
+<details><summary>Documentation ⛔</summary>
 
-Current version supports **.NET** only. Other languages (for example TypeScript) may be added later.
+Documents -- `*.md` files -- are old, unfinished, unreliable.
+
+Only this README and the [ROADMAP](./ROADMAP.md) are maintained recently.
 
 </details>
-<details>
-<summary>Implementation</summary>
+
+<details><summary>Languages</summary>
+
+Current version supports **.NET** only.
+Other languages (for example TypeScript) may be added later.
+
+</details>
+<details><summary>Implementation</summary>
+
 - Parsing -- System.Reflection and ILSpy
 - Storage -- SQLite
 - Graphic -- GraphViz
 - Packaged -- a VS Code extension; or a standalone Electron app
+
 </details>
