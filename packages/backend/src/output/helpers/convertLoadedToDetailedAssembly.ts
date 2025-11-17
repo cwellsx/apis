@@ -7,17 +7,17 @@ import type {
   PropertyMember,
   TypeId,
   TypeInfo,
-} from "./contracts-dotnet";
+} from "../../contracts-dotnet";
 import {
   getMembers,
   isAnonTypeInfo,
   isNamedTypeInfo,
   Access as LoadedAccess,
   MemberException,
-} from "./contracts-dotnet";
-import type { Access, DetailedAssembly, MemberInfo, Members, Named, Namespace, NodeId, Type } from "./contracts-ui";
-import { artificialNodeIdFactory, GetArtificialNodeId, toMetadataNodeId, toNodeId } from "./nodeIds";
-import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "./utils";
+} from "../../contracts-dotnet";
+import type { Access, DetailedAssembly, MemberInfo, Members, Named, Namespace, NodeId, Type } from "../../contracts-ui";
+import { artificialNodeIdFactory, GetArtificialNodeId, toMetadataNodeId, toNodeId } from "../../nodeIds";
+import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "../../utils";
 
 type Exceptions = Named[];
 
@@ -96,12 +96,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
       access: LoadedAccess
     ): MemberInfo => {
       name = !memberTypeId ? name : `${name} : ${getTypeIdName(memberTypeId)}`;
-      return {
-        name,
-        nodeId,
-        attributes,
-        access: getAccess(access),
-      };
+      return { name, nodeId, attributes, access: getAccess(access) };
     };
 
     const getFieldMember = (fieldMember: FieldMember): MemberInfo =>
@@ -200,11 +195,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
   const namespaces: Namespace[] = [...grouped.entries()]
     .map(([name, typeInfos]) => {
       const nodeId: NodeId = toNodeId({ type: "namespace", name });
-      return {
-        name,
-        nodeId,
-        types: typeInfos.map(getType).sort((x, y) => x.name.localeCompare(y.name)),
-      };
+      return { name, nodeId, types: typeInfos.map(getType).sort((x, y) => x.name.localeCompare(y.name)) };
     })
     .sort((x, y) => x.name.localeCompare(y.name));
 

@@ -9,12 +9,16 @@ import type {
   ViewType,
 } from "../contracts-ui";
 import { nodeIdToText } from "../contracts-ui";
-import { convertLoadedToDetailedAssembly } from "../convertLoadedToDetailedAssembly";
-import { convertCallstackToImage, convertLoadedToCalls, convertLoadedToCallstack } from "../convertLoadedToMethods";
-import { convertLoadedToReferences } from "../convertLoadedToReferences";
-import { bindImage } from "../image";
 import { getClusterNames, isMethodNodeId, MethodNodeId, textToAnyNodeId, toNodeId } from "../nodeIds";
 import { SqlLoaded } from "../sql";
+import {
+  convertCallstackToImage,
+  convertLoadedToCalls,
+  convertLoadedToCallstack,
+  convertLoadedToDetailedAssembly,
+  convertLoadedToReferences,
+} from "./helpers";
+import { bindImage } from "./image";
 import { KVP, showMenu } from "./showMenu";
 import type { Show, ShowReflected, ShowTitle } from "./types";
 

@@ -1,3 +1,17 @@
+Create this folder structure:
+
+- contracts-\*
+- input
+- model
+- output
+  - ./image
+  - ./helpers
+  - show\*.ts
+  - types.ts
+- nodeIds
+- utils
+  openDataSource
+
 Add openViewType to MainApiAsync
 
 Refactor ./sql to contain factory, tables, read, write, and filter

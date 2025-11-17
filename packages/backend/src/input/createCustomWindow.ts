@@ -1,10 +1,10 @@
-import type { AppConfig, MainApiAsync } from "./contracts-app";
-import type { AppOptions, CustomViewOptions, FilterEvent, GraphEvent, ViewOptions, ViewType } from "./contracts-ui";
-import { isCustomManual, isCustomViewOptions } from "./contracts-ui";
-import { edgeIdToNodeIds, isEdgeId, toAnyNodeId, toggleNodeId } from "./nodeIds";
-import { ShowCustom } from "./show";
-import { SqlCustom } from "./sql";
-import { viewFeatures } from "./utils";
+import type { AppConfig, MainApiAsync } from "../contracts-app";
+import type { AppOptions, CustomViewOptions, FilterEvent, GraphEvent, ViewOptions, ViewType } from "../contracts-ui";
+import { isCustomManual, isCustomViewOptions } from "../contracts-ui";
+import { edgeIdToNodeIds, isEdgeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
+import { ShowCustom } from "../output";
+import { SqlCustom } from "../sql";
+import { viewFeatures } from "../utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, show: ShowCustom): MainApiAsync => {

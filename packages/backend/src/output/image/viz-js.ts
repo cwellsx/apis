@@ -26,10 +26,11 @@
 //   return viz;
 // };
 // ```
-//
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore TS1479 (see comment above)
 import { instance, Viz } from "@viz-js/viz";
-import { log } from "../utils";
+import { log } from "../../utils";
 
 let viz: Viz | undefined = undefined;
 

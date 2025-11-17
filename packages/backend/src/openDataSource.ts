@@ -1,10 +1,9 @@
 import type { AppConfig, DataSource, DisplayApi, MainApiAsync, SecondDisplay, ViewMenu } from "./contracts-app";
 import { SetViewMenu } from "./contracts-app";
 import { AppOptions } from "./contracts-ui";
-import { createAppWindow, ShowReflectedEx } from "./createAppWindow";
-import { createCustomWindow } from "./createCustomWindow";
+import { createAppWindow, createCustomWindow, ShowReflectedEx } from "./input";
 import { MethodNodeId } from "./nodeIds";
-import { MenuViewTypes, ShowBase, showCustom, showMethods, ShowReflected, showReflected } from "./show";
+import { MenuViewTypes, ShowBase, showCustom, showMethods, ShowReflected, showReflected } from "./output";
 import {
   createSqlCustomFromJson,
   createSqlLoadedFromCoreJson,

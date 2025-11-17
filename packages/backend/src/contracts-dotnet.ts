@@ -1,1 +1,1 @@
-export * from "../contracts/dotnet/index";
+export * from "../contracts/dotnet";

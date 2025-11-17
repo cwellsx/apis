@@ -1,4 +1,4 @@
-import type { AppConfig, MainApiAsync } from "./contracts-app";
+import type { AppConfig, MainApiAsync } from "../contracts-app";
 import type {
   AppOptions,
   ClusterBy,
@@ -7,7 +7,7 @@ import type {
   GraphEvent,
   GraphViewOptions,
   ViewOptions,
-} from "./contracts-ui";
+} from "../contracts-ui";
 import {
   isAssemblyNodeId,
   isEdgeId,
@@ -16,11 +16,11 @@ import {
   removeNodeId,
   toAnyNodeId,
   toggleNodeId,
-} from "./nodeIds";
+} from "../nodeIds";
+import { ShowReflected } from "../output";
+import type { CommonGraphViewType, SqlLoaded } from "../sql";
+import { viewFeatures } from "../utils";
 import { showAdjacent } from "./onGraphClick";
-import { ShowReflected } from "./show";
-import type { CommonGraphViewType, SqlLoaded } from "./sql";
-import { viewFeatures } from "./utils";
 
 export type ShowReflectedEx = ShowReflected & { showMethods: (methodNodeId: MethodNodeId) => Promise<void> };
 

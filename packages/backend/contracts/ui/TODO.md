@@ -1,0 +1,3 @@
+- Isolate methods into methods.ts
+- Verify that all types are used in UI
+- Remove as many methods as feasible into the backend

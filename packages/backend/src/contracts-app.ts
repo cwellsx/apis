@@ -1,1 +1,1 @@
-export * from "../contracts/app/index";
+export * from "../contracts/app";

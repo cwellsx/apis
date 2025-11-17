@@ -1,11 +1,11 @@
+import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
+import { isCustomManual, isParent } from "../../contracts-ui";
+import { CustomNode } from "../../customJson";
+import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "../../nodeIds";
+import { getOrThrow, last, log, options } from "../../utils";
+import type { GraphData, ImageAttribute, Shape } from "../imageDataTypes";
 import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
-import { CustomNode } from "./customJson";
-import type { GraphData, ImageAttribute, Shape } from "./imageDataTypes";
-import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "./nodeIds";
-import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "./contracts-ui";
-import { isCustomManual, isParent } from "./contracts-ui";
-import { getOrThrow, last, log, options } from "./utils";
 
 export const convertLoadedToCustom = (
   nodes: CustomNode[],

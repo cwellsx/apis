@@ -1,9 +1,9 @@
 import { AppConfig, DisplayApi } from "../contracts-app";
 import { AppOptions, DetailedCustom, isCustomManual, NodeId, ViewCustomErrors } from "../contracts-ui";
-import { convertLoadedToCustom } from "../convertLoadedToCustom";
-import { bindImage } from "../image";
 import { anyNodeIdToText, isNameNodeId, toAnyNodeId } from "../nodeIds";
 import { SqlCustom } from "../sql";
+import { convertLoadedToCustom } from "./helpers";
+import { bindImage } from "./image";
 import { KVP, showMenu } from "./showMenu";
 import { Show, ShowCustom } from "./types";
 

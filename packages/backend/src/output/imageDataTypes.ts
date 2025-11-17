@@ -1,4 +1,4 @@
-import type { AreaClass, ViewGraph, ViewGraphData } from "./contracts-ui";
+import type { AreaClass, ViewGraph, ViewGraphData } from "../contracts-ui";
 
 export type Shape = "folder" | "rect" | "none" | "component";
 
@@ -13,11 +13,7 @@ export type ImageAttribute = {
   className?: AreaClass;
 };
 
-export type ImageText = ImageAttribute & {
-  id: string;
-  label: string;
-  className: AreaClass;
-};
+export type ImageText = ImageAttribute & { id: string; label: string; className: AreaClass };
 
 type Subgraph = ImageText & { type: "subgraph"; children: ImageNode[] };
 export type ImageNode = (ImageText & { type: "node" | "group" }) | Subgraph;

@@ -1,9 +1,9 @@
+import type { ApiViewOptions, GraphFilter, Leaf, MethodViewOptions, NodeId, Parent } from "../../contracts-ui";
+import { Edges, methodNodeId, NodeIdMap, toMethodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../../nodeIds";
+import type { Call, CallstackIterator, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../../sql";
+import { getOrSet, log } from "../../utils";
+import type { GraphData, ImageAttribute } from "../imageDataTypes";
 import { convertToImage } from "./convertToImage";
-import type { GraphData, ImageAttribute } from "./imageDataTypes";
-import { Edges, methodNodeId, NodeIdMap, toMethodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "./nodeIds";
-import type { ApiViewOptions, GraphFilter, Leaf, MethodViewOptions, NodeId, Parent } from "./contracts-ui";
-import type { Call, CallstackIterator, Direction, GetTypeOrMethodName, TypeAndMethodId } from "./sql";
-import { getOrSet, log } from "./utils";
 
 /*
   exported
@@ -11,10 +11,7 @@ import { getOrSet, log } from "./utils";
 
 type LeafDictionary = NodeIdMap<TypeAndMethodId>;
 
-type CallstackElements = {
-  leafs: LeafDictionary;
-  edges: Edges;
-};
+type CallstackElements = { leafs: LeafDictionary; edges: Edges };
 
 const makeMethodNodeId = (method: TypeAndMethodId): NodeId => toMethodNodeId(method.assemblyName, method.methodId);
 
@@ -144,29 +141,15 @@ export const convertCallstackToImage = (
   const groups: Parent[] = [];
   [...topNodes.entries()].forEach(([topName, typeAndMethods]) => {
     const nameNodeId = toNameNodeId(clusterBy, topName);
-    const topParent: Parent = {
-      parent: null,
-      label: topName,
-      nodeId: nameNodeId,
-      children: [],
-    };
+    const topParent: Parent = { parent: null, label: topName, nodeId: nameNodeId, children: [] };
     groups.push(topParent);
 
     typeAndMethods.entries().forEach(([typeNodeId, typeData]) => {
-      const typeParent: Parent = {
-        parent: topParent,
-        label: typeData.typeName,
-        nodeId: typeNodeId,
-        children: [],
-      };
+      const typeParent: Parent = { parent: topParent, label: typeData.typeName, nodeId: typeNodeId, children: [] };
       topParent.children.push(typeParent);
 
       typeData.methods.forEach((methodData) => {
-        const methodLeaf: Leaf = {
-          parent: typeParent,
-          label: methodData.methodName,
-          nodeId: methodData.methodNodeId,
-        };
+        const methodLeaf: Leaf = { parent: typeParent, label: methodData.methodName, nodeId: methodData.methodNodeId };
         typeParent.children.push(methodLeaf);
       });
     });

@@ -1,12 +1,9 @@
-import { NameTypes, toNameNodeId } from "./nodeIds";
-import type { Leaf, Node, Parent } from "./contracts-ui";
-import { isParent } from "./contracts-ui";
-import { options, remove, replace, uniqueStrings } from "./utils";
+import type { Leaf, Node, Parent } from "../../contracts-ui";
+import { isParent } from "../../contracts-ui";
+import { NameTypes, toNameNodeId } from "../../nodeIds";
+import { options, remove, replace, uniqueStrings } from "../../utils";
 
-type Result = {
-  leafs: { [id: string]: Node };
-  groups: Node[];
-};
+type Result = { leafs: { [id: string]: Node }; groups: Node[] };
 
 const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
   const groups: Node[] = [];

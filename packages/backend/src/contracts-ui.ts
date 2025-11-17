@@ -1,1 +1,1 @@
-export * from "../contracts/ui/index";
+export * from "../contracts/ui";

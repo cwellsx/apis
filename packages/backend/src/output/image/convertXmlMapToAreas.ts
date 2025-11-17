@@ -1,7 +1,7 @@
 import { ElementCompact, xml2js } from "xml-js";
-import { makeUniqueEdgeId } from "../nodeIds";
-import { Area, AreaClass, textIsEdgeId } from "../contracts-ui";
-import { log } from "../utils";
+import { Area, AreaClass, textIsEdgeId } from "../../contracts-ui";
+import { makeUniqueEdgeId } from "../../nodeIds";
+import { log } from "../../utils";
 
 /*
 Input is a *.map file, created by Graphviz, which has a format like this:
@@ -53,19 +53,9 @@ To run xml-js from the command-line, add a line like the following to package.js
 
 */
 
-type Attributes = {
-  _attributes: {
-    shape: "poly" | "rect";
-    id: string;
-    coords: string;
-    title?: string;
-  };
-};
+type Attributes = { _attributes: { shape: "poly" | "rect"; id: string; coords: string; title?: string } };
 
-export type ExtraAttributes = {
-  className: AreaClass;
-  edgeLabelTooltip?: string;
-};
+export type ExtraAttributes = { className: AreaClass; edgeLabelTooltip?: string };
 
 export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string) => ExtraAttributes): Area[] {
   log("convertXmlMapToAreas");
