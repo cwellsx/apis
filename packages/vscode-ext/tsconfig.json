@@ -7,11 +7,7 @@
     "rootDirs": ["src", "../backend/src"],
     "strict": true,
     "baseUrl": ".", // needed when paths is specified
-    "paths": {
-      "backend-api": ["../backend/src/index.ts"],
-      "backend-ui": ["../backend/contracts/ui/index.ts"],
-      "backend-utils": ["../backend/src/utils/index.ts"]
-    }
+    "paths": { "backend-api": ["../backend/src/index.ts"], "backend-ui": ["../backend/contracts/ui/index.ts"] }
   },
   "exclude": ["src.webview"],
   "include": ["src", "../backend/src"]

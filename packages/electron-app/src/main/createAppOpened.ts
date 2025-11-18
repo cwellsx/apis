@@ -1,6 +1,5 @@
-import { createSqlConfig, openDataSource } from "backend-api";
+import { createSqlConfig, existsSync, openDataSource, pathJoin } from "backend-api";
 import type { DataSource } from "backend-app";
-import { existsSync, pathJoin } from "backend-utils";
 import { FileFilter, dialog, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";

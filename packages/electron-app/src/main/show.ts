@@ -1,6 +1,6 @@
+import { getErrorString, log } from "backend-api";
 import type { DisplayApi, SecondDisplay } from "backend-app";
 import type { AppOptions, View, ViewDetails, ViewGreeting } from "backend-ui";
-import { getErrorString, log } from "backend-utils";
 import type { BrowserWindow } from "electron";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { appWindows, createBrowserWindow, loadURL } from "./createBrowserWindow";

@@ -14,8 +14,7 @@
     "paths": {
       "backend-api": ["../backend/src/index.ts"],
       "backend-app": ["../backend/contracts/app/index.ts"],
-      "backend-ui": ["../backend/contracts/ui/index.ts"],
-      "backend-utils": ["../backend/src/utils/index.ts"]
+      "backend-ui": ["../backend/contracts/ui/index.ts"]
     },
     "jsx": "react",
     "target": "es6"

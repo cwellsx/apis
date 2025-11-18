@@ -1,7 +1,6 @@
-import { hello, setPaths } from "backend-api";
+import { hello, log, setPaths } from "backend-api";
 import type { MainApiAsync } from "backend-app";
 import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-ui";
-import { log } from "backend-utils";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
