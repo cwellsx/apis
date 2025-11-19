@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "module": "Node16",
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "sourceMap": true,
+    "rootDirs": ["test", "../backend/src"],
+    "strict": true,
+    "baseUrl": ".", // needed when paths is specified
+    "paths": { "backend-api": ["../backend/src/index.ts"], "backend-ui": ["../backend/contracts/ui/index.ts"] }
+  },
+  "include": ["test", "../backend/src"]
+}
