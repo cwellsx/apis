@@ -10,10 +10,7 @@ import { mainConfig } from "./webpack.main.config";
 import { rendererConfig } from "./webpack.renderer.config";
 
 const config: ForgeConfig = {
-  packagerConfig: {
-    extraResource: "./LICENSE",
-    asar: true,
-  },
+  packagerConfig: { extraResource: "./LICENSE", asar: true },
   rebuildConfig: {},
   // makers: [new MakerSquirrel({}), new MakerZIP({}, ["darwin"]), new MakerRpm({}), new MakerDeb({})],
   makers: [new MakerZIP({}), new MakerRpm({}), new MakerDeb({})],
@@ -29,24 +26,19 @@ const config: ForgeConfig = {
             html: "./src/renderer/index.html",
             js: "./src/renderer/index.ts",
             name: "main_window",
-            preload: {
-              js: "./src/preload/index.ts",
-            },
+            preload: { js: "./src/preload/index.ts" },
           },
         ],
       },
     }),
     new ResourcePlugin({
       env: "CORE_EXE",
-      path: "./src.dotnet/Core/bin/Release/net8.0/Core.exe",
+      path: "../backend-dotnet/Core/bin/Release/net8.0/Core.exe",
       build: {
-        command:
-          "dotnet.exe build ./src.dotnet/Core.sln --verbosity normal --configuration Release",
-        sources: ["./src.dotnet/", "./src.dotnet/Core"],
+        command: "dotnet.exe build ../backend-dotnet/Core.sln --verbosity normal --configuration Release",
+        sources: ["../backend-dotnet/", "../backend-dotnet/Core"],
       },
-      package: {
-        dirname: "core",
-      },
+      package: { dirname: "core" },
       verbose: true,
     }),
   ],
