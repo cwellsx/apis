@@ -1,0 +1,26 @@
+{
+  "name": "backend-dotnet",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "ts-node index.ts"
+  },
+  "devDependencies": {
+    "ts-node": "^10.0.0",
+    "typescript": "^5.9.2"
+  },
+  "config": {
+    "outputDir": "./Core/bin/Release/net8.0/",
+    "sourceDir": ".",
+    "buildCommand": "dotnet.exe build ./Core.sln --verbosity normal --configuration Release",
+    "ignoreDirs": [
+      "obj",
+      "bin"
+    ],
+    "ignoreExtensions": [
+      ".json",
+      ".ts",
+      ".props"
+    ],
+    "log": true
+  }
+}
