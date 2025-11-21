@@ -1,11 +1,13 @@
 import { existsSync, mkdirSync } from "fs";
 import path from "path";
 
-const dataPath = path.join(__dirname, "..", "data");
-// create data directory if it doesn't exist
-if (!existsSync(dataPath)) mkdirSync(dataPath);
+const tempDataPath = path.resolve(path.join(__dirname, "..", "temp-data"));
+mkdirSync(tempDataPath, { recursive: true });
 
-export const pathTempDb = path.join(dataPath, "temp.db");
+export const pathTempDb = path.join(tempDataPath, "temp.db");
+
+export const pathAppData = path.join(tempDataPath, "appData");
+mkdirSync(pathAppData, { recursive: true });
 
 export const pathNativeSqlite = (() => {
   const betterSqlite3Path = require.resolve("better-sqlite3");

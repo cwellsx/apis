@@ -4,10 +4,15 @@
     "target": "ES2022",
     "lib": ["ES2022"],
     "sourceMap": true,
-    "rootDirs": ["test", "../backend/src"],
+    //"rootDirs": ["test", "../backend/src"],
     "strict": true,
     "baseUrl": ".", // needed when paths is specified
-    "paths": { "backend-api": ["../backend/src/index.ts"], "backend-ui": ["../backend/contracts/ui/index.ts"] }
+    "paths": {
+      "backend-api": ["../backend/src/index.ts"],
+      "backend-app": ["../backend/contracts/app/index.ts"],
+      "backend-ui": ["../backend/contracts/ui/index.ts"],
+      "sut/*": ["../backend/src/*"]
+    }
   },
-  "include": ["test", "../backend/src"]
+  "include": ["test", "../backend/src", "../backend/contracts"]
 }

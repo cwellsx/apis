@@ -4,7 +4,15 @@
   "description": "Tests for the backend package",
   "version": "0.0.1",
   "scripts": {
-    "test": "electron-mocha test/**/*.test.ts --require ts-node/register"
+    "test": "electron-mocha test/**/*.test.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "mocha": {
+    "require": [
+      "ts-node/register",
+      "tsconfig-paths/register",
+      "./test/global-hooks.ts"
+    ]
   },
   "activationEvents": [],
   "main": "./dist/extension.js",
