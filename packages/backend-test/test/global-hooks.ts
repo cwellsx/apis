@@ -1,7 +1,6 @@
 import { setPaths } from "backend-api";
 import type { Paths } from "backend-app";
-import path from "path";
-import { pathAppData } from "./paths";
+import { dirAppData, fileCoreExe } from "./paths";
 
 /*
   electron-mocha does not currently support mochaHooks
@@ -19,6 +18,6 @@ export const mochaHooks = {
 */
 
 // Your one-time setup logic here
-const paths: Paths = { appDataPath: pathAppData, coreExePath: path.resolve("./externals/dotnet/core.exe") };
+const paths: Paths = { appDataPath: dirAppData, coreExePath: fileCoreExe };
 console.log("🔧 Global setup before any test runs");
 setPaths(paths);

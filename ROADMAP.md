@@ -292,6 +292,37 @@ Perhaps this should be changed:
 
 </details>
 
+<details><summary>Compress Core.json</summary>
+
+The JSON has more data than needed e.g. this
+
+```
+                "propertyType": {
+                  "assemblyName": "System.Private.CoreLib",
+                  "namespace": "System",
+                  "name": "Nullable`1",
+                  "genericTypeArguments": [
+                    {
+                      "assemblyName": "System.Private.CoreLib",
+                      "namespace": "System",
+                      "name": "Boolean",
+                      "metadataToken": 33554682
+                    }
+                  ],
+                  "metadataToken": 33554827
+                },
+```
+
+There are three types of token:
+
+- TypeDef (defined in this assembly)
+- TypeRef (imported from an external assembly)
+- TypeSpec (specialized from a generic)
+
+The distinction isn't in System.Reflection but in System.Reflection.Metadata
+
+</details>
+
 <details><summary>More TODO</summary>
 
 There's an older TODO file here:

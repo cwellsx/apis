@@ -1,0 +1,5 @@
+data-temp/
+
+// ideally this would be version-controlled but the files are large
+// so for now I keep them on my local machine only
+data-good/
