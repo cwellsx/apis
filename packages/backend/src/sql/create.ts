@@ -4,17 +4,13 @@ import type { Reflected } from "../contracts-dotnet";
 import { isReflected } from "../contracts-dotnet";
 import { fixCustomJson, isCustomJson } from "../customJson";
 import * as dotNetApi from "../dotNetApi";
-import { getAppFilename, jsonParse, log, options, pathJoin, readJsonT, whenFile, writeFileSync } from "../utils";
+import { getAppFilename, getSqlNodePath, jsonParse, log, options, readJsonT, whenFile, writeFileSync } from "../utils";
 import { hash } from "./hash";
 import { SqlConfig } from "./sqlConfig";
 import { SqlCustom } from "./sqlCustom";
 import { SqlLoaded } from "./sqlLoaded";
 
-const nativeBinding = pathJoin(process.cwd(), ".webpack\\main\\native_modules\\build\\Release\\better_sqlite3.node");
-
-type Opened = {
-  close: () => void;
-};
+type Opened = { close: () => void };
 let opened: Opened | undefined;
 
 const closeOpened = (): void => {
@@ -38,7 +34,7 @@ const createSqlLoaded = async (
   const filename = getAppFilename(`${dataSource.type}-${hashValue}.db`);
 
   log(`createSqlDatabase(${filename})`);
-  const sqlLoaded = new SqlLoaded(createSqlDatabase(filename, nativeBinding));
+  const sqlLoaded = new SqlLoaded(createSqlDatabase(filename, getSqlNodePath()));
 
   const when = await getWhen(dataSource);
 
@@ -85,7 +81,7 @@ export const createSqlCustomFromJson = async (dataSource: DataSource): Promise<S
   const filename = getAppFilename(`${dataSource.type}-${hashValue}.db`);
 
   log("createSqlCustom: " + filename);
-  const sqlCustom = new SqlCustom(createSqlDatabase(filename, nativeBinding));
+  const sqlCustom = new SqlCustom(createSqlDatabase(filename, getSqlNodePath()));
 
   const when = await whenFile(dataSource.path);
 
@@ -102,5 +98,5 @@ export const createSqlCustomFromJson = async (dataSource: DataSource): Promise<S
 export function createSqlConfig(filename: string): AppConfig {
   filename = getAppFilename(filename);
   log("createSqlConfig: " + filename);
-  return new SqlConfig(createSqlDatabase(filename, nativeBinding));
+  return new SqlConfig(createSqlDatabase(filename, getSqlNodePath()));
 }

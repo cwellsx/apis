@@ -2,6 +2,7 @@ import { hello, log, setPaths } from "backend-api";
 import type { MainApiAsync } from "backend-app";
 import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-ui";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
+import path from "node:path";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
 import { appWindows, loadURL } from "./createBrowserWindow";
@@ -16,8 +17,10 @@ import { appWindows, loadURL } from "./createBrowserWindow";
 
 declare const CORE_EXE: string;
 
+const nativeBinding = path.join(process.cwd(), ".webpack\\main\\native_modules\\build\\Release\\better_sqlite3.node");
+
 export const createApplication = async (mainWindow: BrowserWindow, appDataPath: string): Promise<void> => {
-  setPaths({ appDataPath, coreExePath: CORE_EXE });
+  setPaths({ appDataPath, coreExePath: CORE_EXE, sqlNodePath: nativeBinding });
 
   log(`CORE_EXE is ${CORE_EXE}`);
   log(`cwd is ${process.cwd()}`);

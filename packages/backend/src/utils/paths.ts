@@ -18,3 +18,8 @@ export const getCoreExePath = (): string => {
   if (!paths) throw new Error("paths not set");
   return paths.coreExePath;
 };
+
+export const getSqlNodePath = (): string => {
+  if (!paths) throw new Error("paths not set");
+  return paths.sqlNodePath;
+};

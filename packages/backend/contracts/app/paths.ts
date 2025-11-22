@@ -1,4 +1,1 @@
-export type Paths = {
-  appDataPath: string;
-  coreExePath: string;
-};
+export type Paths = { appDataPath: string; coreExePath: string; sqlNodePath: string };

@@ -8,6 +8,7 @@ export const createAdaptor = (context: vscode.ExtensionContext) => {
   console.log("Adaptor created");
   const workspaceCachePath = context.storageUri?.fsPath;
   const globalCachePath = context.globalStorageUri.fsPath;
+  const nativeBinding = path.join(context.extensionPath, "native", "better_sqlite3.node");
 
   console.log("Workspace cache path:", workspaceCachePath);
   console.log("Global cache path:", globalCachePath);
@@ -19,7 +20,7 @@ export const createAdaptor = (context: vscode.ExtensionContext) => {
   }
 
   const dbFilename = path.join(dbPath, "example.db");
-  const db = createSqlDatabase(dbFilename, path.join(context.extensionPath, "native", "better_sqlite3.node"));
+  const db = createSqlDatabase(dbFilename, nativeBinding);
 
   console.log("datbase created:", dbFilename);
 

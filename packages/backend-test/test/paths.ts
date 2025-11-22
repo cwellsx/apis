@@ -26,7 +26,8 @@ mkdirSync(dirAppData, { recursive: true });
 
 export const fileNativeSqlite = (() => {
   const betterSqlite3Path = require.resolve("better-sqlite3");
-  const nativePath = path.join(betterSqlite3Path, "..", "..", "build", "Release", "better_sqlite3.node");
+  const betterSqlite3lib = path.resolve(path.dirname(betterSqlite3Path));
+  const nativePath = path.join(betterSqlite3lib, "..", "build", "Release", "better_sqlite3.node");
   if (!existsSync(nativePath)) {
     throw new Error(`Native better_sqlite3 module not found at expected path: ${nativePath}`);
   }

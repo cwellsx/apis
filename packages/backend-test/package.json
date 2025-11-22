@@ -5,8 +5,8 @@
   "version": "0.0.1",
   "scripts": {
     "test": "electron-mocha test/**/*.test.ts",
-    "type-check": "tsc --noEmit",
-    "dotnet": "electron-mocha test/dotnet.slow.ts --timeout 120000"
+    "test-slow": "electron-mocha test/dotnet.slow.ts --timeout 30000",
+    "type-check": "tsc --noEmit"
   },
   "mocha": {
     "require": [
