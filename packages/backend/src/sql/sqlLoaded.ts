@@ -40,6 +40,7 @@ import type {
   MethodColumns,
   NamedBadTypeInfo,
   SavedTypeInfo,
+  Tables,
   TypeNameColumns,
 } from "./sqlLoadedImpl";
 import { compilerTransform, compilerTransformDisabled, getTypeAndMethodNames, newTables, save } from "./sqlLoadedImpl";
@@ -60,9 +61,7 @@ import { ViewState } from "./viewState";
   says to do it when the rows are less than 50 bytes in size, however these tables contain serialized JSON columns.
 */
 
-type GoodTypeDictionary = {
-  [key: number]: GoodTypeInfo;
-};
+type GoodTypeDictionary = { [key: number]: GoodTypeInfo };
 
 export class SqlLoaded {
   save: (reflected: Reflected, when: string) => void;
@@ -95,6 +94,8 @@ export class SqlLoaded {
 
   close: () => void;
 
+  table: Tables;
+
   constructor(db: SqlDatabase) {
     const loadedSchemaVersionExpected = "2024-09-07";
 
@@ -104,6 +105,7 @@ export class SqlLoaded {
     const isSchemaChanged = schema !== loadedSchemaVersionExpected;
 
     const table = newTables(db, isSchemaChanged);
+    this.table = table;
 
     if (isSchemaChanged) {
       this.viewState.loadedSchemaVersion = loadedSchemaVersionExpected;
@@ -198,14 +200,16 @@ export class SqlLoaded {
           })) ?? [],
       });
 
-      return table.error.selectAll().map((errorColumns) => ({
-        assemblyName: errorColumns.assemblyName,
-        anonTypeInfos: errorColumns.badTypeInfos.flatMap(convertAnonTypeInfo),
-        badTypeInfos: errorColumns.badTypeInfos.filter(isNamedBadTypeInfo).map(convertBadTypeInfo),
-        badMethodInfos: errorColumns.badMethodInfos.map((badMethodInfo) =>
-          convertBadMethodInfo(errorColumns.assemblyName, badMethodInfo)
-        ),
-      }));
+      return table.error
+        .selectAll()
+        .map((errorColumns) => ({
+          assemblyName: errorColumns.assemblyName,
+          anonTypeInfos: errorColumns.badTypeInfos.flatMap(convertAnonTypeInfo),
+          badTypeInfos: errorColumns.badTypeInfos.filter(isNamedBadTypeInfo).map(convertBadTypeInfo),
+          badMethodInfos: errorColumns.badMethodInfos.map((badMethodInfo) =>
+            convertBadMethodInfo(errorColumns.assemblyName, badMethodInfo)
+          ),
+        }));
     };
 
     this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): Call[] => {
@@ -221,9 +225,7 @@ export class SqlLoaded {
       const result = table.call.selectCustom(true, `${fromName} != ${toName}`);
       expandedClusterNames.forEach((clusterName) =>
         result.push(
-          ...table.call.selectCustom(true, `${fromName} == ${toName} AND ${fromName} == @clusterName`, {
-            clusterName,
-          })
+          ...table.call.selectCustom(true, `${fromName} == ${toName} AND ${fromName} == @clusterName`, { clusterName })
         )
       );
       const calls: Call[] = result.map((callColumns) => ({
@@ -383,11 +385,7 @@ export class SqlLoaded {
       const { methodName, typeName } = readMethodName(methodNodeId);
 
       return {
-        title: {
-          assemblyName: methodNodeId.assemblyName,
-          declaringType: typeName,
-          methodMember: methodName,
-        },
+        title: { assemblyName: methodNodeId.assemblyName, declaringType: typeName, methodMember: methodName },
         asText: methodInfo.asText,
         badMethodCalls: validateMethodInfo(methodInfo).badMethodInfo?.badMethodCalls,
       };

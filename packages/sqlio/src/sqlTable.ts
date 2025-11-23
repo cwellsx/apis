@@ -20,7 +20,7 @@ function getColumnType(value: unknown): columnType {
   }
 }
 
-function getColumnDefinition(entry: [string, undefined], constraint: string): string {
+function getColumnDefinition(entry: [string, unknown], constraint: string): string {
   return `"${entry[0]}" ${getColumnType(entry[1])} ${constraint}`;
 }
 
@@ -39,12 +39,7 @@ export const dropTable = (db: Database, tableName: string): void => {
 };
 
 // this lets you define columns of type [] and {} which during I/O are automatically converted to/from string using JSON
-const sqlJson = <T extends object>(
-  t: T
-): {
-  toSql: (t: T) => object;
-  fromSql: (t: unknown) => T;
-} => {
+const sqlJson = <T extends object>(t: T): { toSql: (t: T) => object; fromSql: (t: unknown) => T } => {
   type Stringified = { [key: string]: unknown };
 
   const keys: string[] = [];
@@ -93,7 +88,7 @@ export class SqlTable<T extends object> {
       return isNullable(key as keyof T);
     }
 
-    const entries = Object.entries(t);
+    const entries = Object.entries(t) as [string, unknown][];
     const columnDefs = entries.map((entry) => {
       const key = entry[0];
       const constraint = !isKeyNullable(key) ? "NOT NULL" : "";

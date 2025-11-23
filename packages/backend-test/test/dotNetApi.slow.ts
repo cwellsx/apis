@@ -1,8 +1,8 @@
 // this is slow so it's run as an explicit script instead of being a test
-import * as fs from "fs";
 import { getJson, getWhen } from "sut/dotNetApi";
+import { fileAssert, fileWrite } from "./file";
 import "./global-hooks";
-import { dirDotNet, fileCoreGoodJson, fileCoreJson, fileCoreTestJson } from "./paths";
+import { dirDotNet, fileCoreGoodJson, fileCoreJson, fileCoreTempJson } from "./paths";
 
 describe("dotnet", () => {
   it("getWhen", async () => {
@@ -12,14 +12,10 @@ describe("dotnet", () => {
 
   it("getJson", async () => {
     const json = await getJson(dirDotNet);
-    fs.writeFileSync(fileCoreJson, json, "utf-8");
+    fileWrite(fileCoreJson, json);
     const obj = JSON.parse(json) as unknown;
     const testJson = JSON.stringify(obj, null, 2);
-    fs.writeFileSync(fileCoreTestJson, testJson, "utf-8");
-    if (!fs.existsSync(fileCoreGoodJson)) fs.copyFileSync(fileCoreTestJson, fileCoreGoodJson);
-    else {
-      const goodJson = fs.readFileSync(fileCoreGoodJson, "utf-8");
-      if (goodJson !== testJson) throw new Error(`core.json does not match expected content. See ${fileCoreTestJson}`);
-    }
+    if (!fileAssert(fileCoreGoodJson, fileCoreTempJson, testJson))
+      throw new Error(`core.json does not match expected content. See ${fileCoreTempJson}`);
   });
 });
