@@ -1,14 +1,21 @@
 import { createSqlDatabase } from "sqlio";
-import type { AppConfig, DataSource } from "../contracts-app";
-import type { Reflected } from "../contracts-dotnet";
-import { isReflected } from "../contracts-dotnet";
-import { fixCustomJson, isCustomJson } from "../customJson";
-import * as dotNetApi from "../dotNetApi";
-import { getAppFilename, getSqlNodePath, jsonParse, log, options, readJsonT, whenFile, writeFileSync } from "../utils";
+import type { AppConfig, DataSource } from "../../contracts-app";
+import type { Reflected } from "../../contracts-dotnet";
+import { isReflected } from "../../contracts-dotnet";
+import { fixCustomJson, isCustomJson } from "../../customJson";
+import * as dotNetApi from "../../dotNetApi";
+import {
+  getAppFilename,
+  getSqlNodePath,
+  jsonParse,
+  log,
+  options,
+  readJsonT,
+  whenFile,
+  writeFileSync,
+} from "../../utils";
+import { SqlConfig, SqlCustom, SqlLoaded } from "../output";
 import { hash } from "./hash";
-import { SqlConfig } from "./sqlConfig";
-import { SqlCustom } from "./sqlCustom";
-import { SqlLoaded } from "./sqlLoaded";
 
 type Opened = { close: () => void };
 let opened: Opened | undefined;

@@ -1,7 +1,13 @@
 import { getMembers, Members, MethodMember, NamedTypeInfo } from "../../contracts-dotnet";
 import { getTypeInfoName } from "../../utils";
-import type { DeclaringTypeColumns, MemberColumns, MethodNameColumns, TypeColumns, TypeNameColumns } from "./columns";
-import { createSavedTypeInfo } from "./savedTypeInfo";
+import type { Columns, GoodTypeInfo, SavedTypeInfo } from "../types";
+
+const createSavedTypeInfo = (typeInfo: GoodTypeInfo): SavedTypeInfo => {
+  const result: SavedTypeInfo = { ...typeInfo };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
+  delete (result as any)["members"];
+  return result;
+};
 
 const isCompilerGeneratedAttribute = (attribute: string): boolean =>
   attribute === "[System.Runtime.CompilerServices.CompilerGeneratedAttribute]";
@@ -20,15 +26,15 @@ export const flattenTypeInfo = (
   assemblyName: string,
   typeInfos: NamedTypeInfo[]
 ): {
-  typeColumns: TypeColumns[];
-  memberColumns: MemberColumns[];
-  methodNameColumns: MethodNameColumns[];
-  declaringTypeColumns: DeclaringTypeColumns[];
-  typeNameColumns: TypeNameColumns[];
+  typeColumns: Columns.TypeColumns[];
+  memberColumns: Columns.MemberColumns[];
+  methodNameColumns: Columns.MethodNameColumns[];
+  declaringTypeColumns: Columns.DeclaringTypeColumns[];
+  typeNameColumns: Columns.TypeNameColumns[];
 } => {
   // types
 
-  const typeColumns: TypeColumns[] = typeInfos.map((type) => ({
+  const typeColumns: Columns.TypeColumns[] = typeInfos.map((type) => ({
     assemblyName,
     metadataToken: type.typeId.metadataToken,
     typeInfo: createSavedTypeInfo(type),
@@ -36,8 +42,8 @@ export const flattenTypeInfo = (
 
   // members and methods for each type
 
-  const memberColumns: MemberColumns[] = [];
-  const methodNameColumns: MethodNameColumns[] = [];
+  const memberColumns: Columns.MemberColumns[] = [];
+  const methodNameColumns: Columns.MethodNameColumns[] = [];
 
   for (const type of typeInfos) {
     memberColumns.push(
@@ -55,7 +61,7 @@ export const flattenTypeInfo = (
         .flat()
     );
 
-    const getMethodNameColumns = (nethodMember: MethodMember): MethodNameColumns => ({
+    const getMethodNameColumns = (nethodMember: MethodMember): Columns.MethodNameColumns => ({
       assemblyName,
       name: nethodMember.name,
       metadataToken: nethodMember.metadataToken,
@@ -71,7 +77,7 @@ export const flattenTypeInfo = (
   }
   // declaring types
 
-  const declaringTypeColumns: DeclaringTypeColumns[] = [];
+  const declaringTypeColumns: Columns.DeclaringTypeColumns[] = [];
   const declaringTypeIds = new Set<number>();
 
   typeInfos.forEach((typeInfo) => {
@@ -102,7 +108,7 @@ export const flattenTypeInfo = (
 
   // type names
 
-  const typeNameColumns: TypeNameColumns[] = typeInfos.map((typeInfo) => ({
+  const typeNameColumns: Columns.TypeNameColumns[] = typeInfos.map((typeInfo) => ({
     assemblyName,
     metadataToken: typeInfo.typeId.metadataToken,
     namespace: typeInfo.typeId.namespace ?? null,

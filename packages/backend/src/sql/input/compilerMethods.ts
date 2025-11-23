@@ -1,8 +1,7 @@
 import { getMembers, isNamedTypeInfo, Reflected } from "../../contracts-dotnet";
 import { methodNodeId, typeNodeId } from "../../nodeIds";
 import { getOrSet, log, logJson } from "../../utils";
-import { GetTypeOrMethodName } from "../sqlLoadedApiTypes";
-import { CallColumns, CompilerMethodColumns, LocalsTypeColumns } from "./columns";
+import type { Columns, GetTypeOrMethodName } from "../types";
 
 // use Inspected with Watch to debug specific metadataToken values displayed within errors on the compiler view
 // - add the typeId and methodId of the method in error, to the array of Inspected instances
@@ -77,11 +76,11 @@ type Watch = {
   isInspectedMethod: (assemblyName: string, methodId: number) => boolean;
   isInspectedType: (assemblyName: string, typeId: number) => boolean;
   logMethod: (assemblyName: string, typeIdId: number, methodId: number) => void;
-  logCall: (call: CallColumns) => void;
-  logLocals: (localsType: LocalsTypeColumns) => void;
+  logCall: (call: Columns.CallColumns) => void;
+  logLocals: (localsType: Columns.LocalsTypeColumns) => void;
   logOwners: (message: string, owners: Owner[]) => void;
-  inspectCall: (call: CallColumns) => void;
-  inspectLocals: (localsType: LocalsTypeColumns) => void;
+  inspectCall: (call: Columns.CallColumns) => void;
+  inspectLocals: (localsType: Columns.LocalsTypeColumns) => void;
   inspectOwners: (message: string, assemblyName: string, methodId: number, compiler: Compiler) => void;
 };
 
@@ -104,13 +103,13 @@ const createWatch = (getTypeOrMethodName: GetTypeOrMethodName): Watch => {
       logJson("method", getName(assemblyName, typeIdId, methodId));
   };
 
-  const logCall = (call: CallColumns): void =>
+  const logCall = (call: Columns.CallColumns): void =>
     logJson("call", [
       getName(call.fromAssemblyName, call.fromTypeId, call.fromMethodId),
       getName(call.toAssemblyName, call.toTypeId, call.toMethodId),
     ]);
 
-  const logLocals = (localsType: LocalsTypeColumns): void =>
+  const logLocals = (localsType: Columns.LocalsTypeColumns): void =>
     logJson("locals", [
       getName(localsType.assemblyName, localsType.ownerType, localsType.ownerMethod),
       `${getTypeName(typeNodeId(localsType.assemblyName, localsType.compilerType))} (${localsType.compilerType})`,
@@ -123,7 +122,7 @@ const createWatch = (getTypeOrMethodName: GetTypeOrMethodName): Watch => {
     );
   };
 
-  const inspectCall = (call: CallColumns): void => {
+  const inspectCall = (call: Columns.CallColumns): void => {
     if (
       isInspectedMethod(call.fromAssemblyName, call.fromMethodId) ||
       isInspectedMethod(call.toAssemblyName, call.toMethodId) ||
@@ -133,7 +132,7 @@ const createWatch = (getTypeOrMethodName: GetTypeOrMethodName): Watch => {
       logCall(call);
   };
 
-  const inspectLocals = (localsType: LocalsTypeColumns): void => {
+  const inspectLocals = (localsType: Columns.LocalsTypeColumns): void => {
     if (
       isInspectedMethod(localsType.assemblyName, localsType.ownerMethod) ||
       isInspectedType(localsType.assemblyName, localsType.compilerType)
@@ -161,13 +160,13 @@ const createWatch = (getTypeOrMethodName: GetTypeOrMethodName): Watch => {
 
 export const flattenCompilerMethods = (
   reflected: Reflected,
-  callColumns: CallColumns[],
-  localsTypeColumns: LocalsTypeColumns[],
+  callColumns: Columns.CallColumns[],
+  localsTypeColumns: Columns.LocalsTypeColumns[],
   allCompilerTypes: Map<string, Set<number>>,
   allCompilerMethods: Map<string, Set<number>>,
   // not really needed but used for debugged
   getTypeOrMethodName: GetTypeOrMethodName
-): CompilerMethodColumns[] => {
+): Columns.CompilerMethodColumns[] => {
   log("flattenCompilerMethods");
 
   // this is only to help debug
@@ -311,13 +310,13 @@ export const flattenCompilerMethods = (
     });
   });
 
-  const result: CompilerMethodColumns[] = [];
+  const result: Columns.CompilerMethodColumns[] = [];
 
   const getCompilerMethodColumns = (
     assemblyName: string,
     compilerMethod: number,
     compiler: Compiler
-  ): CompilerMethodColumns => {
+  ): Columns.CompilerMethodColumns => {
     if (watch.isInspectedMethod(assemblyName, compilerMethod)) {
       log("resulting watched method"); // put a breakpoint here to step through the resolve method
     }
@@ -358,7 +357,7 @@ export const flattenCompilerMethods = (
     methods.forEach((compiler, method) => result.push(getCompilerMethodColumns(assemblyName, method, compiler)));
   });
 
-  const assemblyCallers = new Map<string, CallColumns[]>();
+  const assemblyCallers = new Map<string, Columns.CallColumns[]>();
   const getCompoundKey = (assemblyName: string, compilerMethod: number) => `${assemblyName}-${compilerMethod}`;
   callColumns.forEach((call) => {
     const found = getOrSet(assemblyCallers, getCompoundKey(call.fromAssemblyName, call.fromMethodId), () => []);
@@ -368,7 +367,7 @@ export const flattenCompilerMethods = (
   const isSignificant = (assemblyName: string, compilerMethod: number): boolean => {
     const found = assemblyCallers.get(getCompoundKey(assemblyName, compilerMethod));
     if (!found) return false;
-    const isSameType = (columns: CallColumns): boolean =>
+    const isSameType = (columns: Columns.CallColumns): boolean =>
       columns.fromAssemblyName === columns.toAssemblyName && columns.fromTypeId === columns.toTypeId;
     return found.filter((columns) => !isSameType(columns)).length > 0;
   };

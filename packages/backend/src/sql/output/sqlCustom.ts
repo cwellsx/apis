@@ -1,13 +1,10 @@
 import { SqlDatabase } from "sqlio";
-import { isAnyOtherCustomField, type CustomNode } from "../customJson";
-import { toNameNodeId } from "../nodeIds";
-import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../contracts-ui";
-import { jsonParse, options } from "../utils";
+import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../contracts-ui";
+import { isAnyOtherCustomField, type CustomNode } from "../../customJson";
+import { toNameNodeId } from "../../nodeIds";
+import { jsonParse, options } from "../../utils";
 
-type ConfigColumns = {
-  name: string;
-  value: string;
-};
+type ConfigColumns = { name: string; value: string };
 
 export class SqlCustom {
   save: (nodes: CustomNode[], errors: CustomError[], when: string) => void;
@@ -75,10 +72,7 @@ export class SqlCustom {
 
       const base = {
         tags: [...tags].sort().map((tag) => ({ tag, shown: true })),
-        showEdgeLabels: {
-          groups: false,
-          leafs: false,
-        },
+        showEdgeLabels: { groups: false, leafs: false },
       };
 
       const isCustomFolders = isAutoLayers && options.customFolders;
@@ -86,13 +80,7 @@ export class SqlCustom {
 
       const customViewOptions: CustomViewOptions = isAutoLayers
         ? { ...base, viewType: "custom", isAutoLayers, layers }
-        : {
-            ...base,
-            viewType: "custom",
-            isAutoLayers,
-            nodeProperties: [...nodeProperties].sort(),
-            clusterBy: [],
-          };
+        : { ...base, viewType: "custom", isAutoLayers, nodeProperties: [...nodeProperties].sort(), clusterBy: [] };
 
       this.viewState.onSave(
         when,

@@ -1,13 +1,11 @@
 import { MethodNodeId, TypeNodeId } from "../../nodeIds";
 import { getMapped, mapOfMaps } from "../../utils";
-import type { GetTypeOrMethodName } from "../sqlLoadedApiTypes";
-import { DeclaringTypeColumns, MethodNameColumns, TypeNameColumns } from "./columns";
-import { Tables } from "./tables";
+import { Columns, GetTypeOrMethodName, Tables } from "../types";
 
 export const getTypeAndMethodNames = (table: Tables): GetTypeOrMethodName => {
-  const typeNames: TypeNameColumns[] = table.typeName.selectAll();
-  const methodNames: MethodNameColumns[] = table.methodName.selectAll();
-  const declaringTypes: DeclaringTypeColumns[] = table.declaringType.selectAll();
+  const typeNames: Columns.TypeNameColumns[] = table.typeName.selectAll();
+  const methodNames: Columns.MethodNameColumns[] = table.methodName.selectAll();
+  const declaringTypes: Columns.DeclaringTypeColumns[] = table.declaringType.selectAll();
 
   const assemblyTypeNames = mapOfMaps(
     typeNames.map((typeName) => [typeName.assemblyName, typeName.metadataToken, typeName.decoratedName])

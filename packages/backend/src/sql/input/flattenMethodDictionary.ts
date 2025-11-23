@@ -1,7 +1,7 @@
 import type { MethodDictionary } from "../../contracts-dotnet";
 import { validateMethodInfo } from "../../contracts-dotnet";
 import { distinctor } from "../../utils";
-import { BadMethodInfoAndIds, CallColumns, LocalsTypeColumns, MethodColumns } from "./columns";
+import { BadMethodInfoAndIds, Columns } from "../types";
 import { GetTypeId } from "./getMethodTypeId";
 
 const distinctCalls = distinctor<{ toAssemblyName: string; toMethodId: number }>(
@@ -13,15 +13,15 @@ export const flattenMethodDictionary = (
   methodDictionary: MethodDictionary,
   getTypeId: GetTypeId
 ): {
-  callColumns: CallColumns[];
-  methodColumns: MethodColumns[];
+  callColumns: Columns.CallColumns[];
+  methodColumns: Columns.MethodColumns[];
   badMethodInfos: BadMethodInfoAndIds[];
-  localsTypeColumns: LocalsTypeColumns[];
+  localsTypeColumns: Columns.LocalsTypeColumns[];
 } => {
-  const callColumns: CallColumns[] = [];
-  const methodColumns: MethodColumns[] = [];
+  const callColumns: Columns.CallColumns[] = [];
+  const methodColumns: Columns.MethodColumns[] = [];
   const badMethodInfos: BadMethodInfoAndIds[] = [];
-  const localsTypeColumns: LocalsTypeColumns[] = [];
+  const localsTypeColumns: Columns.LocalsTypeColumns[] = [];
 
   Object.entries(methodDictionary).forEach(([key, methodInfo]) => {
     const metadataToken = +key;
@@ -40,10 +40,7 @@ export const flattenMethodDictionary = (
     // CallColumns[]
     callColumns.push(
       ...methodCalls
-        .map((methodCall) => ({
-          toAssemblyName: methodCall.assemblyName,
-          toMethodId: methodCall.metadataToken,
-        }))
+        .map((methodCall) => ({ toAssemblyName: methodCall.assemblyName, toMethodId: methodCall.metadataToken }))
         .filter(distinctCalls)
         .map((call) => {
           const fromAssemblyName = assemblyName;

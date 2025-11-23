@@ -5,8 +5,8 @@ import {
   MethodViewOptions,
   ReferenceViewOptions,
   ViewType,
-} from "../contracts-ui";
-import { jsonParse } from "../utils";
+} from "../../contracts-ui";
+import { jsonParse } from "../../utils";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
 

@@ -1,6 +1,5 @@
 import { mapOfMaps } from "../../utils";
-import { Call, TypeAndMethodId } from "../sqlLoadedApiTypes";
-import { CompilerMethodColumns } from "./columns";
+import type { Call, Columns, TypeAndMethodId } from "../types";
 
 type CompilerTransform = {
   filterCall: (call: Call) => boolean;
@@ -19,7 +18,7 @@ export const compilerTransformDisabled: CompilerTransform = {
   },
 };
 
-export const compilerTransform = (compilerColumns: CompilerMethodColumns[]): CompilerTransform => {
+export const compilerTransform = (compilerColumns: Columns.CompilerMethodColumns[]): CompilerTransform => {
   // map to transform compiler methods to user methods
   const assemblyMethodMap = mapOfMaps(
     compilerColumns.map((columns) => [

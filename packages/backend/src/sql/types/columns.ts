@@ -1,14 +1,7 @@
-import type { BadMethodInfo, MemberException, Members, MethodInfo, TypeId } from "../../contracts-dotnet";
+import type { Members, MethodInfo } from "../../contracts-dotnet";
 import type { ClusterBy, NodeId } from "../../contracts-ui";
-import { CommonGraphViewType } from "../sqlLoadedApiTypes";
-import type { SavedTypeInfo } from "./savedTypeInfo";
-
-export type BadMethodInfoAndIds = BadMethodInfo & { methodId: number; typeId: number };
-export type CompilerMethodError = "Multiple Callers" | "No Callers" | null;
-
-// contains all exceptions (if any) from a TypeInfo
-export type BadTypeInfo = { typeId?: TypeId; exceptions?: string[]; memberExceptions?: MemberException[] };
-export type NamedBadTypeInfo = BadTypeInfo & { typeId: TypeId };
+import type { BadMethodInfoAndIds, BadTypeInfo, CompilerMethodError, SavedTypeInfo } from "./info";
+import { CommonGraphViewType } from "./viewType";
 
 /*
   This defines types used by most of the SQL source, and imports types from elsewhere -- avoid circular dependencies
@@ -43,18 +36,9 @@ export type MethodColumns = {
   methodInfo: MethodInfo;
 };
 
-export type ErrorColumns = {
-  assemblyName: string;
-  badTypeInfos: BadTypeInfo[];
-  badMethodInfos: BadMethodInfoAndIds[];
-};
+export type ErrorColumns = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badMethodInfos: BadMethodInfoAndIds[] };
 
-export type LoadedCall = {
-  fromAssemblyName: string;
-  fromMethodId: number;
-  toAssemblyName: string;
-  toMethodId: number;
-};
+export type LoadedCall = { fromAssemblyName: string; fromMethodId: number; toAssemblyName: string; toMethodId: number };
 
 export type CallColumns = LoadedCall & {
   // this could be refactored as one table with three or four columns, plus a join table
@@ -72,12 +56,7 @@ export type TypeNameColumns = {
   isCompilerType: 0 | 1; // "SQLite3 can only bind numbers, strings, bigints, buffers, and null"
 };
 
-export type MethodNameColumns = {
-  assemblyName: string;
-  metadataToken: number;
-  name: string;
-  isCompilerMethod: 0 | 1;
-};
+export type MethodNameColumns = { assemblyName: string; metadataToken: number; name: string; isCompilerMethod: 0 | 1 };
 
 export type GraphFilterColumns = {
   viewType: CommonGraphViewType;
@@ -85,11 +64,7 @@ export type GraphFilterColumns = {
   nodeIds: NodeId[];
 };
 
-export type DeclaringTypeColumns = {
-  assemblyName: string;
-  nestedType: number;
-  declaringType: number;
-};
+export type DeclaringTypeColumns = { assemblyName: string; nestedType: number; declaringType: number };
 
 // this table is used to avoid calls to compiler-generated nested types e.g. for anonymous predicates
 export type CompilerMethodColumns = {

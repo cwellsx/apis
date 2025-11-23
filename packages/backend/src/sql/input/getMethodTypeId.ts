@@ -1,6 +1,5 @@
 import { mapOfMaps } from "../../utils";
-import { TypeNameColumns } from "./columns";
-import { Tables } from "./tables";
+import { Columns, Tables } from "../types";
 
 export type GetTypeId = (assemblyName: string, methodId: number) => { namespace: string; typeId: number };
 
@@ -16,7 +15,7 @@ export const getMethodTypeId = (table: Tables): GetTypeId => {
         memberColumns.typeMetadataToken,
       ])
   );
-  const assemblyTypeNames: Map<string, Map<number, TypeNameColumns>> = mapOfMaps(
+  const assemblyTypeNames: Map<string, Map<number, Columns.TypeNameColumns>> = mapOfMaps(
     table.typeName.selectAll().map((typeName) => [typeName.assemblyName, typeName.metadataToken, typeName])
   );
 
@@ -27,10 +26,7 @@ export const getMethodTypeId = (table: Tables): GetTypeId => {
     // get namespace and wantedTypeId from typeId
     const found = assemblyTypeNames.get(assemblyName)?.get(typeId);
     if (!found) throw new Error("typeName not found");
-    return {
-      namespace: found.namespace ?? "(no namespace)",
-      typeId: /*found.wantedTypeId ??*/ found.metadataToken,
-    };
+    return { namespace: found.namespace ?? "(no namespace)", typeId: /*found.wantedTypeId ??*/ found.metadataToken };
   };
 
   return getTypeId;

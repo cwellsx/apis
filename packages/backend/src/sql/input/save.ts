@@ -1,15 +1,12 @@
 import type { Reflected, TypeInfo } from "../../contracts-dotnet";
 import { isNamedTypeInfo } from "../../contracts-dotnet";
-import { Tables } from "./tables";
-
 import { log, uniqueStrings } from "../../utils";
-
-import type { BadTypeInfo, CallColumns, ErrorColumns, LocalsTypeColumns } from "./columns";
+import { BadTypeInfo, Columns, Tables } from "../types";
+import { getTypeAndMethodNames } from "../utils";
 import { flattenCompilerMethods } from "./compilerMethods";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
 import { flattenTypeInfo } from "./flattenTypeInfo";
 import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
-import { getTypeAndMethodNames } from "./getTypeAndMethodNames";
 
 /*
   Save the namespace in CallColumns, because that is:
@@ -82,8 +79,8 @@ export const save = (reflected: Reflected, table: Tables): void => {
 
   const getTypeId: GetTypeId = getMethodTypeId(table);
 
-  const allCallColumns: CallColumns[] = [];
-  const allLocalsTypeColumns: LocalsTypeColumns[] = [];
+  const allCallColumns: Columns.CallColumns[] = [];
+  const allLocalsTypeColumns: Columns.LocalsTypeColumns[] = [];
 
   for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
     const { callColumns, methodColumns, badMethodInfos, localsTypeColumns } = flattenMethodDictionary(
@@ -95,11 +92,7 @@ export const save = (reflected: Reflected, table: Tables): void => {
     // => errorsTable
     if (badMethodInfos.length) {
       const found = table.error.selectOne({ assemblyName });
-      const columns: ErrorColumns = {
-        assemblyName,
-        badTypeInfos: found?.badTypeInfos ?? [],
-        badMethodInfos,
-      };
+      const columns: Columns.ErrorColumns = { assemblyName, badTypeInfos: found?.badTypeInfos ?? [], badMethodInfos };
       if (found) table.error.update(columns);
       else table.error.insert(columns);
     }
