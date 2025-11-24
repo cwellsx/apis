@@ -1,26 +1,26 @@
 import path from "path";
 import { pathExists, pathMkdir } from "./file";
 
-// data-temp/*
+// c:/Dev/apis.testdata
 
-const dirDataTemp = path.resolve(path.join(__dirname, "..", "data-temp"));
-pathMkdir(dirDataTemp);
+const dirRoot = path.resolve(path.join(__dirname, "..", "..", "..", "..", "apis.testdata"));
+pathMkdir(dirRoot);
+const dirTestRoot = path.join(dirRoot, "Core.2025-11-24");
+pathMkdir(dirTestRoot);
 
-export const fileTempDb = path.join(dirDataTemp, "temp.db");
+export const dirSutBin = path.join(dirTestRoot, "sut.bin");
+pathMkdir(dirSutBin);
+export const fileSutJson = path.join(dirTestRoot, "Core.json");
 
-export const fileCoreJson = path.join(dirDataTemp, "core.json");
-export const fileCoreTempJson = path.join(dirDataTemp, "core.test.json");
-
-// data-good/*
-
-const dirDataGood = path.resolve(path.join(__dirname, "..", "data-good"));
-pathMkdir(dirDataGood);
-export const fileCoreGoodJson = path.join(dirDataGood, "core.good.json");
-
-// data-temp/app-data/*
-
-export const dirAppData = path.join(dirDataTemp, "appData");
+export const dirAppData = path.join(dirTestRoot, "appData");
 pathMkdir(dirAppData);
+
+export const dirDbRaw = path.join(dirTestRoot, "db.raw");
+pathMkdir(dirDbRaw);
+
+export const fileTempDb = path.join(dirAppData, "temp.db");
+export const fileCoreJson = path.join(dirAppData, "core.json");
+export const fileCorePrettyJson = path.join(dirAppData, "core.pretty.json");
 
 // better-sqlite3.node
 
@@ -36,16 +36,9 @@ export const fileNativeSqlite = (() => {
 
 // externals/dotnet/*
 
-export const dirDotNet = path.resolve("./externals/dotnet");
+const dirDotNet = path.resolve("./externals/dotnet");
 export const fileCoreExe = path.join(dirDotNet, "core.exe");
 
 // sql
 
-const dirSqlTemp = path.join(dirDataTemp, "sqlTable");
-pathMkdir(dirSqlTemp);
-const dirSqlGood = path.join(dirDataGood, "sqlTable");
-pathMkdir(dirSqlGood);
-export const fileSqlTable = (tableName: string) => {
-  const fileName = tableName + ".json";
-  return { tempFileName: path.join(dirSqlTemp, fileName), goodFileName: path.join(dirSqlGood, fileName) };
-};
+export const fileSqlTableJsonl = (tableName: string) => path.join(dirDbRaw, tableName + ".jsonl");

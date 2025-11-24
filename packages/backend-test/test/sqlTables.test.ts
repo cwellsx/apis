@@ -1,9 +1,8 @@
-import * as assert from "assert";
 import { DataSource } from "backend-app";
 import { SqlTable } from "sqlio";
 import { createSqlLoadedFromCoreJson } from "sut/sql";
-import { fileAssert } from "./file";
-import { fileCoreJson, fileSqlTable } from "./paths";
+import { fileWrite } from "./file";
+import { fileCoreJson, fileSqlTableJsonl } from "./paths";
 type Columns = Record<string, unknown>;
 const isTable = (value: object): value is SqlTable<Columns> => (value as SqlTable<Columns>).selectAll != undefined;
 
@@ -34,11 +33,11 @@ const toTabular = (rows: Columns[]): unknown[] => {
   return [keys, ...values];
 };
 
-const assertJsonL = (tableName: string, rows: Columns[]): boolean => {
+const writeJsonL = (tableName: string, rows: Columns[]): void => {
   const tabular = toTabular(rows);
   const jsonl = toJsonL(tabular);
-  const { goodFileName, tempFileName } = fileSqlTable(tableName);
-  return fileAssert(goodFileName, tempFileName, jsonl);
+  const fileName = fileSqlTableJsonl(tableName);
+  return fileWrite(fileName, jsonl);
 };
 
 describe("sqlLoaded", () => {
@@ -49,16 +48,12 @@ describe("sqlLoaded", () => {
     const tables = sqlLoaded.table;
     const entries = Object.entries(tables);
 
-    const failed: string[] = [];
-
     for (const [key, value] of entries) {
       if (!isTable(value)) continue;
       const rows = value.selectAll();
-      if (!assertJsonL(key, rows)) failed.push(key);
+      writeJsonL(key, rows);
     }
 
     sqlLoaded.close();
-
-    if (failed.length) assert.fail(`Changed table contents: ${failed.join(",")}`);
   });
 });

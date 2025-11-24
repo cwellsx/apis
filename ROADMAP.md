@@ -76,27 +76,6 @@ I said "minimize technical debt" except documentation is out of scope
 - The only "supported" files are this ROADMAP and the [README](./README.md)
 </details>
 
-<details><summary>Unit tests</summary>
-
-The project currently has no automated unit tests.
-
-Being a solo developer, instead I system-test (i.e. run the application and review the UI) after any change:
-
-- See also my topic, [Should one test internal implementation, or only test public behaviour?](https://stackoverflow.com/q/856115/49942)
-
-I accept I will want these tests eventually.
-IMO that's premature while I am still refactoring the APIs.
-
-I intend to do it later:
-
-- When I write the user document
-- Then I will take screenshots of the UI
-- And write automated regression tests to verify that the app continues to produce the data shown in the screenshots
-
-If necessary i.e. if my priorities changed I could do it now.
-
-</details>
-
 ### How
 
 These are issues to be fixed before this phase is "done".
@@ -120,16 +99,11 @@ Proof-of-concept for the VS Code extension to de-risk it:
 - Two-ways APIs between the WebView and the extension
 </details>
 
-<details><summary>Refactoring -- still TODO</summary>
+<details><summary>More unit-testing</summary>
 
-The public `backend/contracts` are in place.
-The internal `backend/src` APIs need further improvement.
-These are related to several of the other issues below.
+I've begun to write unit-tests -- see backend-test -- but they're barely started and far from complete.
 
-When this refactoring is finished:
-
-- This should be deleted -- [TODO](./packages/backend/src/TODO.md)
-- This should be merged into to the README in the folder above it -- [OVERVIEW](./packages/backend/src/OVERVIEW.md)
+They ought to cover whatever UIs are documented as samples.
 
 </details>
 
@@ -152,6 +126,26 @@ So, by default, all top-level nodes in a view will be neither hidden nor expande
 
 </details>
 
+<details><summary>Simplify .NET reader</summary>
+
+Simplify:
+
+- Finding calls in IL
+- Mapping token to types and methods
+- Resolving generic specializations
+- Associating compiler-generated types with methods
+- Use ILSpy only for source code
+
+How:
+
+- Use Reflection.Metadata API
+
+Prerequisite:
+
+- Start by generating tables without token IDs i.e. with IDs replaced with strong names
+
+</details>
+
 <details><summary>Maintain GraphFilter in the backend</summary>
 
 Currently in the Electron app the GraphFilter data is:
@@ -164,16 +158,6 @@ This must be changed:
 
 - A VS Code extension will use `vscode.TreeView` instead of `CheckboxTree`
 - Logic to mutate the view state belongs in the backend
-
-</details>
-
-<details><summary>Refactor SQL module</summary>
-
-I haven't yet reviewed the `sql` module since last year:
-
-- Check that it still makes sense
-- Create abstract contract types to export instead of implementation
-- Identify modules which create the model from the JSON which the parser generates
 
 </details>
 

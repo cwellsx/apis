@@ -15,11 +15,7 @@ const ignorePaths = [
 export default defineConfig([
   {
     ignores: ignorePaths,
-    languageOptions: {
-      parserOptions: {
-        projectService: true,
-      },
-    },
+    languageOptions: { parserOptions: { projectService: true } },
     extends: [eslint.configs.recommended, tseslint.configs.recommendedTypeChecked],
 
     // register plugins for flat config
@@ -46,6 +42,7 @@ export default defineConfig([
           ],
         },
       ],
+      "import/no-cycle": ["error", { maxDepth: 2 }],
     },
 
     // make eslint-plugin-import resolve using your tsconfig paths

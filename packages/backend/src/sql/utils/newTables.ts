@@ -1,6 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import type { MethodInfo, SavedTypeInfo } from "../types";
-import { Columns, Tables } from "../types";
+import type { Columns, MethodInfo, SavedTypeInfo, Tables } from "../types";
 
 export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => {
   if (isSchemaChanged) {
