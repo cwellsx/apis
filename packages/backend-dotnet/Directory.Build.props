@@ -1,5 +1,7 @@
 <Project>
   <PropertyGroup>
     <!--<LangVersion>8.0</LangVersion>-->
+    <!-- enable lock file generation for all projects under this folder -->
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
 </Project>
