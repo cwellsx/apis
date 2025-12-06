@@ -14,7 +14,8 @@
     "buildCommand": "dotnet.exe build ./Core.sln --verbosity normal --configuration Release",
     "ignoreDirs": [
       "obj",
-      "bin"
+      "bin",
+      ".vs"
     ],
     "ignoreExtensions": [
       ".json",

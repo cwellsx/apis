@@ -51,16 +51,12 @@
       "type": "node",
       "request": "launch",
       "runtimeExecutable": "${workspaceFolder}/node_modules/@electron-forge/cli/script/vscode.sh",
-      "windows": {
-        "runtimeExecutable": "${workspaceFolder}/node_modules/@electron-forge/cli/script/vscode.cmd"
-      },
+      "windows": { "runtimeExecutable": "${workspaceFolder}/node_modules/@electron-forge/cli/script/vscode.cmd" },
       // runtimeArgs will be passed directly to your Electron application
       "runtimeArgs": ["--remote-debugging-port=9222"],
       "cwd": "${workspaceFolder}/packages/electron-app",
       "console": "integratedTerminal",
-      "sourceMapPathOverrides": {
-        "webpack://apis/*": "${workspaceFolder}/packages/electron-app/*"
-      }
+      "sourceMapPathOverrides": { "webpack://apis/*": "${workspaceFolder}/packages/electron-app/*" }
     },
     {
       "name": "Electron Renderer",
@@ -68,9 +64,7 @@
       "request": "attach",
       "port": 9222,
       "timeout": 120000,
-      "sourceMapPathOverrides": {
-        "webpack://apis/*": "${workspaceFolder}/packages/electron-app/*"
-      }
+      "sourceMapPathOverrides": { "webpack://apis/*": "${workspaceFolder}/packages/electron-app/*" }
     },
     // This was the unit-tests of the Electron app,
     // not currently supported
@@ -82,12 +76,18 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run-script", "unit-test-1"],
       "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Debug electron-mocha (launch)",
+      "type": "pwa-node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "test", "-w", "backend-test", "--", "--inspect-brk=9229", "--require", "ts-node/register"],
+      "cwd": "${workspaceFolder}",
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "env": { "TS_NODE_PROJECT": "${workspaceFolder}/packages/backend-test/tsconfig.json" }
     }
   ],
-  "compounds": [
-    {
-      "name": "Electron All",
-      "configurations": ["Electron Main", "Electron Renderer"]
-    }
-  ]
+  "compounds": [{ "name": "Electron All", "configurations": ["Electron Main", "Electron Renderer"] }]
 }

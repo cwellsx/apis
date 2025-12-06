@@ -1,4 +1,4 @@
-import { exec } from "child_process";
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 import packageJson from "./package.json";
@@ -58,11 +58,12 @@ const rebuildRequired = (latestSource: Date, latestBuild: Date | null): boolean 
 const rebuild = (config: Config): Date => {
   const { outputDir, buildCommand, sourceDir, ignoreDirs, ignoreExtensions } = config;
   const latestSource = getLatestMtime(sourceDir, ignoreDirs, ignoreExtensions);
-  let latestBuild = getLatestMtime(outputDir, [], []);
+  let latestBuild = fs.existsSync(outputDir) ? getLatestMtime(outputDir, [], []) : null;
   if (!latestSource) throw new Error(`Source directory "${sourceDir}" is empty or does not exist.`);
   if (rebuildRequired(latestSource, latestBuild)) {
     consoleLog(`Executing build command: ${buildCommand}`);
-    exec(buildCommand);
+    execSync(buildCommand);
+    consoleLog(`Finished build command`);
     latestBuild = getLatestMtime(outputDir, [], []);
   }
   if (!latestBuild || latestBuild < latestSource)

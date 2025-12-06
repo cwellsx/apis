@@ -1,4 +1,4 @@
-import { mapOfMaps } from "../../utils";
+import { getMapped, mapOfMaps } from "../../utils";
 import { Columns, Tables } from "../types";
 
 export type GetTypeId = (assemblyName: string, methodId: number) => { namespace: string; typeId: number };
@@ -21,7 +21,7 @@ export const getMethodTypeId = (table: Tables): GetTypeId => {
 
   const getTypeId = (assemblyName: string, methodId: number): { namespace: string; typeId: number } => {
     // get typeId from methodId
-    const typeId = assemblyMethodTypes.get(assemblyName)?.get(methodId);
+    const typeId = getMapped(assemblyMethodTypes, assemblyName, methodId);
     if (!typeId) throw new Error("typeId not found");
     // get namespace and wantedTypeId from typeId
     const found = assemblyTypeNames.get(assemblyName)?.get(typeId);

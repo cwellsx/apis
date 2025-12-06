@@ -5,7 +5,7 @@ import { pathExists, pathMkdir } from "./file";
 
 const dirRoot = path.resolve(path.join(__dirname, "..", "..", "..", "..", "apis.testdata"));
 pathMkdir(dirRoot);
-const dirTestRoot = path.join(dirRoot, "Core.2025-11-24");
+const dirTestRoot = path.join(dirRoot, "Core.2025-12-03");
 pathMkdir(dirTestRoot);
 
 export const dirSutBin = path.join(dirTestRoot, "sut.bin");
@@ -47,7 +47,3 @@ export const fileNativeSqlite = (() => {
 
 const dirDotNet = path.resolve("./externals/dotnet");
 export const fileCoreExe = path.join(dirDotNet, "core.exe");
-
-
-
-

@@ -5,6 +5,7 @@
   "version": "0.0.1",
   "scripts": {
     "test": "electron-mocha test/**/*.test.ts",
+    "build-dotnet": "npm --workspace=backend-dotnet run build -- backend-test",
     "test-slow": "electron-mocha test/dotNetApi.slow.ts --timeout 30000",
     "test-sample": "electron-mocha test/**/sample.test.ts",
     "type-check": "tsc --noEmit"
