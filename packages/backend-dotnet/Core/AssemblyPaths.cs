@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Mono.Cecil;
+using Mono.Cecil.Cil;
 
 using Core.Cecil;
 using Found = Core.Cecil.AssemblyResolver.Found;
@@ -69,6 +70,7 @@ namespace Core
 
         private static bool IsMicrosoftAssemblyName(string assemblyName) =>
             assemblyName == "mscorlib" ||
+            assemblyName == "netstandard" ||
             assemblyName.StartsWith("System.") ||
             assemblyName.StartsWith("Microsoft.") ||
             // also don't try to reflect ICSharpCode.Decompiler
@@ -83,10 +85,22 @@ namespace Core
                 AsText: "foo",
                 Called: Convert(methodData.Called),
                 Argued: Convert(methodData.Argued),
-                Locals: [],
+                Locals: Convert(methodData.Locals.Where(IsSimple)),
                 null
                 );
         }
+
+        private bool IsSimple(VariableReference variableReference) => IsSimple(variableReference.VariableType);
+
+        private bool IsSimple(TypeReference typeReference) =>
+            !typeReference.IsArray &&
+            !typeReference.IsByReference &&
+            !typeReference.IsPointer &&
+            !typeReference.IsPinned &&
+            !typeReference.IsGenericInstance &&
+            !typeReference.IsGenericParameter &&
+            !typeReference.IsFunctionPointer &&
+            !typeReference.IsPrimitive;
 
         private Output.Public.MethodCall[]? Convert(IEnumerable<MethodReference> methodReferences)
         {
@@ -94,6 +108,16 @@ namespace Core
                 .Where(methodReference => !IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
                 .Select(Convert)
                 .Where(methodCall => !IsMicrosoftAssemblyPath(methodCall.AssemblyName))
+                .ToArray();
+        }
+
+        private Output.Public.LocalsType[]? Convert(IEnumerable<VariableReference> variableReferences)
+        {
+            return variableReferences
+                .Where(variableReference => !IsMicrosoftAssemblyName(variableReference.VariableType.Scope.Name)) // don't know the Module yet
+                .Select(Convert)
+                .Where(localsType => !IsMicrosoftAssemblyPath(localsType.AssemblyName))
+                .Distinct()
                 .ToArray();
         }
 
@@ -112,8 +136,38 @@ namespace Core
                 Logger.Log($"Failed to resolve method {methodReference}");
                 var scope = methodReference.DeclaringType.Scope;
                 return new Output.Public.MethodCall(
-                    AssemblyName: methodReference.DeclaringType.Scope.Name,
+                    AssemblyName: scope.Name,
                     MetadataToken: null //methodReference.MetadataToken.ToInt32(),                  
+                    );
+            }
+        }
+
+        private Output.Public.LocalsType Convert(VariableReference variableReference)
+        {
+            try
+            {
+                var variableDefinition = variableReference.Resolve();
+                // TODO there's so
+                if (0 == (variableDefinition.VariableType.MetadataToken.ToInt32() & 0xFFFFFF))
+                {
+                    var scope = variableReference.VariableType.Scope as AssemblyNameReference;
+                    var resolvedAssembly = _assemblyResolver.Resolve(scope!);
+                    throw new ArgumentException("nil token");
+                }
+                return new Output.Public.LocalsType(
+                    AssemblyName: variableDefinition.VariableType.Module.Assembly.Name.Name,
+                    MetadataToken: variableDefinition.VariableType.MetadataToken.ToInt32(),
+                    null
+                    );
+            }
+            catch (Exception)
+            {
+                Logger.Log($"Failed to resolve variable {variableReference}");
+                var scope = variableReference.VariableType.Scope;
+                return new Output.Public.LocalsType(
+                    AssemblyName: scope.Name,
+                    MetadataToken: null, //methodReference.MetadataToken.ToInt32(),
+                    null
                     );
             }
         }

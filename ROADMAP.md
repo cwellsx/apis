@@ -99,6 +99,19 @@ Proof-of-concept for the VS Code extension to de-risk it:
 - Two-ways APIs between the WebView and the extension
 </details>
 
+<details><summary>netstandard</summary>
+
+There's something wrong with the implementation which should resolve netstandard types like System.Object
+
+Currently this is hidden by disabling resolution of Microsoft types.
+
+To reproduce the problem, change the `Convert(IEnumerable<VariableReference>` method
+to not exclude Microsoft types.
+
+Try to fix this with a unit-test which tries a resolve a TypeReference to System.Object.
+
+</details>
+
 <details><summary>More unit-testing</summary>
 
 I've begun to write unit-tests -- see backend-test -- but they're barely started and far from complete.

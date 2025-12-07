@@ -10,12 +10,18 @@ namespace Core.Cecil
         private MethodDefinition MethodDefinition { get; }
         internal List<MethodReference> Called { get; } = [];
         internal List<MethodReference> Argued { get; } = [];
+        internal List<VariableReference> Locals { get; } = [];
 
         internal MethodData(MethodDefinition methodDefinition)
         {
             MethodDefinition = methodDefinition;
 
             if (!methodDefinition.HasBody) return;
+
+            if (methodDefinition.Body.HasVariables)
+            {
+                Locals.AddRange(methodDefinition.Body.Variables);
+            }
 
             foreach (var instr in methodDefinition.Body.Instructions)
             {
@@ -27,7 +33,6 @@ namespace Core.Cecil
                     case Code.Jmp: // this too is rare but its operand is a MethodReference
                         {
                             var target = (MethodReference)instr.Operand;
-                            //Console.WriteLine($"{methodDefinition.FullName} calls {target.FullName}");
                             Called.Add(target);
                             break;
                         }
