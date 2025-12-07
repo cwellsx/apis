@@ -21,8 +21,8 @@
     <PackageReference Include="System.Text.Json" Version="5.0.2" />
   </ItemGroup>
 
-  <ItemGroup>
+  <!--<ItemGroup>
     <ProjectReference Include="..\Core.IL\Core.IL.csproj" />
-  </ItemGroup>
+  </ItemGroup>-->
 
 </Project>

@@ -145,90 +145,10 @@ namespace Core.Output.Public
         MemberException[]? Exceptions
         );
 
-    public record Error(
-        // this is the error message
-        string ErrorMessage,
-        // these are from the MethodId call
-        Internal.TypeIdEx WantType,
-        Internal.MethodMemberEx WantMethod,
-        Internal.TypeIdEx[]? GenericTypeArguments,
-        Internal.TypeIdEx[]? GenericMethodArguments,
-        // these are the candidates found
-        Internal.MethodMemberEx[]? FoundMethods,
-        // these are their generic transformation
-        Internal.MethodMemberEx[]? TransformedMethods
-        )
-    {
-        internal Error(string errorMessage, Internal.MethodId call) : this(errorMessage, call, null) { }
-        internal Error(string errorMessage, Internal.MethodId call, Internal.MethodMemberEx[]? foundMethods) : this(errorMessage, call, foundMethods, null) { }
-        internal Error(string errorMessage, Internal.MethodId call, Internal.MethodMemberEx[]? foundMethods, Internal.MethodMemberEx[]? transformedMethods) : this(
-            errorMessage,
-            call.DeclaringType,
-            call.MethodMember,
-            call.GenericTypeArguments?.Array,
-            call.GenericMethodArguments?.Array,
-            foundMethods,
-            transformedMethods
-            )
-        { }
-    }
-
-    public record CallDetails(
-        // these are TMI but we get them from the decompiler
-        string MethodMember,
-        string DeclaringType,
-        string AssemblyName,
-        // this is determined by MethodFinder, or not if there's an error
-        int? MetadataToken,
-        Error? Error
-        )
-    {
-        internal CallDetails(Internal.TypeIdEx declaringType, Internal.Decompiled decompiled) : this(
-            decompiled.MethodMember.AsString(decompiled.GenericArguments, false),
-            declaringType.AsString(false),
-            declaringType.AssemblyName.NotNull(),
-            decompiled.MetadataToken,
-            null
-            )
-        { }
-
-        internal CallDetails(Internal.MethodId call, int? metadataToken, Error? error) : this(
-            call.MethodMember.AsString(call.GenericMethodArguments, false),
-            call.DeclaringType.AsString(false),
-            call.DeclaringType.AssemblyName.NotNull(),
-            metadataToken,
-            error
-            )
-        { }
-    }
-
     public record TypeDetails(string AssemblyName, string TypeName, bool IsCompiler, int? MetadataToken, string? Error);
 
-    public record MethodDetails(
-        string AsText,
-        string MethodMember,
-        string DeclaringType,
-        List<CallDetails> Called,
-        List<CallDetails> CalledBy,
-        List<CallDetails> Argued,
-        List<CallDetails> ArguedBy,
-        List<TypeDetails> Locals,
-        string? Exception
-        )
-    {
-        internal MethodDetails(string asText, string methodMember, string declaringType) : this(asText, methodMember, declaringType,
-            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<TypeDetails>(),
-            null) { }
-        internal MethodDetails(string methodMember, string declaringType, Exception exception) : this(string.Empty, methodMember, declaringType,
-            new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<CallDetails>(), new List<TypeDetails>(),
-            exception.Message) { }
-    }
-
     // a shorter version of CallDetails
-    public record MethodCall(string AssemblyName, int? MetadataToken, Error? Error)
-    {
-        internal MethodCall(CallDetails callDetails) : this(callDetails.AssemblyName, callDetails.MetadataToken, callDetails.Error) { }
-    }
+    public record MethodCall(string AssemblyName, int? MetadataToken);
 
     // a shorter version of TypeDetails
     public record LocalsType(string AssemblyName, int? MetadataToken, string? Error)
@@ -237,18 +157,7 @@ namespace Core.Output.Public
     }
 
     // a shorter version of MethodDetails
-    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals, string? Exception)
-    {
-        internal MethodInfo(MethodDetails methodDetails) : this(
-            methodDetails.AsText,
-            From(methodDetails.Called),
-            From(methodDetails.Argued),
-            From(methodDetails.Locals),
-            methodDetails.Exception)
-        { }
-        private static MethodCall[]? From(List<CallDetails> list) => list.Count == 0 ? null : list.Select(from => new MethodCall(from)).ToArray();
-        private static LocalsType[]? From(List<TypeDetails> list) => list.Count == 0 ? null : list.Select(from => new LocalsType(from)).ToArray();
-    }
+    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals, string? Exception);
 
     public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods);
 }

@@ -1,10 +1,10 @@
-﻿using Core.Output.Public;
-using ElectronCgi.DotNet;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.IO;
 using System.Linq;
-using System.Net.Http.Headers;
+
+using ElectronCgi.DotNet;
+
+using Core.Output.Public;
 
 namespace Core
 {
@@ -70,7 +70,7 @@ namespace Core
 
             connection.On<string, string>("json", directory =>
             {
-                var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
+                var all = AssemblyLoader.LoadAssemblies(directory);
                 Logger.Log("returning json");
                 return all.ToJson(false);
             });
@@ -78,14 +78,12 @@ namespace Core
             connection.Listen();
         }
 
-        static void WriteJsonToFiles(All all, Dictionary<string, Dictionary<int, MethodDetails>> assemblyMethodDetails)
+        static void WriteJsonToFiles(All all)
         {
             File.WriteAllText("Core.json", all.Assemblies.ToJson(true));
-            File.WriteAllText("FoundCallDetails.json", assemblyMethodDetails.ToJson(true));
             File.WriteAllText("FoundCalls.json", all.AssemblyMethods.ToJson(true));
 
             File.WriteAllText("All2.json", all.ToJson(false));
-            File.WriteAllText("FoundCallDetails2.json", assemblyMethodDetails.ToJson(false));
             File.WriteAllText("FoundCalls2.json", all.AssemblyMethods.ToJson(false));
         }
 
@@ -93,10 +91,10 @@ namespace Core
         {
             MethodCall[] GetAllErrors(string directory)
             {
-                var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
+                var all = AssemblyLoader.LoadAssemblies(directory);
                 var allMethodDetails = all.AssemblyMethods.Values.SelectMany(dictionary => dictionary.Values);
                 var allCallDetails = allMethodDetails.SelectMany(methodDetails => methodDetails.Called ?? Array.Empty<MethodCall>());
-                return allCallDetails.Where(callDetails => callDetails.Error != null).ToArray();
+                return allCallDetails.Where(callDetails => callDetails.MetadataToken == null).ToArray();
             }
 
             var allErrors = GetAllErrors(Directory.GetCurrentDirectory());
@@ -130,8 +128,8 @@ namespace Core
         {
             // e.g. C:\Dev\apis\src.dotnet\Core\bin\Release\net8.0
             var exeDirectory = AppContext.BaseDirectory;
-            var (all, assemblyMethodDetails) = AssemblyLoader.LoadAssemblies(directory);
-            WriteJsonToFiles(all, assemblyMethodDetails);
+            var all = AssemblyLoader.LoadAssemblies(directory);
+            WriteJsonToFiles(all);
         }
     }
 }

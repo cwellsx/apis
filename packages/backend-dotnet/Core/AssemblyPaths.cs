@@ -12,25 +12,35 @@ namespace Core
     internal class AssemblyPaths
     {
         AssemblyResolver _assemblyResolver;
+        SortedDictionary<string, AssemblyData> _foundAssemblies; // key is path
 
         internal AssemblyPaths(string directory)
         {
             var exePath = AssemblyResolver.FindSingleExe(directory);
             _assemblyResolver = new AssemblyResolver(exePath);
 
-            var missingAssemblyNames = Dictionary.Where(kvp => kvp.Value == null).Select(kvp => kvp.Key).Order().ToArray();
+            var missingAssemblyNames = _assemblyResolver.Dictionary.Where(kvp => kvp.Value == null).Select(kvp => kvp.Key).Order().ToArray();
             if (missingAssemblyNames.Length > 0)
             {
                 throw new Exception($"Missing assembly names: {string.Join(", ", missingAssemblyNames)}");
             }
+
+            var foundKvps = _assemblyResolver.Dictionary.Where(kvp => kvp.Value != null).Select(kvp => new KeyValuePair<string, Found>(kvp.Key, kvp.Value!)).ToArray();
+
+            _foundAssemblies = new SortedDictionary<string, AssemblyData>(foundKvps
+                .Where(kvp => !IsMicrosoftAssemblyName(kvp.Key) && !kvp.Value.IsMicrosoft)
+                .ToDictionary(kvp => kvp.Value.Path, kvp => new AssemblyData(kvp.Value.AssemblyDefinition))
+                );
+
+            Paths = foundKvps.Select(kvp => kvp.Value.Path).ToArray();
         }
 
-        // used to initialize PathAssemblyResolver
-        internal IEnumerable<string> Paths => AllFound.Select(found => found.Path);
+        
+        internal string[] Paths { get; } // used to initialize PathAssemblyResolver
 
-        internal IEnumerable<string> NonMicrosoftPaths => AppFound.Select(found => found.Path);
+        internal IEnumerable<string> NonMicrosoftPaths => _foundAssemblies.Keys;
 
-        internal Dictionary<string, Dictionary<int, Output.Public.MethodInfo>> GetAssemblyMethods() => GetAssemblyData().ToDictionary(
+        internal Dictionary<string, Dictionary<int, Output.Public.MethodInfo>> GetAssemblyMethods() => _foundAssemblies.Values.ToDictionary(
             assemblyData => assemblyData.Name,
             assemblyData => assemblyData.GetMethodData().ToDictionary(
                 methodData => methodData.MetadataToken.ToInt32(),
@@ -38,6 +48,22 @@ namespace Core
                 )
             );
 
+        internal void ValidateTypes(string path, Output.Public.TypeInfo[] types)
+        {
+            var assemblyData = _foundAssemblies[path];
+
+            var reflectedTypes = types.ToDictionary(t => t.TypeId?.MetadataToken ?? 0, t => t);
+            var cecilTypeTokens = assemblyData.GetTypeMetadataTokens().ToList();
+
+            var notReflected = cecilTypeTokens.Except(reflectedTypes.Keys).ToList();
+            var notDefined = reflectedTypes.Keys.Except(cecilTypeTokens).ToList();
+
+            Logger.Log($"types: {types.Length}");
+            Logger.Log($"reflectedTypes: {reflectedTypes.Count}");
+            Logger.Log($"definedTypes: {cecilTypeTokens.Count}");
+            Logger.Log($"notReflected: {notReflected.Count}");
+            Logger.Log($"notDefined: {notDefined.Count}");
+        }
 
         internal string[] ExeFileNames => [_assemblyResolver.ExeFileName];
 
@@ -49,12 +75,7 @@ namespace Core
             // bcause it throws an "assembly already loaded" on System.Reflection.Metadata
             assemblyName == "ICSharpCode.Decompiler";
 
-        private bool IsMicrosoftAssemblyPath(string assemblyName) => Dictionary[assemblyName]!.IsMicrosoft;
-
-        private IReadOnlyDictionary<string, Found?> Dictionary => _assemblyResolver.Dictionary;
-        private IEnumerable<Found> AllFound => Dictionary.Values.Where(found => found != null).Select(found => found!);
-        private IEnumerable<Found> AppFound => Dictionary.Where(kvp => !IsMicrosoftAssemblyName(kvp.Key) && kvp.Value != null && !kvp.Value.IsMicrosoft).Select(kvp => kvp.Value!);
-        private AssemblyData[] GetAssemblyData() => AppFound.Select(found => new AssemblyData(found.AssemblyDefinition)).ToArray();
+        private bool IsMicrosoftAssemblyPath(string assemblyName) => _assemblyResolver.Dictionary[assemblyName]!.IsMicrosoft;
 
         private Output.Public.MethodInfo Convert(MethodData methodData)
         {
@@ -83,8 +104,7 @@ namespace Core
                 var methodDefinition = methodReference.Resolve();
                 return new Output.Public.MethodCall(
                     AssemblyName: methodDefinition.DeclaringType.Module.Assembly.Name.Name,
-                    MetadataToken: methodDefinition.MetadataToken.ToInt32(),
-                    Error: null
+                    MetadataToken: methodDefinition.MetadataToken.ToInt32()
                     );
             }
             catch (Exception)
@@ -93,8 +113,7 @@ namespace Core
                 var scope = methodReference.DeclaringType.Scope;
                 return new Output.Public.MethodCall(
                     AssemblyName: methodReference.DeclaringType.Scope.Name,
-                    MetadataToken: null, //methodReference.MetadataToken.ToInt32(),
-                    Error: null //e.Message
+                    MetadataToken: null //methodReference.MetadataToken.ToInt32(),                  
                     );
             }
         }
