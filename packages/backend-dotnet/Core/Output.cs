@@ -56,31 +56,15 @@ namespace Core.Output.Public
         );
 
     public record TypeInfo(
-        TypeId? TypeId, // not null unless there's an exception
+        TypeId TypeId, // not null unless there's an exception
         string[]? Attributes,
         TypeId? BaseType,
         TypeId[]? Interfaces,
         TypeId[]? GenericTypeParameters, // this is a member of System.Reflection.TypeInfo rather than Type
-        Access? Access,
+        Access Access,
         Flag? Flag,
-        Members? Members,
-
-        string[]? Exceptions
-        )
-    {
-        public string[]? Exceptions { get; set; } = Exceptions;
-        internal void AddMessage(string message)
-        {
-            if (Exceptions == null)
-            {
-                Exceptions = new[] { message };
-            }
-            else
-            {
-                Exceptions = Exceptions.Concat(new[] { message }).ToArray();
-            }
-        }
-    }
+        Members Members
+        );
 
     public record FieldMember(
         string Name,
@@ -130,34 +114,24 @@ namespace Core.Output.Public
         int MetadataToken
         );
 
-    public record MemberException(
-        string Name,
-        int MetadataToken,
-        string Exception
-        );
-
     public record Members(
         FieldMember[]? FieldMembers,
         EventMember[]? EventMembers,
         PropertyMember[]? PropertyMembers,
         TypeId[]? TypeMembers,
-        MethodMember[]? MethodMembers,
-        MemberException[]? Exceptions
+        MethodMember[]? MethodMembers
         );
 
-    public record TypeDetails(string AssemblyName, string TypeName, bool IsCompiler, int? MetadataToken, string? Error);
+    public record TypeDetails(string AssemblyName, string TypeName, bool IsCompiler, int? MetadataToken);
 
     // a shorter version of CallDetails
     public record MethodCall(string AssemblyName, int? MetadataToken);
 
     // a shorter version of TypeDetails
-    public record LocalsType(string AssemblyName, int? MetadataToken, string? Error)
-    {
-        internal LocalsType(TypeDetails typeDetails) : this(typeDetails.AssemblyName, typeDetails.MetadataToken, typeDetails.Error) { }
-    }
+    public record LocalsType(string AssemblyName, int? MetadataToken);
 
     // a shorter version of MethodDetails
-    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals, string? Exception);
+    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals);
 
     public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods);
 }

@@ -1,4 +1,4 @@
-import { NamedTypeInfo, TypeId } from "../contracts-dotnet";
+import { TypeId, TypeInfo } from "../contracts-dotnet";
 
 const getUnwantedTypes = <T extends { typeId: TypeId; attributes?: string[] }>(
   allTypes: T[],
@@ -25,20 +25,20 @@ const getUnwantedTypes = <T extends { typeId: TypeId; attributes?: string[] }>(
 };
 
 export const nestTypes = (
-  allTypes: NamedTypeInfo[]
+  allTypes: TypeInfo[]
 ): {
-  rootTypes: NamedTypeInfo[];
-  getChildren: (typeId: TypeId) => NamedTypeInfo[];
+  rootTypes: TypeInfo[];
+  getChildren: (typeId: TypeId) => TypeInfo[];
   unwantedTypes: { [index: number]: number };
 } => {
   // create Map of every type's children, and an array of all the root types
-  const childTypes = new Map<number, NamedTypeInfo[]>(allTypes.map((typeInfo) => [typeInfo.typeId.metadataToken, []]));
-  const getChildren = (typeId: TypeId): NamedTypeInfo[] => {
+  const childTypes = new Map<number, TypeInfo[]>(allTypes.map((typeInfo) => [typeInfo.typeId.metadataToken, []]));
+  const getChildren = (typeId: TypeId): TypeInfo[] => {
     const found = childTypes.get(typeId.metadataToken);
     if (!found) throw new Error(`!findElement(${typeId.metadataToken})`);
     return found;
   };
-  const rootTypes: NamedTypeInfo[] = [];
+  const rootTypes: TypeInfo[] = [];
   allTypes.forEach((typeInfo) => {
     if (typeInfo.typeId.declaringType) getChildren(typeInfo.typeId.declaringType).push(typeInfo);
     else rootTypes.push(typeInfo);

@@ -1,38 +1,17 @@
 import { SqlDatabase } from "sqlio";
-import type {
-  AnonTypeInfo,
-  AssemblyReferences,
-  BadMethodCall,
-  GoodTypeInfo,
-  MethodInfo,
-  Reflected,
-  TypeInfo,
-} from "../../contracts-dotnet";
-import { isAnonTypeInfo, loadedVersion, validateMethodInfo } from "../../contracts-dotnet";
-import type {
-  BadMethodInfoAndNames,
-  BadTypeInfoAndNames,
-  ClusterBy,
-  CompilerMethod,
-  ErrorsInfo,
-  GraphFilter,
-  LocalsType,
-  MethodName,
-  NodeId,
-} from "../../contracts-ui";
+import type { AssemblyReferences, MethodInfo, Reflected, TypeInfo } from "../../contracts-dotnet";
+import { loadedVersion } from "../../contracts-dotnet";
+import type { ClusterBy, CompilerMethod, GraphFilter, LocalsType, MethodName, NodeId } from "../../contracts-ui";
 import type { MethodNodeId, TypeNodeId } from "../../nodeIds";
 import { methodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../../nodeIds";
 import { jsonParse, log, mapOfMaps, options } from "../../utils";
 import type { CallstackIterator, Direction } from "../contracts-model";
 import { compilerTransform, compilerTransformDisabled, save } from "../input";
 import type {
-  BadMethodInfoAndIds,
-  BadTypeInfo,
   Call,
   Columns,
   CommonGraphViewType,
   GetTypeOrMethodName,
-  NamedBadTypeInfo,
   SavedTypeInfo,
   Tables,
   TypeAndMethodId,
@@ -55,7 +34,7 @@ import { ViewState } from "./viewState";
   says to do it when the rows are less than 50 bytes in size, however these tables contain serialized JSON columns.
 */
 
-type GoodTypeDictionary = { [key: number]: GoodTypeInfo };
+type GoodTypeDictionary = { [key: number]: TypeInfo };
 
 export class SqlLoaded {
   save: (reflected: Reflected, when: string) => void;
@@ -63,7 +42,6 @@ export class SqlLoaded {
   viewState: ViewState;
   readAssemblyReferences: () => AssemblyReferences;
   readTypeInfos: (assemblyName: string) => TypeInfo[];
-  readErrors: () => ErrorsInfo[];
   readCalls: (clusterBy: ClusterBy, expandedClusterNames: string[]) => Call[];
 
   readCallstack: (nodeId: MethodNodeId) => CallstackIterator;
@@ -71,7 +49,7 @@ export class SqlLoaded {
   private readCallstackFirst: (nodeId: MethodNodeId) => TypeAndMethodId;
 
   // reads data for DetailedMethod
-  readMethodDetails: (nodeId: MethodNodeId) => { title: MethodName; asText: string; badMethodCalls?: BadMethodCall[] };
+  readMethodDetails: (nodeId: MethodNodeId) => { title: MethodName; asText: string };
   // reads data for ViewCompiler
   readCompiler: () => { compilerMethods: CompilerMethod[]; localsTypes: LocalsType[] };
 
@@ -142,16 +120,9 @@ export class SqlLoaded {
     this.readTypeInfos = (assemblyName: string): TypeInfo[] => {
       const where = { assemblyName };
 
-      // all the bad types are JSON in a single record
-      const errors = table.error.selectWhere(where);
-      const badTypeInfos: BadTypeInfo[] = errors.length > 0 ? errors[0].badTypeInfos : [];
-      //const allTypeInfo = validateTypeInfo(badTypes);
-
-      const anonTypeInfos: AnonTypeInfo[] = badTypeInfos.filter(isAnonTypeInfo);
-
       // all the good types are JSON in multiple records
       const savedTypes: SavedTypeInfo[] = table.type.selectWhere(where).map((columns) => columns.typeInfo);
-      const goodTypeInfos: GoodTypeInfo[] = savedTypes.map((type) => ({ ...type, members: {} }));
+      const goodTypeInfos: TypeInfo[] = savedTypes.map((type) => ({ ...type, members: {} }));
 
       const goodTypeDictionary: GoodTypeDictionary = {};
       goodTypeInfos.forEach((type) => (goodTypeDictionary[type.typeId.metadataToken] = type));
@@ -164,46 +135,7 @@ export class SqlLoaded {
         type.members[member.memberType]?.push(jsonParse(member.memberInfo));
       });
 
-      return [...anonTypeInfos, ...goodTypeInfos];
-    };
-
-    this.readErrors = (): ErrorsInfo[] => {
-      const { getTypeName, getMethodName } = this.readNames();
-
-      const convertAnonTypeInfo = (badTypeInfo: BadTypeInfo): string[] =>
-        (badTypeInfo.typeId ? undefined : badTypeInfo.exceptions) ?? [];
-
-      const isNamedBadTypeInfo = (badTypeInfo: BadTypeInfo): badTypeInfo is NamedBadTypeInfo =>
-        badTypeInfo.typeId !== undefined;
-
-      const convertBadMethodInfo = (assemblyName: string, errorColumn: BadMethodInfoAndIds): BadMethodInfoAndNames => {
-        return {
-          ...errorColumn,
-          methodMember: getMethodName(methodNodeId(assemblyName, errorColumn.methodId)),
-          declaringType: getTypeName(typeNodeId(assemblyName, errorColumn.typeId)),
-        };
-      };
-
-      const convertBadTypeInfo = (badTypeInfo: NamedBadTypeInfo): BadTypeInfoAndNames => ({
-        typeName: getTypeName(typeNodeId(badTypeInfo.typeId.assemblyName, badTypeInfo.typeId.metadataToken)),
-        exceptions: badTypeInfo.exceptions ?? [],
-        memberExceptions:
-          badTypeInfo.memberExceptions?.map((memberException) => ({
-            exception: memberException.exception,
-            memberName: memberException.name,
-          })) ?? [],
-      });
-
-      return table.error
-        .selectAll()
-        .map((errorColumns) => ({
-          assemblyName: errorColumns.assemblyName,
-          anonTypeInfos: errorColumns.badTypeInfos.flatMap(convertAnonTypeInfo),
-          badTypeInfos: errorColumns.badTypeInfos.filter(isNamedBadTypeInfo).map(convertBadTypeInfo),
-          badMethodInfos: errorColumns.badMethodInfos.map((badMethodInfo) =>
-            convertBadMethodInfo(errorColumns.assemblyName, badMethodInfo)
-          ),
-        }));
+      return [...goodTypeInfos];
     };
 
     this.readCalls = (clusterBy: ClusterBy, expandedClusterNames: string[]): Call[] => {
@@ -357,9 +289,7 @@ export class SqlLoaded {
 
     this.readNames = (): GetTypeOrMethodName => getTypeAndMethodNames(table);
 
-    this.readMethodDetails = (
-      methodNodeId: MethodNodeId
-    ): { title: MethodName; asText: string; badMethodCalls?: BadMethodCall[] } => {
+    this.readMethodDetails = (methodNodeId: MethodNodeId): { title: MethodName; asText: string } => {
       // read one MethodInfo
       const readMethodInfo = (nodeId: MethodNodeId): MethodInfo => {
         const { assemblyName, metadataToken } = nodeId;
@@ -381,7 +311,6 @@ export class SqlLoaded {
       return {
         title: { assemblyName: methodNodeId.assemblyName, declaringType: typeName, methodMember: methodName },
         asText: methodInfo.asText,
-        badMethodCalls: validateMethodInfo(methodInfo).badMethodInfo?.badMethodCalls,
       };
     };
 

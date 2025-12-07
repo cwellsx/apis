@@ -1,6 +1,6 @@
 import type { Members, MethodInfo } from "../../contracts-dotnet";
 import type { ClusterBy, NodeId } from "../../contracts-ui";
-import type { BadMethodInfoAndIds, BadTypeInfo, CompilerMethodError, SavedTypeInfo } from "./info";
+import type { CompilerMethodError, SavedTypeInfo } from "./info";
 import { CommonGraphViewType } from "./viewType";
 
 /*
@@ -35,8 +35,6 @@ export type MethodColumns = {
   metadataToken: number;
   methodInfo: MethodInfo;
 };
-
-export type ErrorColumns = { assemblyName: string; badTypeInfos: BadTypeInfo[]; badMethodInfos: BadMethodInfoAndIds[] };
 
 export type LoadedCall = { fromAssemblyName: string; fromMethodId: number; toAssemblyName: string; toMethodId: number };
 

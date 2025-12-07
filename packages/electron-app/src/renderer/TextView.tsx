@@ -1,6 +1,6 @@
 import { AppOptions, OnUserEvent, ViewOptions, ViewText } from "backend-ui";
 import * as React from "react";
-import { Message, TextCompiler, TextCustomErrors, TextErrors } from "./elements";
+import { Message, TextCompiler, TextCustomErrors } from "./elements";
 import { ChooseCompilerViewOptions } from "./Options";
 import "./TextView.scss";
 import { OnWheel } from "./useZoomPercent";
@@ -31,8 +31,6 @@ const getText = (props: TextViewProps): JSX.Element => {
   switch (view.viewType) {
     case "greeting":
       return <Message message={view.greeting} />;
-    case "errors":
-      return <TextErrors view={view} />;
     case "customErrors":
       return <TextCustomErrors view={view} />;
     case "compiler": {

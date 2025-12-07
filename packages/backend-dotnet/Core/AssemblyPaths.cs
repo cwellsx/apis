@@ -85,8 +85,7 @@ namespace Core
                 AsText: "foo",
                 Called: Convert(methodData.Called),
                 Argued: Convert(methodData.Argued),
-                Locals: Convert(methodData.Locals.Where(IsSimple)),
-                null
+                Locals: Convert(methodData.Locals.Where(IsSimple))
                 );
         }
 
@@ -156,8 +155,7 @@ namespace Core
                 }
                 return new Output.Public.LocalsType(
                     AssemblyName: variableDefinition.VariableType.Module.Assembly.Name.Name,
-                    MetadataToken: variableDefinition.VariableType.MetadataToken.ToInt32(),
-                    null
+                    MetadataToken: variableDefinition.VariableType.MetadataToken.ToInt32()
                     );
             }
             catch (Exception)
@@ -166,8 +164,7 @@ namespace Core
                 var scope = variableReference.VariableType.Scope;
                 return new Output.Public.LocalsType(
                     AssemblyName: scope.Name,
-                    MetadataToken: null, //methodReference.MetadataToken.ToInt32(),
-                    null
+                    MetadataToken: null //methodReference.MetadataToken.ToInt32(),
                     );
             }
         }

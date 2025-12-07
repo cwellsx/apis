@@ -1,10 +1,7 @@
 import { Access } from "./loadedEnums";
 import { TypeId } from "./loadedTypeId";
 
-export type Parameter = {
-  name?: string;
-  type: TypeId;
-};
+export type Parameter = { name?: string; type: TypeId };
 
 export type FieldMember = {
   name: string;
@@ -46,16 +43,9 @@ export type MethodMember = {
   metadataToken: number;
 };
 
-export type MemberException = {
-  name: string;
-  metadataToken: number;
-  exception: string;
-};
-
 export type Members = {
   fieldMembers?: FieldMember[];
   eventMembers?: EventMember[];
   propertyMembers?: PropertyMember[];
   methodMembers?: MethodMember[];
-  exceptions?: MemberException[];
 };

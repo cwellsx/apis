@@ -1,12 +1,14 @@
 import type { MethodDictionary } from "../../contracts-dotnet";
-import { validateMethodInfo } from "../../contracts-dotnet";
 import { distinctor } from "../../utils";
-import { BadMethodInfoAndIds, Columns } from "../types";
+import { Columns } from "../types";
 import { GetTypeId } from "./getMethodTypeId";
 
 const distinctCalls = distinctor<{ toAssemblyName: string; toMethodId: number }>(
   (lhs, rhs) => lhs.toAssemblyName == rhs.toAssemblyName && lhs.toMethodId == rhs.toMethodId
 );
+
+const combine = <T>(called: T[] | undefined, argued: T[] | undefined): T[] | undefined =>
+  !called ? argued : !argued ? called : [...called, ...argued];
 
 export const flattenMethodDictionary = (
   assemblyName: string,
@@ -15,27 +17,19 @@ export const flattenMethodDictionary = (
 ): {
   callColumns: Columns.CallColumns[];
   methodColumns: Columns.MethodColumns[];
-  badMethodInfos: BadMethodInfoAndIds[];
   localsTypeColumns: Columns.LocalsTypeColumns[];
 } => {
   const callColumns: Columns.CallColumns[] = [];
   const methodColumns: Columns.MethodColumns[] = [];
-  const badMethodInfos: BadMethodInfoAndIds[] = [];
   const localsTypeColumns: Columns.LocalsTypeColumns[] = [];
 
   Object.entries(methodDictionary).forEach(([key, methodInfo]) => {
     const metadataToken = +key;
 
     // returned methodCalls includes methodInfo.called and methodInfo.argued
-    const { methodCalls, localsTypes, badMethodInfo } = validateMethodInfo(methodInfo);
-
-    // BadMethodInfoAndIds[]
-    if (badMethodInfo)
-      badMethodInfos.push({
-        methodId: metadataToken,
-        typeId: getTypeId(assemblyName, metadataToken).typeId,
-        ...badMethodInfo,
-      });
+    //const { methodCalls, localsTypes, badMethodInfo } = validateMethodInfo(methodInfo);
+    const localsTypes = methodInfo.locals ?? [];
+    const methodCalls = combine(methodInfo.argued, methodInfo.called) ?? [];
 
     // CallColumns[]
     callColumns.push(
@@ -69,5 +63,5 @@ export const flattenMethodDictionary = (
     methodColumns.push({ assemblyName, metadataToken, methodInfo });
   });
 
-  return { callColumns, methodColumns, badMethodInfos, localsTypeColumns };
+  return { callColumns, methodColumns, localsTypeColumns };
 };

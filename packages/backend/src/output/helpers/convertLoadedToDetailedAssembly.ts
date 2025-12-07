@@ -3,18 +3,11 @@ import type {
   FieldMember,
   Members as LoadedMembers,
   MethodMember,
-  NamedTypeInfo,
   PropertyMember,
   TypeId,
   TypeInfo,
 } from "../../contracts-dotnet";
-import {
-  getMembers,
-  isAnonTypeInfo,
-  isNamedTypeInfo,
-  Access as LoadedAccess,
-  MemberException,
-} from "../../contracts-dotnet";
+import { Access as LoadedAccess } from "../../contracts-dotnet";
 import type { Access, DetailedAssembly, MemberInfo, Members, Named, Namespace, NodeId, Type } from "../../contracts-ui";
 import { artificialNodeIdFactory, GetArtificialNodeId, toMetadataNodeId, toNodeId } from "../../nodeIds";
 import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "../../utils";
@@ -131,41 +124,24 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
         methodMember.returnType,
         methodMember.access
       );
-    const getException = (exception: MemberException): MemberInfo =>
-      getFromName(
-        toMetadataNodeId("memberException", assemblyName, exception.metadataToken),
-        exception.name,
-        [],
-        undefined,
-        LoadedAccess.Private // not ideal but ignored by the UI
-      );
 
     return {
       fieldMembers: members.fieldMembers?.map(getFieldMember) ?? [],
       eventMembers: members.eventMembers?.map(getEventMember) ?? [],
       propertyMembers: members.propertyMembers?.map(getPropertyMember) ?? [],
       methodMembers: members.methodMembers?.map(getMethodMember) ?? [],
-      exceptions: members.exceptions?.map(getException) ?? [],
     };
   };
 
-  // remove all typeInfo without typeId
-  const exceptions: Exceptions = [];
-  const createExceptions = (exceptions: string[]): Exceptions =>
-    exceptions.map((exceptionMessage) => ({ name: exceptionMessage, nodeId: getArtificialNodeId("exception") }));
-  typeInfos.filter(isAnonTypeInfo).forEach((typeInfo) => exceptions.push(...createExceptions(typeInfo.exceptions)));
-
-  const named = typeInfos.filter(isNamedTypeInfo);
-
   // use declaringType to nest
-  const { rootTypes, getChildren, unwantedTypes } = nestTypes(named);
+  const { rootTypes, getChildren, unwantedTypes } = nestTypes(typeInfos);
 
   // optionally remove compiler-generated types
-  const isWantedType = (typeInfo: NamedTypeInfo): boolean =>
+  const isWantedType = (typeInfo: TypeInfo): boolean =>
     options.showCompilerGeneratedTypes ? true : unwantedTypes[typeInfo.typeId.metadataToken] === undefined;
 
   // group by namespace
-  const grouped = new Map<string, NamedTypeInfo[]>();
+  const grouped = new Map<string, TypeInfo[]>();
   rootTypes.filter(isWantedType).forEach((typeInfo) => {
     const namespace = typeInfo.typeId.namespace ?? "";
     let list = grouped.get(namespace);
@@ -176,7 +152,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
     list.push(typeInfo);
   });
 
-  const getType = (typeInfo: NamedTypeInfo): Type => {
+  const getType = (typeInfo: TypeInfo): Type => {
     const nested = getChildren(typeInfo.typeId);
 
     return {
@@ -187,8 +163,7 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
       access: typeInfo.access ? getAccess(typeInfo.access) : undefined,
       attributes: getAttributes(typeInfo.attributes, getArtificialNodeId),
       subtypes: nested.length ? nested.filter(isWantedType).map(getType) : undefined,
-      members: createMembers(getMembers(typeInfo)),
-      exceptions: typeInfo.exceptions ? createExceptions(typeInfo.exceptions) : [],
+      members: createMembers(typeInfo.members),
     };
   };
 
@@ -199,5 +174,5 @@ export const convertLoadedToDetailedAssembly = (typeInfos: TypeInfo[], assemblyN
     })
     .sort((x, y) => x.name.localeCompare(y.name));
 
-  return { namespaces, exceptions, detailType: "assemblyDetails" };
+  return { namespaces, detailType: "assemblyDetails" };
 };

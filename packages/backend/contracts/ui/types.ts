@@ -7,17 +7,13 @@ export type Named = {
 
 export type Access = "public" | "protected" | "internal" | "private";
 
-export type MemberInfo = Named & {
-  attributes: Named[];
-  access: Access;
-};
+export type MemberInfo = Named & { attributes: Named[]; access: Access };
 
 export type Members = {
   fieldMembers: MemberInfo[];
   eventMembers: MemberInfo[];
   propertyMembers: MemberInfo[];
   methodMembers: MemberInfo[];
-  exceptions: MemberInfo[];
 };
 
 export type Type = Named & {
@@ -25,9 +21,6 @@ export type Type = Named & {
   attributes: Named[];
   subtypes?: Type[];
   members: Members;
-  exceptions: Named[]; // normally empty
 };
 
-export type Namespace = Named & {
-  types: Type[];
-};
+export type Namespace = Named & { types: Type[] };

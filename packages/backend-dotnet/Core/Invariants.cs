@@ -81,13 +81,6 @@ namespace Core.Output.Public
 
         static void VerifyTypes(TypeInfo[] types)
         {
-            foreach (var typeInfo in types)
-            {
-                if (typeInfo.TypeId == null && typeInfo.Exceptions == null)
-                {
-                    typeInfo.AddMessage("TypeInfo");
-                }
-            }
             var all = types.Where(type => type.TypeId != null).ToDictionary(type => type.TypeId!);
             foreach (var (typeId, typeInfo) in all.Select(kvp => (kvp.Key, kvp.Value)))
             {
@@ -96,7 +89,7 @@ namespace Core.Output.Public
                 {
                     if (!b)
                     {
-                        typeInfo.AddMessage(message);
+                        throw new Exception(message);
                     }
                 };
                 var index = typeId.Name.IndexOf("`");

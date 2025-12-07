@@ -1,13 +1,5 @@
 import type { AppConfig, DisplayApi } from "../contracts-app";
-import type {
-  AppOptions,
-  GraphFilter,
-  MethodViewOptions,
-  ViewCompiler,
-  ViewDetails,
-  ViewErrors,
-  ViewType,
-} from "../contracts-ui";
+import type { AppOptions, GraphFilter, MethodViewOptions, ViewCompiler, ViewDetails, ViewType } from "../contracts-ui";
 import { nodeIdToText } from "../contracts-ui";
 import { getClusterNames, isMethodNodeId, MethodNodeId, textToAnyNodeId, toNodeId } from "../nodeIds";
 import { SqlLoaded } from "../sql";
@@ -72,14 +64,6 @@ export const showReflected = (
     display.showView(viewGraph);
   };
 
-  const showErrors = (): Promise<void> => {
-    const errors = sqlLoaded.readErrors();
-
-    const viewErrors: ViewErrors = { errors, viewType: "errors" };
-    display.showView(viewErrors);
-    return Promise.resolve();
-  };
-
   const showApis = async (): Promise<void> => {
     const apiViewOptions = sqlLoaded.viewState.apiViewOptions;
     const clusterBy = apiViewOptions.showClustered.clusterBy;
@@ -115,11 +99,6 @@ export const showReflected = (
       { menuLabel: "Assemblies", title: `References — ${dataSourcePath}`, showViewType: showReferences },
     ],
     [
-      "errors",
-      //
-      { menuLabel: ".NET reflection errors", title: `Errors — ${dataSourcePath}`, showViewType: showErrors },
-    ],
-    [
       "apis",
       //
       { menuLabel: "APIs", title: `APIs — ${dataSourcePath}`, showViewType: showApis },
@@ -136,8 +115,6 @@ export const showReflected = (
       case "references":
       case "apis":
         return true;
-      case "errors":
-        return sqlLoaded.readErrors().length !== 0;
       case "compiler":
         return !!appConfig.appOptions.showCompilerGeneratedMenuItem;
       default:

@@ -1,7 +1,6 @@
-import type { Reflected, TypeInfo } from "../../contracts-dotnet";
-import { isNamedTypeInfo } from "../../contracts-dotnet";
+import type { Reflected } from "../../contracts-dotnet";
 import { log, uniqueStrings } from "../../utils";
-import { BadTypeInfo, Columns, Tables } from "../types";
+import { Columns, Tables } from "../types";
 import { getTypeAndMethodNames } from "../utils";
 import { flattenCompilerMethods } from "./compilerMethods";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
@@ -18,19 +17,6 @@ import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
   so do all reflected.assemblies to get MapMethodTypes before doing any reflected.assemblyMethods
 */
 
-const getBadTypeInfos = (typeInfos: TypeInfo[]): BadTypeInfo[] => {
-  const result: BadTypeInfo[] = [];
-  typeInfos.forEach((typeInfo) => {
-    if (typeInfo.exceptions || typeInfo.members?.exceptions)
-      result.push({
-        exceptions: typeInfo.exceptions,
-        typeId: typeInfo.typeId,
-        memberExceptions: typeInfo.members?.exceptions,
-      });
-  });
-  return result;
-};
-
 export const save = (reflected: Reflected, table: Tables): void => {
   log("save reflected.assemblies");
 
@@ -38,16 +24,10 @@ export const save = (reflected: Reflected, table: Tables): void => {
   const allCompilerMethods = new Map<string, Set<number>>();
 
   for (const [assemblyName, assemblyInfo] of Object.entries(reflected.assemblies)) {
-    // BadTypeInfo[]
-    const badTypeInfos = getBadTypeInfos(assemblyInfo.types);
-    if (badTypeInfos.length) {
-      table.error.insert({ assemblyName, badTypeInfos, badMethodInfos: [] });
-    }
-
-    // NamedTypeInfo[]
+    // TypeInfo[]
     const { typeColumns, memberColumns, methodNameColumns, declaringTypeColumns, typeNameColumns } = flattenTypeInfo(
       assemblyName,
-      assemblyInfo.types.filter(isNamedTypeInfo)
+      assemblyInfo.types
     );
     table.type.insertMany(typeColumns);
     table.member.insertMany(memberColumns);
@@ -83,19 +63,11 @@ export const save = (reflected: Reflected, table: Tables): void => {
   const allLocalsTypeColumns: Columns.LocalsTypeColumns[] = [];
 
   for (const [assemblyName, methodDictionary] of Object.entries(reflected.assemblyMethods)) {
-    const { callColumns, methodColumns, badMethodInfos, localsTypeColumns } = flattenMethodDictionary(
+    const { callColumns, methodColumns, localsTypeColumns } = flattenMethodDictionary(
       assemblyName,
       methodDictionary,
       getTypeId
     );
-
-    // => errorsTable
-    if (badMethodInfos.length) {
-      const found = table.error.selectOne({ assemblyName });
-      const columns: Columns.ErrorColumns = { assemblyName, badTypeInfos: found?.badTypeInfos ?? [], badMethodInfos };
-      if (found) table.error.update(columns);
-      else table.error.insert(columns);
-    }
 
     // => MethodColumns[]
     table.method.insertMany(methodColumns);

@@ -7,7 +7,6 @@ export type Tables = {
   type: SqlTable<Columns.TypeColumns>;
   member: SqlTable<Columns.MemberColumns>;
   method: SqlTable<Columns.MethodColumns>;
-  error: SqlTable<Columns.ErrorColumns>;
   call: SqlTable<Columns.CallColumns>;
   typeName: SqlTable<Columns.TypeNameColumns>;
   methodName: SqlTable<Columns.MethodNameColumns>;

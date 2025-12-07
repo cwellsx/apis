@@ -58,7 +58,7 @@ export const showCustom = (
       { menuLabel: "Custom JSON", title: `${dataSourcePath}`, showViewType: showCustom },
     ],
     [
-      "errors",
+      "customErrors",
       //
       { menuLabel: "Custom JSON syntax errors", title: `Errors — ${dataSourcePath}`, showViewType: showErrors },
     ],

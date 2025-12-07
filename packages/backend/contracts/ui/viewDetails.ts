@@ -1,17 +1,11 @@
-import { BadMethodCall } from "./dotnet";
 import { MethodName } from "./methodName";
-import { Named, Namespace } from "./types";
+import { Namespace } from "./types";
 
 /*
   The types of ViewDetails are distinguished by the detailType
 */
 
-export type DetailedMethod = {
-  title: MethodName;
-  asText: string;
-  badMethodCalls?: BadMethodCall[];
-  detailType: "methodDetails";
-};
+export type DetailedMethod = { title: MethodName; asText: string; detailType: "methodDetails" };
 
 export type DetailedAssembly = {
   // assemblyId is needed because metadataToken is only unique within a given assembly
@@ -20,7 +14,7 @@ export type DetailedAssembly = {
   // - concatenate assemblyId with metadataToken
   // - or return multiple Types instances
   namespaces: Namespace[];
-  exceptions: Named[];
+
   detailType: "assemblyDetails";
 };
 

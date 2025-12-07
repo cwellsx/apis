@@ -4,8 +4,6 @@ export type { AppOptions, OptionsType } from "./appOptions";
 export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export { isCustomError } from "./customError";
 export type { CustomError } from "./customError";
-export type { BadMethodCall, LoadedMethodError } from "./dotnet";
-export type { BadMethodInfoAndNames, BadTypeInfoAndNames, ErrorsInfo } from "./errors";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export type { GraphFilter } from "./graphFilter";
 export { isCustomManual } from "./graphViewOptions";
@@ -23,16 +21,7 @@ export type { Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
 export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./types";
 export { defaultView } from "./view";
-export type {
-  View,
-  ViewCompiler,
-  ViewCustomErrors,
-  ViewErrors,
-  ViewGraph,
-  ViewGraphData,
-  ViewGreeting,
-  ViewText,
-} from "./view";
+export type { View, ViewCompiler, ViewCustomErrors, ViewGraph, ViewGraphData, ViewGreeting, ViewText } from "./view";
 export type { DetailedAssembly, DetailedCustom, DetailedMethod, DetailType, ViewDetails } from "./viewDetails";
 export { isCustomViewOptions } from "./viewOptions";
 export type { AnyGraphViewOptions, CompilerViewOptions, GraphViewOptions, ViewOptions } from "./viewOptions";

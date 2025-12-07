@@ -1,4 +1,4 @@
-import { getMembers, isNamedTypeInfo, Reflected } from "../../contracts-dotnet";
+import { Reflected } from "../../contracts-dotnet";
 import { methodNodeId, typeNodeId } from "../../nodeIds";
 import { getOrSet, log, logJson } from "../../utils";
 import type { Columns, GetTypeOrMethodName } from "../types";
@@ -196,15 +196,12 @@ export const flattenCompilerMethods = (
     const methods = new Map<number, Compiler>();
     assemblyCompilerMethods.set(assemblyName, methods);
     assemblyInfo.types
-      .filter(isNamedTypeInfo)
-      //.filter((typeInfo) => isCompilerType(assemblyName, typeInfo.typeId.metadataToken))
+
       // for each good compiler-generated type in the assembly
       .forEach((type) => {
         const isCompilerType = getIsCompilerType(assemblyName, type.typeId.metadataToken);
-        getMembers(type)
-          .methodMembers?.filter(
-            (methodMember) => isCompilerType || getIsCompilerMethod(assemblyName, methodMember.metadataToken)
-          )
+        type.members.methodMembers
+          ?.filter((methodMember) => isCompilerType || getIsCompilerMethod(assemblyName, methodMember.metadataToken))
           .forEach((methodMember) => {
             watch.logMethod(assemblyName, type.typeId.metadataToken, methodMember.metadataToken);
             // map each method to a different Compiler instance (some types' methods are called from different methods)

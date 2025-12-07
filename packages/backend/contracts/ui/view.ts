@@ -1,6 +1,5 @@
 import { CompilerMethod, LocalsType } from "./compilerMethod";
 import { CustomError } from "./customError";
-import { ErrorsInfo } from "./errors";
 import { GraphFilter } from "./graphFilter";
 import { Image } from "./image";
 import { Node } from "./node";
@@ -25,20 +24,9 @@ export type ViewGraph = ViewGraphData & {
   image: Image | string;
 };
 
-export type ViewGreeting = {
-  viewType: "greeting";
-  greeting: string;
-};
+export type ViewGreeting = { viewType: "greeting"; greeting: string };
 
-export type ViewErrors = {
-  viewType: "errors";
-  errors?: ErrorsInfo[];
-};
-
-export type ViewCustomErrors = {
-  viewType: "customErrors";
-  customErrors?: CustomError[];
-};
+export type ViewCustomErrors = { viewType: "customErrors"; customErrors?: CustomError[] };
 
 export type ViewCompiler = {
   viewType: "compiler";
@@ -47,11 +35,8 @@ export type ViewCompiler = {
   textViewOptions: CompilerViewOptions;
 };
 
-export type ViewText = ViewGreeting | ViewErrors | ViewCustomErrors | ViewCompiler;
+export type ViewText = ViewGreeting | ViewCustomErrors | ViewCompiler;
 
 export type View = ViewGraph | ViewText;
 
-export const defaultView: ViewGreeting = {
-  greeting: "No data",
-  viewType: "greeting",
-};
+export const defaultView: ViewGreeting = { greeting: "No data", viewType: "greeting" };

@@ -31,8 +31,6 @@ const makeNode = (
   };
 };
 
-const convertException = (exception: Named): CheckboxNode =>
-  makeNode(exception, <Icon.SvgExclamationPoint />, "exception");
 const convertAttribute = (attribute: Named): CheckboxNode => makeNode(attribute, <Icon.SvgAttribute />, "attribute");
 
 const getTypeIcon = (access: Access | undefined) => {
@@ -127,30 +125,21 @@ const convertType = (type: Type): CheckboxNode => {
       .map((memberInfo) => makeMemberNode(memberInfo, getIcon, className));
 
   return makeNode(type, getTypeIcon(type.access), "type", [
-    ...type.exceptions.map(convertException),
     ...type.attributes.map(convertAttribute),
     ...convertTypes(type.subtypes),
     ...makeMemberNodes(type.members.fieldMembers, getFieldIcon, "field"),
     ...makeMemberNodes(type.members.propertyMembers, getPropertyIcon, "property"),
     ...makeMemberNodes(type.members.methodMembers, getMethodIcon, "method"),
     ...makeMemberNodes(type.members.eventMembers, getEventIcon, "event"),
-    ...makeMemberNodes(type.members.exceptions, () => <Icon.SvgExclamationPoint />, "exception"),
   ]);
 };
 
 const convertNamespace = (namespace: Namespace): CheckboxNode =>
   makeNode(namespace, <Icon.SvgNamespace />, "namespace", namespace.types.map(convertType));
 
-const getNodes = (types: DetailedAssembly): CheckboxNode[] => [
-  ...types.exceptions.map(convertException),
-  ...types.namespaces.map(convertNamespace),
-];
+const getNodes = (types: DetailedAssembly): CheckboxNode[] => [...types.namespaces.map(convertNamespace)];
 
-type State = {
-  types: DetailedAssembly;
-  nodes: CheckboxNode[];
-  expanded: string[];
-};
+type State = { types: DetailedAssembly; nodes: CheckboxNode[]; expanded: string[] };
 
 interface ActionNewNodes {
   type: "NewNodes";
@@ -176,17 +165,11 @@ const reducer = (state: State, action: Action): State => {
       return initialState(action.types);
 
     case "SetExpanded":
-      return {
-        ...state,
-        expanded: action.expanded,
-      };
+      return { ...state, expanded: action.expanded };
   }
 };
 
-type DetailsProps = {
-  types: DetailedAssembly;
-  onDetailEvent: OnUserEvent<DetailEvent>;
-};
+type DetailsProps = { types: DetailedAssembly; onDetailEvent: OnUserEvent<DetailEvent> };
 export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: DetailsProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState(props.types));
   const { nodes, expanded } = state;

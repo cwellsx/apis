@@ -38,11 +38,6 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
     metadataToken: 1,
     methodInfo: {} as MethodInfo,
   });
-  const error = db.newSqlTable<Columns.ErrorColumns>("error", "assemblyName", () => false, {
-    assemblyName: "foo",
-    badTypeInfos: [],
-    badMethodInfos: [],
-  });
   const call = db.newSqlTable<Columns.CallColumns>(
     "call",
     ["fromAssemblyName", "fromMethodId", "toAssemblyName", "toMethodId"],
@@ -113,7 +108,6 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
     methodName.deleteAll();
     typeName.deleteAll();
     call.deleteAll();
-    error.deleteAll();
     method.deleteAll();
     member.deleteAll();
     type.deleteAll();
@@ -126,7 +120,6 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
     type,
     member,
     method,
-    error,
     call,
     typeName,
     methodName,
