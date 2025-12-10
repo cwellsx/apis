@@ -53,18 +53,18 @@ namespace Core
 
         internal static string? GetMicrosoftDirectory(string assemblyPath, FrameworkName frameworkName) => (frameworkName.IsCore())
                 ? GetCoreDirectory(assemblyPath, frameworkName)
-                : (frameworkName.IsCore())
+                : (frameworkName.IsFramework())
                 ? GetFrameworkDirectory(frameworkName.Version)
                 : throw new Exception($"Unexpected FrameworkName {frameworkName.FullName}");
 
         static string? GetCoreDirectory(string assemblyPath, FrameworkName frameworkName)
         {
             var runtimeTarget = GetRuntimeTarget(assemblyPath, frameworkName);
-            if (frameworkName == null)
+            if (runtimeTarget == null)
             {
                 return null;
             }
-            return GetCoreDirectory(frameworkName);
+            return GetCoreDirectory(runtimeTarget);
         }
 
         private static FrameworkName? GetRuntimeTarget(string assemblyPath, FrameworkName frameworkName)

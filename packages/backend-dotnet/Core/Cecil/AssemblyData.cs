@@ -8,22 +8,21 @@ namespace Core.Cecil
     internal class AssemblyData
     {
         private AssemblyDefinition _assemblyDefinition { get; }
-        private Dictionary<MetadataToken, TypeData> _types { get; }
-
-        internal AssemblyData(string path) : this(AssemblyDefinition.ReadAssembly(path))
-        {
-        }
+        private TypeData[] _types { get; }
 
         internal AssemblyData(AssemblyDefinition assemblyDefinition)
         {
             _assemblyDefinition = assemblyDefinition;
-            _types = TypeData.ReadTypes(assemblyDefinition.MainModule.Types.Where(typeDefinition => typeDefinition.Name != "<Module>"));
+            _types = assemblyDefinition.MainModule.Types
+                .Where(typeDefinition => typeDefinition.Name != "<Module>")
+                .Select(typeDefinition => new TypeData(typeDefinition))
+                .ToArray();
         }
 
         internal string Name => _assemblyDefinition.Name.Name;
 
-        internal int[] GetTypeMetadataTokens() => _types.Values.SelectMany(typeData => typeData.GetTypeMetadataTokens()).ToArray();
+        internal TypeDefinition[] TypeDefinitions => _types.SelectMany(typeData => typeData.AllTypeDefinitions).ToArray();
 
-        internal MethodData[] GetMethodData() => _types.Values.SelectMany(typeData => typeData.GetMethodData()).ToArray();
+        internal MethodData[] MethodData => _types.SelectMany(typeData => typeData.AllMethodData).ToArray();
     }
 }

@@ -1,7 +1,6 @@
 ﻿using Core.Extensions;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Core.Output.Public
 {
@@ -121,8 +120,6 @@ namespace Core.Output.Public
         TypeId[]? TypeMembers,
         MethodMember[]? MethodMembers
         );
-
-    public record TypeDetails(string AssemblyName, string TypeName, bool IsCompiler, int? MetadataToken);
 
     // a shorter version of CallDetails
     public record MethodCall(string AssemblyName, int? MetadataToken);

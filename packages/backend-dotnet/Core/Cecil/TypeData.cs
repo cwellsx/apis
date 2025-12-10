@@ -8,41 +8,28 @@ namespace Core.Cecil
     internal class TypeData
     {
         private TypeDefinition TypeDefinition { get; }
-        private Dictionary<MetadataToken, TypeData> NestedTypes { get; }
-        private Dictionary<MetadataToken, MethodData> Methods { get; } = [];
+        internal TypeDefinition[] AllTypeDefinitions { get; }
+        internal MethodData[] AllMethodData { get; }
 
         internal TypeData(TypeDefinition typeDefinition)
         {
             TypeDefinition = typeDefinition;
 
-            NestedTypes = (typeDefinition.HasNestedTypes) ? ReadTypes(typeDefinition.NestedTypes) : [];
+            AllTypeDefinitions = GetAllTypeDefinitions(TypeDefinition).ToArray();
+            AllMethodData = AllTypeDefinitions
+                .SelectMany(typeDefinition => typeDefinition.Methods)
+                .Select(methodDefinition => new MethodData(methodDefinition))
+                .ToArray();
+        }
 
-            foreach (var methodDefinition in typeDefinition.Methods)
+        private static IEnumerable<TypeDefinition> GetAllTypeDefinitions(TypeDefinition typeDefinition)
+        {
+            yield return typeDefinition;
+            foreach (var nestedType in typeDefinition.NestedTypes)
             {
-                Methods.Add(methodDefinition.MetadataToken, new MethodData(methodDefinition));
+                foreach (var child in GetAllTypeDefinitions(nestedType))
+                    yield return child;
             }
-        }
-
-        internal IEnumerable<int> GetTypeMetadataTokens()
-        {
-            return NestedTypes.Values.SelectMany(nt => nt.GetTypeMetadataTokens())
-                .Append(TypeDefinition.MetadataToken.ToInt32());
-        }
-
-        internal IEnumerable<MethodData> GetMethodData()
-        {
-            return NestedTypes.Values.SelectMany(nt => nt.GetMethodData())
-                .Concat(Methods.Values);
-        }
-
-        internal static Dictionary<MetadataToken, TypeData> ReadTypes(IEnumerable<TypeDefinition> fromTypes)
-        {
-            var result = new Dictionary<MetadataToken, TypeData>();
-            foreach (var typeDefinition in fromTypes)
-            {
-                result.Add(typeDefinition.MetadataToken, new TypeData(typeDefinition));
-            }
-            return result;
         }
     }
 }
