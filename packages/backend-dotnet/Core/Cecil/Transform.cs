@@ -34,6 +34,128 @@ namespace Core.Cecil
             Logger.Log($"Types: {typeInfos.Length}");
         }
 
+        internal static void ToCompilerMethods(AssemblyData assemblyData)
+        {
+            var resolvedTypes = assemblyData.MethodData
+                // we want to know whose calling which methods of the <>c class
+                // it's not really a static class, it's a singleton with a static constructor
+                .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
+                .SelectMany(methodData => methodData.CompilerGeneratedTypes
+                .Select(typeDefinition => (methodData, typeDefinition))
+                ).ToArray();
+
+            var resolvedTypeIds = new HashSet<MetadataToken>(resolvedTypes.Select(t => t.typeDefinition.MetadataToken));
+
+            var unresolvedTypes = assemblyData.TypeDefinitions
+                .Where(IsCompilerGenerated)
+                .Where(IsSignificantCompilerGenerated)
+                .Where(typeDefinition => !resolvedTypeIds.Contains(typeDefinition.MetadataToken));
+
+            if (!unresolvedTypes.All(IsLambdaCache))
+            {
+                throw new Exception("Some compiler-generated types were not resolved");
+            }
+
+            var compilerMethods = unresolvedTypes
+                .SelectMany(typeDefinition => typeDefinition.Methods)
+                .Where(methodDefinition => !methodDefinition.IsConstructor)
+                .ToArray();
+
+            var compilerMethodsIds = new HashSet<MetadataToken>(compilerMethods.Select(methodDefinition => methodDefinition.MetadataToken));
+
+            if (compilerMethods.Length != compilerMethodsIds.Count)
+            {
+                throw new Exception("Compiler methods are not distinct");
+            }
+
+            var resolvedMethods = assemblyData.MethodData
+                // we want to know whose calling which methods of the <>c class
+                // it's not really a static class, it's a singleton with a static constructor
+                .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
+                .SelectMany(methodData => methodData.CompilerGeneratedMethods
+                .Select(methodDefinition => (methodData, methodDefinition))
+                ).ToArray();
+
+            var resolvedMethodIds = new HashSet<MetadataToken>(resolvedMethods.Select(t => t.methodDefinition.MetadataToken));
+
+            if (!compilerMethodsIds.SetEquals(resolvedMethodIds))
+            {
+                throw new Exception("Some compiler-generated methods were not resolved");
+            }
+
+            /*
+             * There are two problems to resolve:
+             * - A type might be constructed from a user method and from a compiler-generated method
+             * - A type might be constructed only from a compiler-generated method
+             * In both cases we want to know which user method owns the compiler-generated method.
+             * Do it in two stages: first resolve each type; then verify that any duplicates agree.
+             */
+
+            // key is compiler type, value is the user method which owns it
+            var map = new Dictionary<MetadataToken, MetadataToken>();
+            foreach (var (methodData, typeDefinition) in resolvedTypes)
+            {
+                if (!methodData.DeclaringType.IsCompilerGenerated())
+                {
+                    map.Add(typeDefinition.MetadataToken, methodData.MetadataToken);
+                }
+            }
+
+            bool tryNeeded;
+            bool tryUseful;
+            do
+            {
+                tryNeeded = false;
+                tryUseful = false;
+                var generation = new Dictionary<MetadataToken, MetadataToken>();
+                foreach (var (methodData, typeDefinition) in resolvedTypes)
+                {
+                    if (map.ContainsKey(typeDefinition.MetadataToken))
+                    {
+                        continue;
+                    }
+
+                    var declaringType = methodData.DeclaringType;
+                    if (!declaringType.IsCompilerGenerated())
+                    {
+                        throw new Exception();
+                    }
+
+                    if (map.ContainsKey(declaringType.MetadataToken))
+                    {
+                        var userMethodId = map[declaringType.MetadataToken];
+                        map.Add(typeDefinition.MetadataToken, userMethodId);
+                        tryUseful = true;
+                    }
+                    else
+                    {
+                        tryNeeded = true;
+                    }
+                }
+
+            } while (tryNeeded && tryUseful);
+
+            if (tryNeeded)
+            {
+                throw new Exception();
+            }
+        }
+
+        // this is the only compiler-generated type that isn't wholly-owned by a single user methods
+        // instead each of its methods is owned by various user methods
+        internal static bool IsLambdaCache(this TypeDefinition typeDefinition) => typeDefinition.Name == "<>c";
+        internal static bool IsLambdaCache(this TypeReference typeReference) => typeReference.Name == "<>c";
+
+        internal static bool IsCompilerGenerated(this TypeDefinition typeDefinition) =>
+            typeDefinition.CustomAttributes.Any(ca => ca.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+
+        internal static bool IsSignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
+            // maybe some types like Foo/<>O which have no methods and aren't used at runtime
+            typeDefinition.HasMethods &&
+            // ignore e.g. "Microsoft.CodeAnalysis.EmbeddedAttribute
+            typeDefinition.BaseType.FullName != "System.Attribute" &&
+            !typeDefinition.FullName.StartsWith("<PrivateImplementationDetails>");
+
         internal static Output.Public.MethodInfo ToMethodInfo(MethodData methodData, IFilter filter)
         {
             return new Output.Public.MethodInfo(

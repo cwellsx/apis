@@ -21,8 +21,8 @@ namespace Core.Cecil
 
         internal string Name => _assemblyDefinition.Name.Name;
 
-        internal TypeDefinition[] TypeDefinitions => _types.SelectMany(typeData => typeData.AllTypeDefinitions).ToArray();
+        internal TypeDefinition[] TypeDefinitions => _types.SelectMany(typeData => typeData.TypeDefinitions).ToArray();
 
-        internal MethodData[] MethodData => _types.SelectMany(typeData => typeData.AllMethodData).ToArray();
+        internal MethodData[] MethodData => _types.SelectMany(typeData => typeData.Methods).ToArray();
     }
 }

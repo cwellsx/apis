@@ -65,6 +65,8 @@ namespace Core
             var assemblyData = _foundAssemblies[path];
             Transform.ValidateTypes(types, assemblyData.TypeDefinitions);
 
+            Transform.ToCompilerMethods(assemblyData);
+
             Logger.Log($"Methods: {assemblyData.MethodData.Length}");
         }
 

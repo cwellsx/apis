@@ -12,8 +12,6 @@ import type { Access, DetailedAssembly, MemberInfo, Members, Named, Namespace, N
 import { artificialNodeIdFactory, GetArtificialNodeId, toMetadataNodeId, toNodeId } from "../../nodeIds";
 import { getMethodName, getPropertyName, getTypeIdName, getTypeInfoName, nestTypes, options } from "../../utils";
 
-type Exceptions = Named[];
-
 const getAttributes = (attributes: string[] | undefined, getArtificialNodeId: GetArtificialNodeId): Named[] => {
   const parseAttribute = (attribute: string): { namespace?: string; name: string; args?: string } => {
     if (attribute[0] != "[" || attribute[attribute.length - 1] != "]")
