@@ -3,8 +3,7 @@ using Mono.Cecil.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Core.Cecil
 {
@@ -72,11 +71,11 @@ namespace Core.Cecil
                 // we want to know whose calling which methods of the <>c class
                 // it's not really a static class, it's a singleton with a static constructor
                 .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
-                .SelectMany(methodData => methodData.CompilerGeneratedMethods
-                .Select(methodDefinition => (methodData, methodDefinition))
+                .SelectMany(ownerMethodData => ownerMethodData.CompilerGeneratedMethods
+                .Select(compilerMethodDefinition => (ownerMethodData, compilerMethodDefinition))
                 ).ToArray();
 
-            var resolvedMethodIds = new HashSet<MetadataToken>(resolvedMethods.Select(t => t.methodDefinition.MetadataToken));
+            var resolvedMethodIds = new HashSet<MetadataToken>(resolvedMethods.Select(t => t.compilerMethodDefinition.MetadataToken));
 
             if (!compilerMethodsIds.SetEquals(resolvedMethodIds))
             {
@@ -98,6 +97,15 @@ namespace Core.Cecil
                 if (!methodData.DeclaringType.IsCompilerGenerated())
                 {
                     map.Add(typeDefinition.MetadataToken, methodData.MetadataToken);
+                }
+                if (resolvedMethodIds.Contains(methodData.MetadataToken))
+                {
+                    var ownerMethodData = resolvedMethods.Single(t => t.compilerMethodDefinition.MetadataToken == methodData.MetadataToken).ownerMethodData;
+                    if (ownerMethodData.DeclaringType.IsCompilerGenerated())
+                    {
+                        throw new Exception();
+                    }
+                    map.Add(typeDefinition.MetadataToken, ownerMethodData.MetadataToken);
                 }
             }
 
@@ -135,6 +143,25 @@ namespace Core.Cecil
 
             } while (tryNeeded && tryUseful);
 
+            var methodDataDictionary = assemblyData.MethodData.ToDictionary(methodData => methodData.MetadataToken);
+            Func<TypeDefinition, MethodData?> getOwner = (typeDefinition) => map.TryGetValue(typeDefinition.MetadataToken, out var ownerMetadataToken)
+            ? methodDataDictionary[ownerMetadataToken]
+            : null;
+
+            var result = resolvedTypes.Select(pair => (pair.typeDefinition, pair.methodData, owner: getOwner(pair.typeDefinition)))
+            .Select(tuple => (
+            tuple.typeDefinition.FullName,
+            tuple.methodData.Name,
+            tuple.methodData.DeclaringType.FullName,
+            tuple.owner?.Name,
+            tuple.owner?.DeclaringType.FullName
+            )).ToArray();
+
+            Array.Sort(result);
+
+            Logger.Log($@"Compiler-generated methods and their owners:
+{string.Join("\r\n", result)}");
+
             if (tryNeeded)
             {
                 throw new Exception();
@@ -143,8 +170,9 @@ namespace Core.Cecil
 
         // this is the only compiler-generated type that isn't wholly-owned by a single user methods
         // instead each of its methods is owned by various user methods
-        internal static bool IsLambdaCache(this TypeDefinition typeDefinition) => typeDefinition.Name == "<>c";
-        internal static bool IsLambdaCache(this TypeReference typeReference) => typeReference.Name == "<>c";
+        //internal static bool IsLambdaCache(this TypeDefinition typeDefinition) => typeDefinition.Name == "<>c";
+        private static readonly Regex LambdaCachePattern = new(@"^<>c(__\d+)?(`\d+)?$", RegexOptions.Compiled);
+        internal static bool IsLambdaCache(this TypeReference typeReference) => LambdaCachePattern.IsMatch(typeReference.Name);
 
         internal static bool IsCompilerGenerated(this TypeDefinition typeDefinition) =>
             typeDefinition.CustomAttributes.Any(ca => ca.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute");

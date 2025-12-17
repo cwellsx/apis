@@ -12,6 +12,8 @@ namespace Core.Cecil
 
         internal MetadataToken MetadataToken => _methodDefinition.MetadataToken;
         internal TypeDefinition DeclaringType => _methodDefinition.DeclaringType;
+        internal string FullName => _methodDefinition.FullName;
+        internal string Name => _methodDefinition.Name;
 
         internal List<MethodReference> Called { get; } = [];
         internal List<MethodReference> Argued { get; } = [];
