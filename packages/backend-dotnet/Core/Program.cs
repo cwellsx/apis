@@ -12,6 +12,8 @@ namespace Core
     {
         static void Main(string[] args)
         {
+            Test.SelfTest.Run();
+
             switch (args.Length)
             {
                 case 0:
