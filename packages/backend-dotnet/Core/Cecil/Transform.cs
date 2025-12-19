@@ -35,36 +35,20 @@ namespace Core.Cecil
 
         internal static void ToCompilerMethods(AssemblyData assemblyData)
         {
+            // compiler types which are referenced via Newobj in methods
             var resolvedTypes = assemblyData.MethodData
-                // we want to know whose calling which methods of the <>c class
-                // it's not really a static class, it's a singleton with a static constructor
+                // exclude the <>c class which is not really a static class, it's a singleton with a static constructor
                 .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
                 .SelectMany(methodData => methodData.CompilerGeneratedTypes
                 .Select(typeDefinition => (methodData, typeDefinition))
                 ).ToArray();
 
+            // assert that resolvedTypes includes all compiler-generated types except the <>c class
             var resolvedTypeIds = new HashSet<MetadataToken>(resolvedTypes.Select(t => t.typeDefinition.MetadataToken));
-
-            var unresolvedTypes = assemblyData.TypeDefinitions
-                .Where(IsCompilerGenerated)
-                .Where(IsSignificantCompilerGenerated)
-                .Where(typeDefinition => !resolvedTypeIds.Contains(typeDefinition.MetadataToken));
-
-            if (!unresolvedTypes.All(IsLambdaCache))
+            var allCompilerTypes = assemblyData.TypeDefinitions.Where(IsSignificantCompilerGenerated).ToArray();
+            if (allCompilerTypes.Any(typeDefinition => !resolvedTypeIds.Contains(typeDefinition.MetadataToken) && !typeDefinition.IsLambdaCache()))
             {
                 throw new Exception("Some compiler-generated types were not resolved");
-            }
-
-            var compilerMethods = unresolvedTypes
-                .SelectMany(typeDefinition => typeDefinition.Methods)
-                .Where(methodDefinition => !methodDefinition.IsConstructor)
-                .ToArray();
-
-            var compilerMethodsIds = new HashSet<MetadataToken>(compilerMethods.Select(methodDefinition => methodDefinition.MetadataToken));
-
-            if (compilerMethods.Length != compilerMethodsIds.Count)
-            {
-                throw new Exception("Compiler methods are not distinct");
             }
 
             var resolvedMethods = assemblyData.MethodData
@@ -75,9 +59,15 @@ namespace Core.Cecil
                 .Select(compilerMethodDefinition => (ownerMethodData, compilerMethodDefinition))
                 ).ToArray();
 
+            // assert that resolvedMethods includes all compiler-generated methods of the <>c class
+            var allCompilerMethodIds = allCompilerTypes
+                .Where(IsLambdaCache)
+                .SelectMany(typeDefinition => typeDefinition.Methods)
+                .Where(methodDefinition => !methodDefinition.IsConstructor)
+                .Select(methodDefinition => methodDefinition.MetadataToken)
+                .ToHashSet();
             var resolvedMethodIds = new HashSet<MetadataToken>(resolvedMethods.Select(t => t.compilerMethodDefinition.MetadataToken));
-
-            if (!compilerMethodsIds.SetEquals(resolvedMethodIds))
+            if (!resolvedMethodIds.SetEquals(allCompilerMethodIds))
             {
                 throw new Exception("Some compiler-generated methods were not resolved");
             }
@@ -91,21 +81,27 @@ namespace Core.Cecil
              */
 
             // key is compiler type, value is the user method which owns it
-            var map = new Dictionary<MetadataToken, MetadataToken>();
+            var mapMethods = resolvedMethods.ToDictionary(
+                pair => pair.compilerMethodDefinition.MetadataToken,
+                pair => pair.ownerMethodData
+                );
+
+            // key is compiler type, value is the user method which owns it
+            var mapTypes = new Dictionary<MetadataToken, MethodData>();
+
             foreach (var (methodData, typeDefinition) in resolvedTypes)
             {
                 if (!methodData.DeclaringType.IsCompilerGenerated())
                 {
-                    map.Add(typeDefinition.MetadataToken, methodData.MetadataToken);
+                    mapTypes.Add(typeDefinition.MetadataToken, methodData);
                 }
-                if (resolvedMethodIds.Contains(methodData.MetadataToken))
+                if (mapMethods.TryGetValue(methodData.MetadataToken, out var ownerMethodData))
                 {
-                    var ownerMethodData = resolvedMethods.Single(t => t.compilerMethodDefinition.MetadataToken == methodData.MetadataToken).ownerMethodData;
                     if (ownerMethodData.DeclaringType.IsCompilerGenerated())
                     {
                         throw new Exception();
                     }
-                    map.Add(typeDefinition.MetadataToken, ownerMethodData.MetadataToken);
+                    mapTypes.Add(typeDefinition.MetadataToken, ownerMethodData);
                 }
             }
 
@@ -118,7 +114,7 @@ namespace Core.Cecil
                 var generation = new Dictionary<MetadataToken, MetadataToken>();
                 foreach (var (methodData, typeDefinition) in resolvedTypes)
                 {
-                    if (map.ContainsKey(typeDefinition.MetadataToken))
+                    if (mapTypes.ContainsKey(typeDefinition.MetadataToken))
                     {
                         continue;
                     }
@@ -129,10 +125,10 @@ namespace Core.Cecil
                         throw new Exception();
                     }
 
-                    if (map.ContainsKey(declaringType.MetadataToken))
+                    if (mapTypes.ContainsKey(declaringType.MetadataToken))
                     {
-                        var userMethodId = map[declaringType.MetadataToken];
-                        map.Add(typeDefinition.MetadataToken, userMethodId);
+                        var userMethodId = mapTypes[declaringType.MetadataToken];
+                        mapTypes.Add(typeDefinition.MetadataToken, userMethodId);
                         tryUseful = true;
                     }
                     else
@@ -143,12 +139,34 @@ namespace Core.Cecil
 
             } while (tryNeeded && tryUseful);
 
-            var methodDataDictionary = assemblyData.MethodData.ToDictionary(methodData => methodData.MetadataToken);
-            Func<TypeDefinition, MethodData?> getOwner = (typeDefinition) => map.TryGetValue(typeDefinition.MetadataToken, out var ownerMetadataToken)
-            ? methodDataDictionary[ownerMetadataToken]
-            : null;
+            MethodData GetTypeOwner(TypeDefinition typeDefinition)
+            {
+                if (mapTypes.TryGetValue(typeDefinition.MetadataToken, out var ownerMetadata))
+                {
+                    return ownerMetadata;
+                }
+                throw new Exception();
+            }
 
-            var result = resolvedTypes.Select(pair => (pair.typeDefinition, pair.methodData, owner: getOwner(pair.typeDefinition)))
+            MethodData GetMethodOwner(MethodData methodData)
+            {
+                TypeDefinition typeDefinition = methodData.DeclaringType;
+                if (!typeDefinition.IsCompilerGenerated())
+                {
+                    return methodData;
+                }
+                if (typeDefinition.IsLambdaCache())
+                {
+                    if (mapMethods.TryGetValue(methodData.MetadataToken, out var ownerMethodData))
+                    {
+                        return ownerMethodData;
+                    }
+                    throw new Exception();
+                }
+                return GetTypeOwner(typeDefinition);
+            }
+
+            var showTypes = resolvedTypes.Select(pair => (pair.typeDefinition, pair.methodData, owner: GetTypeOwner(pair.typeDefinition)))
             .Select(tuple => (
             tuple.typeDefinition.FullName,
             tuple.methodData.Name,
@@ -157,10 +175,28 @@ namespace Core.Cecil
             tuple.owner?.DeclaringType.FullName
             )).ToArray();
 
-            Array.Sort(result);
+            Array.Sort(showTypes);
+
+            Logger.Log($@"Compiler-generated types and their owners:
+{string.Join("\r\n", showTypes)}");
+
+            var showMethods = resolvedMethods.Select(pair => (
+            pair.compilerMethodDefinition,
+            pair.ownerMethodData,
+            owner: GetMethodOwner(pair.ownerMethodData)
+            )).Select(tuple => (
+            tuple.compilerMethodDefinition.DeclaringType.FullName,
+            tuple.compilerMethodDefinition.Name,
+            tuple.ownerMethodData.DeclaringType.FullName,
+            tuple.ownerMethodData.Name,
+            tuple.owner == tuple.ownerMethodData ? "-" : tuple.owner?.DeclaringType.FullName,
+            tuple.owner == tuple.ownerMethodData ? "-" : tuple.owner?.Name
+            )).ToArray();
+
+            Array.Sort(showMethods);
 
             Logger.Log($@"Compiler-generated methods and their owners:
-{string.Join("\r\n", result)}");
+{string.Join("\r\n", showMethods)}");
 
             if (tryNeeded)
             {
@@ -178,6 +214,7 @@ namespace Core.Cecil
             typeDefinition.CustomAttributes.Any(ca => ca.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
 
         internal static bool IsSignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
+            typeDefinition.IsCompilerGenerated() &&
             // maybe some types like Foo/<>O which have no methods and aren't used at runtime
             typeDefinition.HasMethods &&
             // ignore e.g. "Microsoft.CodeAnalysis.EmbeddedAttribute

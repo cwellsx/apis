@@ -104,3 +104,73 @@ class HoistedLocalsExample
 👉 Produces helper structs like `HoistedLocalsExample+<>f__Switch…` or similar, depending on compiler version.
 
 
+---
+
+## 1. Async state machine using a cached lambda
+```csharp
+using System;
+using System.Threading.Tasks;
+
+class AsyncCacheExample
+{
+    public async Task RunAsync()
+    {
+        // LINQ inside async → compiler emits a state machine (<RunAsync>d__0)
+        // and caches the lambda in <>c
+        var data = new[] { 1, 2, 3 };
+        var doubled = data.Select(x => x * 2).ToArray();
+
+        await Task.Delay(10);
+        Console.WriteLine(string.Join(",", doubled));
+    }
+}
+```
+- The async state machine type `<RunAsync>d__0.MoveNext` will reference the cached delegate in `AsyncCacheExample.<>c`.
+
+---
+
+## 2. Iterator state machine using a cached lambda
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+class IteratorCacheExample
+{
+    public IEnumerable<int> GetNumbers()
+    {
+        var data = new[] { 1, 2, 3 };
+        // LINQ inside iterator → compiler emits <GetNumbers>d__0
+        // which calls into <>c.<GetNumbers>b__0_0
+        var doubled = data.Select(x => x * 2).ToArray();
+
+        foreach (var d in doubled)
+            yield return d;
+    }
+}
+```
+- The iterator state machine `<GetNumbers>d__0.MoveNext` will load the cached delegate from `<>c`.
+
+---
+
+## 3. Display class calling a cached lambda
+```csharp
+using System;
+using System.Linq;
+
+class DisplayCacheExample
+{
+    public void Run()
+    {
+        int captured = 42;
+        // Captured variable → compiler emits <>c__DisplayClass0_0
+        // The display class method will itself call into a cached lambda in <>c
+        var data = new[] { captured, captured + 1 };
+        var doubled = data.Select(x => x * 2).ToArray();
+
+        Console.WriteLine(string.Join(",", doubled));
+    }
+}
+```
+- The closure class `<>c__DisplayClass0_0` is generated to hold `captured`.
+- Its generated method will invoke the cached delegate from `<>c`.
