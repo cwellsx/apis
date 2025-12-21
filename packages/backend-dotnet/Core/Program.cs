@@ -82,7 +82,7 @@ namespace Core
 
         static void WriteJsonToFiles(All all)
         {
-            File.WriteAllText("Core.json", all.Assemblies.ToJson(true));
+            File.WriteAllText("All.json", all.ToJson(true));
             File.WriteAllText("FoundCalls.json", all.AssemblyMethods.ToJson(true));
 
             File.WriteAllText("All2.json", all.ToJson(false));

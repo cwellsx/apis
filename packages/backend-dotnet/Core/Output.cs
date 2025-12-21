@@ -130,5 +130,12 @@ namespace Core.Output.Public
     // a shorter version of MethodDetails
     public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals);
 
-    public record All(Dictionary<string, AssemblyInfo> Assemblies, List<string> Exceptions, string Version, string[] Exes, Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods);
+    public record All(
+        Dictionary<string, AssemblyInfo> Assemblies,
+        List<string> Exceptions,
+        string Version,
+        string[] Exes,
+        Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods,
+        Dictionary<string, Dictionary<int, int>> CompilerMethods
+        );
 }

@@ -26,6 +26,7 @@ namespace Core
 
             var assemblies = new Dictionary<string, AssemblyInfo>();
             var exceptions = new List<string>();
+            var compilerMethods = new Dictionary<string, Dictionary<int, int>>();
 
             using (var metaDataLoadContext = new MetadataLoadContext(pathAssemblyResolver))
             {
@@ -46,6 +47,7 @@ namespace Core
                         assemblies.Add(assemblyName, assemblyInfo);
 
                         assemblyPaths.ValidateTypes(path, assemblyInfo.Types);
+                        compilerMethods.Add(assemblyName, assemblyPaths.GetCompilerMethods(path));
                     }
                     catch (BadImageFormatException)
                     {
@@ -57,9 +59,9 @@ namespace Core
                     }
                 }
             }
-            var assemblyMethodCalls = assemblyPaths.GetAssemblyMethods();
+            var assemblyMethods = assemblyPaths.GetAssemblyMethods();
 
-            return new All(assemblies, exceptions, version, assemblyPaths.ExeFileNames, assemblyMethodCalls);
+            return new All(assemblies, exceptions, version, assemblyPaths.ExeFileNames, assemblyMethods, compilerMethods);
         }
 
         internal static string GetDateModified(string directory)

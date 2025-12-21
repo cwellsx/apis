@@ -33,7 +33,7 @@ namespace Core.Cecil
             Logger.Log($"Types: {typeInfos.Length}");
         }
 
-        internal static void ToCompilerMethods(AssemblyData assemblyData)
+        internal static Dictionary<int, int> ToCompilerMethods(AssemblyData assemblyData)
         {
             // compiler types which are referenced via Newobj in methods
             var resolvedTypes = assemblyData.MethodData
@@ -202,6 +202,51 @@ namespace Core.Cecil
             {
                 throw new Exception();
             }
+
+            var result = new Dictionary<int, int>();
+
+            void AddResult(MethodDefinition compilerMethodDefinition, MethodData ownerMethodData)
+            {
+                if (!compilerMethodDefinition.DeclaringType.IsCompilerGenerated())
+                {
+                    throw new Exception();
+                }
+                if (ownerMethodData.DeclaringType.IsCompilerGenerated())
+                {
+                    throw new Exception();
+                }
+                result.Add(compilerMethodDefinition.MetadataToken.ToInt32(), ownerMethodData.MetadataToken.ToInt32());
+            }
+
+            var added = new HashSet<MetadataToken>();
+
+            foreach (var typeDefinition in resolvedTypes.Select(pair => pair.typeDefinition))
+            {
+                // the same class can be called from more than one method, e.g. from a user method and from a compiler-generated method
+                if (!added.Add(typeDefinition.MetadataToken))
+                {
+                    continue;
+                }
+                var owner = GetTypeOwner(typeDefinition);
+                foreach (var methodDefinition in typeDefinition.Methods.Where(methodDefinition => !methodDefinition.IsConstructor()))
+                {
+                    AddResult(methodDefinition, owner);
+                }
+            }
+
+            foreach (var (ownerMethodData, compilerMethodDefinition) in resolvedMethods)
+            {
+                var owner = GetMethodOwner(ownerMethodData);
+                AddResult(compilerMethodDefinition, owner);
+            }
+
+            return result;
+
+            //foreach (var method in resolvedTypes.SelectMany(pair => pair.typeDefinition.Methods).Where(methodDefinition => !methodDefinition.isConstructor())
+            //{
+            //    var ownerMethodData = GetTypeOwner(method.DeclaringType);
+            //    result.Add(method.MetadataToken.ToInt32(), ownerMethodData.MetadataToken.ToInt32());
+            //}
         }
 
         // this is the only compiler-generated type that isn't wholly-owned by a single user methods
@@ -211,7 +256,12 @@ namespace Core.Cecil
         internal static bool IsLambdaCache(this TypeReference typeReference) => LambdaCachePattern.IsMatch(typeReference.Name);
 
         internal static bool IsCompilerGenerated(this TypeDefinition typeDefinition) =>
-            typeDefinition.CustomAttributes.Any(ca => ca.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute");
+            // most compiler-generated types have this attribute
+            typeDefinition.CustomAttributes.Any(ca => ca.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute") ||
+            // nested types might be compiler-generated even if the attribute is on the parent type
+            (typeDefinition.DeclaringType != null && IsCompilerGenerated(typeDefinition.DeclaringType)) ||
+            // maybe the IteratorInsideLocalExample example needs this
+            typeDefinition.Name.StartsWith("<");
 
         internal static bool IsSignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
             typeDefinition.IsCompilerGenerated() &&
@@ -220,6 +270,8 @@ namespace Core.Cecil
             // ignore e.g. "Microsoft.CodeAnalysis.EmbeddedAttribute
             typeDefinition.BaseType.FullName != "System.Attribute" &&
             !typeDefinition.FullName.StartsWith("<PrivateImplementationDetails>");
+
+        internal static bool IsConstructor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".ctor" || methodDefinition.Name == ".cctor";
 
         internal static Output.Public.MethodInfo ToMethodInfo(MethodData methodData, IFilter filter)
         {

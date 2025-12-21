@@ -70,6 +70,12 @@ namespace Core
             Logger.Log($"Methods: {assemblyData.MethodData.Length}");
         }
 
+        internal Dictionary<int, int> GetCompilerMethods(string path)
+        {
+            var assemblyData = _foundAssemblies[path];
+            return Transform.ToCompilerMethods(assemblyData);
+        }
+
         internal string[] ExeFileNames => [_assemblyResolver.ExeFileName];
 
         private static bool IsMicrosoftAssemblyName(string assemblyName) =>

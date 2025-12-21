@@ -174,3 +174,21 @@ class DisplayCacheExample
 ```
 - The closure class `<>c__DisplayClass0_0` is generated to hold `captured`.
 - Its generated method will invoke the cached delegate from `<>c`.
+
+---
+
+## Interator state mechine inside local function
+```csharp
+internal class IteratorInsideLocalExample
+{
+    IEnumerable<int> Foo()
+    {
+        IEnumerable<int> Local()
+        {
+            yield return 1;
+        }
+        return Local();
+    }
+}
+```
+- `IteratorInsideLocalExample/<Foo>g__Local|0_0>d` 
