@@ -1,10 +1,9 @@
 import type { Reflected } from "../../contracts-dotnet";
 import { log, uniqueStrings } from "../../utils";
 import { Columns, Tables } from "../types";
-import { getTypeAndMethodNames } from "../utils";
-import { flattenCompilerMethods } from "./compilerMethods";
 import { flattenMethodDictionary } from "./flattenMethodDictionary";
 import { flattenTypeInfo } from "./flattenTypeInfo";
+import { getCompilerMethodColumns } from "./getCompilerMethodColumns";
 import { getMethodTypeId, GetTypeId } from "./getMethodTypeId";
 
 /*
@@ -81,13 +80,14 @@ export const save = (reflected: Reflected, table: Tables): void => {
     allLocalsTypeColumns.push(...localsTypeColumns);
   }
 
-  const compilerMethodColumns = flattenCompilerMethods(
-    reflected,
-    allCallColumns,
-    allLocalsTypeColumns,
-    allCompilerTypes,
-    allCompilerMethods,
-    getTypeAndMethodNames(table)
-  );
+  const compilerMethodColumns = getCompilerMethodColumns(reflected.compilerMethods, getTypeId);
+  // const compilerMethodColumns = flattenCompilerMethods(
+  //   reflected,
+  //   allCallColumns,
+  //   allLocalsTypeColumns,
+  //   allCompilerTypes,
+  //   allCompilerMethods,
+  //   getTypeAndMethodNames(table)
+  // );
   table.compilerMethod.insertMany(compilerMethodColumns);
 };

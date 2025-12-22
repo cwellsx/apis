@@ -112,6 +112,17 @@ Try to fix this with a unit-test which tries a resolve a TypeReference to System
 
 </details>
 
+<details><summary>isCompilerMethod</summary>
+
+Remove:
+
+- `*.ts` code which sets `isCompilerMethod` and `isCompilerType`
+- code which toggles the display of compiler-generated types and methods
+- `info` and error from `Columns.CompilerMethodColumns`
+- `compilerMethods.ts`
+
+</details>
+
 <details><summary>More unit-testing</summary>
 
 I've begun to write unit-tests -- see backend-test -- but they're barely started and far from complete.
