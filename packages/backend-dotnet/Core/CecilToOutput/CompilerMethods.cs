@@ -1,39 +1,14 @@
-﻿using Mono.Cecil;
-using Mono.Cecil.Cil;
+﻿using Core.Cecil;
+using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 
-namespace Core.Cecil
+namespace Core.CecilToOutput
 {
-    internal static class Transform
+    internal static class CompilerMethods
     {
-        internal interface IFilter
-        {
-            bool IsMicrosoftAssemblyName(string assemblyName);
-            bool IsMicrosoftAssemblyPath(string assemblyName);
-        }
-
-        internal static void ValidateTypes(Output.Public.TypeInfo[] typeInfos, TypeDefinition[] typeDefinitions)
-        {
-            if (typeInfos.Length != typeDefinitions.Length)
-            {
-                throw new Exception($"Type count mismatch: {typeInfos.Length} != {typeDefinitions.Length}");
-            }
-
-            var typeInfoIds = typeInfos.Select(typeInfo => typeInfo.TypeId.MetadataToken).ToHashSet();
-            var typeDefinitionIds = typeDefinitions.Select(typeDefinition => typeDefinition.MetadataToken.ToInt32()).ToHashSet();
-
-            if (!typeInfoIds.SetEquals(typeDefinitionIds))
-            {
-                throw new Exception("Type metadata token mismatch");
-            }
-
-            Logger.Log($"Types: {typeInfos.Length}");
-        }
-
-        internal static Dictionary<int, int> ToCompilerMethods(AssemblyData assemblyData)
+        internal static Dictionary<int, int> Transform(AssemblyData assemblyData)
         {
             // compiler types which are referenced via Newobj in methods
             var resolvedTypes = assemblyData.MethodData
@@ -45,7 +20,7 @@ namespace Core.Cecil
 
             // assert that resolvedTypes includes all compiler-generated types except the <>c class
             var resolvedTypeIds = new HashSet<MetadataToken>(resolvedTypes.Select(t => t.typeDefinition.MetadataToken));
-            var allCompilerTypes = assemblyData.TypeDefinitions.Where(IsSignificantCompilerGenerated).ToArray();
+            var allCompilerTypes = assemblyData.TypeDefinitions.Where(Predicates.IsSignificantCompilerGenerated).ToArray();
             if (allCompilerTypes.Any(typeDefinition => !resolvedTypeIds.Contains(typeDefinition.MetadataToken) && !typeDefinition.IsLambdaCache()))
             {
                 throw new Exception("Some compiler-generated types were not resolved");
@@ -61,7 +36,7 @@ namespace Core.Cecil
 
             // assert that resolvedMethods includes all compiler-generated methods of the <>c class
             var allCompilerMethodIds = allCompilerTypes
-                .Where(IsLambdaCache)
+                .Where(Predicates.IsLambdaCache)
                 .SelectMany(typeDefinition => typeDefinition.Methods)
                 .Where(methodDefinition => !methodDefinition.IsConstructor)
                 .Select(methodDefinition => methodDefinition.MetadataToken)
@@ -253,126 +228,6 @@ namespace Core.Cecil
             }
 
             return result;
-
-            //foreach (var method in resolvedTypes.SelectMany(pair => pair.typeDefinition.Methods).Where(methodDefinition => !methodDefinition.isConstructor())
-            //{
-            //    var ownerMethodData = GetTypeOwner(method.DeclaringType);
-            //    result.Add(method.MetadataToken.ToInt32(), ownerMethodData.MetadataToken.ToInt32());
-            //}
-        }
-
-        // this is the only compiler-generated type that isn't wholly-owned by a single user methods
-        // instead each of its methods is owned by various user methods
-        //internal static bool IsLambdaCache(this TypeDefinition typeDefinition) => typeDefinition.Name == "<>c";
-        private static readonly Regex LambdaCachePattern = new(@"^<>c(__\d+)?(`\d+)?$", RegexOptions.Compiled);
-        internal static bool IsLambdaCache(this TypeReference typeReference) => LambdaCachePattern.IsMatch(typeReference.Name);
-
-        internal static bool IsCompilerGenerated(this TypeDefinition typeDefinition) =>
-            // most compiler-generated types have this attribute
-            typeDefinition.CustomAttributes.Any(ca => ca.AttributeType.FullName == "System.Runtime.CompilerServices.CompilerGeneratedAttribute") ||
-            // nested types might be compiler-generated even if the attribute is on the parent type
-            (typeDefinition.DeclaringType != null && IsCompilerGenerated(typeDefinition.DeclaringType)) ||
-            // maybe the IteratorInsideLocalExample example needs this
-            typeDefinition.Name.StartsWith("<");
-
-        internal static bool IsSignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
-            typeDefinition.IsCompilerGenerated() &&
-            // maybe some types like Foo/<>O which have no methods and aren't used at runtime
-            typeDefinition.HasMethods &&
-            // ignore e.g. "Microsoft.CodeAnalysis.EmbeddedAttribute
-            typeDefinition.BaseType.FullName != "System.Attribute" &&
-            !typeDefinition.FullName.StartsWith("<PrivateImplementationDetails>");
-
-        internal static bool IsConstructor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".ctor" || methodDefinition.Name == ".cctor";
-
-        internal static Output.Public.MethodInfo ToMethodInfo(MethodData methodData, IFilter filter)
-        {
-            return new Output.Public.MethodInfo(
-                AsText: "foo",
-                Called: ToMethodCall(methodData.Called, filter),
-                Argued: ToMethodCall(methodData.Argued, filter),
-                Locals: ToLocalsType(methodData.Locals.Where(IsSimple), filter)
-                );
-        }
-
-        private static bool IsSimple(VariableReference variableReference) => IsSimple(variableReference.VariableType);
-
-        private static bool IsSimple(TypeReference typeReference) =>
-            !typeReference.IsArray &&
-            !typeReference.IsByReference &&
-            !typeReference.IsPointer &&
-            !typeReference.IsPinned &&
-            !typeReference.IsGenericInstance &&
-            !typeReference.IsGenericParameter &&
-            !typeReference.IsFunctionPointer &&
-            !typeReference.IsPrimitive;
-
-        private static Output.Public.MethodCall[]? ToMethodCall(IEnumerable<MethodReference> methodReferences, IFilter filter)
-        {
-            return methodReferences
-                .Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
-                .Select(ToMethodCall)
-                .Where(methodCall => !filter.IsMicrosoftAssemblyPath(methodCall.AssemblyName))
-                .ToArray();
-        }
-
-        private static Output.Public.LocalsType[]? ToLocalsType(IEnumerable<VariableReference> variableReferences, IFilter filter)
-        {
-            return variableReferences
-                .Where(variableReference => !filter.IsMicrosoftAssemblyName(variableReference.VariableType.Scope.Name)) // don't know the Module yet
-                .Select(ToLocalsType)
-                .Where(localsType => !filter.IsMicrosoftAssemblyPath(localsType.AssemblyName))
-                .Distinct()
-                .ToArray();
-        }
-
-        private static Output.Public.MethodCall ToMethodCall(MethodReference methodReference)
-        {
-            try
-            {
-                var methodDefinition = methodReference.Resolve();
-                return new Output.Public.MethodCall(
-                    AssemblyName: methodDefinition.DeclaringType.Module.Assembly.Name.Name,
-                    MetadataToken: methodDefinition.MetadataToken.ToInt32()
-                    );
-            }
-            catch (Exception)
-            {
-                Logger.Log($"Failed to resolve method {methodReference}");
-                var scope = methodReference.DeclaringType.Scope;
-                return new Output.Public.MethodCall(
-                    AssemblyName: scope.Name,
-                    MetadataToken: null //methodReference.MetadataToken.ToInt32(),                  
-                    );
-            }
-        }
-
-        private static Output.Public.LocalsType ToLocalsType(VariableReference variableReference)
-        {
-            try
-            {
-                var variableDefinition = variableReference.Resolve();
-                // TODO there's so
-                if (0 == (variableDefinition.VariableType.MetadataToken.ToInt32() & 0xFFFFFF))
-                {
-                    var scope = variableReference.VariableType.Scope as AssemblyNameReference;
-                    //var resolvedAssembly = _assemblyResolver.Resolve(scope!);
-                    throw new ArgumentException("nil token");
-                }
-                return new Output.Public.LocalsType(
-                    AssemblyName: variableDefinition.VariableType.Module.Assembly.Name.Name,
-                    MetadataToken: variableDefinition.VariableType.MetadataToken.ToInt32()
-                    );
-            }
-            catch (Exception)
-            {
-                Logger.Log($"Failed to resolve variable {variableReference}");
-                var scope = variableReference.VariableType.Scope;
-                return new Output.Public.LocalsType(
-                    AssemblyName: scope.Name,
-                    MetadataToken: null //methodReference.MetadataToken.ToInt32(),
-                    );
-            }
         }
     }
 }

@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 
 using Core.Cecil;
+
 using Found = Core.Cecil.AssemblyResolver.Found;
 
 namespace Core
 {
     internal class AssemblyPaths
     {
-        private class Filter : Transform.IFilter
+        private class Filter : IFilter
         {
             private readonly AssemblyPaths _assemblyPaths;
             internal Filter(AssemblyPaths assemblyPaths)
@@ -23,7 +24,7 @@ namespace Core
         AssemblyResolver _assemblyResolver;
         SortedDictionary<string, AssemblyData> _foundAssemblies; // key is path
         string[] _paths;
-        Transform.IFilter _filter;
+        IFilter _filter;
 
         internal AssemblyPaths(string directory)
         {
@@ -56,16 +57,14 @@ namespace Core
             assemblyData => assemblyData.Name,
             assemblyData => assemblyData.MethodData.ToDictionary(
                 methodData => methodData.MetadataToken.ToInt32(),
-                methodData => Transform.ToMethodInfo(methodData, _filter)
+                methodData => CecilToOutput.MethodInfo.Transform(methodData, _filter)
                 )
             );
 
         internal void ValidateTypes(string path, Output.Public.TypeInfo[] types)
         {
             var assemblyData = _foundAssemblies[path];
-            Transform.ValidateTypes(types, assemblyData.TypeDefinitions);
-
-            Transform.ToCompilerMethods(assemblyData);
+            Predicates.ValidateTypes(types, assemblyData.TypeDefinitions);
 
             Logger.Log($"Methods: {assemblyData.MethodData.Length}");
         }
@@ -73,7 +72,7 @@ namespace Core
         internal Dictionary<int, int> GetCompilerMethods(string path)
         {
             var assemblyData = _foundAssemblies[path];
-            return Transform.ToCompilerMethods(assemblyData);
+            return CecilToOutput.CompilerMethods.Transform(assemblyData);
         }
 
         internal string[] ExeFileNames => [_assemblyResolver.ExeFileName];
