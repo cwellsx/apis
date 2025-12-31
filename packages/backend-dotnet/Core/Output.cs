@@ -43,16 +43,49 @@ namespace Core.Output.Public
         TypeInfo[] Types
         );
 
-    public record TypeId(
+    public sealed record TypeId(
         string AssemblyName,
         string? Namespace,
         string Name,
-        Values<TypeId>? GenericTypeArguments,
+        Values<TypeId> GenericTypeArguments,
         TypeId? DeclaringType,
         TypeKind? Kind,
         TypeId? ElementType,
         int MetadataToken
-        );
+        )
+    {
+        public string? Namespace { get; set; } = Namespace;
+        public bool Equals(TypeId? rhs)
+        {
+            if (rhs == null)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(this.Namespace) &&
+                !string.IsNullOrEmpty(rhs.Namespace) &&
+                this.Namespace != rhs.Namespace)
+            {
+                return false;
+            }
+
+            if (this.MetadataToken != 0 &&
+                rhs.MetadataToken != 0 &&
+                rhs.MetadataToken != this.MetadataToken)
+            {
+                return false;
+            }
+
+            return this.AssemblyName == rhs.AssemblyName &&
+                    this.Name == rhs.Name &&
+                    this.GenericTypeArguments == rhs.GenericTypeArguments &&
+                    this.DeclaringType == rhs.DeclaringType &&
+                    this.Kind == rhs.Kind &&
+                    this.ElementType == rhs.ElementType
+                    ;
+        }
+        public override int GetHashCode() => Name.GetHashCode();
+  }
 
     public record TypeInfo(
         TypeId TypeId, // not null unless there's an exception
@@ -72,7 +105,10 @@ namespace Core.Output.Public
         TypeId FieldType,
         bool? IsStatic,
         int MetadataToken
-        );
+        )
+    {
+        internal string[]? Attributes { get; set; } = Attributes;
+    }
 
     // can't be static
     // EventHandlerType is nullable but probably shouldn't be?
@@ -90,11 +126,14 @@ namespace Core.Output.Public
         string Name,
         string[]? Attributes,
         Access Access,
-        Parameter[]? Parameters,
+        Values<Parameter> Parameters,
         TypeId PropertyType,
         bool? IsStatic,
         int MetadataToken
-        );
+        )
+    {
+        internal string[]? Attributes { get; set; } = Attributes;
+    }
 
     public record Parameter(
         string? Name,
@@ -104,14 +143,18 @@ namespace Core.Output.Public
     public record MethodMember(
         string Name,
         Access Access,
-        Values<Parameter>? Parameters,
+        Values<Parameter> Parameters,
         bool? IsStatic,
         bool? IsConstructor,
-        Values<TypeId>? GenericArguments,
+        Values<TypeId> GenericArguments,
         TypeId ReturnType,
-        Values<string>? Attributes,
+        Values<string> Attributes,
         int MetadataToken
-        );
+        )
+    {
+        internal Values<string>? Attributes { get; set; } = Attributes;
+        internal bool? IsConstructor { get; set; } = IsConstructor;
+    }
 
     public record Members(
         FieldMember[]? FieldMembers,

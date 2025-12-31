@@ -116,7 +116,7 @@ namespace Core.Output.Public
                     assert(typeInfo.Attributes.Distinct().Count() == typeInfo.Attributes.Length, "Unique attributes");
                 }
 
-                assert(typeId.GenericTypeArguments == null, "Generic arguments");
+                assert(typeId.GenericTypeArguments == new Values<TypeId>(null), "Generic arguments");
                 assert(typeId.AssemblyName != null, "Type assembly name");
                 assert((typeId.ElementType != null) == (typeId.Kind.NameSuffix() != null), "Type element type");
                 if (typeId.ElementType != null)

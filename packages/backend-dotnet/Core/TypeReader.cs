@@ -249,7 +249,7 @@ namespace Core
             bool? isConstructor = memberInfo.IsConstructor ? true : null;
             var returnType = typeof(void);
             var name = isStatic == true ? ".cctor" : ".ctor"; // matches the name returned from Core.IL
-            return new MethodMember(name, access, parameters, isStatic, isConstructor, null, GetTypeId(returnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
+            return new MethodMember(name, access, parameters, isStatic, isConstructor, new TypeId[0], GetTypeId(returnType), GetAttributes(memberInfo), memberInfo.MetadataToken);
         }
         MethodMember GetMethod(MethodInfo memberInfo)
         {

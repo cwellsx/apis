@@ -1,82 +1,74 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-using TypeKind = Core.Output.Public.TypeKind;
-
 namespace Core.Extensions
 {
-    internal static class StringExtensions
-    {
-        internal static string NotNull(this string? name)
-        {
-            if (name == null)
-            {
-                throw new System.ArgumentNullException("Unexpected null Name");
-            }
-            return name;
-        }
-        
-        internal static string? ToStringOrNull(this string? s) => !string.IsNullOrEmpty(s) ? s : null;
-
-        internal static string? NameSuffix(this TypeKind? kind)
-        {
-            switch (kind)
-            {
-                default:
-                case null:
-                case TypeKind.GenericParameter: return null;
-                case TypeKind.Array: return "[]";
-                case TypeKind.Pointer: return "*";
-                case TypeKind.ByReference: return "&";
-            }
-        }
-    }
-
     // this JSON serializes like an array but implements value-equality semantics
-    public class Values<T> : IEnumerable<T> where T : notnull
+    public class Values<T> where T : notnull
     {
-        internal T[] Array { get; }
+        internal T[]? Array { get; }
 
-        public static implicit operator Values<T>?(T[]? array) => array == null ? null : new Values<T>(array);
+        public static implicit operator Values<T>(T[]? array) => new Values<T>(array);
 
-        internal Values(T[] array)
+        internal Values(T[]? array)
         {
+            if (array?.Length == 0)
+            {
+                array = null;
+            }
             Array = array;
         }
 
-        internal int Length => Array.Length;
-        internal T this[int i] => Array[i];
-
-        public override bool Equals(object? obj)
-        {
-            Values<T>? rhs = obj as Values<T>;
-            if (rhs == null)
-            {
-                return false;
-            }
-            return Array.SequenceEqual(rhs.Array);
-        }
+        internal int Length => Array?.Length ?? 0;
+        internal T this[int i] => Array![i];
 
         public override int GetHashCode()
         {
             // https://stackoverflow.com/questions/263400/what-is-the-best-algorithm-for-overriding-gethashcode
             int hash = 17;
-            foreach (T item in Array)
+            if (Array != null)
             {
-                hash = hash * 23 + item.GetHashCode();
+                foreach (T item in Array)
+                {
+                    hash = hash * 23 + item.GetHashCode();
+                }
             }
             return hash;
         }
 
-        public override string ToString() => $"[{string.Join(", ", Array)}]";
+        public override string ToString() => Array != null ? $"[{string.Join(", ", Array)}]" : "null";
 
-        public IEnumerator<T> GetEnumerator() => ((IEnumerable<T>)Array).GetEnumerator();
-        IEnumerator IEnumerable.GetEnumerator() => Array.GetEnumerator();
+        public bool Equals(Values<T>? other)
+        {
+            if (other is null)
+                return false;
+
+            if (this.Array == null || other.Array == null)
+                return this.Array == null && other.Array == null;
+
+            return Array.SequenceEqual(other.Array);
+        }
+
+        public override bool Equals(object? obj) => Equals(obj as Values<T>);
+
+        public static bool operator ==(Values<T>? left, Values<T>? right)
+        {
+            if (ReferenceEquals(left, right)) return true;
+            if (!(left is null))
+            {
+                return left.Equals(right);
+            }
+            if (!(right is null))
+            {
+                return right.Equals(left);
+            }
+            return true; // both null
+        }
+
+        public static bool operator !=(Values<T>? left, Values<T>? right) => !(left == right);
     }
 
     // implementation of this class is copied from
@@ -112,6 +104,11 @@ namespace Core.Extensions
 
         public override void Write(Utf8JsonWriter writer, Values<T> value, JsonSerializerOptions options)
         {
+            if (value.Array == null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
             writer.WriteStartArray();
             foreach (T item in value.Array)
             {
