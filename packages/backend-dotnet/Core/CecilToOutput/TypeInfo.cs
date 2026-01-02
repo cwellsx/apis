@@ -150,11 +150,13 @@ namespace Core.CecilToOutput
             {
                 flag |= Flag.Nested;
             }
-            if (typeDefinition.IsGenericParameter)
+            //if (typeDefinition.IsGenericParameter)
+            if (typeDefinition.HasGenericParameters)
             {
                 flag |= Flag.Generic;
             }
-            if (typeDefinition.IsGenericInstance)
+            //if (typeDefinition.IsGenericInstance)
+            if (typeDefinition.HasGenericParameters)
             {
                 flag |= Flag.GenericDefinition;
             }

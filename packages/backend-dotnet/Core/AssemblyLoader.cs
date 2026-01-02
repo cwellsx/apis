@@ -41,12 +41,13 @@ namespace Core
                         // load the type and member metadata
                         var assemblyInfo = new AssemblyInfo(
                             ReferencedAssemblies: assembly.GetReferencedAssemblies().Select(GetAssemblyName).ToArray(),
-                            Types: assembly.GetTypes().Select(type => TypeReader.GetTypeInfo(type)).ToArray()
+                            //Types: assembly.GetTypes().Select(type => TypeReader.GetTypeInfo(type)).ToArray()
+                            Types: assemblyPaths.GetTypes(path)
                             );
                         Invariants.Verify(assemblyInfo.Types);
                         assemblies.Add(assemblyName, assemblyInfo);
 
-                        assemblyPaths.ValidateTypes(path, assemblyInfo.Types);
+                        //assemblyPaths.ValidateTypes(path, assemblyInfo.Types);
                         compilerMethods.Add(assemblyName, assemblyPaths.GetCompilerMethods(path));
                     }
                     catch (BadImageFormatException)

@@ -61,13 +61,19 @@ namespace Core
                 )
             );
 
-        internal void ValidateTypes(string path, Output.Public.TypeInfo[] types)
+        internal Output.Public.TypeInfo[] GetTypes(string path)
         {
-            var assemblyData = _foundAssemblies[path];
-            Predicates.ValidateTypes(types, assemblyData.TypeDefinitions);
-
-            Logger.Log($"Methods: {assemblyData.MethodData.Length}");
+             var assemblyData = _foundAssemblies[path];
+            return assemblyData.TypeDefinitions.Select(CecilToOutput.TypeInfo.Transform).ToArray();
         }
+
+        //internal void ValidateTypes(string path, Output.Public.TypeInfo[] types)
+        //{
+        //    var assemblyData = _foundAssemblies[path];
+        //    Predicates.ValidateTypes(types, assemblyData.TypeDefinitions);
+
+        //    Logger.Log($"Methods: {assemblyData.MethodData.Length}");
+        //}
 
         internal Dictionary<int, int> GetCompilerMethods(string path)
         {
