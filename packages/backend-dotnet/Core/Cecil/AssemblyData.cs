@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Core.Cecil
 {
-    internal class AssemblyData
+    internal sealed class AssemblyData : IDisposable
     {
         internal AssemblyDefinition AssemblyDefinition { get; }
         private Lazy<TypeData[]> _types { get; }
@@ -27,5 +27,10 @@ namespace Core.Cecil
         internal TypeDefinition[] TypeDefinitions => _types.Value.SelectMany(typeData => typeData.TypeDefinitions).ToArray();
 
         internal MethodData[] MethodData => _types.Value.SelectMany(typeData => typeData.Methods).ToArray();
+
+        public void Dispose()
+        {
+            AssemblyDefinition.Dispose();
+        }
     }
 }

@@ -13,8 +13,7 @@ namespace Core.Loader
     // their implementation does not depend on Mono.Cecil APIs
     internal static class AssemblyResolverPaths
     {
-        internal static IEnumerable<string> GetExesFromDirectory(string directory) => Directory.GetFiles(directory).Where(IsExe);
-        internal static IEnumerable<string> GetDllsFromDirectory(string directory) => Directory.GetFiles(directory).Where(IsDll);
+        private static IEnumerable<string> GetExesFromDirectory(string directory) => Directory.GetFiles(directory).Where(IsExe);
 
         internal static string FindSingleExe(string directory)
         {
@@ -184,6 +183,5 @@ namespace Core.Loader
 
         private static bool IsExtension(string path, string extension) => Path.GetExtension(path).Equals(extension, StringComparison.OrdinalIgnoreCase);
         private static bool IsExe(string path) => IsExtension(path, ".exe");
-        private static bool IsDll(string path) => IsExtension(path, ".dll");
     }
 }

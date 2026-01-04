@@ -7,14 +7,11 @@ namespace Core.Cecil
 {
     internal class TypeData
     {
-        //private TypeDefinition TypeDefinition { get; }
         internal TypeDefinition[] TypeDefinitions { get; }
         internal MethodData[] Methods { get; }
 
         internal TypeData(TypeDefinition typeDefinition)
         {
-            //TypeDefinition = typeDefinition;
-
             TypeDefinitions = GetAllTypeDefinitions(typeDefinition).ToArray();
             Methods = TypeDefinitions
                 .SelectMany(typeDefinition => typeDefinition.Methods)

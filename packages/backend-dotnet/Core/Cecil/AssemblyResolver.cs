@@ -10,7 +10,7 @@ namespace Core.Cecil
 {
     // purpose of this class is to implement a resolver
     // it uses LoadedAssemblies as a cache to ensure that that each assembly is only loaded once
-    internal sealed class AssemblyResolver : IAssemblyResolver, IReader<AssemblyData>
+    internal sealed class AssemblyResolver : IAssemblyResolver, IReader<AssemblyData>, IDisposable
     {
         internal LoadedAssemblies LoadedAssemblies { get; init; }
 
@@ -80,6 +80,9 @@ namespace Core.Cecil
 
         #endregion
 
-        public void Dispose() { }
+        public void Dispose()
+        {
+            LoadedAssemblies.Dispose();
+        }
     }
 }

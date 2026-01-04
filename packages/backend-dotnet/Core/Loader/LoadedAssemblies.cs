@@ -1,14 +1,14 @@
-﻿using System;
+﻿using Core.Cecil;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.Versioning;
 
 using static Core.Loader.AssemblyResolverPaths;
 
 namespace Core.Loader
 {
-    internal class LoadedAssemblies<T>
+    internal sealed class LoadedAssemblies<T> : IDisposable where T : IDisposable
     {
         private class FilterImpl : IFilter
         {
@@ -33,7 +33,7 @@ namespace Core.Loader
 
         private readonly string _exePath;
 
-        internal class Found
+        private class Found : IDisposable
         {
             internal readonly T AssemblyData;
             internal readonly bool IsMicrosoft;
@@ -45,26 +45,14 @@ namespace Core.Loader
                 IsMicrosoft = isMicrosoft;
                 Path = path;
             }
+
+            public void Dispose()
+            {
+                AssemblyData.Dispose();
+            }
         }
 
         private readonly IReadOnlyDictionary<string, Found?> _cache;
-
-        //internal static string FindSingleExe(string directory)
-        //{
-        //    var exePaths = GetExesFromDirectory(directory)
-        //        .Where(path => IsExeManagedAssembly(path))
-        //        .ToArray();
-        //    if (exePaths.Length != 1)
-        //    {
-        //        throw new ArgumentException($"Expect to find one managed EXE in directory, actually found {exePaths.Length}");
-        //    }
-        //    return exePaths[0];
-        //}
-
-        //// call this before construction to avoid throwing on native executables
-        //internal static bool IsExeManagedAssembly(string exePath) =>
-        //    IsManagedAssembly(exePath) ||
-        //    IsManagedAssembly(Path.ChangeExtension(exePath, "dll"));
 
         internal LoadedAssemblies(string exePath, IReader<T> reader)
         {
@@ -85,18 +73,10 @@ namespace Core.Loader
             var appDirectory = GetDirectoryName(assemblyPath);
             var microsoftDirectory = GetMicrosoftDirectory(assemblyPath, frameworkName);
 
-            // if we don't pass this in ReaderParameters then Mono.Cecil will substitute in its own DefaultAssemblyResolver
-            // which we don't want e.g. because it uses SearchTrustedPlatformAssemblies
-            // however assert that this.Resolve won't be called until after LoadAllAssemblies returns
-            //var readerParameters = new ReaderParameters { AssemblyResolver = this };
-            //Func<string, AssemblyDefinition> readAssemblyFromPath = (string fileName) => AssemblyDefinition.ReadAssembly(fileName, readerParameters);
-
             _cache = LoadAllAssemblies(assemblyPath, reader, appDirectory, microsoftDirectory);
         }
 
         internal IFilter Filter => new FilterImpl(this);
-
-        internal IReadOnlyDictionary<string, Found?> Dictionary => _cache;
 
         internal string ExeFileName => Path.GetFileNameWithoutExtension(_exePath);
 
@@ -127,48 +107,8 @@ namespace Core.Loader
             return false;
         }
 
-        //public AssemblyDefinition Resolve(AssemblyNameReference name)
-        //{
-        //    if (_cache == null)
-        //    {
-        //        throw new Exception("Unexpectted Resolve while initializing");
-        //    }
-        //    _cache.TryGetValue(name.Name, out var found);
-        //    if (found == null)
-        //    {
-        //        throw new AssemblyResolutionException(name);
-        //    }
-        //    return found.AssemblyDefinition;
-        //}
-
-        //public AssemblyDefinition Resolve(AssemblyNameReference name, ReaderParameters parameters)
-        //{
-        //    throw new NotImplementedException();
-        //}
-
-        public void Dispose() { }
-
-        //private static FrameworkName GetTargetFramework(string assemblyPath)
-        //{
-        //    // this uses AssemblyDefinition.ReadAssembly because it's complicated to read custom attribute constructor values using PEReader alone.
-        //    // this is the only redundent call to AssemblyDefinition.ReadAssembly i.e. it's called once only for ever other assembly
-        //    using var assembly = AssemblyDefinition.ReadAssembly(assemblyPath);
-        //    if (assembly == null)
-        //    {
-        //        throw new Exception($"Failed to read assembly from {assemblyPath}");
-        //    }
-        //    var attribute = assembly.CustomAttributes.FirstOrDefault(attr => attr.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute");
-        //    if (attribute != null && attribute.ConstructorArguments.Count > 0)
-        //    {
-        //        var frameworkName = (string)attribute.ConstructorArguments[0].Value!;
-        //        return new FrameworkName(frameworkName);
-        //    }
-        //    throw new ArgumentException($"TargetFrameworkAttribute not found in assembly {assemblyPath}");
-        //}
-
         private static IReadOnlyDictionary<string, Found?> LoadAllAssemblies(
             string assemblyPath,
-            //Func<string, AssemblyDefinition> readAssemblyFromPath,
             IReader<T> reader,
             string appDirectory,
             string? microsoftDirectory
@@ -220,6 +160,14 @@ namespace Core.Loader
             }
 
             return results;
+        }
+
+        public void Dispose()
+        {
+            foreach (var found in _cache.Values)
+            {
+                found?.Dispose();
+            }
         }
     }
 }
