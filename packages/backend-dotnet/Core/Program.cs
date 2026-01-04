@@ -65,14 +65,14 @@ namespace Core
 
             connection.On<string, string>("when", directory =>
             {
-                var response = AssemblyLoader.GetDateModified(directory);
+                var response = App.GetDateModified(directory);
                 Logger.Log(response);
                 return response;
             });
 
             connection.On<string, string>("json", directory =>
             {
-                var all = AssemblyLoader.LoadAssemblies(directory);
+                var all = App.LoadAssemblies(directory);
                 Logger.Log("returning json");
                 return all.ToJson(false);
             });
@@ -93,7 +93,7 @@ namespace Core
         {
             MethodCall[] GetAllErrors(string directory)
             {
-                var all = AssemblyLoader.LoadAssemblies(directory);
+                var all = App.LoadAssemblies(directory);
                 var allMethodDetails = all.AssemblyMethods.Values.SelectMany(dictionary => dictionary.Values);
                 var allCallDetails = allMethodDetails.SelectMany(methodDetails => methodDetails.Called ?? Array.Empty<MethodCall>());
                 return allCallDetails.Where(callDetails => callDetails.MetadataToken == null).ToArray();
@@ -130,7 +130,7 @@ namespace Core
         {
             // e.g. C:\Dev\apis\src.dotnet\Core\bin\Release\net8.0
             var exeDirectory = AppContext.BaseDirectory;
-            var all = AssemblyLoader.LoadAssemblies(directory);
+            var all = App.LoadAssemblies(directory);
             WriteJsonToFiles(all);
         }
     }

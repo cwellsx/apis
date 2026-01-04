@@ -1,5 +1,4 @@
-﻿using Core.Extensions;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,7 +7,7 @@ using System.Reflection.PortableExecutable;
 using System.Runtime.Versioning;
 using System.Text.Json;
 
-namespace Core
+namespace Core.Loader
 {
     // these methods are only used by AssemblyResolver
     // their implementation does not depend on Mono.Cecil APIs
@@ -16,6 +15,23 @@ namespace Core
     {
         internal static IEnumerable<string> GetExesFromDirectory(string directory) => Directory.GetFiles(directory).Where(IsExe);
         internal static IEnumerable<string> GetDllsFromDirectory(string directory) => Directory.GetFiles(directory).Where(IsDll);
+
+        internal static string FindSingleExe(string directory)
+        {
+            var exePaths = GetExesFromDirectory(directory)
+                .Where(path => IsExeManagedAssembly(path))
+                .ToArray();
+            if (exePaths.Length != 1)
+            {
+                throw new ArgumentException($"Expect to find one managed EXE in directory, actually found {exePaths.Length}");
+            }
+            return exePaths[0];
+        }
+
+        // call this before construction to avoid throwing on native executables
+        internal static bool IsExeManagedAssembly(string exePath) =>
+            IsManagedAssembly(exePath) ||
+            IsManagedAssembly(Path.ChangeExtension(exePath, "dll"));
 
         internal static bool IsManagedAssembly(string path)
         {
@@ -44,16 +60,16 @@ namespace Core
                     throw new Exception($"Unexpected Exe {exe}");
                 }
             }
-            if ((exe.IsFramework() && lib.IsFramework()) || (exe.IsCore() && lib.IsCore()))
+            if (exe.IsFramework() && lib.IsFramework() || exe.IsCore() && lib.IsCore())
             {
                 return lib.Version <= exe.Version;
             }
             return false;
         }
 
-        internal static string? GetMicrosoftDirectory(string assemblyPath, FrameworkName frameworkName) => (frameworkName.IsCore())
+        internal static string? GetMicrosoftDirectory(string assemblyPath, FrameworkName frameworkName) => frameworkName.IsCore()
                 ? GetCoreDirectory(assemblyPath, frameworkName)
-                : (frameworkName.IsFramework())
+                : frameworkName.IsFramework()
                 ? GetFrameworkDirectory(frameworkName.Version)
                 : throw new Exception($"Unexpected FrameworkName {frameworkName.FullName}");
 
@@ -102,7 +118,7 @@ namespace Core
         private static string GetCoreDirectory(FrameworkName frameworkName)
         {
             var dotnetSharedRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "dotnet", "shared");
-            var subdirectory = (frameworkName.Identifier == ".NETCoreApp") ? "Microsoft.NetCore.App" : frameworkName.Identifier;
+            var subdirectory = frameworkName.Identifier == ".NETCoreApp" ? "Microsoft.NetCore.App" : frameworkName.Identifier;
             var frameworkRoot = Path.Combine(dotnetSharedRoot, subdirectory);
 
             if (!Directory.Exists(frameworkRoot))

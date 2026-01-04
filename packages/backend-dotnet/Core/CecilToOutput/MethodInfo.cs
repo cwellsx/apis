@@ -76,12 +76,13 @@ namespace Core.CecilToOutput
             try
             {
                 var variableDefinition = variableReference.Resolve();
-                // TODO there's so
                 if (0 == (variableDefinition.VariableType.MetadataToken.ToInt32() & 0xFFFFFF))
                 {
                     var scope = variableReference.VariableType.Scope as AssemblyNameReference;
-                    //var resolvedAssembly = _assemblyResolver.Resolve(scope!);
-                    throw new ArgumentException("nil token");
+                    return new Output.Public.LocalsType(
+                        AssemblyName: scope!.Name,
+                        MetadataToken: null
+                        );
                 }
                 return new Output.Public.LocalsType(
                     AssemblyName: variableDefinition.VariableType.Module.Assembly.Name.Name,
@@ -94,7 +95,7 @@ namespace Core.CecilToOutput
                 var scope = variableReference.VariableType.Scope;
                 return new Output.Public.LocalsType(
                     AssemblyName: scope.Name,
-                    MetadataToken: null //methodReference.MetadataToken.ToInt32(),
+                    MetadataToken: null
                     );
             }
         }
