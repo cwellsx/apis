@@ -1,6 +1,4 @@
-﻿global using LoadedAssemblies = Core.Loader.LoadedAssemblies<Core.Cecil.AssemblyData>;
-
-using System;
+﻿using System;
 using System.Linq;
 using System.Runtime.Versioning;
 using Core.Loader;
@@ -10,7 +8,7 @@ namespace Core.Cecil
 {
     // purpose of this class is to implement a resolver
     // it uses LoadedAssemblies as a cache to ensure that that each assembly is only loaded once
-    internal sealed class AssemblyResolver : IAssemblyResolver, IReader<AssemblyData>, IDisposable
+    internal sealed class AssemblyResolver : IAssemblyResolver, ILoader<AssemblyData>, IReader<AssemblyData>, IDisposable
     {
         internal LoadedAssemblies LoadedAssemblies { get; init; }
 
@@ -18,7 +16,7 @@ namespace Core.Cecil
         {
             // beware don't call Resolve until after LoadedAssemblies is fully constructed
             // but it's safe to call the IReader methods
-            LoadedAssemblies = new LoadedAssemblies(exePath, this);
+            LoadedAssemblies = new LoadedAssemblies(exePath, this, this);
         }
 
         #region IAssemblyResolver
@@ -65,17 +63,28 @@ namespace Core.Cecil
             throw new ArgumentException($"TargetFrameworkAttribute not found in assembly {assemblyPath}");
         }
 
-        public AssemblyData ReadAssemblyFromPath(string fileName)
-        {
-            var readerParameters = new ReaderParameters { AssemblyResolver = this };
-            var assemblyDefinition = AssemblyDefinition.ReadAssembly(fileName, readerParameters);
-            var assemblyData = new AssemblyData(assemblyDefinition);
-            return assemblyData;
-        }
-
         public AssemblyReference[] GetAssemblyReferences(AssemblyData assemblyData)
         {
             return assemblyData.AssemblyReferences;
+        }
+
+        #endregion
+
+        #region ILoader<AssemblyData>
+
+        public AssemblyData ReadAssemblyFromPath(string fileName, byte[] bytes)
+        {
+            var readerParameters = new ReaderParameters {
+                AssemblyResolver = this,
+                InMemory = true,
+                ReadingMode = ReadingMode.Deferred,
+                ReadWrite = false,
+                ReadSymbols = false
+            };
+            using var stream = new System.IO.MemoryStream(bytes, writable: false);
+            var assemblyDefinition = AssemblyDefinition.ReadAssembly(fileName, readerParameters);
+            var assemblyData = new AssemblyData(assemblyDefinition);
+            return assemblyData;
         }
 
         #endregion

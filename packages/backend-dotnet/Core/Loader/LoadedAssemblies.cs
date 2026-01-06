@@ -1,5 +1,4 @@
-﻿using Core.Cecil;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,12 +7,14 @@ using static Core.Loader.AssemblyResolverPaths;
 
 namespace Core.Loader
 {
-    internal sealed class LoadedAssemblies<T> : IDisposable where T : IDisposable
+    internal sealed class LoadedAssemblies<T, U> : ILoaded<U>, IDisposable
+        where T : IDisposable
+        where U : IDisposable
     {
         private class FilterImpl : IFilter
         {
-            private readonly LoadedAssemblies<T> _self;
-            internal FilterImpl(LoadedAssemblies<T> self)
+            private readonly LoadedAssemblies<T, U> _self;
+            internal FilterImpl(LoadedAssemblies<T, U> self)
             {
                 _self = self;
             }
@@ -22,10 +23,7 @@ namespace Core.Loader
                 assemblyName == "mscorlib" ||
                 assemblyName == "netstandard" ||
                 assemblyName.StartsWith("System.") ||
-                assemblyName.StartsWith("Microsoft.") ||
-                // also don't try to reflect ICSharpCode.Decompiler
-                // bcause it throws an "assembly already loaded" on System.Reflection.Metadata
-                assemblyName == "ICSharpCode.Decompiler";
+                assemblyName.StartsWith("Microsoft.");
 
 
             public bool IsMicrosoftAssemblyPath(string assemblyName) => _self._cache[assemblyName]!.IsMicrosoft;
@@ -38,32 +36,32 @@ namespace Core.Loader
             internal readonly T AssemblyData;
             internal readonly bool IsMicrosoft;
             internal readonly string Path;
+            internal readonly byte[] Bytes;
+            internal U? PEFile;
 
-            internal Found(T assemblyData, bool isMicrosoft, string path)
+            internal Found(T assemblyData, bool isMicrosoft, string path, byte[] bytes)
             {
                 AssemblyData = assemblyData;
                 IsMicrosoft = isMicrosoft;
                 Path = path;
+                Bytes = bytes;
             }
 
             public void Dispose()
             {
                 AssemblyData.Dispose();
+                PEFile?.Dispose();
             }
         }
 
         private readonly IReadOnlyDictionary<string, Found?> _cache;
 
-        internal LoadedAssemblies(string exePath, IReader<T> reader)
+        internal LoadedAssemblies(string exeOrDllPath, ILoader<T> loader, IReader<T> reader)
         {
-            _exePath = exePath;
+            _exePath = exeOrDllPath;
 
             // the EXE assembly path
-            var assemblyPath = IsManagedAssembly(_exePath) ? _exePath : Path.ChangeExtension(exePath, "dll");
-            if (!IsExeManagedAssembly(assemblyPath))
-            {
-                throw new Exception($"EXE is not a managed assembly");
-            }
+            var assemblyPath = exeOrDllPath;
 
             var frameworkName = reader.GetTargetFramework(assemblyPath);
 
@@ -73,7 +71,7 @@ namespace Core.Loader
             var appDirectory = GetDirectoryName(assemblyPath);
             var microsoftDirectory = GetMicrosoftDirectory(assemblyPath, frameworkName);
 
-            _cache = LoadAllAssemblies(assemblyPath, reader, appDirectory, microsoftDirectory);
+            _cache = LoadAllAssemblies(assemblyPath, loader, reader, appDirectory, microsoftDirectory);
         }
 
         internal IFilter Filter => new FilterImpl(this);
@@ -107,8 +105,24 @@ namespace Core.Loader
             return false;
         }
 
+        public bool TryGetAssembly(AssemblyReference assemblyReference, ILoader<U> loader, out U? assemblyData)
+        {
+            if (!_cache.TryGetValue(assemblyReference.Name, out var found) && found != null)
+            {
+                assemblyData = default;
+                return false;
+            }
+            if (found!.PEFile == null)
+            {
+                found.PEFile = loader.ReadAssemblyFromPath(found.Path, found.Bytes);
+            }
+            assemblyData = found.PEFile;
+            return true;
+        }
+
         private static IReadOnlyDictionary<string, Found?> LoadAllAssemblies(
             string assemblyPath,
+            ILoader<T> loader,
             IReader<T> reader,
             string appDirectory,
             string? microsoftDirectory
@@ -119,8 +133,9 @@ namespace Core.Loader
 
             void LoadFromPath(string path, bool isMicrosoft)
             {
-                var assemblyData = reader.ReadAssemblyFromPath(path);
-                results.Add(Path.GetFileNameWithoutExtension(path), new Found(assemblyData, isMicrosoft, path));
+                var bytes = File.ReadAllBytes(path);
+                var assemblyData = loader.ReadAssemblyFromPath(path, bytes);
+                results.Add(Path.GetFileNameWithoutExtension(path), new Found(assemblyData, isMicrosoft, path, bytes));
                 stack.Push(assemblyData);
             }
 

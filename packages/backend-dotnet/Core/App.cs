@@ -1,6 +1,4 @@
-﻿using Core.Cecil;
-using Core.Loader;
-using Core.Output.Public;
+﻿using Core.Output.Public;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,9 +17,11 @@ namespace Core
                 throw new Exception($"Input directory not found: `{directory}`");
             }
 
-            var exePath = AssemblyResolverPaths.FindSingleExe(directory);
-            using var assemblyResolver = new AssemblyResolver(exePath);
-            var loadedAssemblies = assemblyResolver.LoadedAssemblies;
+            var exePath = ExePaths.FindSingleExe(directory);
+            using var cecilAssemblyResolver = new Cecil.AssemblyResolver(exePath);
+            var loadedAssemblies = cecilAssemblyResolver.LoadedAssemblies;
+
+            var ilspyAssemblyResolver = new Decompiler.AssemblyResolver(loadedAssemblies);
 
             var missingAssemblyNames = loadedAssemblies.MissingAssemblyNames;
             if (missingAssemblyNames.Length > 0)
@@ -52,9 +52,15 @@ namespace Core
 
                     compilerMethods.Add(assemblyName, CecilToOutput.CompilerMethods.Transform(assemblyData));
 
+                    var decompiler = new Decompiler.AssemblyDecompiler(assemblyName, ilspyAssemblyResolver);
+
                     assemblyMethods.Add(assemblyName, assemblyData.MethodData.ToDictionary(
                         methodData => methodData.MetadataToken.ToInt32(),
-                        methodData => CecilToOutput.MethodInfo.Transform(methodData, filter)
+                        methodData =>
+                        {
+                            var asText = decompiler.DecompileMethod(methodData.MetadataToken.ToInt32());
+                            return CecilToOutput.MethodInfo.Transform(methodData, asText, filter);
+                        }
                         ));
                 }
                 catch (Exception e)

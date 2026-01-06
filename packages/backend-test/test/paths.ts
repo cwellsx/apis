@@ -5,7 +5,7 @@ import { pathExists, pathMkdir } from "./file";
 
 const dirRoot = path.resolve(path.join(__dirname, "..", "..", "..", "..", "apis.testdata"));
 pathMkdir(dirRoot);
-const dirTestRoot = path.join(dirRoot, "Core.2026-01-01");
+const dirTestRoot = path.join(dirRoot, "Core.2026-01-04");
 pathMkdir(dirTestRoot);
 
 export const dirSutBin = path.join(dirTestRoot, "sut.bin");

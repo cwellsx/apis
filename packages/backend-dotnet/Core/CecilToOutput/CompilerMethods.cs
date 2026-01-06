@@ -141,50 +141,6 @@ namespace Core.CecilToOutput
                 return GetTypeOwner(typeDefinition);
             }
 
-            var show = false;
-            if (show)
-            {
-                var showTypes = resolvedTypes.Select(pair => (pair.typeDefinition, pair.methodData, owner: GetTypeOwner(pair.typeDefinition)))
-                .Select(tuple => (
-                tuple.typeDefinition.FullName,
-                tuple.methodData.Name,
-                tuple.methodData.DeclaringType.FullName,
-                tuple.owner?.Name,
-                tuple.owner?.DeclaringType.FullName
-                )).ToArray();
-
-                Array.Sort(showTypes);
-
-                Logger.Log($@"Compiler-generated types and their owners:
-{string.Join("\r\n", showTypes)}");
-
-                var showMethods = resolvedMethods.Select(pair => (
-                pair.compilerMethodDefinition,
-                pair.ownerMethodData,
-                owner: GetMethodOwner(pair.ownerMethodData)
-                )).Select(tuple => (
-                tuple.compilerMethodDefinition.DeclaringType.FullName,
-                tuple.compilerMethodDefinition.Name,
-                tuple.ownerMethodData.DeclaringType.FullName,
-                tuple.ownerMethodData.Name,
-                tuple.owner == tuple.ownerMethodData ? "-" : tuple.owner?.DeclaringType.FullName,
-                tuple.owner == tuple.ownerMethodData ? "-" : tuple.owner?.Name
-                )).ToArray();
-
-                Array.Sort(showMethods);
-
-                Logger.Log($@"Compiler-generated methods and their owners:
-{string.Join("\r\n", showMethods)}");
-            }
-
-            foreach (var methodData in assemblyData.MethodData)
-            {
-                if (methodData.Name.StartsWith("<") && !methodData.DeclaringType.IsCompilerGenerated())
-                {
-                    Logger.Log(methodData.FullName);
-                }
-            }
-
             if (tryNeeded)
             {
                 throw new Exception();

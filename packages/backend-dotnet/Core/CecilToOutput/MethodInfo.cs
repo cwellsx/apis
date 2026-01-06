@@ -9,15 +9,17 @@ namespace Core.CecilToOutput
 {
     internal static class MethodInfo
     {
-        internal static Output.Public.MethodInfo Transform(MethodData methodData, IFilter filter)
+        internal static Output.Public.MethodInfo Transform(MethodData methodData, string asText, IFilter filter)
         {
             return new Output.Public.MethodInfo(
-                AsText: "foo",
+                AsText: asText,
                 Called: ToMethodCall(methodData.Called, filter),
                 Argued: ToMethodCall(methodData.Argued, filter),
                 Locals: ToLocalsType(methodData.Locals.Where(IsSimple), filter)
                 );
         }
+
+        static T[]? OrNull<T>(this T[] array) where T : class => array.Length == 0 ? null : array;
 
         private static bool IsSimple(VariableReference variableReference) => IsSimple(variableReference.VariableType);
 
@@ -37,7 +39,8 @@ namespace Core.CecilToOutput
                 .Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
                 .Select(ToMethodCall)
                 .Where(methodCall => !filter.IsMicrosoftAssemblyPath(methodCall.AssemblyName))
-                .ToArray();
+                .ToArray()
+                .OrNull();
         }
 
         private static Output.Public.LocalsType[]? ToLocalsType(IEnumerable<VariableReference> variableReferences, IFilter filter)
@@ -47,7 +50,8 @@ namespace Core.CecilToOutput
                 .Select(ToLocalsType)
                 .Where(localsType => !filter.IsMicrosoftAssemblyPath(localsType.AssemblyName))
                 .Distinct()
-                .ToArray();
+                .ToArray()
+                .OrNull();
         }
 
         private static Output.Public.MethodCall ToMethodCall(MethodReference methodReference)

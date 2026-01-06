@@ -13,32 +13,6 @@ namespace Core.Loader
     // their implementation does not depend on Mono.Cecil APIs
     internal static class AssemblyResolverPaths
     {
-        private static IEnumerable<string> GetExesFromDirectory(string directory) => Directory.GetFiles(directory).Where(IsExe);
-
-        internal static string FindSingleExe(string directory)
-        {
-            var exePaths = GetExesFromDirectory(directory)
-                .Where(path => IsExeManagedAssembly(path))
-                .ToArray();
-            if (exePaths.Length != 1)
-            {
-                throw new ArgumentException($"Expect to find one managed EXE in directory, actually found {exePaths.Length}");
-            }
-            return exePaths[0];
-        }
-
-        // call this before construction to avoid throwing on native executables
-        internal static bool IsExeManagedAssembly(string exePath) =>
-            IsManagedAssembly(exePath) ||
-            IsManagedAssembly(Path.ChangeExtension(exePath, "dll"));
-
-        internal static bool IsManagedAssembly(string path)
-        {
-            using var stream = File.OpenRead(path);
-            using var pe = new PEReader(stream);
-            return pe.HasMetadata;
-        }
-
         internal static string GetDirectoryName(string path) => Path.GetDirectoryName(path).NotNull();
 
         internal static bool IsCompatibleWith(FrameworkName exe, FrameworkName lib)
@@ -180,8 +154,5 @@ namespace Core.Loader
         private static bool IsFramework(this FrameworkName frameworkName) => frameworkName.Identifier.Equals(".NETFramework", StringComparison.OrdinalIgnoreCase);
         private static bool IsCore(this FrameworkName frameworkName) => frameworkName.Identifier.Equals(".NETCoreApp", StringComparison.OrdinalIgnoreCase);
         private static bool IsStandard(this FrameworkName frameworkName) => frameworkName.Identifier.Equals(".NETStandard", StringComparison.OrdinalIgnoreCase);
-
-        private static bool IsExtension(string path, string extension) => Path.GetExtension(path).Equals(extension, StringComparison.OrdinalIgnoreCase);
-        private static bool IsExe(string path) => IsExtension(path, ".exe");
     }
 }

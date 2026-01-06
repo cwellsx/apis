@@ -251,10 +251,6 @@ namespace Core.CecilToOutput
 
         static MethodMember GetMethod(MethodDefinition memberInfo)
         {
-            if (memberInfo.Name == "Deconstruct")
-            {
-                Logger.Log("Deconstruct");
-            }
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var parameters = GetParameters(memberInfo.Parameters);
             bool? isStatic = memberInfo.IsStatic ? true : null;
