@@ -150,23 +150,45 @@ So, by default, all top-level nodes in a view will be neither hidden nor expande
 
 </details>
 
-<details><summary>Simplify .NET reader</summary>
+<details><summary>Simplify TypeId</summary>
 
-Simplify:
+The current TypeId is a structure of properties:
 
-- Finding calls in IL
-- Mapping token to types and methods
-- Resolving generic specializations
-- Associating compiler-generated types with methods
-- Use ILSpy only for source code
+```cs
+public sealed record TypeId(
+    string AssemblyName,
+    string? Namespace,
+    string Name,
+    Values<TypeId> GenericTypeArguments,
+    TypeId? DeclaringType,
+    TypeKind? Kind,
+    TypeId? ElementType,
+    int MetadataToken
+    )
+```
 
-How:
+It may be more sensible to replace these with a single string FullName value:
 
-- Use Reflection.Metadata API
+```
+{AssemblyName}::{Namespace}.{DeclaringType+}.{Name}[{Args}]{ElementSuffix}
+```
 
-Prerequisite:
+Where:
 
-- Start by generating tables without token IDs i.e. with IDs replaced with strong names
+- Generic arguments use recursive canonical strings
+- Generic parameters use !0, !1, !!0, !!1
+- Element types use [], \*, &
+
+In ECMA‑335, generic parameters are represented as:
+
+- Type parameters: !0, !1, !2, …
+- Method parameters: !!0, !!1, !!2, …
+
+If ElementType is not null:
+
+- Array: ElementTypeFullName + "[]"
+- Pointer: ElementTypeFullName + "\*"
+- ByRef: ElementTypeFullName + "&"
 
 </details>
 
@@ -244,59 +266,6 @@ those screenshots would be "contracts" and unit-tests could regression-test sele
 
 Instead perhaps I should begin to write at least unit-tests now --
 when, what, and why are still TBD.
-
-</details>
-
-<details><summary>Compiler-emitted types</summary>
-
-Newer version the C# language -- e.g. the `aync` keyword --
-are implemented by emitting compiler-generated types.
-
-- These aren't seen by the source code author
-- They shouldn't be displayed by the API viewer
-- Instead their code belongs with a user method
-
-There's already code to implement this:
-
-- See `compilerMethods.ts` and `compilerTransform.ts`
-- This used to work completely
-- It's incomplete now i.e. I see unhandled compiler-generated types in the UI's output
-- Perhaps this was caused by using a newer version of the compiler/language in the .NET software
-
-</details>
-
-<details><summary>Investigate Roslyn</summary>
-
-A different and more normal way to parse .NET is with the Roslyn APIs to parse source code.
-
-Investigate this to see whether it might be significantly better than -- or an alternative to -- the current solution which parses compiled assemblies.
-
-- This is e.g. `Microsoft.CodeAnalysis.CSharp` reference
-- It produces a `CSharpSyntaxTree` which might be what I need
-- Create a `CSharpCompilation` and call `GetSemanticModel` to get type information
-
-If this is desirable but not necessary then consider moving it to do "Later".
-
-</details>
-
-<details><summary>Tighter ILSpy integration</summary>
-
-The `src.dotnet/Core` project currently use two dependencies in their implementation:
-
-- `System.Reflection.MetadataLoadContext`
-- `ICSharpCode.Decompiler`
-
-Perhaps this should be changed:
-
-- Why use both?
-  - I must use ICSharpCode for the method calls
-  - Should I use it entirely instead of also using System.Reflection?
-
-- Can it solve the problem of Compiler-emitted types
-  - It's able to disassemble code without displaying compiler-emitted types
-  - If so I could remove my code from the backend, which is complicated and fragile
-
-  I don't know yet -- the ICSharpCode implementation is large and not necessarily public.
 
 </details>
 

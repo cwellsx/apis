@@ -1,4 +1,6 @@
 import { app, BrowserWindow, dialog } from "electron";
+import fs from "fs";
+import path from "path";
 import { createApplication, createBrowserWindow, getErrorString } from "./main";
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -13,9 +15,10 @@ const createWindow = (): void => {
   // Create the browser window.
   const mainWindow = createBrowserWindow();
 
-  createApplication(mainWindow, app.getPath("userData")).catch((error) =>
-    dialog.showErrorBox("Error", getErrorString(error))
-  );
+  const appDataPath = path.join(app.getPath("userData"), "app_dbs");
+  fs.mkdirSync(appDataPath, { recursive: true });
+
+  createApplication(mainWindow, appDataPath).catch((error) => dialog.showErrorBox("Error", getErrorString(error)));
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools();

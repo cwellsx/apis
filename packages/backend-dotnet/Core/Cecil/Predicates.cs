@@ -268,6 +268,6 @@ namespace Core.Cecil
             !typeInfo.TypeId.Name.StartsWith("<PrivateImplementationDetails>") &&
             (!typeInfo.TypeId.DeclaringType?.Name.StartsWith("<PrivateImplementationDetails>") ?? false);
 
-        internal static bool IsConstructor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".ctor" || methodDefinition.Name == ".cctor";
+        internal static bool IsConstructor(this MethodReference methodReference) => methodReference.Name == ".ctor" || methodReference.Name == ".cctor";
     }
 }

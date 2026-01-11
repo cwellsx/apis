@@ -27,7 +27,7 @@ namespace Core.CecilToOutput
             }
 
             var resolvedMethods = assemblyData.MethodData
-                // we want to know whose calling which methods of the <>c class
+                // we want to know who's calling which methods of the <>c class
                 // it's not really a static class, it's a singleton with a static constructor
                 .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
                 .SelectMany(ownerMethodData => ownerMethodData.CompilerGeneratedMethods
@@ -171,7 +171,7 @@ namespace Core.CecilToOutput
                     continue;
                 }
                 var owner = GetTypeOwner(typeDefinition);
-                foreach (var methodDefinition in typeDefinition.Methods.Where(methodDefinition => !methodDefinition.IsConstructor()))
+                foreach (var methodDefinition in typeDefinition.Methods)
                 {
                     AddResult(methodDefinition, owner);
                 }

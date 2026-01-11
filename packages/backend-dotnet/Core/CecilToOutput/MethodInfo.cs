@@ -37,6 +37,7 @@ namespace Core.CecilToOutput
         {
             return methodReferences
                 .Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
+                .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
                 .Select(ToMethodCall)
                 .Where(methodCall => !filter.IsMicrosoftAssemblyPath(methodCall.AssemblyName))
                 .ToArray()
