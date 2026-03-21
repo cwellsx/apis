@@ -1,10 +1,9 @@
-import type { ApiViewOptions, CompilerViewOptions, MethodViewOptions, ReferenceViewOptions } from "../../contracts-ui";
+import type { ApiViewOptions, MethodViewOptions, ReferenceViewOptions } from "../../contracts-ui";
 
 type DefaultViewOptions = {
   referenceViewOptions: ReferenceViewOptions;
   methodViewOptions: MethodViewOptions;
   apiViewOptions: ApiViewOptions;
-  compilerViewOptions: CompilerViewOptions;
 };
 
 export const defaultViewOptions: DefaultViewOptions = {
@@ -23,6 +22,4 @@ export const defaultViewOptions: DefaultViewOptions = {
     showInternalCalls: false,
     showClustered: { clusterBy: "assembly", nestedClusters: true },
   },
-
-  compilerViewOptions: { viewType: "compiler", errorsOnly: true },
 };

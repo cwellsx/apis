@@ -10,6 +10,5 @@ export type AppOptions = {
 
   showCompilerGeneratedTypes?: boolean;
   showCompilerGeneratedMethod?: boolean;
-  showCompilerGeneratedMenuItem?: boolean;
 };
 export const defaultAppOptions: AppOptions = { zoomPercent: 100, fontSize: 12 };

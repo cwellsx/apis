@@ -1,5 +1,5 @@
 import type { AppConfig, DisplayApi } from "../contracts-app";
-import type { AppOptions, GraphFilter, MethodViewOptions, ViewCompiler, ViewDetails, ViewType } from "../contracts-ui";
+import type { AppOptions, GraphFilter, MethodViewOptions, ViewDetails, ViewType } from "../contracts-ui";
 import { nodeIdToText } from "../contracts-ui";
 import { getClusterNames, isMethodNodeId, MethodNodeId, textToAnyNodeId, toNodeId } from "../nodeIds";
 import { SqlLoaded } from "../sql";
@@ -79,19 +79,6 @@ export const showReflected = (
     display.showView(viewGraph);
   };
 
-  const showCompiler = (): Promise<void> => {
-    const { compilerMethods, localsTypes } = sqlLoaded.readCompiler();
-    const compilerViewOptions = sqlLoaded.viewState.compilerViewOptions;
-    const viewCompiler: ViewCompiler = {
-      compilerMethods,
-      localsTypes,
-      viewType: "compiler",
-      textViewOptions: compilerViewOptions,
-    };
-    display.showView(viewCompiler);
-    return Promise.resolve();
-  };
-
   const kvps: KVP[] = [
     [
       "references",
@@ -103,11 +90,6 @@ export const showReflected = (
       //
       { menuLabel: "APIs", title: `APIs — ${dataSourcePath}`, showViewType: showApis },
     ],
-    [
-      "compiler",
-      //
-      { menuLabel: "Compiler-generated", title: `Compiler — ${dataSourcePath}`, showViewType: showCompiler },
-    ],
   ];
 
   const isEnabled = (viewType: ViewType): boolean => {
@@ -115,8 +97,7 @@ export const showReflected = (
       case "references":
       case "apis":
         return true;
-      case "compiler":
-        return !!appConfig.appOptions.showCompilerGeneratedMenuItem;
+
       default:
         throw new Error(`Unknown viewType: ${viewType}`);
     }

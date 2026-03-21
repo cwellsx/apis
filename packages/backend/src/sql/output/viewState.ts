@@ -1,11 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import {
-  ApiViewOptions,
-  CompilerViewOptions,
-  MethodViewOptions,
-  ReferenceViewOptions,
-  ViewType,
-} from "../../contracts-ui";
+import { ApiViewOptions, MethodViewOptions, ReferenceViewOptions, ViewType } from "../../contracts-ui";
 import { jsonParse } from "../../utils";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
@@ -27,7 +21,6 @@ export class ViewState {
 
     if (isSchemaChanged) {
       this.viewType = "references";
-      this.compilerViewOptions = defaultViewOptions.compilerViewOptions;
     }
   }
 
@@ -79,16 +72,6 @@ export class ViewState {
   get apiViewOptions(): ApiViewOptions {
     const value = this._cache.getValue("apiViewOptions");
     return value ? { ...defaultViewOptions.apiViewOptions, ...jsonParse(value) } : defaultViewOptions.apiViewOptions;
-  }
-
-  set compilerViewOptions(viewOptions: CompilerViewOptions) {
-    this._cache.setValue("compilerViewOptions", JSON.stringify(viewOptions));
-  }
-  get compilerViewOptions(): CompilerViewOptions {
-    const value = this._cache.getValue("compilerViewOptions");
-    return value
-      ? { ...defaultViewOptions.compilerViewOptions, ...jsonParse(value) }
-      : defaultViewOptions.compilerViewOptions;
   }
 
   set exes(names: string[]) {

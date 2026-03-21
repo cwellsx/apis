@@ -1,6 +1,6 @@
 import type { Members, MethodInfo } from "../../contracts-dotnet";
 import type { ClusterBy, NodeId } from "../../contracts-ui";
-import type { CompilerMethodError, SavedTypeInfo } from "./info";
+import type { SavedTypeInfo } from "./info";
 import { CommonGraphViewType } from "./viewType";
 
 /*
@@ -72,8 +72,8 @@ export type CompilerMethodColumns = {
   ownerType: number;
   ownerNamespace: string | null;
   ownerMethod: number;
-  info: string | null;
-  error: CompilerMethodError;
+  // info: string | null;
+  // error: CompilerMethodError;
 };
 
 // this table too helps to implement compilerMethods module
@@ -84,3 +84,5 @@ export type LocalsTypeColumns = {
   ownerMethod: number;
   compilerType: number;
 };
+
+export type FilterColumns = { assemblyName: string; metadataToken: number; leafHidden: 0 | 1; groupExpanded: 0 | 1 };

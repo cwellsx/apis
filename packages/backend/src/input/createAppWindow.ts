@@ -36,9 +36,6 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
       case "apis":
         sqlLoaded.viewState.apiViewOptions = viewOptions;
         break;
-      case "compiler":
-        sqlLoaded.viewState.compilerViewOptions = viewOptions;
-        break;
     }
   };
 

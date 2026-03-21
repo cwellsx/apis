@@ -19,8 +19,6 @@ export const getCompilerMethodColumns = (
         ownerType: ownerTypeId.typeId,
         ownerNamespace: ownerTypeId.namespace,
         ownerMethod,
-        info: null,
-        error: null,
       });
     });
   });

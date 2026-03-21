@@ -69,7 +69,7 @@ export class SqlLoaded {
   table: Tables;
 
   constructor(db: SqlDatabase) {
-    const loadedSchemaVersionExpected = "2024-09-07";
+    const loadedSchemaVersionExpected = "2026-01-11";
 
     this.viewState = new ViewState(db);
 
@@ -329,31 +329,6 @@ export class SqlLoaded {
         ])
       );
 
-      const getCallstackFromDirection = (column: Columns.CompilerMethodColumns, direction: Direction): MethodName[] => {
-        const { assemblyName, compilerType, compilerMethod } = column;
-        const typeAndMethodIds = this.readCallstackNext(assemblyName, compilerMethod, direction);
-        const isSameType = (typeAndMethodId: TypeAndMethodId): boolean =>
-          assemblyName === typeAndMethodId.assemblyName && compilerType === typeAndMethodId.typeId;
-        return typeAndMethodIds
-          .filter((found) => !isSameType(found))
-          .map((typeAndMethodId) => ({
-            assemblyName,
-            declaringType: getTypeName(typeNodeId(assemblyName, typeAndMethodId.typeId)),
-            methodMember: getMethodName(methodNodeId(assemblyName, typeAndMethodId.methodId)),
-          }));
-      };
-
-      const getCallstackFromError = (column: Columns.CompilerMethodColumns): MethodName[] | undefined => {
-        switch (column.error) {
-          case null:
-            return undefined;
-          case "No Callers":
-            return getCallstackFromDirection(column, "downwards");
-          case "Multiple Callers":
-            return getCallstackFromDirection(column, "upwards");
-        }
-      };
-
       const compilerMethods: CompilerMethod[] = compilerMethodColumns.map((column) => {
         // don't use getMapped which asserts a match is found
         // because there may be other compiler-generated types at assembly scope i.e. not nested inside a method
@@ -369,9 +344,6 @@ export class SqlLoaded {
           ownerType: column.ownerType ? getTypeName(typeNodeId(column.assemblyName, column.ownerType)) : "",
           ownerMethod: column.ownerMethod ? getMethodName(methodNodeId(column.assemblyName, column.ownerMethod)) : "",
           declaringType: declaringType ? getTypeName(declaringType) : "(no declaringType)",
-          callstack: getCallstackFromError(column),
-          error: column.error ?? undefined,
-          info: column.info ?? undefined,
         };
         return result;
       });

@@ -15,6 +15,7 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
     db.dropTable("declaringType");
     db.dropTable("compilerMethod");
     db.dropTable("localsType");
+    db.dropTable("filter");
   }
 
   const assembly = db.newSqlTable<Columns.AssemblyColumns>("assembly", "assemblyName", () => false, {
@@ -80,7 +81,7 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
   const compilerMethod = db.newSqlTable<Columns.CompilerMethodColumns>(
     "compilerMethod",
     ["assemblyName", "compilerMethod"],
-    (key) => key === "error" || key === "info" || key === "ownerNamespace",
+    (key) => key === "ownerNamespace",
     {
       assemblyName: "references",
       compilerType: 0,
@@ -88,8 +89,6 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
       ownerType: 0,
       ownerNamespace: "foo",
       ownerMethod: 0,
-      info: "baz",
-      error: "No Callers",
     }
   );
   const localsType = db.newSqlTable<Columns.LocalsTypeColumns>(
@@ -98,9 +97,16 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
     (/* key */) => false,
     { assemblyName: "references", ownerType: 0, ownerNamespace: "foo", ownerMethod: 0, compilerType: 0 }
   );
+  const filter = db.newSqlTable<Columns.FilterColumns>(
+    "filter",
+    ["assemblyName", "metadataToken"],
+    (/* key */) => false,
+    { assemblyName: "references", metadataToken: 0, leafHidden: 0, groupExpanded: 0 }
+  );
 
   const deleteAll = (): void => {
     // delete in reverse order
+    filter.deleteAll();
     localsType.deleteAll();
     compilerMethod.deleteAll();
     declaringType.deleteAll();
@@ -127,5 +133,6 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
     declaringType,
     compilerMethod,
     localsType,
+    filter,
   };
 };

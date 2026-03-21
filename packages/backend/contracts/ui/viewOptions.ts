@@ -9,14 +9,7 @@ export type AnyGraphViewOptions = Partial<
     Omit<CustomViewOptions, "viewType">
 >;
 
-export type CompilerViewOptions = {
-  viewType: "compiler";
-  errorsOnly: boolean;
-};
-
-type TextViewOptions = CompilerViewOptions;
-
-export type ViewOptions = GraphViewOptions | TextViewOptions;
+export type ViewOptions = GraphViewOptions;
 
 export const isCustomViewOptions = (viewOptions: ViewOptions): viewOptions is CustomViewOptions =>
   viewOptions.viewType === "custom";

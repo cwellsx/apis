@@ -14,5 +14,6 @@ export type Tables = {
   declaringType: SqlTable<Columns.DeclaringTypeColumns>;
   compilerMethod: SqlTable<Columns.CompilerMethodColumns>;
   localsType: SqlTable<Columns.LocalsTypeColumns>;
+  filter: SqlTable<Columns.FilterColumns>;
   deleteAll: () => void;
 };

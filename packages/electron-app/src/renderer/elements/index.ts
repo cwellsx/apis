@@ -4,5 +4,4 @@
 
 export { Message } from "./Message";
 export { MethodTitle } from "./MethodTitle";
-export { TextCompiler } from "./TextCompiler";
 export { TextCustomErrors } from "./TextCustomErrors";

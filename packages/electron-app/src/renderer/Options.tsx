@@ -1,11 +1,4 @@
-import type {
-  AnyGraphViewOptions,
-  AppOptions,
-  CompilerViewOptions,
-  GraphViewOptions,
-  OptionsType,
-  ReferenceViewOptions,
-} from "backend-ui";
+import type { AnyGraphViewOptions, AppOptions, GraphViewOptions, OptionsType, ReferenceViewOptions } from "backend-ui";
 import { isCustomManual, isCustomViewOptions } from "backend-ui";
 import * as React from "react";
 import "./Options.css";
@@ -37,11 +30,7 @@ const isReferenceViewOptions = (viewOptions: GraphViewOptions): viewOptions is R
 
 // agnostic/reusable React element groups
 
-type CheckboxProps = {
-  label: string;
-  checked: boolean;
-  onChange: (newValue: boolean) => void;
-};
+type CheckboxProps = { label: string; checked: boolean; onChange: (newValue: boolean) => void };
 const Checkbox: React.FunctionComponent<CheckboxProps> = (props: CheckboxProps) => {
   const { label, checked, onChange } = props;
 
@@ -335,10 +324,7 @@ const detailsClosed = (
   return { isClosed, onToggle };
 };
 
-type ChooseAppOptionsProps = {
-  appOptions: AppOptions;
-  onAppOptions: (appOptions: AppOptions) => void;
-};
+type ChooseAppOptionsProps = { appOptions: AppOptions; onAppOptions: (appOptions: AppOptions) => void };
 export const ChooseAppOptions: React.FunctionComponent<ChooseAppOptionsProps> = (props: ChooseAppOptionsProps) => {
   const { appOptions, onAppOptions } = props;
   const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, "app");
@@ -364,45 +350,6 @@ export const ChooseAppOptions: React.FunctionComponent<ChooseAppOptionsProps> = 
           onChange={(newValue) => {
             appOptions.showCompilerGeneratedMethod = newValue;
             onAppOptions(appOptions);
-          }}
-        />
-        <br />
-        <Checkbox
-          label="View menu"
-          checked={!!appOptions.showCompilerGeneratedMenuItem}
-          onChange={(newValue) => {
-            appOptions.showCompilerGeneratedMenuItem = newValue;
-            onAppOptions(appOptions);
-          }}
-        />
-      </p>
-    </details>
-  );
-};
-
-type ChooseCompilerViewOptionsProps = {
-  viewOptions: CompilerViewOptions;
-  onViewOptions: (viewOptions: CompilerViewOptions) => void;
-  appOptions: AppOptions;
-  onAppOptions: (appOptions: AppOptions) => void;
-};
-
-export const ChooseCompilerViewOptions: React.FunctionComponent<ChooseCompilerViewOptionsProps> = (
-  props: ChooseCompilerViewOptionsProps
-) => {
-  const { viewOptions, onViewOptions, appOptions, onAppOptions } = props;
-  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, viewOptions.viewType);
-
-  return (
-    <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
-      <summary>Options</summary>
-      <p>
-        <Checkbox
-          label="Show errors only"
-          checked={viewOptions.errorsOnly}
-          onChange={(newValue: boolean) => {
-            viewOptions.errorsOnly = newValue;
-            onViewOptions(viewOptions);
           }}
         />
       </p>

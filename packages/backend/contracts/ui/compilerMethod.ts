@@ -1,5 +1,3 @@
-import { MethodName } from "./methodName";
-
 // same as CompilerMethodColumns except with string instead of number
 export type CompilerMethod = {
   assemblyName: string;
@@ -12,14 +10,6 @@ export type CompilerMethod = {
   ownerType: string;
   ownerMethod: string;
   declaringType: string; // used to assert that declaringType matches ownerType
-  callstack: MethodName[] | undefined;
-  error: string | undefined;
-  info: string | undefined;
 };
 
-export type LocalsType = {
-  assemblyName: string;
-  ownerType: string;
-  ownerMethod: string;
-  compilerType: string;
-};
+export type LocalsType = { assemblyName: string; ownerType: string; ownerMethod: string; compilerType: string };

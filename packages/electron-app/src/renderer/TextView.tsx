@@ -1,7 +1,6 @@
 import { AppOptions, OnUserEvent, ViewOptions, ViewText } from "backend-ui";
 import * as React from "react";
-import { Message, TextCompiler, TextCustomErrors } from "./elements";
-import { ChooseCompilerViewOptions } from "./Options";
+import { Message, TextCustomErrors } from "./elements";
 import "./TextView.scss";
 import { OnWheel } from "./useZoomPercent";
 
@@ -33,17 +32,5 @@ const getText = (props: TextViewProps): JSX.Element => {
       return <Message message={view.greeting} />;
     case "customErrors":
       return <TextCustomErrors view={view} />;
-    case "compiler": {
-      const { onViewOptions, appOptions, onAppOptions } = props;
-      const chooseOptions = (
-        <ChooseCompilerViewOptions
-          viewOptions={view.textViewOptions}
-          onViewOptions={onViewOptions}
-          appOptions={appOptions}
-          onAppOptions={onAppOptions}
-        />
-      );
-      return <TextCompiler view={view} chooseOptions={chooseOptions} />;
-    }
   }
 };

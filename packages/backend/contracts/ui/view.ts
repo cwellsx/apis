@@ -1,9 +1,8 @@
-import { CompilerMethod, LocalsType } from "./compilerMethod";
 import { CustomError } from "./customError";
 import { GraphFilter } from "./graphFilter";
 import { Image } from "./image";
 import { Node } from "./node";
-import { CompilerViewOptions, GraphViewOptions } from "./viewOptions";
+import { GraphViewOptions } from "./viewOptions";
 
 /*
   The types of View are distinguished by the viewType which is an element of every viewOptions
@@ -28,14 +27,7 @@ export type ViewGreeting = { viewType: "greeting"; greeting: string };
 
 export type ViewCustomErrors = { viewType: "customErrors"; customErrors?: CustomError[] };
 
-export type ViewCompiler = {
-  viewType: "compiler";
-  compilerMethods: CompilerMethod[];
-  localsTypes: LocalsType[];
-  textViewOptions: CompilerViewOptions;
-};
-
-export type ViewText = ViewGreeting | ViewCustomErrors | ViewCompiler;
+export type ViewText = ViewGreeting | ViewCustomErrors;
 
 export type View = ViewGraph | ViewText;
 

@@ -81,13 +81,6 @@ export const save = (reflected: Reflected, table: Tables): void => {
   }
 
   const compilerMethodColumns = getCompilerMethodColumns(reflected.compilerMethods, getTypeId);
-  // const compilerMethodColumns = flattenCompilerMethods(
-  //   reflected,
-  //   allCallColumns,
-  //   allLocalsTypeColumns,
-  //   allCompilerTypes,
-  //   allCompilerMethods,
-  //   getTypeAndMethodNames(table)
-  // );
+
   table.compilerMethod.insertMany(compilerMethodColumns);
 };
