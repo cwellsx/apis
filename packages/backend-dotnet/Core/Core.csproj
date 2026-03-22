@@ -22,10 +22,6 @@
     <PackageReference Include="ICSharpCode.Decompiler" Version="8.2.0.7535" />
   </ItemGroup>
 
-  <!--<ItemGroup>
-    <ProjectReference Include="..\Core.IL\Core.IL.csproj" />
-  </ItemGroup>-->
-
   <ItemGroup>
 	  <ProjectReference Include="..\Core.Test\Core.Test.csproj" />
   </ItemGroup>
