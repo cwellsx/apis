@@ -25,7 +25,12 @@ namespace Core.CecilToOutput
                 Interfaces: GetInterfaces(typeDefinition),
                 GenericTypeParameters: GetGenericParameters(typeDefinition.GenericParameters),
                 Access: GetAccess(typeDefinition),
-                Members: GetMembers(typeDefinition)
+                // Members
+                FieldMembers: typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
+                EventMembers: typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
+                PropertyMembers: typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
+                TypeMembers: typeDefinition.NestedTypes.Select(typeDefinition => GetTypeId(typeDefinition)).ToArrayOrNull(),
+                MethodMembers: typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
                 );
         }
 
@@ -58,44 +63,6 @@ namespace Core.CecilToOutput
             return (!typeDefinition.IsNested)
                 ? (typeDefinition.IsPublic ? Access.Public : Access.Internal)
                 : (typeDefinition.IsNestedPublic ? Access.Public : typeDefinition.IsNestedPrivate ? Access.Private : Access.Internal);
-        }
-
-        static Members GetMembers(TypeDefinition typeDefinition)
-        {
-            var fieldMembers = new List<FieldMember>();
-            var eventMembers = new List<EventMember>();
-            var propertyMembers = new List<PropertyMember>();
-            var typeMembers = new List<TypeId>();
-            var methodMembers = new List<MethodMember>();
-
-            foreach (var memberInfo in typeDefinition.Fields)
-            {
-                fieldMembers.Add(GetField(memberInfo));
-            }
-            foreach (var memberInfo in typeDefinition.Events)
-            {
-                eventMembers.Add(GetEvent(memberInfo));
-            }
-            foreach (var memberInfo in typeDefinition.Properties)
-            {
-                propertyMembers.Add(GetProperty(memberInfo));
-            }
-            foreach (var memberInfo in typeDefinition.NestedTypes)
-            {
-                typeMembers.Add(GetTypeId(memberInfo));
-            }
-            foreach (var memberInfo in typeDefinition.Methods)
-            {
-                methodMembers.Add(GetMethod(memberInfo));
-            }
-
-            return new Members(
-                fieldMembers.Count != 0 ? fieldMembers.ToArray() : null,
-                eventMembers.Count != 0 ? eventMembers.ToArray() : null,
-                propertyMembers.Count != 0 ? propertyMembers.ToArray() : null,
-                typeMembers.Count != 0 ? typeMembers.ToArray() : null,
-                methodMembers.Count != 0 ? methodMembers.ToArray() : null
-                );
         }
 
         static FieldMember GetField(FieldDefinition memberInfo)

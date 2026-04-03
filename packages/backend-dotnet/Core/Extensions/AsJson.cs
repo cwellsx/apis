@@ -22,58 +22,10 @@ namespace Core.Extensions
                 Encoder = prettyPrint ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
                 Converters =
                 {
-                    new JsonConverterFactoryForValuesOfT(),
                     new JsonConverterFactoryForShortJson() { PrettyPrint = prettyPrint }
                 }
             });
             return json;
-        }
-
-        // implementation of this class is copied from
-        // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/converters-how-to
-        public class JsonConverterFactoryForValuesOfT : JsonConverterFactory
-        {
-            public override bool CanConvert(Type typeToConvert)
-            {
-                return typeToConvert.IsGenericType && typeToConvert.GetGenericTypeDefinition() == typeof(Values<>);
-            }
-
-            public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
-            {
-                Type elementType = typeToConvert.GetGenericArguments()[0];
-
-                JsonConverter converter = (JsonConverter)Activator.CreateInstance(
-                    typeof(JsonConverterForValuesOfT<>).MakeGenericType(new Type[] { elementType }),
-                    BindingFlags.Instance | BindingFlags.Public,
-                    binder: null,
-                    args: null,
-                    culture: null)!;
-
-                return converter;
-            }
-
-            private sealed class JsonConverterForValuesOfT<T> : JsonConverter<Values<T>> where T : notnull
-            {
-                public override Values<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-                {
-                    throw new NotImplementedException();
-                }
-
-                public override void Write(Utf8JsonWriter writer, Values<T> value, JsonSerializerOptions options)
-                {
-                    if (value.Array == null)
-                    {
-                        writer.WriteNullValue();
-                        return;
-                    }
-                    writer.WriteStartArray();
-                    foreach (T item in value.Array)
-                    {
-                        JsonSerializer.Serialize(writer, item, options);
-                    }
-                    writer.WriteEndArray();
-                }
-            }
         }
 
         // implementation of this class is copied from

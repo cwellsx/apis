@@ -70,7 +70,7 @@ namespace Core.Output.Public
         public override object SerializeAs => Name;
     }
 
-    public sealed record TypeSpecId(SimpleTypeId Resolved, Values<SimpleTypeId> GenericTypeArguments, string FullName) : TypeId
+    public sealed record TypeSpecId(SimpleTypeId Resolved, SimpleTypeId[]? GenericTypeArguments, string FullName) : TypeId
     {
         public override object SerializeAs
         {
@@ -78,10 +78,9 @@ namespace Core.Output.Public
             {
                 var result = new List<object>();
                 result.Add(Resolved.SerializeAs);
-                if (GenericTypeArguments.Length != 0)
+                if (GenericTypeArguments != null)
                 {
-                    var array = GenericTypeArguments.Array!;
-                    result.AddRange(array.Select(arg => arg.SerializeAs));
+                    result.AddRange(GenericTypeArguments.Select(arg => arg.SerializeAs));
                 }
                 result.Add(FullName);
                 return result.ToArray();
@@ -104,82 +103,21 @@ namespace Core.Output.Public
         TypeId[]? Interfaces,
         string[]? GenericTypeParameters,
         Access Access,
-        Members Members
-     );
-
-    // Members
-    public record FieldMember(string Name, TypeId FieldType, Access Access, bool? IsStatic, string[]? Attributes, int MetadataToken);
-    public record EventMember(string Name, TypeId EventHandlerType, Access Access, bool? IsStatic, string[]? Attributes, int MetadataToken);
-    public record PropertyMember(string Name, TypeId PropertyType, Access Access, bool? IsStatic, Values<Parameter> Parameters, string[]? Attributes, int MetadataToken);
-    public record Parameter(string? Name, TypeId Type);
-    public record MethodMember(string Name, Access Access, bool? IsStatic, bool? IsConstructor, string[]? GenericParameters, Values<Parameter> Parameters, TypeId ReturnType, string[]? Attributes, int MetadataToken);
-    //public record Members(FieldMember[]? Fields, EventMember[]? Events, PropertyMember[]? Properties, LocalTypeDefId[]? NestedTypes, MethodMember[]? Methods);
-
-    //public record FieldMember(
-    //    string Name,
-    //    string[]? Attributes,
-    //    Access Access,
-    //    TypeId FieldType,
-    //    bool? IsStatic,
-    //    int MetadataToken
-    //    )
-    //{
-    //    internal string[]? Attributes { get; set; } = Attributes;
-    //}
-
-    //// can't be static
-    //// EventHandlerType is nullable but probably shouldn't be?
-    //public record EventMember(
-    //    string Name,
-    //    string[]? Attributes,
-    //    Access Access,
-    //    TypeId? EventHandlerType,
-    //    bool? IsStatic,
-    //    int MetadataToken
-    //    );
-
-    //// two Access values but these can/should be combined
-    //public record PropertyMember(
-    //    string Name,
-    //    string[]? Attributes,
-    //    Access Access,
-    //    Values<Parameter> Parameters,
-    //    TypeId PropertyType,
-    //    bool? IsStatic,
-    //    int MetadataToken
-    //    )
-    //{
-    //    internal string[]? Attributes { get; set; } = Attributes;
-    //}
-
-    //public record Parameter(
-    //    string? Name,
-    //    TypeId Type
-    //    );
-
-    //public record MethodMember(
-    //    string Name,
-    //    Access Access,
-    //    Values<Parameter> Parameters,
-    //    bool? IsStatic,
-    //    bool? IsConstructor,
-    //    Values<TypeId> GenericArguments,
-    //    TypeId ReturnType,
-    //    Values<string> Attributes,
-    //    int MetadataToken
-    //    )
-    //{
-    //    internal Values<string>? Attributes { get; set; } = Attributes;
-    //    internal bool? IsConstructor { get; set; } = IsConstructor;
-    //}
-
-    public record Members(
+        // Members
         FieldMember[]? FieldMembers,
         EventMember[]? EventMembers,
         PropertyMember[]? PropertyMembers,
         TypeId[]? TypeMembers,
         MethodMember[]? MethodMembers
-        );
+     );
+
+    // Members
+    public record FieldMember(string Name, TypeId FieldType, Access Access, bool? IsStatic, string[]? Attributes, int MetadataToken);
+    public record EventMember(string Name, TypeId EventHandlerType, Access Access, bool? IsStatic, string[]? Attributes, int MetadataToken);
+    public record PropertyMember(string Name, TypeId PropertyType, Access Access, bool? IsStatic, Parameter[]? Parameters, string[]? Attributes, int MetadataToken);
+    public record Parameter(string? Name, TypeId Type);
+    public record MethodMember(string Name, Access Access, bool? IsStatic, bool? IsConstructor, string[]? GenericParameters, Parameter[]? Parameters, TypeId ReturnType, string[]? Attributes, int MetadataToken);
+
 
     // a shorter version of CallDetails
     public record MethodCall(string AssemblyName, int? MetadataToken);

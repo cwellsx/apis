@@ -1,10 +1,8 @@
 ﻿using Core.Extensions;
 using Microsoft.Win32;
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection.PortableExecutable;
 using System.Runtime.Versioning;
 using System.Text.Json;
 
