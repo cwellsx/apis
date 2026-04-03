@@ -5,6 +5,7 @@ using System.Linq;
 using ElectronCgi.DotNet;
 
 using Core.Output.Public;
+using Core.Extensions;
 
 namespace Core
 {
@@ -37,8 +38,15 @@ namespace Core
             }
         }
 
+        record Trash(TypeId Foo, Values<TypeId> Bar, Values<TypeId> Baz);
+
         static void HandleArgument(string argument)
         {
+            TypeId typeId = new LocalTypeDefId(123);
+
+            var test2 = new Trash(typeId, new Values<TypeId>(null), new Values<TypeId>([typeId, typeId]));
+            var yaml = test2.ToYaml();
+
             switch (argument)
             {
                 case "--selfload":
@@ -82,6 +90,8 @@ namespace Core
 
         static void WriteJsonToFiles(All all)
         {
+            File.WriteAllText("All.yaml", all.ToYaml());
+
             File.WriteAllText("All.json", all.ToJson(true));
             File.WriteAllText("FoundCalls.json", all.AssemblyMethods.ToJson(true));
 

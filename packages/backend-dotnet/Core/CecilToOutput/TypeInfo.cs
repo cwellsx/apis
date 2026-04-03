@@ -1,4 +1,5 @@
-﻿using Core.Output.Public;
+﻿using Core.Extensions;
+using Core.Output.Public;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
@@ -8,108 +9,28 @@ namespace Core.CecilToOutput
 {
     internal static class TypeInfo
     {
-        internal static Output.Public.TypeInfo Transform(TypeDefinition typeDefinition)
+        internal static TypeDefInfo Transform(TypeDefinition typeDefinition)
         {
             if (typeDefinition.Name == "Convert")
             {
                 Console.WriteLine();
             }
-            return new Output.Public.TypeInfo(
-                TypeId: GetTypeId(typeDefinition),
+            return new TypeDefInfo(
+                Id: new LocalTypeDefId(typeDefinition.MetadataToken.ToInt32()),
+                Namespace: typeDefinition.Namespace.ToStringOrNull(),
+                Name: typeDefinition.Name,
+                DeclaringType: typeDefinition.DeclaringType == null ? null : (LocalTypeDefId)GetTypeId(typeDefinition.DeclaringType),
                 Attributes: GetAttributes(typeDefinition.CustomAttributes),
-                BaseType: GetBaseType(typeDefinition),
+                BaseType: typeDefinition.BaseType == null ? null : GetTypeId(typeDefinition.BaseType),
                 Interfaces: GetInterfaces(typeDefinition),
-                GenericTypeParameters: GetGenericTypeParameters(typeDefinition),
+                GenericTypeParameters: GetGenericParameters(typeDefinition.GenericParameters),
                 Access: GetAccess(typeDefinition),
-                Flag: GetFlag(typeDefinition),
                 Members: GetMembers(typeDefinition)
                 );
         }
 
-        private static TypeId GetTypeId(TypeReference typeReference)
-        {
-            TypeId[]? GetGenericTypeArguments()
-            {
-                var genericInstanceType = typeReference as GenericInstanceType;
-                if (genericInstanceType == null)
-                {
-                    return null;
-                }
-                var genericArguments = genericInstanceType.GenericArguments;
-                return (genericArguments.Count == 0) ? null : genericArguments
-                    .Select(GetTypeId).ToArray();
-            }
+        private static TypeId GetTypeId(TypeReference tr) => ToTypeId.Convert(tr);
 
-            // strip modifiers e.g. from "Void modreq(System.Runtime.CompilerServices.IsExternalInit)"
-            while (typeReference is OptionalModifierType || typeReference is RequiredModifierType)
-            {
-                typeReference = ((IModifierType)typeReference).ElementType;
-            }
-
-            var kind = GetTypeKind(typeReference);
-
-            // prefer the metadatatoken of the definiion not of the reference
-            var typeDefinition = typeReference.Resolve();
-            // no definition if it's a generic parameter but it could also be e.g. an array of generic parameters
-            if (typeDefinition == null && kind == null)
-            {
-                throw new Exception();
-            }
-            var metadataToken = typeReference.HasElementType() ? 0 : typeDefinition?.MetadataToken.ToInt32() ?? 0;
-            var assemblyName = typeDefinition?.Module.Assembly.Name.Name ?? typeReference.Module.Assembly.Name.Name;
-
-            return new TypeId(
-                AssemblyName: assemblyName,
-                Namespace: typeReference.Namespace,
-                Name: typeReference.Name,
-                GenericTypeArguments: GetGenericTypeArguments(),
-                DeclaringType: GetOptionalTypeId(typeReference.DeclaringType),
-                Kind: kind,
-                ElementType: typeReference.HasElementType() ? GetOptionalTypeId(typeReference.GetElementType()) : null,
-                MetadataToken: metadataToken
-            );
-        }
-
-        static TypeId? GetOptionalTypeId(TypeReference? typeReference) => typeReference == null ? null : GetTypeId(typeReference);
-
-        static bool HasElementType(this TypeReference typeReference)
-        {
-            switch (GetTypeKind(typeReference))
-            {
-                case TypeKind.Array:
-                case TypeKind.ByReference:
-                case TypeKind.Pointer:
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        static TypeKind? GetTypeKind(TypeReference typeReference)
-        {
-            switch (CountFlags(
-                typeReference.IsGenericParameter,
-                typeReference.IsArray,
-                typeReference.IsPointer,
-                typeReference.IsByReference
-                ))
-            {
-                case 0:
-                    return null;
-                case 1:
-                    break;
-                default:
-                    throw new System.ArgumentOutOfRangeException("Expect at most one flag");
-            }
-            return (typeReference.IsGenericParameter)
-                ? TypeKind.GenericParameter
-                : typeReference.IsArray
-                ? TypeKind.Array
-                : typeReference.IsPointer
-                ? TypeKind.Pointer
-                : TypeKind.ByReference;
-        }
-        private static int CountFlags(params bool[] flags) => flags.Count(b => b);
         static string[]? GetAttributes(IEnumerable<CustomAttribute> customAttributes)
         {
             return !customAttributes.Any() ? null : customAttributes.Select(attribute =>
@@ -120,16 +41,12 @@ namespace Core.CecilToOutput
                 return (args.Length != 0) ? $"[{name}({string.Join(", ", args)})]" : $"[{name}]";
             }).ToArray();
         }
-        static TypeId? GetBaseType(TypeDefinition typeDefinition)
+
+        static string[]? GetGenericParameters(IList<GenericParameter> genericParameters)
         {
-            var baseType = typeDefinition.BaseType;
-            return baseType == null ? null : GetTypeId(baseType);
+            return (genericParameters.Count == 0) ? null : genericParameters.Select(genericParameter => genericParameter.Name).ToArray();
         }
-        static TypeId[]? GetGenericTypeParameters(TypeDefinition typeDefinition)
-        {
-            var types = typeDefinition.GenericParameters;
-            return (types.Count == 0) ? null : types.Select(GetTypeId).ToArray();
-        }
+
         static TypeId[]? GetInterfaces(TypeDefinition typeDefinition)
         {
             var array = typeDefinition.Interfaces;
@@ -141,26 +58,6 @@ namespace Core.CecilToOutput
             return (!typeDefinition.IsNested)
                 ? (typeDefinition.IsPublic ? Access.Public : Access.Internal)
                 : (typeDefinition.IsNestedPublic ? Access.Public : typeDefinition.IsNestedPrivate ? Access.Private : Access.Internal);
-        }
-
-        static Flag? GetFlag(TypeDefinition typeDefinition)
-        {
-            Flag flag = Flag.None;
-            if (typeDefinition.IsNested)
-            {
-                flag |= Flag.Nested;
-            }
-            //if (typeDefinition.IsGenericParameter)
-            if (typeDefinition.HasGenericParameters)
-            {
-                flag |= Flag.Generic;
-            }
-            //if (typeDefinition.IsGenericInstance)
-            if (typeDefinition.HasGenericParameters)
-            {
-                flag |= Flag.GenericDefinition;
-            }
-            return flag == Flag.None ? null : flag;
         }
 
         static Members GetMembers(TypeDefinition typeDefinition)
@@ -206,8 +103,9 @@ namespace Core.CecilToOutput
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var fieldType = memberInfo.FieldType;
             bool? isStatic = memberInfo.IsStatic ? true : null;
-            return new FieldMember(memberInfo.Name, GetAttributes(memberInfo.CustomAttributes), access, GetTypeId(fieldType), isStatic, memberInfo.MetadataToken.ToInt32());
+            return new FieldMember(memberInfo.Name, GetTypeId(fieldType), access, isStatic, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
+
         static EventMember GetEvent(EventDefinition memberInfo)
         {
             var eventType = memberInfo.EventType;
@@ -216,14 +114,16 @@ namespace Core.CecilToOutput
             {
                 throw new ArgumentNullException();
             }
-            return new EventMember(memberInfo.Name, GetAttributes(memberInfo.CustomAttributes), GetAccess(addMethod), GetOptionalTypeId(eventType), addMethod.IsStatic, memberInfo.MetadataToken.ToInt32());
+            bool? isStatic = addMethod.IsStatic ? true : null;
+            return new EventMember(memberInfo.Name, GetTypeId(eventType), GetAccess(addMethod), isStatic, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
+
         static PropertyMember GetProperty(PropertyDefinition memberInfo)
         {
             var propertyType = memberInfo.PropertyType;
             var getMethod = memberInfo.GetMethod;
             var setMethod = memberInfo.SetMethod;
-            (Access, bool) Get()
+            (Access, bool?) Get()
             {
                 if (getMethod == null)
                 {
@@ -241,12 +141,12 @@ namespace Core.CecilToOutput
                     }
                 }
                 var access = (Access)Math.Min((int)GetAccess(getMethod), (int)GetAccess(setMethod));
-                var isStatic = getMethod.IsStatic; // doesn't matter which method we use here
+                bool? isStatic = getMethod.IsStatic ? true : null; // doesn't matter which method we use here
                 return (access, isStatic);
             }
             var (access, isStatic) = Get();
             var parameters = GetParameters(memberInfo.Parameters);
-            return new PropertyMember(memberInfo.Name, GetAttributes(memberInfo.CustomAttributes), access, parameters, GetTypeId(propertyType), isStatic, memberInfo.MetadataToken.ToInt32());
+            return new PropertyMember(memberInfo.Name, GetTypeId(propertyType), access, isStatic, parameters, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
 
         static MethodMember GetMethod(MethodDefinition memberInfo)
@@ -255,8 +155,8 @@ namespace Core.CecilToOutput
             var parameters = GetParameters(memberInfo.Parameters);
             bool? isStatic = memberInfo.IsStatic ? true : null;
             bool? isConstructor = memberInfo.IsConstructor ? true : null;
-            var genericArguments = (memberInfo.HasGenericParameters) ? memberInfo.GenericParameters.Select(GetTypeId).ToArray() : null;
-            return new MethodMember(memberInfo.Name, access, parameters, isStatic, isConstructor, genericArguments, GetTypeId(memberInfo.ReturnType), GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
+            var genericParameters = (memberInfo.HasGenericParameters) ? GetGenericParameters(memberInfo.GenericParameters) : null;
+            return new MethodMember(memberInfo.Name, access, isStatic, isConstructor, genericParameters, parameters, GetTypeId(memberInfo.ReturnType), GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
 
         static Parameter[]? GetParameters(IEnumerable<ParameterDefinition> parameterInfos)

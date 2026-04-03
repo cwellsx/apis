@@ -44,10 +44,9 @@ namespace Core
 
                     var assemblyInfo = new AssemblyInfo(
                         ReferencedAssemblies: assemblyData.AssemblyReferences.Select(assemblyReference => assemblyReference.Name).ToArray(),
-                        Types: assemblyData.TypeDefinitions.Select(CecilToOutput.TypeInfo.Transform).ToArray()
+                        TypeDefinitions: assemblyData.TypeDefinitions.Select(CecilToOutput.TypeInfo.Transform).ToArray()
                         );
 
-                    Invariants.Verify(assemblyInfo.Types);
                     assemblies.Add(assemblyName, assemblyInfo);
 
                     compilerMethods.Add(assemblyName, CecilToOutput.CompilerMethods.Transform(assemblyData));
