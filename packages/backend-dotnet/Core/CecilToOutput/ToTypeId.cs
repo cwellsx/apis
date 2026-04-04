@@ -1,4 +1,4 @@
-﻿using Core.Output.Public;
+﻿using Core.Output;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;

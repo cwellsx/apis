@@ -1,4 +1,4 @@
-﻿using Core.Output.Public;
+﻿using Core.Output;
 using System;
 using System.Collections.Generic;
 using System.IO;

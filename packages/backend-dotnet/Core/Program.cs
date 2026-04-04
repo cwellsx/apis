@@ -4,7 +4,7 @@ using System.Linq;
 
 using ElectronCgi.DotNet;
 
-using Core.Output.Public;
+using Core.Output;
 using Core.Extensions;
 
 namespace Core
@@ -84,6 +84,9 @@ namespace Core
         static void WriteJsonToFiles(All all)
         {
             File.WriteAllText("All.yaml", all.ToYaml());
+            File.WriteAllText("Assemblies.yaml", all.Assemblies.ToYaml());
+            File.WriteAllText("Methods.yaml", all.AssemblyMethods.ToYaml());
+            File.WriteAllText("Compiler.yaml", all.CompilerMethods.ToYaml());
 
             File.WriteAllText("All.json", all.ToJson(true));
             File.WriteAllText("FoundCalls.json", all.AssemblyMethods.ToJson(true));

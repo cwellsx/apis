@@ -22,7 +22,7 @@ namespace Core.Extensions
                 Encoder = prettyPrint ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
                 Converters =
                 {
-                    new JsonConverterFactoryForShortJson() { PrettyPrint = prettyPrint }
+                    new JsonConverterFactoryForShortJson()
                 }
             });
             return json;
@@ -32,8 +32,6 @@ namespace Core.Extensions
         // https://learn.microsoft.com/en-us/dotnet/standard/serialization/system-text-json/converters-how-to
         public class JsonConverterFactoryForShortJson : JsonConverterFactory
         {
-            internal bool PrettyPrint { get; init; }
-
             public override bool CanConvert(Type typeToConvert)
             {
                 return typeof(IShortJson).IsAssignableFrom(typeToConvert);
@@ -41,18 +39,11 @@ namespace Core.Extensions
 
             public override JsonConverter? CreateConverter(Type typeToConvert, JsonSerializerOptions options)
             {
-                return (JsonConverter)Activator.CreateInstance(typeof(JsonConverterForShortJson), new object[] { PrettyPrint })!;
+                return (JsonConverter)Activator.CreateInstance(typeof(JsonConverterForShortJson))!;
             }
 
             private sealed class JsonConverterForShortJson : JsonConverter<IShortJson>
             {
-                private readonly bool _prettyPrint;
-
-                public JsonConverterForShortJson(bool prettyPrint)
-                {
-                    _prettyPrint = prettyPrint;
-                }
-
                 public override IShortJson? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
                 {
                     throw new NotImplementedException();
@@ -78,29 +69,7 @@ namespace Core.Extensions
                         throw new Exception();
                     }
 
-                    // Serialize the returned object using the serializer so it respects converters/options
-                    if (!_prettyPrint)
-                    {
-                        JsonSerializer.Serialize(writer, obj, obj.GetType(), options);
-                        return;
-                    }
-
-                    using var ms = new MemoryStream();
-                    //var isArray = false ;// obj is Array;
-                    //var nonIndented = new JsonWriterOptions { Indented = !isArray, Encoder = writer.Options.Encoder };
-                    var writerOptions = new JsonWriterOptions { Indented = true, Encoder = writer.Options.Encoder };
-                    using (var tempWriter = new Utf8JsonWriter(ms, writerOptions))
-                    {
-                        JsonSerializer.Serialize(tempWriter, obj, obj.GetType(), options);
-                        tempWriter.Flush();
-                    }
-
-                    string compactValue = Encoding.UTF8.GetString(ms.ToArray());
-
-                    // append the comment to the compact fragment
-                    // write the whole fragment as a raw value into the main writer
-                    // Use the overload that skips validation if available to avoid the writer re-parsing the fragment.
-                    writer.WriteRawValue($"{compactValue} /* foo */", skipInputValidation: true);
+                    JsonSerializer.Serialize(writer, obj, obj.GetType(), options);
                 }
             }
         }
