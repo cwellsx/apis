@@ -69,8 +69,9 @@ namespace Core
                     exceptions.Add($"{assemblyData.Name} -- {e.Message}");
                 }
             }
+            var microsoftAssemblyNames = loadedAssemblies.GetMicrosoftAssemblies(filter).Select(assembly => assembly.Name).ToArray();
 
-            return new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods);
+            return new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, microsoftAssemblyNames);
         }
 
         internal static string GetDateModified(string directory)

@@ -1,9 +1,6 @@
 ﻿using Core.Extensions;
-using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
-using System.Xml.Linq;
 
 namespace Core.Output
 {
@@ -47,52 +44,6 @@ namespace Core.Output
     //    );
 
     public record AssemblyInfo(string[] ReferencedAssemblies, TypeDefInfo[] TypeDefinitions);
-
-    // Ids (identities)
-    public abstract record TypeId : IShortJson
-    {
-        public abstract object SerializeAs { get; }
-        public abstract string GetName(INameFromId nameFromId);
-    }
-
-    public abstract record SimpleTypeId : TypeId;
-
-    // token in this assembly
-    public sealed record LocalTypeDefId(string LocalAssemblyName, int MetadataToken) : SimpleTypeId
-    {
-        public override object SerializeAs => MetadataToken;
-        public override string GetName(INameFromId nameFromId) => nameFromId.GetTypeName(LocalAssemblyName, MetadataToken);
-    }
-    // resolved TypeRef -> remote TypeDef
-    public sealed record RemoteTypeDefId(string AssemblyName, int MetadataToken) : SimpleTypeId
-    {
-        public override object SerializeAs => $"{AssemblyName}|{MetadataToken}";
-        public override string GetName(INameFromId nameFromId) => nameFromId.GetTypeName(AssemblyName, MetadataToken);
-    }
-    public sealed record GenericParameterId(string OwnerAssembly, int OwnerToken, bool OwnerIsMethod, int Position, string Name) : SimpleTypeId
-    {
-        public override object SerializeAs => Name;
-        public override string GetName(INameFromId nameFromId) => Name;
-    }
-
-    public sealed record TypeSpecId(SimpleTypeId Resolved, SimpleTypeId[]? GenericTypeArguments, string FullName) : TypeId
-    {
-        public override object SerializeAs
-        {
-            get
-            {
-                var result = new List<object>();
-                result.Add(Resolved.SerializeAs);
-                if (GenericTypeArguments != null)
-                {
-                    result.AddRange(GenericTypeArguments.Select(arg => arg.SerializeAs));
-                }
-                result.Add(FullName);
-                return result.ToArray();
-            }
-        }
-        public override string GetName(INameFromId nameFromId) => FullName;
-    }
 
     /// <summary>
     /// All properties which were previously in TypeId plus TypeInfo
@@ -140,6 +91,7 @@ namespace Core.Output
         string Version,
         string[] Exes,
         Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods,
-        Dictionary<string, Dictionary<int, int>> CompilerMethods
+        Dictionary<string, Dictionary<int, int>> CompilerMethods,
+        string[] MicrosoftAssemblyNames
         );
 }

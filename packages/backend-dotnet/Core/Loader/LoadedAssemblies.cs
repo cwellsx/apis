@@ -94,6 +94,15 @@ namespace Core.Loader
                 .ToArray();
         }
 
+        internal IEnumerable<T> GetMicrosoftAssemblies(IFilter? filter)
+        {
+            return _cache
+                .Where(kv => kv.Value != null)
+                .Where(kv => filter != null && filter.IsMicrosoftAssemblyName(kv.Key))
+                .Select(kv => kv.Value!.AssemblyData)
+                .ToArray();
+        }
+
         internal bool TryGetAssembly(AssemblyReference assemblyReference, out T? assemblyData)
         {
             if (_cache.TryGetValue(assemblyReference.Name, out var found) && found != null)

@@ -8,10 +8,10 @@ namespace Core.Extensions
 {
     internal static class AsYaml
     {
-        internal static string ToYaml<T>(this T value)
+        internal static string ToYaml<T>(this T value, INameFromId? nameFromId)
         {
             var serializer = new SerializerBuilder()
-                .WithTypeConverter(new YamlConverterForShortJson())
+                .WithTypeConverter(new YamlConverterForShortJson(nameFromId))
                 .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitNull)
                 .DisableAliases()
                 .Build();
@@ -23,6 +23,13 @@ namespace Core.Extensions
 
     public class YamlConverterForShortJson : IYamlTypeConverter
     {
+        INameFromId? _nameFromId;
+
+        internal YamlConverterForShortJson(INameFromId? nameFromId)
+        {
+            _nameFromId = nameFromId;
+        }
+
         public bool Accepts(Type type)
         {
             return typeof(IShortJson).IsAssignableFrom(type);
@@ -38,9 +45,6 @@ namespace Core.Extensions
                 return;
             }
 
-            // Example: compute comment text for this value
-            string commentText = ComputeCommentFor(obj);
-
             // If obj is a sequence (array/list) and you want per-element comments:
             if (obj is IEnumerable seq && !(obj is string))
             {
@@ -52,8 +56,8 @@ namespace Core.Extensions
                     // For complex elements you would recursively call serializer.Serialize for that element
                     emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(element)));
 
-                    // emit inline comment for the element
-                    emitter.Emit(new Comment(ComputeCommentFor(element), true));
+                    // emit inline comment for the element is TBD
+                    //emitter.Emit(new Comment(ComputeCommentFor(element), true));
                 }
                 emitter.Emit(new SequenceEnd());
                 return;
@@ -61,19 +65,17 @@ namespace Core.Extensions
 
             // Non-sequence: emit a scalar (or mapping) and then an inline comment
             emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(obj)));
-            emitter.Emit(new Comment(commentText, true));
+
+            if (_nameFromId != null)
+            {
+                var typeName = shortJson.GetName(_nameFromId);
+                emitter.Emit(new Comment(typeName, true));
+            }
         }
 
         public object ReadYaml(IParser parser, Type type, ObjectDeserializer rootDeserializer)
         {
             throw new NotImplementedException();
-        }
-
-        // Helpers
-        private string ComputeCommentFor(object obj)
-        {
-            // your logic to produce the comment text for obj
-            return "foo";
         }
 
         private string ConvertToYamlScalar(object obj)

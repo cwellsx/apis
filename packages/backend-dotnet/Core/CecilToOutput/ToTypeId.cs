@@ -2,6 +2,7 @@
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Core.CecilToOutput
 {
@@ -16,44 +17,110 @@ namespace Core.CecilToOutput
 
         internal TypeId Convert(TypeReference tr)
         {
-            if (IsSimple(tr))
+            if (IsSimpleOrGenericParameter(tr))
             {
-                return GetSimpleTypeId(tr);
+                return GetBaseTypeId(tr);
             }
 
-            var list = new List<SimpleTypeId>();
-            var resolved = Recurse(tr, list);
-            return new TypeSpecId(Resolved: resolved, GenericTypeArguments: list.ToArray(), FullName: tr.FullName);
+            var recurseResult = Recurse(tr);
+            return new TypeSpecId(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs.ToArray(), Suffix: recurseResult.Suffix, FullName: tr.FullName);
         }
 
-        static bool IsSimple(TypeReference tr) =>
+        static bool IsSimpleOrGenericParameter(TypeReference tr) =>
             tr is TypeDefinition ||
             tr is GenericParameter ||
             tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
 
-        SimpleTypeId Recurse(TypeReference tr, List<SimpleTypeId> genericArgs)
+        // result of recursing a TypeReference
+        public sealed record RecurseResult(BaseTypeId Simple, string Suffix, IReadOnlyList<TypeId> GenericArgs);
+
+        RecurseResult Recurse(TypeReference tr)
         {
-            if (IsSimple(tr))
+            // Base: simple types and generic parameters
+            if (IsSimpleOrGenericParameter(tr))
             {
-                return GetSimpleTypeId(tr);
+                return new RecurseResult(GetBaseTypeId(tr), string.Empty, Array.Empty<TypeId>());
             }
+
+            // Generic instance: resolve each generic argument recursively,
+            // then treat the element type (generic definition) as the simple part.
             if (tr is GenericInstanceType git)
             {
+                var genericArgs = new List<TypeId>(git.GenericArguments.Count);
                 foreach (var arg in git.GenericArguments)
                 {
-                    var index = genericArgs.Count;
-                    genericArgs.Add(null!);
-                    var resolved = Recurse(arg, genericArgs);
-                    genericArgs[index] = resolved;
+                    genericArgs.Add(Convert(arg));
                 }
-                // the generic type definition is the "simple" part of the TypeSpec
-                return GetSimpleTypeId(git.ElementType);
+
+                var simple = GetBaseTypeId(git.ElementType); // generic definition
+                return new RecurseResult(simple, string.Empty, genericArgs);
             }
-            // for arrays, pointers, byrefs, and other TypeSpecs, the "simple" part is the element type
-            return Recurse(tr.GetElementType(), genericArgs);
+
+            // Array
+            if (tr is ArrayType at)
+            {
+                var inner = Recurse(at.ElementType);
+                var thisSuffix = "[" + new string(',', Math.Max(0, at.Rank - 1)) + "]";
+                return new RecurseResult(inner.Simple, inner.Suffix + thisSuffix, inner.GenericArgs);
+            }
+
+            // Pointer
+            if (tr is PointerType pt)
+            {
+                var inner = Recurse(pt.ElementType);
+                return new RecurseResult(inner.Simple, inner.Suffix + "*", inner.GenericArgs);
+            }
+
+            // ByRef
+            if (tr is ByReferenceType br)
+            {
+                var inner = Recurse(br.ElementType);
+                return new RecurseResult(inner.Simple, inner.Suffix + "&", inner.GenericArgs);
+            }
+
+            // Optional modifier
+            if (tr is OptionalModifierType opt)
+            {
+                var inner = Recurse(opt.ElementType);
+                var mod = $" modopt({opt.ModifierType.FullName})";
+                return new RecurseResult(inner.Simple, inner.Suffix + mod, inner.GenericArgs);
+            }
+
+            // Required modifier
+            if (tr is RequiredModifierType req)
+            {
+                var inner = Recurse(req.ElementType);
+                var mod = $" modreq({req.ModifierType.FullName})";
+                return new RecurseResult(inner.Simple, inner.Suffix + mod, inner.GenericArgs);
+            }
+
+            // Pinned
+            if (tr is PinnedType pinned)
+            {
+                var inner = Recurse(pinned.ElementType);
+                return new RecurseResult(inner.Simple, inner.Suffix + " pinned", inner.GenericArgs);
+            }
+
+            // Sentinel
+            if (tr is SentinelType sentinel)
+            {
+                var inner = Recurse(sentinel.ElementType);
+                return new RecurseResult(inner.Simple, inner.Suffix + " sentinel", inner.GenericArgs);
+            }
+
+            // Function pointer (if you need it)
+            if (tr is FunctionPointerType fptr)
+            {
+                // function pointer formatting is complex; represent as a token-like suffix
+                var inner = Recurse(fptr.ReturnType);
+                // you may want to render parameters; here we append a placeholder suffix
+                return new RecurseResult(inner.Simple, inner.Suffix + " unmanagedcallconv*", inner.GenericArgs);
+            }
+
+            throw new NotSupportedException();
         }
 
-        private SimpleTypeId GetSimpleTypeId(TypeReference tr)
+        private BaseTypeId GetBaseTypeId(TypeReference tr)
         {
             // 1. Local type definition
             if (tr is TypeDefinition td)
@@ -62,7 +129,7 @@ namespace Core.CecilToOutput
                 {
                     throw new Exception();
                 }
-                return new LocalTypeDefId(_assemblyName, td.MetadataToken.ToInt32());
+                return new LocalTypeDefId(_assemblyName, td.MetadataToken.ToInt32(), td.FullName);
             }
 
             // 2. Local TypeSpec (constructed/modified type)
@@ -103,10 +170,7 @@ namespace Core.CecilToOutput
                     );
                 }
 
-                string assemblyName = resolved.Module.Assembly.Name.Name;
-                int token = resolved.MetadataToken.ToInt32();
-
-                return new RemoteTypeDefId(assemblyName, token);
+                return new RemoteTypeDefId(resolved.Module.Assembly.Name.Name, resolved.MetadataToken.ToInt32(), resolved.FullName);
             }
         }
     }

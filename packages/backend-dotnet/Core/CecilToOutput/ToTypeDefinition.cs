@@ -25,7 +25,7 @@ namespace Core.CecilToOutput
                 Console.WriteLine();
             }
             return new TypeDefInfo(
-                Id: new LocalTypeDefId(_assemblyName, typeDefinition.MetadataToken.ToInt32()),
+                Id: new LocalTypeDefId(_assemblyName, typeDefinition.MetadataToken.ToInt32(), typeDefinition.FullName),
                 Namespace: typeDefinition.Namespace.ToStringOrNull(),
                 Name: typeDefinition.Name,
                 DeclaringType: typeDefinition.DeclaringType == null ? null : (LocalTypeDefId)GetTypeId(typeDefinition.DeclaringType),

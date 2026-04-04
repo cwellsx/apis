@@ -83,10 +83,11 @@ namespace Core
 
         static void WriteJsonToFiles(All all)
         {
-            File.WriteAllText("All.yaml", all.ToYaml());
-            File.WriteAllText("Assemblies.yaml", all.Assemblies.ToYaml());
-            File.WriteAllText("Methods.yaml", all.AssemblyMethods.ToYaml());
-            File.WriteAllText("Compiler.yaml", all.CompilerMethods.ToYaml());
+            var nameFromId = new NameFromId(all);
+            File.WriteAllText("All.yaml", all.ToYaml(null));
+            File.WriteAllText("Assemblies.yaml", all.Assemblies.ToYaml(nameFromId));
+            File.WriteAllText("Methods.yaml", all.AssemblyMethods.ToYaml(nameFromId));
+            File.WriteAllText("Compiler.yaml", all.CompilerMethods.ToYaml(nameFromId));
 
             File.WriteAllText("All.json", all.ToJson(true));
             File.WriteAllText("FoundCalls.json", all.AssemblyMethods.ToJson(true));
