@@ -7,7 +7,14 @@ namespace Core.CecilToOutput
 {
     internal class ToTypeId
     {
-        internal static TypeId Convert(TypeReference tr)
+        string _assemblyName;
+
+        internal ToTypeId(string assemblyName)
+        {
+            _assemblyName = assemblyName;
+        }
+
+        internal TypeId Convert(TypeReference tr)
         {
             if (IsSimple(tr))
             {
@@ -19,7 +26,12 @@ namespace Core.CecilToOutput
             return new TypeSpecId(Resolved: resolved, GenericTypeArguments: list.ToArray(), FullName: tr.FullName);
         }
 
-        static SimpleTypeId Recurse(TypeReference tr, List<SimpleTypeId> genericArgs)
+        static bool IsSimple(TypeReference tr) =>
+            tr is TypeDefinition ||
+            tr is GenericParameter ||
+            tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
+
+        SimpleTypeId Recurse(TypeReference tr, List<SimpleTypeId> genericArgs)
         {
             if (IsSimple(tr))
             {
@@ -41,17 +53,16 @@ namespace Core.CecilToOutput
             return Recurse(tr.GetElementType(), genericArgs);
         }
 
-        static bool IsSimple(TypeReference tr) =>
-            tr is TypeDefinition ||
-            tr is GenericParameter ||
-            tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
-
-        private static SimpleTypeId GetSimpleTypeId(TypeReference tr)
+        private SimpleTypeId GetSimpleTypeId(TypeReference tr)
         {
             // 1. Local type definition
             if (tr is TypeDefinition td)
             {
-                return new LocalTypeDefId(td.MetadataToken.ToInt32());
+                if (td.Module.Assembly.Name.Name != _assemblyName)
+                {
+                    throw new Exception();
+                }
+                return new LocalTypeDefId(_assemblyName, td.MetadataToken.ToInt32());
             }
 
             // 2. Local TypeSpec (constructed/modified type)

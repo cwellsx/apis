@@ -42,9 +42,11 @@ namespace Core
                     var assemblyName = assemblyData.Name;
                     Logger.Log(assemblyName);
 
+                    var toTypeDefInfo = new CecilToOutput.ToTypeDefinition(assemblyName);
+
                     var assemblyInfo = new AssemblyInfo(
                         ReferencedAssemblies: assemblyData.AssemblyReferences.Select(assemblyReference => assemblyReference.Name).ToArray(),
-                        TypeDefinitions: assemblyData.TypeDefinitions.Select(CecilToOutput.TypeInfo.Transform).ToArray()
+                        TypeDefinitions: assemblyData.TypeDefinitions.Select(toTypeDefInfo.Transform).ToArray()
                         );
 
                     assemblies.Add(assemblyName, assemblyInfo);

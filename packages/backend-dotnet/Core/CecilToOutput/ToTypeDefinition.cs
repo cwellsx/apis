@@ -7,34 +7,43 @@ using System.Linq;
 
 namespace Core.CecilToOutput
 {
-    internal static class TypeInfo
+    internal class ToTypeDefinition
     {
-        internal static TypeDefInfo Transform(TypeDefinition typeDefinition)
+        string _assemblyName;
+        ToTypeId _toTypeId;
+
+        internal ToTypeDefinition(string assemblyName)
+        {
+            _assemblyName = assemblyName;
+            _toTypeId = new ToTypeId(assemblyName);
+        }
+
+        internal TypeDefInfo Transform(TypeDefinition typeDefinition)
         {
             if (typeDefinition.Name == "Convert")
             {
                 Console.WriteLine();
             }
             return new TypeDefInfo(
-                Id: new LocalTypeDefId(typeDefinition.MetadataToken.ToInt32()),
+                Id: new LocalTypeDefId(_assemblyName, typeDefinition.MetadataToken.ToInt32()),
                 Namespace: typeDefinition.Namespace.ToStringOrNull(),
                 Name: typeDefinition.Name,
-                DeclaringType: typeDefinition.DeclaringType == null ? null : (LocalTypeDefId)GetTypeId(typeDefinition.DeclaringType, typeDefinition),
+                DeclaringType: typeDefinition.DeclaringType == null ? null : (LocalTypeDefId)GetTypeId(typeDefinition.DeclaringType),
                 Attributes: GetAttributes(typeDefinition.CustomAttributes),
-                BaseType: typeDefinition.BaseType == null ? null : GetTypeId(typeDefinition.BaseType, typeDefinition),
-                Interfaces: typeDefinition.Interfaces.Select(interfaceImlementation => GetTypeId(interfaceImlementation.InterfaceType, typeDefinition)).ToArrayOrNull(),
+                BaseType: typeDefinition.BaseType == null ? null : GetTypeId(typeDefinition.BaseType),
+                Interfaces: typeDefinition.Interfaces.Select(interfaceImlementation => GetTypeId(interfaceImlementation.InterfaceType)).ToArrayOrNull(),
                 GenericTypeParameters: GetGenericParameters(typeDefinition.GenericParameters),
                 Access: GetAccess(typeDefinition),
                 // Members
-                FieldMembers: typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition, typeDefinition)).ToArrayOrNull(),
-                EventMembers: typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition, typeDefinition)).ToArrayOrNull(),
-                PropertyMembers: typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition, typeDefinition)).ToArrayOrNull(),
-                TypeMembers: typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType, typeDefinition)).ToArrayOrNull(),
-                MethodMembers: typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition, typeDefinition)).ToArrayOrNull()
+                FieldMembers: typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
+                EventMembers: typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
+                PropertyMembers: typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
+                TypeMembers: typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType)).ToArrayOrNull(),
+                MethodMembers: typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
                 );
         }
 
-        private static TypeId GetTypeId(TypeReference tr, TypeDefinition typeDefinition) => ToTypeId.Convert(tr);
+        TypeId GetTypeId(TypeReference tr) => _toTypeId.Convert(tr);
 
         static string[]? GetAttributes(IEnumerable<CustomAttribute> customAttributes)
         {
@@ -59,15 +68,15 @@ namespace Core.CecilToOutput
                 : (typeDefinition.IsNestedPublic ? Access.Public : typeDefinition.IsNestedPrivate ? Access.Private : Access.Internal);
         }
 
-        static FieldMember GetField(FieldDefinition memberInfo, TypeDefinition typeDefinition)
+        FieldMember GetField(FieldDefinition memberInfo)
         {
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var fieldType = memberInfo.FieldType;
             bool? isStatic = memberInfo.IsStatic ? true : null;
-            return new FieldMember(memberInfo.Name, GetTypeId(fieldType, typeDefinition), access, isStatic, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
+            return new FieldMember(memberInfo.Name, GetTypeId(fieldType), access, isStatic, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
 
-        static EventMember GetEvent(EventDefinition memberInfo, TypeDefinition typeDefinition)
+        EventMember GetEvent(EventDefinition memberInfo)
         {
             var eventType = memberInfo.EventType;
             var addMethod = memberInfo.AddMethod;
@@ -76,10 +85,10 @@ namespace Core.CecilToOutput
                 throw new ArgumentNullException();
             }
             bool? isStatic = addMethod.IsStatic ? true : null;
-            return new EventMember(memberInfo.Name, GetTypeId(eventType, typeDefinition), GetAccess(addMethod), isStatic, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
+            return new EventMember(memberInfo.Name, GetTypeId(eventType), GetAccess(addMethod), isStatic, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
 
-        static PropertyMember GetProperty(PropertyDefinition memberInfo, TypeDefinition typeDefinition)
+        PropertyMember GetProperty(PropertyDefinition memberInfo)
         {
             var propertyType = memberInfo.PropertyType;
             var getMethod = memberInfo.GetMethod;
@@ -106,23 +115,23 @@ namespace Core.CecilToOutput
                 return (access, isStatic);
             }
             var (access, isStatic) = Get();
-            var parameters = GetParameters(memberInfo.Parameters, typeDefinition);
-            return new PropertyMember(memberInfo.Name, GetTypeId(propertyType, typeDefinition), access, isStatic, parameters, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
+            var parameters = GetParameters(memberInfo.Parameters);
+            return new PropertyMember(memberInfo.Name, GetTypeId(propertyType), access, isStatic, parameters, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
 
-        static MethodMember GetMethod(MethodDefinition memberInfo, TypeDefinition typeDefinition)
+        MethodMember GetMethod(MethodDefinition memberInfo)
         {
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
-            var parameters = GetParameters(memberInfo.Parameters, typeDefinition);
+            var parameters = GetParameters(memberInfo.Parameters);
             bool? isStatic = memberInfo.IsStatic ? true : null;
             bool? isConstructor = memberInfo.IsConstructor ? true : null;
             var genericParameters = (memberInfo.HasGenericParameters) ? GetGenericParameters(memberInfo.GenericParameters) : null;
-            return new MethodMember(memberInfo.Name, access, isStatic, isConstructor, genericParameters, parameters, GetTypeId(memberInfo.ReturnType, typeDefinition), GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
+            return new MethodMember(memberInfo.Name, access, isStatic, isConstructor, genericParameters, parameters, GetTypeId(memberInfo.ReturnType), GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
 
-        static Parameter[]? GetParameters(IEnumerable<ParameterDefinition> parameterInfos, TypeDefinition typeDefinition)
+        Parameter[]? GetParameters(IEnumerable<ParameterDefinition> parameterInfos)
         {
-            var parameters = parameterInfos.Select(parameterInfo => new Parameter(parameterInfo.Name, GetTypeId(parameterInfo.ParameterType, typeDefinition))).ToArray();
+            var parameters = parameterInfos.Select(parameterInfo => new Parameter(parameterInfo.Name, GetTypeId(parameterInfo.ParameterType))).ToArray();
             return parameters.Length == 0 ? null : parameters;
         }
 

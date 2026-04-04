@@ -1,6 +1,9 @@
 ﻿using Core.Extensions;
+using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Xml.Linq;
 
 namespace Core.Output
 {
@@ -49,23 +52,27 @@ namespace Core.Output
     public abstract record TypeId : IShortJson
     {
         public abstract object SerializeAs { get; }
+        public abstract string GetName(INameFromId nameFromId);
     }
 
     public abstract record SimpleTypeId : TypeId;
 
     // token in this assembly
-    public sealed record LocalTypeDefId(int MetadataToken) : SimpleTypeId
+    public sealed record LocalTypeDefId(string LocalAssemblyName, int MetadataToken) : SimpleTypeId
     {
         public override object SerializeAs => MetadataToken;
+        public override string GetName(INameFromId nameFromId) => nameFromId.GetTypeName(LocalAssemblyName, MetadataToken);
     }
     // resolved TypeRef -> remote TypeDef
     public sealed record RemoteTypeDefId(string AssemblyName, int MetadataToken) : SimpleTypeId
     {
         public override object SerializeAs => $"{AssemblyName}|{MetadataToken}";
+        public override string GetName(INameFromId nameFromId) => nameFromId.GetTypeName(AssemblyName, MetadataToken);
     }
     public sealed record GenericParameterId(string OwnerAssembly, int OwnerToken, bool OwnerIsMethod, int Position, string Name) : SimpleTypeId
     {
         public override object SerializeAs => Name;
+        public override string GetName(INameFromId nameFromId) => Name;
     }
 
     public sealed record TypeSpecId(SimpleTypeId Resolved, SimpleTypeId[]? GenericTypeArguments, string FullName) : TypeId
@@ -84,6 +91,7 @@ namespace Core.Output
                 return result.ToArray();
             }
         }
+        public override string GetName(INameFromId nameFromId) => FullName;
     }
 
     /// <summary>
