@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -21,6 +22,35 @@ namespace Core.Serializer
                 .Build();
 
             string yaml = serializer.Serialize(value);
+
+            // postprocess the "special" comments to change this
+            //
+            // - - 33554469 # Core.Loader.ILoaded`1 # ;Core.Loader.ILoaded`1<U>
+            //
+            // to this
+            //
+            // - # Core.Loader.ILoaded`1<U>
+            //   - 33554469 # Core.Loader.ILoaded`1
+
+            var lines = yaml.Split(new[] { "\r\n", "\n" }, StringSplitOptions.None).ToList();
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                var line = lines[i];
+                var index0 = line.IndexOf("- -");
+                var index1 = line.IndexOf("# ;");
+                if (index0 < 0 || index1 < 0)
+                {
+                    continue;
+                }
+                var line0 = new string(' ', index0) + "- # " + line.Substring(index1 + 3);
+                var line1 = new string(' ', index0 + 2) + line.Substring(index0 + 2, index1 - index0 - 3);
+                lines[i] = line0;
+                lines.Insert(i + 1, line1);
+            }
+
+            yaml = string.Join("\r\n", lines);
+
             return yaml;
         }
     }
@@ -55,10 +85,14 @@ namespace Core.Serializer
                 // if this array is the value of a key then an inline comment is good and attaches to the key with the array on lines underneath
                 // but if this array is subitems of an array item then emit a block comment instead
                 bool isInSequence = ContextTrackingEventEmitter.Singleton?.IsInSequence ?? false;
-                EmitComment(emitter, shortJson, !isInSequence);
+                if (!isInSequence)
+                {
+                    EmitComment(emitter, shortJson);
+                }
 
                 // start block sequence
                 emitter.Emit(new SequenceStart(null, null, false, SequenceStyle.Block));
+                var first = true;
                 foreach (var element in seq)
                 {
                     // emit element as scalar or nested object; here we emit scalar for simplicity
@@ -68,11 +102,17 @@ namespace Core.Serializer
                     {
                         var elementObj = elementShortJson.SerializeAs;
                         emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(elementObj)));
-                        EmitComment(emitter, elementShortJson, true);
+                        EmitComment(emitter, elementShortJson);
                     }
                     else
                     {
                         emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(element)));
+                    }
+
+                    if (isInSequence && first)
+                    {
+                        first = false;
+                        EmitComment(emitter, shortJson, true);
                     }
                 }
                 emitter.Emit(new SequenceEnd());
@@ -83,16 +123,20 @@ namespace Core.Serializer
                 // Non-sequence: emit a scalar (or mapping) and then an inline comment
                 emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(obj)));
 
-                EmitComment(emitter, shortJson, true);
+                EmitComment(emitter, shortJson);
             }
         }
 
-        private void EmitComment(IEmitter emitter, IShortJson shortJson, bool isInline)
+        private void EmitComment(IEmitter emitter, IShortJson shortJson, bool isSpecial = false)
         {
             if (_nameFromId != null)
             {
                 var typeName = shortJson.GetName(_nameFromId);
-                emitter.Emit(new Comment(typeName, isInline));
+                if (isSpecial)
+                {
+                    typeName = $";{typeName}"; // prepend ';' for post-processing
+                }
+                emitter.Emit(new Comment(typeName, true));
             }
         }
 
