@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 
 using ElectronCgi.DotNet;
 
@@ -31,7 +30,7 @@ namespace Core
                     catch (Exception e)
                     {
                         Console.WriteLine(e.ToString());
-                    }
+                    }   
                     break;
                 default:
                     throw new ArgumentException("Expected no arguments in production or one argument for debugging as a standalone program");
@@ -98,37 +97,17 @@ namespace Core
 
         static void SelfTest()
         {
-            MethodCall[] GetAllErrors(string directory)
-            {
-                var all = App.LoadAssemblies(directory);
-                var allMethodDetails = all.AssemblyMethods.Values.SelectMany(dictionary => dictionary.Values);
-                var allCallDetails = allMethodDetails.SelectMany(methodDetails => methodDetails.Called ?? Array.Empty<MethodCall>());
-                return allCallDetails.Where(callDetails => callDetails.MetadataToken == null).ToArray();
-            }
-
-            var allErrors = GetAllErrors(Directory.GetCurrentDirectory());
-            if (allErrors.Length > 1)
-            {
-                throw new Exception("New errors found");
-            }
+            var all = App.LoadAssemblies(Directory.GetCurrentDirectory());
 
             // e.g. C:\Dev\apis\src.dotnet\Core\bin\Release\net8.0
             var exeDirectory = AppContext.BaseDirectory;
 
             var exeTestDirectory = exeDirectory.Replace(@"\Core\", @"\Core.Test\");
 
-            allErrors = GetAllErrors(exeTestDirectory);
-            if (allErrors.Length > 0)
-            {
-                throw new Exception("New errors found");
-            }
+            all = App.LoadAssemblies(exeTestDirectory);
 
             var modeltextDirectory = @"C:\Users\Christopher\Source\Repos\modeltext\ModelTextHtml\ModelEditControl\bin\Debug";
-            allErrors = GetAllErrors(modeltextDirectory);
-            if (allErrors.Length > 0)
-            {
-                throw new Exception("New errors found");
-            }
+            all = App.LoadAssemblies(modeltextDirectory);
         }
 
         static void SelfLoad() => TestLoad(AppContext.BaseDirectory);

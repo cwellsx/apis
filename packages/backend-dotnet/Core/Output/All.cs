@@ -72,11 +72,8 @@ namespace Core.Output
     public record MethodMember(string Name, Access Access, bool? IsStatic, bool? IsConstructor, string[]? GenericParameters, Parameter[]? Parameters, TypeId ReturnType, string[]? Attributes, int MetadataToken);
 
 
-    // a shorter version of CallDetails
-    public record MethodCall(string AssemblyName, int? MetadataToken);
-
     // a shorter version of MethodDetails
-    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, TypeId[]? Locals);
+    public record MethodInfo(string AsText, MethodId[]? Called, MethodId[]? Argued, TypeId[]? Locals);
 
     public record AssemblyInfo(string[] ReferencedAssemblies, TypeInfo[] TypeInfos);
 
