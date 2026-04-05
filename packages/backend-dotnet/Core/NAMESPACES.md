@@ -40,11 +40,11 @@ Uses
 - (only System APIs)
 - System.Text.Json (to read framework name from `*.deps.json`)
 
-## Core.Loader
+## Core.Output
 
 Uses
 
-- Core.Serializer
+- (only System APIs)
 
 ## Core.Serializer
 

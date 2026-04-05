@@ -6,24 +6,24 @@ using System.Linq;
 
 namespace Core.CecilToOutput
 {
-    internal class ToTypeDefinition
+    internal class ToTypeInfo
     {
-        string _assemblyName;
+        readonly string _assemblyName;
         ToTypeId _toTypeId;
 
-        internal ToTypeDefinition(string assemblyName)
+        internal ToTypeInfo(string assemblyName)
         {
             _assemblyName = assemblyName;
             _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal TypeDefInfo Transform(TypeDefinition typeDefinition)
+        internal TypeInfo Transform(TypeDefinition typeDefinition)
         {
             if (typeDefinition.Name == "Convert")
             {
                 Console.WriteLine();
             }
-            return new TypeDefInfo(
+            return new TypeInfo(
                 Id: new LocalTypeId(_assemblyName, typeDefinition.MetadataToken.ToInt32(), typeDefinition.FullName),
                 Namespace: typeDefinition.Namespace.ToStringOrNull(),
                 Name: typeDefinition.Name,

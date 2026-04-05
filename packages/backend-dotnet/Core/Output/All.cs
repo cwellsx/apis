@@ -41,13 +41,11 @@ namespace Core.Output
     //    TypeInfo[] Types
     //    );
 
-    public record AssemblyInfo(string[] ReferencedAssemblies, TypeDefInfo[] TypeDefinitions);
-
     /// <summary>
     /// All properties which were previously in TypeId plus TypeInfo
     /// excluding (GenericTypeArguments, Kind, ElementType, Flag) which are TypeSpec only and not TypeDef
     /// </summary>
-    public record TypeDefInfo(
+    public record TypeInfo(
         // string AssemblyName,
         LocalTypeId Id,
         string? Namespace,
@@ -70,7 +68,7 @@ namespace Core.Output
     public record FieldMember(string Name, TypeId FieldType, Access Access, bool? IsStatic, string[]? Attributes, int MetadataToken);
     public record EventMember(string Name, TypeId EventHandlerType, Access Access, bool? IsStatic, string[]? Attributes, int MetadataToken);
     public record PropertyMember(string Name, TypeId PropertyType, Access Access, bool? IsStatic, Parameter[]? Parameters, string[]? Attributes, int MetadataToken);
-    public record Parameter(string? Name, TypeId Type);
+    public record Parameter(string Name, TypeId Type);
     public record MethodMember(string Name, Access Access, bool? IsStatic, bool? IsConstructor, string[]? GenericParameters, Parameter[]? Parameters, TypeId ReturnType, string[]? Attributes, int MetadataToken);
 
 
@@ -82,6 +80,8 @@ namespace Core.Output
 
     // a shorter version of MethodDetails
     public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals);
+
+    public record AssemblyInfo(string[] ReferencedAssemblies, TypeInfo[] TypeInfos);
 
     public record All(
         Dictionary<string, AssemblyInfo> Assemblies,

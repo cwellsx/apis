@@ -1,4 +1,4 @@
-﻿namespace Core.Serializer
+﻿namespace Core.Output
 {
     public interface IShortJson
     {

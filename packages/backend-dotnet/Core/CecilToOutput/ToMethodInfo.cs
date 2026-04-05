@@ -1,4 +1,6 @@
 ﻿using Core.Cecil;
+using Core.Output;
+
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 using System;
@@ -7,19 +9,24 @@ using System.Linq;
 
 namespace Core.CecilToOutput
 {
-    internal static class MethodInfo
+    internal class ToMethodInfo
     {
-        internal static Output.MethodInfo Transform(MethodData methodData, string asText, IFilter filter)
+        readonly string _assemblyName;
+
+        internal ToMethodInfo(string assemblyName)
         {
-            return new Output.MethodInfo(
+            _assemblyName = assemblyName;
+        }
+
+        internal static MethodInfo Transform(MethodData methodData, string asText, IFilter filter)
+        {
+            return new MethodInfo(
                 AsText: asText,
                 Called: ToMethodCall(methodData.Called, filter),
                 Argued: ToMethodCall(methodData.Argued, filter),
                 Locals: ToLocalsType(methodData.Locals.Where(IsSimple), filter)
                 );
         }
-
-        static T[]? OrNull<T>(this T[] array) where T : class => array.Length == 0 ? null : array;
 
         private static bool IsSimple(VariableReference variableReference) => IsSimple(variableReference.VariableType);
 
@@ -33,34 +40,32 @@ namespace Core.CecilToOutput
             !typeReference.IsFunctionPointer &&
             !typeReference.IsPrimitive;
 
-        private static Output.MethodCall[]? ToMethodCall(IEnumerable<MethodReference> methodReferences, IFilter filter)
+        private static MethodCall[]? ToMethodCall(IEnumerable<MethodReference> methodReferences, IFilter filter)
         {
             return methodReferences
                 .Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
                 .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
                 .Select(ToMethodCall)
                 .Where(methodCall => !filter.IsMicrosoftAssemblyPath(methodCall.AssemblyName))
-                .ToArray()
-                .OrNull();
+                .ToArrayOrNull();
         }
 
-        private static Output.LocalsType[]? ToLocalsType(IEnumerable<VariableReference> variableReferences, IFilter filter)
+        private static LocalsType[]? ToLocalsType(IEnumerable<VariableReference> variableReferences, IFilter filter)
         {
             return variableReferences
                 .Where(variableReference => !filter.IsMicrosoftAssemblyName(variableReference.VariableType.Scope.Name)) // don't know the Module yet
                 .Select(ToLocalsType)
                 .Where(localsType => !filter.IsMicrosoftAssemblyPath(localsType.AssemblyName))
                 .Distinct()
-                .ToArray()
-                .OrNull();
+                .ToArrayOrNull();
         }
 
-        private static Output.MethodCall ToMethodCall(MethodReference methodReference)
+        private static MethodCall ToMethodCall(MethodReference methodReference)
         {
             try
             {
                 var methodDefinition = methodReference.Resolve();
-                return new Output.MethodCall(
+                return new MethodCall(
                     AssemblyName: methodDefinition.DeclaringType.Module.Assembly.Name.Name,
                     MetadataToken: methodDefinition.MetadataToken.ToInt32()
                     );
@@ -69,14 +74,14 @@ namespace Core.CecilToOutput
             {
                 Logger.Log($"Failed to resolve method {methodReference}");
                 var scope = methodReference.DeclaringType.Scope;
-                return new Output.MethodCall(
+                return new MethodCall(
                     AssemblyName: scope.Name,
                     MetadataToken: null //methodReference.MetadataToken.ToInt32(),                  
                     );
             }
         }
 
-        private static Output.LocalsType ToLocalsType(VariableReference variableReference)
+        private static LocalsType ToLocalsType(VariableReference variableReference)
         {
             try
             {
@@ -84,12 +89,12 @@ namespace Core.CecilToOutput
                 if (0 == (variableDefinition.VariableType.MetadataToken.ToInt32() & 0xFFFFFF))
                 {
                     var scope = variableReference.VariableType.Scope as AssemblyNameReference;
-                    return new Output.LocalsType(
+                    return new LocalsType(
                         AssemblyName: scope!.Name,
                         MetadataToken: null
                         );
                 }
-                return new Output.LocalsType(
+                return new LocalsType(
                     AssemblyName: variableDefinition.VariableType.Module.Assembly.Name.Name,
                     MetadataToken: variableDefinition.VariableType.MetadataToken.ToInt32()
                     );
@@ -98,7 +103,7 @@ namespace Core.CecilToOutput
             {
                 Logger.Log($"Failed to resolve variable {variableReference}");
                 var scope = variableReference.VariableType.Scope;
-                return new Output.LocalsType(
+                return new LocalsType(
                     AssemblyName: scope.Name,
                     MetadataToken: null
                     );

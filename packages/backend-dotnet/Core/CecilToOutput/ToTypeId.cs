@@ -151,11 +151,11 @@ namespace Core.CecilToOutput
                 string ownerAssembly = gp.Module.Assembly.Name.Name;
 
                 return new GenericParameterTypeId(
-                    OwnerAssembly: ownerAssembly,
-                    OwnerToken: ownerToken,
-                    OwnerIsMethod: ownerIsMethod,
-                    Position: gp.Position,
-                    Name: gp.Name
+                    ownerAssembly: ownerAssembly,
+                    ownerToken: ownerToken,
+                    ownerIsMethod: ownerIsMethod,
+                    position: gp.Position,
+                    name: gp.Name
                 );
             }
 

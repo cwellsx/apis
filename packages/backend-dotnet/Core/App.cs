@@ -1,4 +1,6 @@
 ﻿using Core.Output;
+using Core.CecilToOutput;
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -42,25 +44,26 @@ namespace Core
                     var assemblyName = assemblyData.Name;
                     Logger.Log(assemblyName);
 
-                    var toTypeDefInfo = new CecilToOutput.ToTypeDefinition(assemblyName);
+                    var toTypeDefInfo = new ToTypeInfo(assemblyName);
 
                     var assemblyInfo = new AssemblyInfo(
                         ReferencedAssemblies: assemblyData.AssemblyReferences.Select(assemblyReference => assemblyReference.Name).ToArray(),
-                        TypeDefinitions: assemblyData.TypeDefinitions.Select(toTypeDefInfo.Transform).ToArray()
+                        TypeInfos: assemblyData.TypeDefinitions.Select(toTypeDefInfo.Transform).ToArray()
                         );
 
                     assemblies.Add(assemblyName, assemblyInfo);
 
-                    compilerMethods.Add(assemblyName, CecilToOutput.CompilerMethods.Transform(assemblyData));
+                    compilerMethods.Add(assemblyName, CompilerMethods.Transform(assemblyData));
 
                     var decompiler = new Decompiler.AssemblyDecompiler(assemblyName, ilspyAssemblyResolver);
 
+                    var toMethodInfo = new ToMethodInfo(assemblyName);
                     assemblyMethods.Add(assemblyName, assemblyData.MethodData.ToDictionary(
                         methodData => methodData.MetadataToken.ToInt32(),
                         methodData =>
                         {
                             var asText = decompiler.DecompileMethod(methodData.MetadataToken.ToInt32());
-                            return CecilToOutput.MethodInfo.Transform(methodData, asText, filter);
+                            return ToMethodInfo.Transform(methodData, asText, filter);
                         }
                         ));
                 }
