@@ -49,24 +49,40 @@ namespace Core.Serializer
             // If obj is a sequence (array/list) and you want per-element comments:
             if (obj is IEnumerable seq && !(obj is string))
             {
+                EmitComment(emitter, shortJson);
+
                 // start block sequence
                 emitter.Emit(new SequenceStart(null, null, false, SequenceStyle.Block));
                 foreach (var element in seq)
                 {
                     // emit element as scalar or nested object; here we emit scalar for simplicity
                     // For complex elements you would recursively call serializer.Serialize for that element
-                    emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(element)));
 
-                    // emit inline comment for the element is TBD
-                    //emitter.Emit(new Comment(ComputeCommentFor(element), true));
+                    if (element is IShortJson elementShortJson)
+                    {
+                        var elementObj = elementShortJson.SerializeAs;
+                        emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(elementObj)));
+                        EmitComment(emitter, elementShortJson);
+                    }
+                    else
+                    {
+                        emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(element)));
+                    }
                 }
                 emitter.Emit(new SequenceEnd());
                 return;
             }
+            else
+            {
+                // Non-sequence: emit a scalar (or mapping) and then an inline comment
+                emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(obj)));
 
-            // Non-sequence: emit a scalar (or mapping) and then an inline comment
-            emitter.Emit(new Scalar(null, null, ConvertToYamlScalar(obj)));
+                EmitComment(emitter, shortJson);
+            }
+        }
 
+        private void EmitComment(IEmitter emitter, IShortJson shortJson)
+        {
             if (_nameFromId != null)
             {
                 var typeName = shortJson.GetName(_nameFromId);

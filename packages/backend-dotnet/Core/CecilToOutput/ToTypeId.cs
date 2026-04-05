@@ -4,6 +4,18 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
+/*
+ * This resolves a Cecil TypeReference to an app-specific TypeId
+ * 
+ * TypeId // abstract superclass
+ * - BaseTypeId : TypeId // simple or generic parameter
+ *   - SimpleTypeId : BaseTypeId // resolved type definition
+ *     - LocalTypeId : SimpleTypeId // type definition in current assembly
+ *     - RemoveTypeId : SimpleTypeId // type definition in remote assembly
+ *   - GenericParameterTypeId : BaseTypeId // e.g. "T"
+ * - SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string Suffix) : TypeId
+ */
+
 namespace Core.CecilToOutput
 {
     internal class ToTypeId
@@ -23,7 +35,7 @@ namespace Core.CecilToOutput
             }
 
             var recurseResult = Recurse(tr);
-            return new SpecTypeId(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs.ToArray(), Suffix: recurseResult.Suffix, FullName: tr.FullName);
+            return new SpecTypeId(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs.ToArrayOrNull(), Suffix: recurseResult.Suffix, FullName: tr.FullName);
         }
 
         static bool IsSimpleOrGenericParameter(TypeReference tr) =>
@@ -60,7 +72,7 @@ namespace Core.CecilToOutput
             if (tr is ArrayType at)
             {
                 var inner = Recurse(at.ElementType);
-                var thisSuffix = "[" + new string(',', Math.Max(0, at.Rank - 1)) + "]";
+                var thisSuffix = $"[{string.Join(",", at.Dimensions)}]";
                 return new RecurseResult(inner.Simple, inner.Suffix + thisSuffix, inner.GenericArgs);
             }
 

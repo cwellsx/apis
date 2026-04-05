@@ -50,15 +50,18 @@ namespace Core.Output
 
         protected override string HelpGetName(INameFromId nameFromId)
         {
-            if (nameFromId.IsMicrosoftAssemblyName(AssemblyName))
-            {
-                return FullName;
-            }
             // Cecil doesn't show generic parameters, only generic arguments
-            return (GetTypeNameParts(nameFromId) with { GenericTypeParameters = null }).AsName;
+            return GetTypeNameParts(nameFromId).AsName(false);
         }
 
-        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId) => nameFromId.GetTypeNameParts(AssemblyName, MetadataToken);
+        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId)
+        {
+            if (nameFromId.IsMicrosoftAssemblyName(AssemblyName))
+            {
+                return TypeNameParts.FromFullName(FullName);
+            }
+            return nameFromId.GetTypeNameParts(AssemblyName, MetadataToken);
+        }
     }
 
     // token in this assembly
@@ -88,17 +91,17 @@ namespace Core.Output
     // generic parameter -> enclosing method or type (in this assembly)
     internal sealed class GenericParameterTypeId : BaseTypeId
     {
-        readonly string _name;
+        internal string Name { get; }
 
         internal GenericParameterTypeId(string ownerAssembly, int ownerToken, bool ownerIsMethod, int position, string name)
             : base(name)
         {
-            _name = name;
+            Name = name;
         }
 
-        public override object SerializeAs => _name;
-        protected override string HelpGetName(INameFromId nameFromId) => _name;
-        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId) => new TypeNameParts(_name, null);
+        public override object SerializeAs => Name;
+        protected override string HelpGetName(INameFromId nameFromId) => Name;
+        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId) => new TypeNameParts(Name, null);
     }
 
     internal sealed class SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string Suffix, string FullName) : TypeId(FullName)
@@ -108,12 +111,15 @@ namespace Core.Output
             get
             {
                 var result = new List<object>();
-                result.Add(Resolved.SerializeAs);
+                result.Add(Resolved);
                 if (GenericTypeArguments != null)
                 {
-                    result.AddRange(GenericTypeArguments.Select(arg => arg.SerializeAs));
+                    result.AddRange(GenericTypeArguments);
                 }
-                result.Add(FullName);
+                if (!string.IsNullOrEmpty(Suffix))
+                {
+                    result.Add(Suffix);
+                }
                 return result.ToArray();
             }
         }
@@ -139,7 +145,7 @@ namespace Core.Output
                 }
                 typeDefName = new TypeNameParts(typeDefName.TypeName, GenericTypeArguments.Select(typeId => typeId.GetName(nameFromId)).ToArray());
             }
-            return typeDefName.AsName + Suffix;
+            return typeDefName.AsName(true) + Suffix;
         }
     }
 }
