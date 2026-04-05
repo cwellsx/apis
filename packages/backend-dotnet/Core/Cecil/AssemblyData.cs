@@ -1,6 +1,7 @@
 ﻿using Mono.Cecil;
 using System;
 using System.Linq;
+using Core.Loader;
 
 namespace Core.Cecil
 {
@@ -20,8 +21,8 @@ namespace Core.Cecil
 
         internal string Name => AssemblyDefinition.Name.Name;
 
-        internal Core.Loader.AssemblyReference[] AssemblyReferences => AssemblyDefinition.MainModule.AssemblyReferences
-            .Select(assemblyNameReference => new Core.Loader.AssemblyReference(assemblyNameReference))
+        internal AssemblyReference[] AssemblyReferences => AssemblyDefinition.MainModule.AssemblyReferences
+            .Select(assemblyNameReference => new AssemblyReference(assemblyNameReference))
             .ToArray();
 
         internal TypeDefinition[] TypeDefinitions => _types.Value.SelectMany(typeData => typeData.TypeDefinitions).ToArray();

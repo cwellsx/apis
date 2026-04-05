@@ -4,7 +4,7 @@ using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
 
-namespace Core.Extensions
+namespace Core.Serializer
 {
     internal static class AsYaml
     {

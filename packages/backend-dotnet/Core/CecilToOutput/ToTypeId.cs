@@ -23,7 +23,7 @@ namespace Core.CecilToOutput
             }
 
             var recurseResult = Recurse(tr);
-            return new TypeSpecId(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs.ToArray(), Suffix: recurseResult.Suffix, FullName: tr.FullName);
+            return new SpecTypeId(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs.ToArray(), Suffix: recurseResult.Suffix, FullName: tr.FullName);
         }
 
         static bool IsSimpleOrGenericParameter(TypeReference tr) =>
@@ -129,7 +129,7 @@ namespace Core.CecilToOutput
                 {
                     throw new Exception();
                 }
-                return new LocalTypeDefId(_assemblyName, td.MetadataToken.ToInt32(), td.FullName);
+                return new LocalTypeId(_assemblyName, td.MetadataToken.ToInt32(), td.FullName);
             }
 
             // 2. Local TypeSpec (constructed/modified type)
@@ -150,7 +150,7 @@ namespace Core.CecilToOutput
 
                 string ownerAssembly = gp.Module.Assembly.Name.Name;
 
-                return new GenericParameterId(
+                return new GenericParameterTypeId(
                     OwnerAssembly: ownerAssembly,
                     OwnerToken: ownerToken,
                     OwnerIsMethod: ownerIsMethod,
@@ -170,7 +170,7 @@ namespace Core.CecilToOutput
                     );
                 }
 
-                return new RemoteTypeDefId(resolved.Module.Assembly.Name.Name, resolved.MetadataToken.ToInt32(), resolved.FullName);
+                return new RemoteTypeId(resolved.Module.Assembly.Name.Name, resolved.MetadataToken.ToInt32(), resolved.FullName);
             }
         }
     }

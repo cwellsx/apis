@@ -1,5 +1,4 @@
-﻿using Core.Extensions;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using System;
 using System.IO;
 using System.Linq;

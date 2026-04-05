@@ -1,12 +1,9 @@
 ﻿using System;
-using System.IO;
-using System.Reflection;
-using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace Core.Extensions
+namespace Core.Serializer
 {
     static class AsJson
     {

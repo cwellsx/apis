@@ -1,4 +1,4 @@
-﻿using Core.Extensions;
+﻿using Core.Serializer;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -59,11 +59,11 @@ namespace Core.Output
     }
 
     // token in this assembly
-    public sealed record LocalTypeDefId : SimpleTypeId
+    public sealed record LocalTypeId : SimpleTypeId
     {
         internal int MetadataToken { get; }
 
-        internal LocalTypeDefId(string localAssemblyName, int metadataToken, string fullName)
+        internal LocalTypeId(string localAssemblyName, int metadataToken, string fullName)
             : base(localAssemblyName, fullName)
         {
             MetadataToken = metadataToken;
@@ -74,11 +74,11 @@ namespace Core.Output
     }
 
     // resolved TypeRef -> remote TypeDef
-    public sealed record RemoteTypeDefId : SimpleTypeId
+    public sealed record RemoteTypeId : SimpleTypeId
     {
         private readonly int _metadataToken;
 
-        internal RemoteTypeDefId(string assemblyName, int metadataToken, string fullName)
+        internal RemoteTypeId(string assemblyName, int metadataToken, string fullName)
             : base(assemblyName, fullName)
         {
             _metadataToken = metadataToken;
@@ -89,14 +89,14 @@ namespace Core.Output
     }
 
     // generic parameter -> enclosing method or type (in this assembly)
-    public sealed record GenericParameterId(string OwnerAssembly, int OwnerToken, bool OwnerIsMethod, int Position, string Name) : BaseTypeId(Name)
+    public sealed record GenericParameterTypeId(string OwnerAssembly, int OwnerToken, bool OwnerIsMethod, int Position, string Name) : BaseTypeId(Name)
     {
         public override object SerializeAs => Name;
         protected override string HelpGetName(INameFromId nameFromId) => Name;
         internal override TypeDefName GetTypeDefName(INameFromId nameFromId) => new TypeDefName(Name, null);
     }
 
-    public sealed record TypeSpecId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string Suffix, string FullName) : TypeId(FullName)
+    public sealed record SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string Suffix, string FullName) : TypeId(FullName)
     {
         public override object SerializeAs
         {

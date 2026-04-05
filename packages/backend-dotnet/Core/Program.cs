@@ -5,7 +5,7 @@ using System.Linq;
 using ElectronCgi.DotNet;
 
 using Core.Output;
-using Core.Extensions;
+using Core.Serializer;
 
 namespace Core
 {

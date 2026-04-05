@@ -1,5 +1,4 @@
-﻿using Core.Extensions;
-using Core.Output;
+﻿using Core.Output;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
@@ -25,10 +24,10 @@ namespace Core.CecilToOutput
                 Console.WriteLine();
             }
             return new TypeDefInfo(
-                Id: new LocalTypeDefId(_assemblyName, typeDefinition.MetadataToken.ToInt32(), typeDefinition.FullName),
+                Id: new LocalTypeId(_assemblyName, typeDefinition.MetadataToken.ToInt32(), typeDefinition.FullName),
                 Namespace: typeDefinition.Namespace.ToStringOrNull(),
                 Name: typeDefinition.Name,
-                DeclaringType: typeDefinition.DeclaringType == null ? null : (LocalTypeDefId)GetTypeId(typeDefinition.DeclaringType),
+                DeclaringType: typeDefinition.DeclaringType == null ? null : (LocalTypeId)GetTypeId(typeDefinition.DeclaringType),
                 Attributes: GetAttributes(typeDefinition.CustomAttributes),
                 BaseType: typeDefinition.BaseType == null ? null : GetTypeId(typeDefinition.BaseType),
                 Interfaces: typeDefinition.Interfaces.Select(interfaceImlementation => GetTypeId(interfaceImlementation.InterfaceType)).ToArrayOrNull(),

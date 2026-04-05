@@ -1,17 +1,26 @@
-﻿namespace Core.Extensions
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Core
 {
-    internal static class StringExtensions
+    internal static class Extensions
     {
         internal static string NotNull(this string? name)
         {
             if (name == null)
             {
-                throw new System.ArgumentNullException("Unexpected null Name");
+                throw new ArgumentNullException("Unexpected null Name");
             }
             return name;
         }
 
         internal static string? ToStringOrNull(this string? s) => !string.IsNullOrEmpty(s) ? s : null;
+        internal static T[]? ToArrayOrNull<T>(this IEnumerable<T> enumerable)
+        {
+            var result = enumerable.ToArray();
+            return result.Length == 0 ? null : result;
+        }
 
         //internal static string? NameSuffix(this TypeKind? kind)
         //{

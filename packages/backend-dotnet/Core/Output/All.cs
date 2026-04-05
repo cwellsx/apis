@@ -1,6 +1,4 @@
-﻿using Core.Extensions;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
 
 namespace Core.Output
 {
@@ -51,10 +49,10 @@ namespace Core.Output
     /// </summary>
     public record TypeDefInfo(
         // string AssemblyName,
-        LocalTypeDefId Id,
+        LocalTypeId Id,
         string? Namespace,
         string Name,
-        LocalTypeDefId? DeclaringType,
+        LocalTypeId? DeclaringType,
         string[]? Attributes,
         TypeId? BaseType,
         TypeId[]? Interfaces,

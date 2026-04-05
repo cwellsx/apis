@@ -1,6 +1,4 @@
-﻿using System.Runtime.Versioning;
-
-namespace Core.Loader
+﻿namespace Core.Loader
 {
     internal interface ILoader<T>
     {
