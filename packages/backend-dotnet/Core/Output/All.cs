@@ -75,11 +75,8 @@ namespace Core.Output
     // a shorter version of CallDetails
     public record MethodCall(string AssemblyName, int? MetadataToken);
 
-    // a shorter version of TypeDetails
-    public record LocalsType(string AssemblyName, int? MetadataToken);
-
     // a shorter version of MethodDetails
-    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, LocalsType[]? Locals);
+    public record MethodInfo(string AsText, MethodCall[]? Called, MethodCall[]? Argued, TypeId[]? Locals);
 
     public record AssemblyInfo(string[] ReferencedAssemblies, TypeInfo[] TypeInfos);
 

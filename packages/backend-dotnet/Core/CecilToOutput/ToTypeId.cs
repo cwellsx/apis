@@ -94,30 +94,28 @@ namespace Core.CecilToOutput
             if (tr is OptionalModifierType opt)
             {
                 var inner = Recurse(opt.ElementType);
-                var mod = $" modopt({opt.ModifierType.FullName})";
-                return new RecurseResult(inner.Simple, inner.Suffix + mod, inner.GenericArgs);
+                return new RecurseResult(inner.Simple, inner.Suffix + $" modopt({opt.ModifierType.FullName})", inner.GenericArgs);
             }
 
             // Required modifier
             if (tr is RequiredModifierType req)
             {
                 var inner = Recurse(req.ElementType);
-                var mod = $" modreq({req.ModifierType.FullName})";
-                return new RecurseResult(inner.Simple, inner.Suffix + mod, inner.GenericArgs);
+                return new RecurseResult(inner.Simple, inner.Suffix + $" modreq({req.ModifierType.FullName})", inner.GenericArgs);
             }
 
             // Pinned
             if (tr is PinnedType pinned)
             {
                 var inner = Recurse(pinned.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + " pinned", inner.GenericArgs);
+                return new RecurseResult(inner.Simple, inner.Suffix + Optional(" pinned"), inner.GenericArgs);
             }
 
             // Sentinel
             if (tr is SentinelType sentinel)
             {
                 var inner = Recurse(sentinel.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + " sentinel", inner.GenericArgs);
+                return new RecurseResult(inner.Simple, inner.Suffix + Optional(" sentinel"), inner.GenericArgs);
             }
 
             // Function pointer (if you need it)
@@ -126,11 +124,13 @@ namespace Core.CecilToOutput
                 // function pointer formatting is complex; represent as a token-like suffix
                 var inner = Recurse(fptr.ReturnType);
                 // you may want to render parameters; here we append a placeholder suffix
-                return new RecurseResult(inner.Simple, inner.Suffix + " unmanagedcallconv*", inner.GenericArgs);
+                return new RecurseResult(inner.Simple, inner.Suffix + Optional(" unmanagedcallconv*"), inner.GenericArgs);
             }
 
             throw new NotSupportedException();
         }
+
+        private static string Optional(string suffix) => ""; // these are technically correct but Cecil doesn't include them in the FullName
 
         private BaseTypeId GetBaseTypeId(TypeReference tr)
         {

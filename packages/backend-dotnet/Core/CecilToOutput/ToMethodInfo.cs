@@ -12,19 +12,21 @@ namespace Core.CecilToOutput
     internal class ToMethodInfo
     {
         readonly string _assemblyName;
+        readonly ToTypeId _toTypeId;
 
         internal ToMethodInfo(string assemblyName)
         {
             _assemblyName = assemblyName;
+            _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal static MethodInfo Transform(MethodData methodData, string asText, IFilter filter)
+        internal MethodInfo Transform(MethodData methodData, string asText, IFilter filter)
         {
             return new MethodInfo(
                 AsText: asText,
                 Called: ToMethodCall(methodData.Called, filter),
                 Argued: ToMethodCall(methodData.Argued, filter),
-                Locals: ToLocalsType(methodData.Locals.Where(IsSimple), filter)
+                Locals: methodData.Locals.Select(local => _toTypeId.Convert(local.VariableType)).ToArrayOrNull()
                 );
         }
 
@@ -50,16 +52,6 @@ namespace Core.CecilToOutput
                 .ToArrayOrNull();
         }
 
-        private static LocalsType[]? ToLocalsType(IEnumerable<VariableReference> variableReferences, IFilter filter)
-        {
-            return variableReferences
-                .Where(variableReference => !filter.IsMicrosoftAssemblyName(variableReference.VariableType.Scope.Name)) // don't know the Module yet
-                .Select(ToLocalsType)
-                .Where(localsType => !filter.IsMicrosoftAssemblyPath(localsType.AssemblyName))
-                .Distinct()
-                .ToArrayOrNull();
-        }
-
         private static MethodCall ToMethodCall(MethodReference methodReference)
         {
             try
@@ -77,35 +69,6 @@ namespace Core.CecilToOutput
                 return new MethodCall(
                     AssemblyName: scope.Name,
                     MetadataToken: null //methodReference.MetadataToken.ToInt32(),                  
-                    );
-            }
-        }
-
-        private static LocalsType ToLocalsType(VariableReference variableReference)
-        {
-            try
-            {
-                var variableDefinition = variableReference.Resolve();
-                if (0 == (variableDefinition.VariableType.MetadataToken.ToInt32() & 0xFFFFFF))
-                {
-                    var scope = variableReference.VariableType.Scope as AssemblyNameReference;
-                    return new LocalsType(
-                        AssemblyName: scope!.Name,
-                        MetadataToken: null
-                        );
-                }
-                return new LocalsType(
-                    AssemblyName: variableDefinition.VariableType.Module.Assembly.Name.Name,
-                    MetadataToken: variableDefinition.VariableType.MetadataToken.ToInt32()
-                    );
-            }
-            catch (Exception)
-            {
-                Logger.Log($"Failed to resolve variable {variableReference}");
-                var scope = variableReference.VariableType.Scope;
-                return new LocalsType(
-                    AssemblyName: scope.Name,
-                    MetadataToken: null
                     );
             }
         }

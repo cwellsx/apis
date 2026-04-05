@@ -63,7 +63,7 @@ namespace Core
                         methodData =>
                         {
                             var asText = decompiler.DecompileMethod(methodData.MetadataToken.ToInt32());
-                            return ToMethodInfo.Transform(methodData, asText, filter);
+                            return toMethodInfo.Transform(methodData, asText, filter);
                         }
                         ));
                 }
