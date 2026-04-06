@@ -1,13 +1,36 @@
-﻿# Namespaces
+﻿# Namespaces and type names
 
-## Mono.Cecil
+## Type names
+
+There are different namespaces.
+Even so type names could be confusing -- because we're converting e.g. from Cecil types to Output types, some code needs to use both namespaces.
+Therefore the type names have their own naming conventions i.e. it isn't only the namespace that's different.
+
+| Namespace   | Type names                     |
+| ----------- | ------------------------------ |
+| Mono.Cecil  | `*Definition` and `*Reference` |
+| Core.Cecil  | `*Data`                        |
+| Core.Output | `*Info`                        |
+
+## Namespaces
+
+### Mono.Cecil
 
 Used in
 
 - Core.Cecil
 - Core.CecilToOutput
 
-## Core.Cecil
+### Core.Application
+
+Uses
+
+- Core.Cecil
+- Core.CecilToOutput
+- Core.Decompiler
+- Core.Output
+
+### Core.Cecil
 
 Uses
 
@@ -15,7 +38,7 @@ Uses
 - Mono.Cecil.Cil
 - Core.Loader
 
-## Core.CecilToOutput
+### Core.CecilToOutput
 
 Uses
 
@@ -23,7 +46,7 @@ Uses
 - Core.Cecil
 - Core.Output
 
-## Core.Decompiler
+### Core.Decompiler
 
 Uses
 
@@ -33,20 +56,27 @@ Uses
 - System.Reflection.Metadata.Ecma335
 - Core.Loader
 
-## Core.Loader
+### Core.Filter
+
+Used in
+
+- Core.CecilToOutput
+- Core.Loader
+
+### Core.Loader
 
 Uses
 
 - (only System APIs)
 - System.Text.Json (to read framework name from `*.deps.json`)
 
-## Core.Output
+### Core.Output
 
 Uses
 
 - (only System APIs)
 
-## Core.Serializer
+### Core.Serializer
 
 Uses
 

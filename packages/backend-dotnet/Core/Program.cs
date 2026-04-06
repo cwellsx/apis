@@ -5,6 +5,7 @@ using ElectronCgi.DotNet;
 
 using Core.Output;
 using Core.Serializer;
+using Core.Application;
 
 namespace Core
 {

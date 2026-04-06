@@ -1,9 +1,8 @@
 ﻿using Core.Cecil;
+using Core.Filter;
 using Core.Output;
 
 using Mono.Cecil;
-using Mono.Cecil.Cil;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -11,13 +10,11 @@ namespace Core.CecilToOutput
 {
     internal class ToMethodInfo
     {
-        readonly string _assemblyName;
         readonly ToTypeId _toTypeId;
         readonly ToMethodId _toMethodId;
 
         internal ToMethodInfo(string assemblyName)
         {
-            _assemblyName = assemblyName;
             _toTypeId = new ToTypeId(assemblyName);
             _toMethodId = new ToMethodId(assemblyName);
         }

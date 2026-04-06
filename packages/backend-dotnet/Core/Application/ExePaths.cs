@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection.PortableExecutable;
 
-namespace Core
+namespace Core.Application
 {
     internal static class ExePaths
     {

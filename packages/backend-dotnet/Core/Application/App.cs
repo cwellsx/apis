@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Core
+namespace Core.Application
 {
     static class App
     {
@@ -20,9 +20,14 @@ namespace Core
             }
 
             var exePath = ExePaths.FindSingleExe(directory);
+
+            // Cecil.AssemblyResolver uses logic from the Core.Loader namespace
             using var cecilAssemblyResolver = new Cecil.AssemblyResolver(exePath);
+
+            // LoadedAssemblies has a dictionary of Core.Cecil.AssemblyData
             var loadedAssemblies = cecilAssemblyResolver.LoadedAssemblies;
 
+            // Decompiler.AssemblyResolver reuses LoadedAssemblies found by Cecil.AssemblyResolver
             var ilspyAssemblyResolver = new Decompiler.AssemblyResolver(loadedAssemblies);
 
             var missingAssemblyNames = loadedAssemblies.MissingAssemblyNames;
