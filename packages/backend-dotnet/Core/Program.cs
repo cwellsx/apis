@@ -88,6 +88,7 @@ namespace Core
             File.WriteAllText("Assemblies.yaml", all.Assemblies.ToYaml(nameFromId));
             File.WriteAllText("Methods.yaml", all.AssemblyMethods.ToYaml(nameFromId));
             File.WriteAllText("Compiler.yaml", all.CompilerMethods.ToYaml(nameFromId));
+            File.WriteAllText("Microsoft.yaml", all.MicrosoftAssemblies.ToYaml(nameFromId));
 
             File.WriteAllText("All.json", all.ToJson(true));
             File.WriteAllText("FoundCalls.json", all.AssemblyMethods.ToJson(true));

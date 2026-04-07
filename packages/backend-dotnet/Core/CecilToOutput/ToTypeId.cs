@@ -121,10 +121,17 @@ namespace Core.CecilToOutput
             // Function pointer (if you need it)
             if (tr is FunctionPointerType fptr)
             {
-                // function pointer formatting is complex; represent as a token-like suffix
-                var inner = Recurse(fptr.ReturnType);
-                // you may want to render parameters; here we append a placeholder suffix
-                return new RecurseResult(inner.Simple, inner.Suffix + Optional(" unmanagedcallconv*"), inner.GenericArgs);
+                //// function pointer formatting is complex; represent as a token-like suffix
+                //var inner = Recurse(fptr.ReturnType);
+                //// you may want to render parameters; here we append a placeholder suffix
+                //return new RecurseResult(inner.Simple, inner.Suffix + Optional(" unmanagedcallconv*"), inner.GenericArgs);
+                //var funcTypeId = new FuncTypeId(
+                //    returnType: Convert(fptr.ReturnType),
+                //    parameterTypes: fptr.Parameters.Select(p => Convert(p.ParameterType)).ToArray(),
+                //    callingConvention: fptr.CallingConvention
+                //);
+                var funcTypeId = new FuncTypeId(fptr.FullName);
+                return new RecurseResult(funcTypeId, string.Empty, Array.Empty<TypeId>());
             }
 
             throw new NotSupportedException();

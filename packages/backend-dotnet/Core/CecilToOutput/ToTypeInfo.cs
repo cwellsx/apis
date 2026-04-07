@@ -1,5 +1,5 @@
-﻿using Core.Output;
-using Mono.Cecil;
+﻿using Mono.Cecil;
+using Core.Output;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,21 +8,25 @@ namespace Core.CecilToOutput
 {
     internal class ToTypeInfo
     {
-        readonly string _assemblyName;
-        ToTypeId _toTypeId;
+        internal static TypeInfo Transform(TypeDefinition typeDefinition, string assemblyName, bool isMicrosoft)
+        {
+            var self = new ToTypeInfo(assemblyName, isMicrosoft);
+            return self.Transform(typeDefinition);
+        }
 
-        internal ToTypeInfo(string assemblyName)
+        readonly string _assemblyName;
+        readonly bool _isMicrosoft;
+        readonly ToTypeId _toTypeId;
+
+        internal ToTypeInfo(string assemblyName, bool isMicrosoft)
         {
             _assemblyName = assemblyName;
+            _isMicrosoft = isMicrosoft;
             _toTypeId = new ToTypeId(assemblyName);
         }
 
         internal TypeInfo Transform(TypeDefinition typeDefinition)
         {
-            if (typeDefinition.Name == "Convert")
-            {
-                Console.WriteLine();
-            }
             return new TypeInfo(
                 Id: new LocalTypeId(_assemblyName, typeDefinition.MetadataToken.ToInt32(), typeDefinition.FullName),
                 Namespace: typeDefinition.Namespace.ToStringOrNull(),
@@ -34,11 +38,11 @@ namespace Core.CecilToOutput
                 GenericTypeParameters: GetGenericParameters(typeDefinition.GenericParameters),
                 Access: GetAccess(typeDefinition),
                 // Members
-                FieldMembers: typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
-                EventMembers: typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
-                PropertyMembers: typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
-                TypeMembers: typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType)).ToArrayOrNull(),
-                MethodMembers: typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
+                FieldMembers: _isMicrosoft ? null : typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
+                EventMembers: _isMicrosoft ? null : typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
+                PropertyMembers: _isMicrosoft ? null : typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
+                TypeMembers: _isMicrosoft ? null : typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType)).ToArrayOrNull(),
+                MethodMembers: _isMicrosoft ? null : typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
                 );
         }
 

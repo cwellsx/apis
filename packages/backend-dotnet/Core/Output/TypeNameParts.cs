@@ -34,13 +34,6 @@ namespace Core.Output
             }
         }
 
-        internal static TypeNameParts FromFullName(string fullName)
-        {
-            var arity = GetTotalArity(fullName);
-            string[]? genericParameters = arity == 0 ? null : Enumerable.Range(1, arity).Select(i => $"T{i}").ToArray();
-            return new TypeNameParts(fullName, genericParameters);
-        }
-
         private static int GetTotalArity(string fullName)
         {
             var parts = fullName.Split("/");

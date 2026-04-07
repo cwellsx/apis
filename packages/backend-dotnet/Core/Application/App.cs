@@ -1,6 +1,5 @@
-﻿using Core.Output;
-using Core.CecilToOutput;
-
+﻿using Core.CecilToOutput;
+using Core.Output;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -49,11 +48,11 @@ namespace Core.Application
                     var assemblyName = assemblyData.Name;
                     Logger.Log(assemblyName);
 
-                    var toTypeDefInfo = new ToTypeInfo(assemblyName);
+                    var toTypeInfo = new ToTypeInfo(assemblyName, false);
 
                     var assemblyInfo = new AssemblyInfo(
                         ReferencedAssemblies: assemblyData.AssemblyReferences.Select(assemblyReference => assemblyReference.Name).ToArray(),
-                        TypeInfos: assemblyData.TypeDefinitions.Select(toTypeDefInfo.Transform).ToArray()
+                        TypeInfos: assemblyData.TypeDefinitions.Select(toTypeInfo.Transform).ToArray()
                         );
 
                     assemblies.Add(assemblyName, assemblyInfo);
@@ -77,9 +76,11 @@ namespace Core.Application
                     exceptions.Add($"{assemblyData.Name} -- {e.Message}");
                 }
             }
-            var microsoftAssemblyNames = loadedAssemblies.GetMicrosoftAssemblies(filter).Select(assembly => assembly.Name).ToArray();
 
-            return new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, microsoftAssemblyNames);
+            var empty = new Dictionary<string, AssemblyInfo>();
+            var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, empty);
+            all = Filtered.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
+            return all;
         }
 
         internal static string GetDateModified(string directory)

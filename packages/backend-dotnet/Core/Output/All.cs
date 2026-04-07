@@ -84,6 +84,6 @@ namespace Core.Output
         string[] Exes,
         Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods,
         Dictionary<string, Dictionary<int, int>> CompilerMethods,
-        string[] MicrosoftAssemblyNames
+        Dictionary<string, AssemblyInfo> MicrosoftAssemblies
         );
 }

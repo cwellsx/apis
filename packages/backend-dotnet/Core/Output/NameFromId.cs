@@ -1,41 +1,81 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Core.Output
 {
     internal class NameFromId : INameFromId
     {
-        Dictionary<string, Dictionary<int, TypeInfo>> _maps;
-        HashSet<string> _microsoftAssemblyNames;
+        readonly Dictionary<string, Dictionary<int, TypeInfo>> _assembliesTypeInfo;
+        readonly Dictionary<string, Dictionary<int, TypeInfo>> _microsoftTypeInfo;
 
         internal NameFromId(All all)
         {
-            _maps = all.Assemblies.ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value.TypeInfos.ToDictionary(
-                    typeDefInfo => typeDefInfo.Id.GetMetadataToken()
-                ));
-
-            _microsoftAssemblyNames = all.MicrosoftAssemblyNames.ToHashSet();
+            _assembliesTypeInfo = ToTypInfoDictionary(all.Assemblies);
+            _microsoftTypeInfo = ToTypInfoDictionary(all.MicrosoftAssemblies);
         }
 
         public TypeNameParts GetTypeNameParts(string assemblyName, int metadataToken)
         {
-            var typeDefInfo = _maps[assemblyName][metadataToken];
-            return GetTypeDefName(typeDefInfo);
+            var typeInfo = GetTypeInfo(assemblyName, metadataToken);
+            return GetTypeDefName(typeInfo);
         }
 
-        public bool IsMicrosoftAssemblyName(string assemblyName) => _microsoftAssemblyNames.Contains(assemblyName);
-
-        private TypeNameParts GetTypeDefName(TypeInfo typeDefInfo)
+        private TypeInfo GetTypeInfo(string assemblyName, int metadataToken)
         {
-            var typeName = typeDefInfo.DeclaringType != null
-                ? $"{typeDefInfo.DeclaringType.GetName(this)}/{typeDefInfo.Name}"
-                : typeDefInfo.Namespace != null
-                ? $"{typeDefInfo.Namespace}.{typeDefInfo.Name}"
-                : typeDefInfo.Name;
+            TypeInfo? typeInfo;
+            if (TryGetValue(_assembliesTypeInfo, assemblyName, metadataToken, out typeInfo))
+            {
+                return typeInfo;
+            }
+            if (TryGetValue(_microsoftTypeInfo, assemblyName, metadataToken, out typeInfo))
+            {
+                return typeInfo;
+            }
 
-            return new TypeNameParts(typeName, typeDefInfo.GenericTypeParameters);
+            typeInfo = FetchTypeInfo(assemblyName, metadataToken);
+            Add(_microsoftTypeInfo, assemblyName, metadataToken, typeInfo);
+
+            return typeInfo;
         }
+
+        private static bool TryGetValue<T>(Dictionary<string, Dictionary<int, T>> dictionary, string assemblyName, int metadataToken, [MaybeNullWhen(false)] out T value)
+        {
+            value = default;
+            if (!dictionary.TryGetValue(assemblyName, out var inner))
+            {
+                return false;
+            }
+            return inner.TryGetValue(metadataToken, out value);
+        }
+
+        private static void Add<T>(Dictionary<string, Dictionary<int, T>> dictionary, string assemblyName, int metadataToken, T value)
+        {
+            if (!dictionary.TryGetValue(assemblyName, out var inner))
+            {
+                inner = new Dictionary<int, T>();
+                dictionary.Add(assemblyName, inner);
+            }
+            inner.Add(metadataToken, value);
+        }
+
+        protected virtual TypeInfo FetchTypeInfo(string assemblyName, int metadataToken) => throw new System.Exception($"assemblyName: {assemblyName}, metadataToken: {metadataToken}");
+
+        private TypeNameParts GetTypeDefName(TypeInfo typeInfo)
+        {
+            var typeName = typeInfo.DeclaringType != null
+                ? $"{typeInfo.DeclaringType.GetName(this)}/{typeInfo.Name}"
+                : typeInfo.Namespace != null
+                ? $"{typeInfo.Namespace}.{typeInfo.Name}"
+                : typeInfo.Name;
+
+            return new TypeNameParts(typeName, typeInfo.GenericTypeParameters);
+        }
+
+        private static Dictionary<string, Dictionary<int, TypeInfo>> ToTypInfoDictionary(Dictionary<string, AssemblyInfo> assemblies) => assemblies.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.TypeInfos.ToDictionary(
+                typeInfo => typeInfo.Id.GetMetadataToken()
+            ));
     }
 }

@@ -17,12 +17,21 @@ namespace Core.Output
         public abstract object SerializeAs { get; }
         public string GetName(INameFromId nameFromId)
         {
-            var name = HelpGetName(nameFromId);
-            if (name != FullName)
+            try
             {
-                throw new System.Exception();
+                var name = HelpGetName(nameFromId);
+                if (name != FullName)
+                {
+                    throw new System.Exception($"name: {name}");
+                }
+                return name;
+
             }
-            return name;
+            catch (System.Exception ex)
+            {
+                //return $"FullName: {FullName}, {ex.Message}";
+                throw new System.Exception($"FullName: {FullName}", ex);
+            }
         }
 
         protected abstract string HelpGetName(INameFromId nameFromId);
@@ -56,10 +65,6 @@ namespace Core.Output
 
         internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId)
         {
-            if (nameFromId.IsMicrosoftAssemblyName(AssemblyName))
-            {
-                return TypeNameParts.FromFullName(FullName);
-            }
             return nameFromId.GetTypeNameParts(AssemblyName, MetadataToken);
         }
     }
@@ -146,6 +151,26 @@ namespace Core.Output
                 typeDefName = new TypeNameParts(typeDefName.TypeName, GenericTypeArguments.Select(typeId => typeId.GetName(nameFromId)).ToArray());
             }
             return typeDefName.AsName(true) + Suffix;
+        }
+    }
+
+    internal sealed class  FuncTypeId : BaseTypeId
+    {
+        internal FuncTypeId(string fullName)
+            : base(fullName)
+        {
+        }
+
+        public override object SerializeAs => FullName;
+
+        protected override string HelpGetName(INameFromId nameFromId)
+        {
+            return FullName;
+        }
+
+        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId)
+        {
+            return new TypeNameParts(FullName, null);
         }
     }
 }

@@ -8,9 +8,13 @@ using static Core.Loader.AssemblyResolverPaths;
 
 namespace Core.Loader
 {
+    // this class doesn't need to be generic but it can be
+    // it doesn't depend on methods of T and U
+    // and doesn't need to use the namespaces in which they're defined
+
     internal sealed class LoadedAssemblies<T, U> : ILoaded<U>, IDisposable
-        where T : IDisposable
-        where U : IDisposable
+        where T : IDisposable // Core.Cecil.AssemblyData
+        where U : IDisposable // ICSharpCode.Decompiler.Metadata.PEFile
     {
         private class FilterImpl : IFilter
         {

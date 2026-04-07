@@ -30,10 +30,6 @@ namespace Core.Output
         {
             get
             {
-                if (_genericTypeArguments != null)
-                {
-                    Logger.Log("doo");
-                }
                 object id = _isLocalAssembly ? _metadataToken : $"{_assemblyName}|{_metadataToken}";
                 if (_genericTypeArguments == null)
                 {
