@@ -1,4 +1,5 @@
 ﻿using Core.Output;
+using Core.Serializer.JsonConverters;
 using System;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -20,7 +21,8 @@ namespace Core.Serializer
                 Encoder = prettyPrint ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
                 Converters =
                 {
-                    new JsonConverterFactoryForShortJson()
+                    new JsonConverterFactoryForShortJson(),
+                    new AssemblyMapConverterFactory(),
                 }
             });
             return json;

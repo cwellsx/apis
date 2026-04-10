@@ -24,13 +24,13 @@ namespace Core.CecilToOutput
                 added.ToYaml(self);
             }
 
-            var microsoftAssemblies = result.ToDictionary(
+            var microsoftAssemblies = new AssemblyMap<AssemblyInfo>(result.ToDictionary(
                 kv => kv.Key,
                 kv => new AssemblyInfo(
                     ReferencedAssemblies: [], // could but need not return referenced assemblies
                     TypeInfos: kv.Value.ToArray()
                     )
-                );
+                ));
 
             return all with { MicrosoftAssemblies = microsoftAssemblies };
         }

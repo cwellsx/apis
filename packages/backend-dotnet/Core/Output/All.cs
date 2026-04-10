@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Text.Json.Serialization;
+using System.Collections.Generic;
 
 namespace Core.Output
 {
@@ -77,13 +78,20 @@ namespace Core.Output
 
     public record AssemblyInfo(string[] ReferencedAssemblies, TypeInfo[] TypeInfos);
 
+    // a dictionary whose key is the assembly name and implicit in the "local ID" of TypeIds of types within each assembly
+    public class AssemblyMap<T> : Dictionary<string, T>
+    {
+        internal AssemblyMap() { }
+        internal AssemblyMap(IDictionary<string, T> rhs) : base(rhs) { }
+    }
+
     public record All(
-        Dictionary<string, AssemblyInfo> Assemblies,
+        AssemblyMap<AssemblyInfo> Assemblies,
         List<string> Exceptions,
         string Version,
         string[] Exes,
-        Dictionary<string, Dictionary<int, MethodInfo>> AssemblyMethods,
-        Dictionary<string, Dictionary<int, int>> CompilerMethods,
-        Dictionary<string, AssemblyInfo> MicrosoftAssemblies
+        AssemblyMap<Dictionary<int, MethodInfo>> AssemblyMethods,
+        AssemblyMap<Dictionary<int, int>> CompilerMethods,
+        AssemblyMap<AssemblyInfo> MicrosoftAssemblies
         );
 }

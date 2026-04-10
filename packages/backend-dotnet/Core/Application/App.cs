@@ -35,10 +35,10 @@ namespace Core.Application
                 throw new Exception($"Missing assembly names: {string.Join(", ", missingAssemblyNames)}");
             }
 
-            var assemblies = new Dictionary<string, AssemblyInfo>();
+            var assemblies = new AssemblyMap<AssemblyInfo>();
             var exceptions = new List<string>();
-            var compilerMethods = new Dictionary<string, Dictionary<int, int>>();
-            var assemblyMethods = new Dictionary<string, Dictionary<int, MethodInfo>>();
+            var compilerMethods = new AssemblyMap<Dictionary<int, int>>();
+            var assemblyMethods = new AssemblyMap<Dictionary<int, MethodInfo>>();
 
             var filter = loadedAssemblies.Filter;
             foreach (var assemblyData in loadedAssemblies.GetAssemblies(filter))
@@ -77,7 +77,7 @@ namespace Core.Application
                 }
             }
 
-            var empty = new Dictionary<string, AssemblyInfo>();
+            var empty = new AssemblyMap<AssemblyInfo>();
             var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, empty);
             all = Filtered.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
             return all;

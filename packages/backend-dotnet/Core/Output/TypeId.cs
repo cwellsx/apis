@@ -130,8 +130,8 @@ namespace Core.Output
         }
         protected override string HelpGetName(INameFromId nameFromId)
         {
-            var typeDefName = Resolved.GetTypeNameParts(nameFromId);
-            if (typeDefName.GenericTypeParameters == null)
+            var typeNameParts = Resolved.GetTypeNameParts(nameFromId);
+            if (typeNameParts.GenericTypeParameters == null)
             {
                 if (GenericTypeArguments != null)
                 {
@@ -144,13 +144,13 @@ namespace Core.Output
                 {
                     throw new System.Exception();
                 }
-                if (typeDefName.GenericTypeParameters.Length != GenericTypeArguments.Length)
+                if (typeNameParts.GenericTypeParameters.Length != GenericTypeArguments.Length)
                 {
                     throw new System.Exception();
                 }
-                typeDefName = new TypeNameParts(typeDefName.TypeName, GenericTypeArguments.Select(typeId => typeId.GetName(nameFromId)).ToArray());
+                typeNameParts = new TypeNameParts(typeNameParts.TypeName, GenericTypeArguments.Select(typeId => typeId.GetName(nameFromId)).ToArray());
             }
-            return typeDefName.AsName(true) + Suffix;
+            return typeNameParts.AsName(true) + Suffix;
         }
     }
 
