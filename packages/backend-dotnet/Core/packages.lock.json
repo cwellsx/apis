@@ -30,12 +30,6 @@
         "resolved": "0.11.6",
         "contentHash": "f33RkDtZO8VlGXCtmQIviOtxgnUdym9xx/b1p9h91CRGOsJFxCFOFK1FDbVt1OCf1aWwYejUFa2MOQyFWTFjbA=="
       },
-      "System.Reflection.MetadataLoadContext": {
-        "type": "Direct",
-        "requested": "[5.0.1, )",
-        "resolved": "5.0.1",
-        "contentHash": "JRI6RMInoZs4KtNeooDNl9KRQyYF5q0VJi1CPxbPPWk5x9Uc0FyCJTcAcWpvrgtDPBh0D91TYJ4OYrv7g6mjeQ=="
-      },
       "System.Text.Json": {
         "type": "Direct",
         "requested": "[5.0.2, )",
