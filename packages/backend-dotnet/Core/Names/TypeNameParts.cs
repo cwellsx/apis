@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Linq;
 
-namespace Core.Output
+namespace Core.Names
 {
     public record TypeNameParts(string TypeName, string[]? GenericTypeParameters)
     {

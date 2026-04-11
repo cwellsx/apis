@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using Core.Names;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Core.Output
@@ -15,34 +16,12 @@ namespace Core.Output
 
         // methods of the IShortJson interface used to help serialize these classes in a compact format
         public abstract object SerializeAs { get; }
-        public string GetName(INameFromId nameFromId)
-        {
-            try
-            {
-                var name = HelpGetName(nameFromId);
-                if (name != FullName)
-                {
-                    throw new System.Exception($"name: {name}");
-                }
-                return name;
-
-            }
-            catch (System.Exception ex)
-            {
-                //return $"FullName: {FullName}, {ex.Message}";
-                throw new System.Exception($"FullName: {FullName}", ex);
-            }
-        }
-
-        protected abstract string HelpGetName(INameFromId nameFromId);
     }
 
     // superclass for SimpleTypeId and GenericParameterId but not TypeSpecId
     public abstract class BaseTypeId : TypeId
     {
         protected BaseTypeId(string fullName) : base(fullName) { }
-
-        internal abstract TypeNameParts GetTypeNameParts(INameFromId nameFromId);
     }
 
     public abstract class SimpleTypeId : BaseTypeId
@@ -55,17 +34,6 @@ namespace Core.Output
         {
             AssemblyName = assemblyName;
             MetadataToken = metadataToken;
-        }
-
-        protected override string HelpGetName(INameFromId nameFromId)
-        {
-            // Cecil doesn't show generic parameters, only generic arguments
-            return GetTypeNameParts(nameFromId).AsName(false);
-        }
-
-        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId)
-        {
-            return nameFromId.GetTypeNameParts(AssemblyName, MetadataToken);
         }
     }
 
@@ -104,12 +72,22 @@ namespace Core.Output
             Name = name;
         }
 
-        public override object SerializeAs => Name;
-        protected override string HelpGetName(INameFromId nameFromId) => Name;
-        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId) => new TypeNameParts(Name, null);
+        public override object SerializeAs => IsValidIdentifier(Name) ? Name : $"!{Name}";
+
+        private static bool IsValidIdentifier(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return false;
+            if (!(char.IsLetter(s[0]) || s[0] == '_')) return false;
+
+            for (int i = 1; i < s.Length; i++)
+                if (!(char.IsLetterOrDigit(s[i]) || s[i] == '_'))
+                    return false;
+
+            return true;
+        }
     }
 
-    internal sealed class SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string Suffix, string FullName) : TypeId(FullName)
+    internal sealed class SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string? Suffix, string FullName) : TypeId(FullName)
     {
         public override object SerializeAs
         {
@@ -125,32 +103,12 @@ namespace Core.Output
                 {
                     result.Add(Suffix);
                 }
+                if (result.Count < 2)
+                {
+                    throw new System.Exception();
+                }
                 return result.ToArray();
             }
-        }
-        protected override string HelpGetName(INameFromId nameFromId)
-        {
-            var typeNameParts = Resolved.GetTypeNameParts(nameFromId);
-            if (typeNameParts.GenericTypeParameters == null)
-            {
-                if (GenericTypeArguments != null)
-                {
-                    throw new System.Exception();
-                }
-            }
-            else
-            {
-                if (GenericTypeArguments == null)
-                {
-                    throw new System.Exception();
-                }
-                if (typeNameParts.GenericTypeParameters.Length != GenericTypeArguments.Length)
-                {
-                    throw new System.Exception();
-                }
-                typeNameParts = new TypeNameParts(typeNameParts.TypeName, GenericTypeArguments.Select(typeId => typeId.GetName(nameFromId)).ToArray());
-            }
-            return typeNameParts.AsName(true) + Suffix;
         }
     }
 
@@ -162,15 +120,5 @@ namespace Core.Output
         }
 
         public override object SerializeAs => FullName;
-
-        protected override string HelpGetName(INameFromId nameFromId)
-        {
-            return FullName;
-        }
-
-        internal override TypeNameParts GetTypeNameParts(INameFromId nameFromId)
-        {
-            return new TypeNameParts(FullName, null);
-        }
     }
 }

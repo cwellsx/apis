@@ -1,8 +1,8 @@
 ﻿using Core.Output;
+//using Core.TypeIds;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 /*
  * This resolves a Cecil TypeReference to an app-specific TypeId
@@ -13,7 +13,7 @@ using System.Linq;
  *     - LocalTypeId : SimpleTypeId // type definition in current assembly
  *     - RemoveTypeId : SimpleTypeId // type definition in remote assembly
  *   - GenericParameterTypeId : BaseTypeId // e.g. "T"
- * - SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string Suffix) : TypeId
+ * - SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string? Suffix) : TypeId
  */
 
 namespace Core.CecilToOutput
@@ -29,12 +29,26 @@ namespace Core.CecilToOutput
 
         internal TypeId Convert(TypeReference tr)
         {
+            // remove Pinned or Sentinel which aren't really part of the type and aren't include in the FullName
+            if (tr is PinnedType pinned)
+            {
+                tr = pinned.ElementType;
+            }
+            else if (tr is SentinelType sentinel)
+            {
+                tr = sentinel.ElementType;
+            }
+
             if (IsSimpleOrGenericParameter(tr))
             {
                 return GetBaseTypeId(tr);
             }
 
             var recurseResult = Recurse(tr);
+            if (recurseResult.GenericArgs.Count == 0 && string.IsNullOrEmpty(recurseResult.Suffix))
+            {
+                throw new Exception();
+            }
             return new SpecTypeId(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs.ToArrayOrNull(), Suffix: recurseResult.Suffix, FullName: tr.FullName);
         }
 
@@ -44,7 +58,7 @@ namespace Core.CecilToOutput
             tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
 
         // result of recursing a TypeReference
-        public sealed record RecurseResult(BaseTypeId Simple, string Suffix, IReadOnlyList<TypeId> GenericArgs);
+        public sealed record RecurseResult(BaseTypeId Simple, string? Suffix, IReadOnlyList<TypeId> GenericArgs);
 
         RecurseResult Recurse(TypeReference tr)
         {
@@ -65,7 +79,7 @@ namespace Core.CecilToOutput
                 }
 
                 var simple = GetBaseTypeId(git.ElementType); // generic definition
-                return new RecurseResult(simple, string.Empty, genericArgs);
+                return new RecurseResult(simple, null, genericArgs);
             }
 
             // Array
@@ -104,18 +118,10 @@ namespace Core.CecilToOutput
                 return new RecurseResult(inner.Simple, inner.Suffix + $" modreq({req.ModifierType.FullName})", inner.GenericArgs);
             }
 
-            // Pinned
-            if (tr is PinnedType pinned)
+            // Pinned or Sentinel
+            if (tr is PinnedType || tr is SentinelType)
             {
-                var inner = Recurse(pinned.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + Optional(" pinned"), inner.GenericArgs);
-            }
-
-            // Sentinel
-            if (tr is SentinelType sentinel)
-            {
-                var inner = Recurse(sentinel.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + Optional(" sentinel"), inner.GenericArgs);
+                throw new Exception($"Unexpected pinned type: {tr.FullName}"); // Cecil doesn't include pinned in the FullName, so we shouldn't encounter it here
             }
 
             // Function pointer (if you need it)
@@ -136,8 +142,6 @@ namespace Core.CecilToOutput
 
             throw new NotSupportedException();
         }
-
-        private static string Optional(string suffix) => ""; // these are technically correct but Cecil doesn't include them in the FullName
 
         private BaseTypeId GetBaseTypeId(TypeReference tr)
         {

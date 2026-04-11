@@ -170,7 +170,7 @@ namespace Core.ShortNames
             }
 
             public override bool IsShortName(object shortName) => shortName is Array;
-            public override bool IsShortNameValid(object shortName) => true;
+            public override bool IsShortNameValid(object shortName) => ((Array)shortName).Length > 1;
 
             private static bool IsValidSuffix(string s)
             {

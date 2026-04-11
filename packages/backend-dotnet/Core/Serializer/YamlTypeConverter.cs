@@ -1,9 +1,8 @@
-﻿using Core.Output;
+﻿using Core.Names;
+using Core.Output;
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using System.Linq;
-using System.Reflection;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -20,17 +19,17 @@ namespace Core.Serializer
     {
         internal static WrappedValue WrapRoot(object value) => new WrappedValue(new State(false, null), value);
 
-        INameFromId? _nameFromId;
+        INames? _names;
         DefaultValuesHandling _defaultValuesHandling;
 
-        internal YamlTypeConverter(INameFromId? nameFromId, DefaultValuesHandling defaultValuesHandling)
+        internal YamlTypeConverter(INames? names, DefaultValuesHandling defaultValuesHandling)
         {
-            _nameFromId = nameFromId;
             _defaultValuesHandling = defaultValuesHandling;
+            _names = names;
         }
 
         // Immutable state carried with each wrapped value
-        internal record State(bool IsInSequence, string? AssemblyName);
+        internal record State(bool IsInSequence, string? InAssemblyName);
 
         // Wrapper that carries state + actual value
         internal record WrappedValue(State State, object? Value);
@@ -155,6 +154,8 @@ namespace Core.Serializer
                 return;
             }
 
+            var inAssemblyName = state.InAssemblyName;
+
             // If obj is a sequence (array/list) and you want per-element comments:
             if (obj is IEnumerable seq && !(obj is string))
             {
@@ -163,7 +164,7 @@ namespace Core.Serializer
                 bool isInSequence = state.IsInSequence;
                 if (!isInSequence)
                 {
-                    EmitComment(emitter, shortJson);
+                    EmitComment(emitter, shortJson, inAssemblyName);
                 }
 
                 // start block sequence
@@ -178,7 +179,7 @@ namespace Core.Serializer
                     {
                         var elementObj = elementShortJson.SerializeAs;
                         EmitScalar(emitter, elementObj);
-                        EmitComment(emitter, elementShortJson);
+                        EmitComment(emitter, elementShortJson, inAssemblyName);
                     }
                     else
                     {
@@ -188,7 +189,7 @@ namespace Core.Serializer
                     if (isInSequence && first)
                     {
                         first = false;
-                        EmitComment(emitter, shortJson, true);
+                        EmitComment(emitter, shortJson, inAssemblyName, true);
                     }
                 }
                 emitter.Emit(new SequenceEnd());
@@ -199,7 +200,7 @@ namespace Core.Serializer
                 // Non-sequence: emit a scalar (or mapping) and then an inline comment
                 EmitScalar(emitter, obj);
 
-                EmitComment(emitter, shortJson);
+                EmitComment(emitter, shortJson, inAssemblyName);
             }
         }
 
@@ -250,16 +251,36 @@ namespace Core.Serializer
             }
         }
 
-        private void EmitComment(IEmitter emitter, IShortJson shortJson, bool isSpecial = false)
+        private static object SerializeRecursive(object value) => value switch
         {
-            if (_nameFromId != null)
+            IShortJson sj => SerializeRecursive(sj.SerializeAs),
+
+            Array arr => arr.Cast<object>()
+                            .Select(SerializeRecursive)
+                            .ToArray(),
+
+            _ => value
+        };
+
+        private void EmitComment(IEmitter emitter, IShortJson shortJson, string? inAssemblyName, bool isSpecial = false)
+        {
+            if (_names != null)
             {
-                var typeName = shortJson.GetName(_nameFromId);
+                if (shortJson is MethodId methodId)
+                {
+                    var methodName = methodId.FullName;
+                    emitter.Emit(new Comment(methodName, true));
+                    return;
+                }
+
+                object serialized = SerializeRecursive(shortJson.SerializeAs);
+                var assemblyTypeName = _names.GetTypeName(serialized, inAssemblyName);
                 if (isSpecial)
                 {
-                    typeName = $";{typeName}"; // prepend ';' for post-processing
+                    assemblyTypeName = $";{assemblyTypeName}"; // prepend ';' for post-processing
                 }
-                emitter.Emit(new Comment(typeName, true));
+                emitter.Emit(new Comment(assemblyTypeName, true));
+                return;
             }
         }
 

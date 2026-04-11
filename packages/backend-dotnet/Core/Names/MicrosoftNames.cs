@@ -5,20 +5,20 @@ using Core.Cecil;
 using Core.Output;
 using Core.Serializer;
 
-namespace Core.CecilToOutput
+namespace Core.Names
 {
-    internal class Filtered : NameFromId
+    internal class MicrosoftNames : AllNames
     {
         internal static All Iterate(All all, IEnumerable<AssemblyData> microsoft)
         {
             var result = new Dictionary<string, List<TypeInfo>>();
-            var self = new Filtered(all, microsoft, result);
+            var self = new MicrosoftNames(all, microsoft, result);
 
             all.ToYaml(self);
 
             while (self._added.Count > 0)
             {
-                var added = self._added.ToArray();
+                var added = new AssemblyMap<List<TypeInfo>>(self._added);
                 self._added.Clear();
                 // visit every element of these too
                 added.ToYaml(self);
@@ -38,9 +38,11 @@ namespace Core.CecilToOutput
         readonly Dictionary<string, AssemblyData> _microsoftAssemblies;
         readonly Dictionary<string, Dictionary<int, TypeDefinition>> _microsoftTypes;
         readonly Dictionary<string, List<TypeInfo>> _result;
-        readonly List<TypeInfo> _added = new List<TypeInfo>();
 
-        internal Filtered(
+
+        readonly AssemblyMap<List<TypeInfo>> _added = [];
+
+        internal MicrosoftNames(
             All all,
             IEnumerable<AssemblyData> microsoft,
             Dictionary<string, List<TypeInfo>> result
@@ -62,10 +64,15 @@ namespace Core.CecilToOutput
             }
 
             var typeDefinition = _microsoftTypes[assemblyName][metadataToken];
-            var typeInfo = ToTypeInfo.Transform(typeDefinition, assemblyName, true);
+            var typeInfo = CecilToOutput.ToTypeInfo.Transform(typeDefinition, assemblyName, true);
 
             _result[assemblyName].Add(typeInfo);
-            _added.Add(typeInfo);
+            if (!_added.TryGetValue(assemblyName, out var list))
+            {
+                list = [];
+                _added.Add(assemblyName, list);
+            }
+            list.Add(typeInfo);
 
             return typeInfo;
         }

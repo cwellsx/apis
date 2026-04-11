@@ -1,5 +1,6 @@
 ﻿using Core.CecilToOutput;
 using Core.Output;
+using Core.Names;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -79,7 +80,7 @@ namespace Core.Application
 
             var empty = new AssemblyMap<AssemblyInfo>();
             var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, empty);
-            all = Filtered.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
+            all = MicrosoftNames.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
             return all;
         }
 

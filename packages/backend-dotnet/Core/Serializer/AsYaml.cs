@@ -1,4 +1,5 @@
-﻿using Core.Output;
+﻿using Core.Names;
+using Core.Output;
 using System;
 using System.Linq;
 using YamlDotNet.Serialization;
@@ -7,11 +8,11 @@ namespace Core.Serializer
 {
     internal static class AsYaml
     {
-        internal static string ToYaml<T>(this T value, INameFromId? nameFromId) where T : notnull
+        internal static string ToYaml<T>(this T value, INames? names) where T : notnull
         {
             var defaultValuesHandling = DefaultValuesHandling.OmitNull;
             var serializer = new SerializerBuilder()
-                .WithTypeConverter(new YamlTypeConverter(nameFromId, defaultValuesHandling))
+                .WithTypeConverter(new YamlTypeConverter(names, defaultValuesHandling))
                 .ConfigureDefaultValuesHandling(defaultValuesHandling)
                 .DisableAliases()
                 .Build();

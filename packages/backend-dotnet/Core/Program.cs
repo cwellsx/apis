@@ -6,6 +6,7 @@ using ElectronCgi.DotNet;
 using Core.Output;
 using Core.Serializer;
 using Core.Application;
+using Core.Names;
 
 namespace Core
 {
@@ -81,20 +82,21 @@ namespace Core
             connection.Listen();
         }
 
-        const string outputDirectory = @"output.now";
+        const string outputDirectory = @"output.new";
 
         static void FileWrite(string filename, string content) => File.WriteAllText(Path.Combine(outputDirectory, filename), content);
 
         static void WriteJsonToFiles(All all)
         {
-            var nameFromId = new NameFromId(all);
+            var allNames = new AllNames(all);
+
             Directory.CreateDirectory(outputDirectory);
 
             FileWrite("All.yaml", all.ToYaml(null));
-            FileWrite("Assemblies.yaml", all.Assemblies.ToYaml(nameFromId));
-            FileWrite("Methods.yaml", all.AssemblyMethods.ToYaml(nameFromId));
-            FileWrite("Compiler.yaml", all.CompilerMethods.ToYaml(nameFromId));
-            FileWrite("Microsoft.yaml", all.MicrosoftAssemblies.ToYaml(nameFromId));
+            FileWrite("Assemblies.yaml", all.Assemblies.ToYaml(allNames));
+            FileWrite("Methods.yaml", all.AssemblyMethods.ToYaml(allNames));
+            FileWrite("Compiler.yaml", all.CompilerMethods.ToYaml(allNames));
+            FileWrite("Microsoft.yaml", all.MicrosoftAssemblies.ToYaml(allNames));
 
             FileWrite("All.json", all.ToJson(true));
             FileWrite("FoundCalls.json", all.AssemblyMethods.ToJson(true));

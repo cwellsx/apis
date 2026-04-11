@@ -40,10 +40,7 @@ namespace Core.Output
                 return list.ToArray();
             }
         }
-        public string GetName(INameFromId nameFromId)
-        {
-            return _fullname;
-        }
+        internal string FullName => _fullname;
 
         internal string AssemblyName => _assemblyName;
     }
