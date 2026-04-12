@@ -1,20 +1,21 @@
 ﻿using System.Collections.Generic;
+using Core.Output.Ids;
 
 namespace Core.Output
 {
-    public class MethodId : IShortJson
+    public class MethodId
     {
         readonly string _assemblyName;
         readonly int _metadataToken;
         readonly bool _isLocalAssembly;
-        readonly TypeId[]? _genericTypeArguments;
+        readonly ITypeId[]? _genericTypeArguments;
         readonly string _fullname;
 
         internal MethodId(
             string assemblyName,
             int metadataToken,
             bool isLocalAssembly,
-            TypeId[]? genericTypeArguments,
+            ITypeId[]? genericTypeArguments,
             string fullName
             )
         {

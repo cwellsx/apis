@@ -1,5 +1,7 @@
-﻿using Core.Names;
+﻿using Core.FullNames;
+using Core.Id;
 using Core.Output;
+using Core.Output.Ids;
 using System;
 using System.Collections;
 using System.Linq;
@@ -75,8 +77,12 @@ namespace Core.Serializer
                     WriteSequence(emitter, seq, state, serializer);
                     return;
 
-                case IShortJson shortJson:
-                    WriteShortJson(emitter, shortJson, state, serializer);
+                case IId id:
+                    WriteId(emitter, id, state, serializer);
+                    return;
+
+                case MethodId methodId:
+                    WriteId(emitter, methodId.SerializeAs, methodId.FullName, state, serializer);
                     return;
             }
 
@@ -141,18 +147,71 @@ namespace Core.Serializer
             emitter.Emit(new SequenceEnd());
         }
 
-        private void WriteShortJson(
+        private static object SerializeRecursive(object value) => value switch
+        {
+            ITypeId typeId => SerializeRecursive(Factory.ToShortName(typeId)),
+
+            Array arr => arr.Cast<object>()
+                            .Select(SerializeRecursive)
+                            .ToArray(),
+
+            _ => value
+        };
+
+        private const string IgnoreSyntheticFullName = "$";
+
+        private void WriteId(
             IEmitter emitter,
-            IShortJson shortJson,
+            IId id,
             State state,
             ObjectSerializer serializer)
         {
-            var obj = shortJson.SerializeAs;
-            if (obj == null)
+            var leafObject = id.LeafObject;
+
+            object shortName;
+            string? fullName = null;
+            switch (leafObject)
             {
-                emitter.Emit(new Scalar("null"));
-                return;
+                case ITypeId typeId:
+                    shortName = Factory.ToShortName(typeId);
+                    if (_names != null)
+                    {
+                        var serialized = SerializeRecursive(typeId);
+                        fullName = _names.GetTypeName(serialized, state.InAssemblyName);
+                    }
+                    break;
+                case Output.MethodId methodId:
+                    shortName = methodId.SerializeAs;
+                    if (_names != null)
+                    {
+                        fullName = methodId.FullName;
+                    }
+                    break;
+                default:
+                    throw new NotSupportedException($"Unsupported leafId type: {leafObject.GetType()}");
             }
+
+            if (fullName != null && id.FullName != IgnoreSyntheticFullName && fullName != id.FullName)
+            {
+                throw new Exception($"Name mismatch: {fullName} != {id.FullName}");
+            }
+
+            WriteId(emitter, shortName, fullName, state, serializer);
+        }
+
+        private void WriteId(
+            IEmitter emitter,
+            object obj,
+            string? fullName,
+            State state,
+            ObjectSerializer serializer)
+        {
+            //var obj = shortJson.SerializeAs;
+            //if (obj == null)
+            //{
+            //    emitter.Emit(new Scalar("null"));
+            //    return;
+            //}
 
             var inAssemblyName = state.InAssemblyName;
 
@@ -164,7 +223,7 @@ namespace Core.Serializer
                 bool isInSequence = state.IsInSequence;
                 if (!isInSequence)
                 {
-                    EmitComment(emitter, shortJson, inAssemblyName);
+                    EmitComment(emitter, fullName);
                 }
 
                 // start block sequence
@@ -175,21 +234,45 @@ namespace Core.Serializer
                     // emit element as scalar or nested object; here we emit scalar for simplicity
                     // For complex elements you would recursively call serializer.Serialize for that element
 
-                    if (element is IShortJson elementShortJson)
+                    var childState = state with { IsInSequence = true };
+                    switch (element)
                     {
-                        var elementObj = elementShortJson.SerializeAs;
-                        EmitScalar(emitter, elementObj);
-                        EmitComment(emitter, elementShortJson, inAssemblyName);
+                        case ITypeId typeId:
+                            IId elementId = new Id<ITypeId>(IgnoreSyntheticFullName, typeId);
+                            serializer(new WrappedValue(childState, elementId));
+                            break;
+
+                        //case Array array:
+                        //    serializer(new WrappedValue(childState, array));
+                        //    break;
+
+                        case string s:
+                            EmitScalar(emitter, s);
+                            break;
+
+                        case int i:
+                            EmitScalar(emitter, i);
+                            break;
+
+                        default:
+                            throw new NotSupportedException($"Unsupported element type in sequence: {element.GetType().FullName}");
                     }
-                    else
-                    {
-                        EmitScalar(emitter, element);
-                    }
+
+                    //if (element is IShortJson elementShortJson)
+                    //{
+                    //    var elementObj = elementShortJson.SerializeAs;
+                    //    EmitScalar(emitter, elementObj);
+                    //    EmitComment(emitter, fullName);
+                    //}
+                    //else
+                    //{
+                    //    EmitScalar(emitter, element);
+                    //}
 
                     if (isInSequence && first)
                     {
                         first = false;
-                        EmitComment(emitter, shortJson, inAssemblyName, true);
+                        EmitComment(emitter, fullName, true);
                     }
                 }
                 emitter.Emit(new SequenceEnd());
@@ -200,7 +283,7 @@ namespace Core.Serializer
                 // Non-sequence: emit a scalar (or mapping) and then an inline comment
                 EmitScalar(emitter, obj);
 
-                EmitComment(emitter, shortJson, inAssemblyName);
+                EmitComment(emitter, fullName);
             }
         }
 
@@ -251,37 +334,18 @@ namespace Core.Serializer
             }
         }
 
-        private static object SerializeRecursive(object value) => value switch
+        private void EmitComment(IEmitter emitter, string? fullName, bool isSpecial = false)
         {
-            IShortJson sj => SerializeRecursive(sj.SerializeAs),
-
-            Array arr => arr.Cast<object>()
-                            .Select(SerializeRecursive)
-                            .ToArray(),
-
-            _ => value
-        };
-
-        private void EmitComment(IEmitter emitter, IShortJson shortJson, string? inAssemblyName, bool isSpecial = false)
-        {
-            if (_names != null)
+            if (fullName == null)
             {
-                if (shortJson is MethodId methodId)
-                {
-                    var methodName = methodId.FullName;
-                    emitter.Emit(new Comment(methodName, true));
-                    return;
-                }
-
-                object serialized = SerializeRecursive(shortJson.SerializeAs);
-                var assemblyTypeName = _names.GetTypeName(serialized, inAssemblyName);
-                if (isSpecial)
-                {
-                    assemblyTypeName = $";{assemblyTypeName}"; // prepend ';' for post-processing
-                }
-                emitter.Emit(new Comment(assemblyTypeName, true));
                 return;
             }
+            if (isSpecial)
+            {
+                fullName = $";{fullName}"; // prepend ';' for post-processing
+            }
+            emitter.Emit(new Comment(fullName, true));
+            return;
         }
 
         private static bool IsAssemblyMap(Type type)

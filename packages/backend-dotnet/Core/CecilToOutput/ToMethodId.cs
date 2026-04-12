@@ -1,6 +1,6 @@
 ﻿using Core.Output;
 using Mono.Cecil;
-using System.Linq;
+using Core.Output.Ids;
 
 namespace Core.CecilToOutput
 {
@@ -18,12 +18,12 @@ namespace Core.CecilToOutput
         internal MethodId Convert(MethodReference mr)
         {
             var fullName = mr.FullName;
-            TypeId[]? genericTypeArguments = null;
+            ITypeId[]? genericTypeArguments = null;
 
             if (mr is GenericInstanceMethod gim)
             {
                 mr = gim.ElementMethod;
-                genericTypeArguments = gim.GenericArguments.Select(_toTypeId.Convert).ToArray();
+                genericTypeArguments = _toTypeId.ConvertGenericArguments(gim.GenericArguments);
             }
 
             var md = mr.Resolve();

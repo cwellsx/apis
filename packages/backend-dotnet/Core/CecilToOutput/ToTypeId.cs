@@ -1,20 +1,8 @@
-﻿using Core.Output;
-//using Core.TypeIds;
+﻿using Core.Id.Types;
+using Core.Output.Ids;
 using Mono.Cecil;
 using System;
-using System.Collections.Generic;
-
-/*
- * This resolves a Cecil TypeReference to an app-specific TypeId
- * 
- * TypeId // abstract superclass
- * - BaseTypeId : TypeId // simple or generic parameter
- *   - SimpleTypeId : BaseTypeId // resolved type definition
- *     - LocalTypeId : SimpleTypeId // type definition in current assembly
- *     - RemoveTypeId : SimpleTypeId // type definition in remote assembly
- *   - GenericParameterTypeId : BaseTypeId // e.g. "T"
- * - SpecTypeId(BaseTypeId Resolved, TypeId[]? GenericTypeArguments, string? Suffix) : TypeId
- */
+using System.Linq;
 
 namespace Core.CecilToOutput
 {
@@ -27,7 +15,13 @@ namespace Core.CecilToOutput
             _assemblyName = assemblyName;
         }
 
-        internal TypeId Convert(TypeReference tr)
+        internal TypeId Convert(TypeReference tr) => new TypeId(tr.FullName, GetShortName(tr));
+
+        internal ITypeId[]? ConvertGenericArguments(Mono.Collections.Generic.Collection<TypeReference> genericArguments) => genericArguments
+            .Select(tr => Convert(tr).LeafId)
+            .ToArrayOrNull();
+
+        private ITypeId GetShortName(TypeReference tr)
         {
             // remove Pinned or Sentinel which aren't really part of the type and aren't include in the FullName
             if (tr is PinnedType pinned)
@@ -44,39 +38,46 @@ namespace Core.CecilToOutput
                 return GetBaseTypeId(tr);
             }
 
-            var recurseResult = Recurse(tr);
-            if (recurseResult.GenericArgs.Count == 0 && string.IsNullOrEmpty(recurseResult.Suffix))
+            // Function pointer is not a base type so don't recurse for it
+            if (tr is FunctionPointerType fptr)
             {
-                throw new Exception();
+                //// function pointer formatting is complex; represent as a token-like suffix
+                //var inner = Recurse(fptr.ReturnType);
+                //// you may want to render parameters; here we append a placeholder suffix
+                //return new RecurseResult(inner.Simple, inner.Suffix + Optional(" unmanagedcallconv*"), inner.GenericArgs);
+                //var funcTypeId = new FuncTypeId(
+                //    returnType: Convert(fptr.ReturnType),
+                //    parameterTypes: fptr.Parameters.Select(p => Convert(p.ParameterType)).ToArray(),
+                //    callingConvention: fptr.CallingConvention
+                //);
+                return new FunctionType(fptr.FullName);
             }
-            return new SpecTypeId(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs.ToArrayOrNull(), Suffix: recurseResult.Suffix, FullName: tr.FullName);
+
+            var recurseResult = Recurse(tr);
+            return new SpecificationType(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs, Suffix: recurseResult.Suffix);
         }
 
         static bool IsSimpleOrGenericParameter(TypeReference tr) =>
             tr is TypeDefinition ||
-            tr is GenericParameter ||
+            tr is Mono.Cecil.GenericParameter ||
             tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
 
         // result of recursing a TypeReference
-        public sealed record RecurseResult(BaseTypeId Simple, string? Suffix, IReadOnlyList<TypeId> GenericArgs);
+        public sealed record RecurseResult(IBaseTypeId Simple, string? Suffix, ITypeId[]? GenericArgs);
 
         RecurseResult Recurse(TypeReference tr)
         {
             // Base: simple types and generic parameters
             if (IsSimpleOrGenericParameter(tr))
             {
-                return new RecurseResult(GetBaseTypeId(tr), string.Empty, Array.Empty<TypeId>());
+                return new RecurseResult(GetBaseTypeId(tr), null, null);
             }
 
             // Generic instance: resolve each generic argument recursively,
             // then treat the element type (generic definition) as the simple part.
             if (tr is GenericInstanceType git)
             {
-                var genericArgs = new List<TypeId>(git.GenericArguments.Count);
-                foreach (var arg in git.GenericArguments)
-                {
-                    genericArgs.Add(Convert(arg));
-                }
+                var genericArgs = ConvertGenericArguments(git.GenericArguments);
 
                 var simple = GetBaseTypeId(git.ElementType); // generic definition
                 return new RecurseResult(simple, null, genericArgs);
@@ -119,31 +120,15 @@ namespace Core.CecilToOutput
             }
 
             // Pinned or Sentinel
-            if (tr is PinnedType || tr is SentinelType)
+            if (tr is PinnedType || tr is SentinelType || tr is FunctionPointerType)
             {
                 throw new Exception($"Unexpected pinned type: {tr.FullName}"); // Cecil doesn't include pinned in the FullName, so we shouldn't encounter it here
-            }
-
-            // Function pointer (if you need it)
-            if (tr is FunctionPointerType fptr)
-            {
-                //// function pointer formatting is complex; represent as a token-like suffix
-                //var inner = Recurse(fptr.ReturnType);
-                //// you may want to render parameters; here we append a placeholder suffix
-                //return new RecurseResult(inner.Simple, inner.Suffix + Optional(" unmanagedcallconv*"), inner.GenericArgs);
-                //var funcTypeId = new FuncTypeId(
-                //    returnType: Convert(fptr.ReturnType),
-                //    parameterTypes: fptr.Parameters.Select(p => Convert(p.ParameterType)).ToArray(),
-                //    callingConvention: fptr.CallingConvention
-                //);
-                var funcTypeId = new FuncTypeId(fptr.FullName);
-                return new RecurseResult(funcTypeId, string.Empty, Array.Empty<TypeId>());
             }
 
             throw new NotSupportedException();
         }
 
-        private BaseTypeId GetBaseTypeId(TypeReference tr)
+        private IBaseTypeId GetBaseTypeId(TypeReference tr)
         {
             // 1. Local type definition
             if (tr is TypeDefinition td)
@@ -152,7 +137,7 @@ namespace Core.CecilToOutput
                 {
                     throw new Exception();
                 }
-                return new LocalTypeId(_assemblyName, td.MetadataToken.ToInt32(), td.FullName);
+                return new LocalType(td.MetadataToken.ToInt32());
             }
 
             // 2. Local TypeSpec (constructed/modified type)
@@ -162,7 +147,7 @@ namespace Core.CecilToOutput
             }
 
             // 3. Generic parameter (type-level or method-level)
-            if (tr is GenericParameter gp)
+            if (tr is Mono.Cecil.GenericParameter gp)
             {
                 var owner = gp.Owner;
 
@@ -173,12 +158,12 @@ namespace Core.CecilToOutput
 
                 string ownerAssembly = gp.Module.Assembly.Name.Name;
 
-                return new GenericParameterTypeId(
-                    ownerAssembly: ownerAssembly,
-                    ownerToken: ownerToken,
-                    ownerIsMethod: ownerIsMethod,
-                    position: gp.Position,
-                    name: gp.Name
+                return new Core.Id.Types.GenericParameter(
+                    //ownerAssembly: ownerAssembly,
+                    //ownerToken: ownerToken,
+                    //ownerIsMethod: ownerIsMethod,
+                    //position: gp.Position,
+                    ParameterName: gp.Name
                 );
             }
 
@@ -193,7 +178,7 @@ namespace Core.CecilToOutput
                     );
                 }
 
-                return new RemoteTypeId(resolved.Module.Assembly.Name.Name, resolved.MetadataToken.ToInt32(), resolved.FullName);
+                return new RemoteType(resolved.Module.Assembly.Name.Name, resolved.MetadataToken.ToInt32());
             }
         }
     }

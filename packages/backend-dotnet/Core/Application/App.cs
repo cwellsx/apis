@@ -1,10 +1,10 @@
 ﻿using Core.CecilToOutput;
 using Core.Output;
-using Core.Names;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Core.FullNames;
 
 namespace Core.Application
 {

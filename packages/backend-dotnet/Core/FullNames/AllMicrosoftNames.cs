@@ -5,7 +5,7 @@ using Core.Cecil;
 using Core.Output;
 using Core.Serializer;
 
-namespace Core.Names
+namespace Core.FullNames
 {
     internal class AllMicrosoftNames : AllNames
     {

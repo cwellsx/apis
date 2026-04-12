@@ -1,4 +1,4 @@
-﻿namespace Core.Names
+﻿namespace Core.FullNames
 {
     internal interface INames
     {

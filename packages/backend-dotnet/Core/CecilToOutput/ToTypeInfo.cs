@@ -1,5 +1,7 @@
 ﻿using Mono.Cecil;
 using Core.Output;
+using Core.Output.Ids;
+using Core.Id.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,10 +30,10 @@ namespace Core.CecilToOutput
         internal TypeInfo Transform(TypeDefinition typeDefinition)
         {
             return new TypeInfo(
-                Id: new LocalTypeId(_assemblyName, typeDefinition.MetadataToken.ToInt32(), typeDefinition.FullName),
+                Id: ToLocalTypeId(typeDefinition),
                 Namespace: typeDefinition.Namespace.ToStringOrNull(),
                 Name: typeDefinition.Name,
-                DeclaringType: typeDefinition.DeclaringType == null ? null : (LocalTypeId)GetTypeId(typeDefinition.DeclaringType),
+                DeclaringType: typeDefinition.DeclaringType == null ? null : ToLocalTypeId(typeDefinition.DeclaringType),
                 Attributes: GetAttributes(typeDefinition.CustomAttributes),
                 BaseType: typeDefinition.BaseType == null ? null : GetTypeId(typeDefinition.BaseType),
                 Interfaces: typeDefinition.Interfaces.Select(interfaceImlementation => GetTypeId(interfaceImlementation.InterfaceType)).ToArrayOrNull(),
@@ -44,6 +46,15 @@ namespace Core.CecilToOutput
                 TypeMembers: _isMicrosoft ? null : typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType)).ToArrayOrNull(),
                 MethodMembers: _isMicrosoft ? null : typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
                 );
+        }
+
+        LocalTypeId ToLocalTypeId(TypeDefinition typeDefinition)
+        {
+            if (typeDefinition.Module.Assembly.Name.Name != _assemblyName)
+            {
+                throw new ArgumentException($"Expected type definition from assembly {_assemblyName} but got {typeDefinition.Module.Assembly.Name.Name}");
+            }
+            return new LocalTypeId(typeDefinition.FullName, new LocalType(typeDefinition.MetadataToken.ToInt32()));
         }
 
         TypeId GetTypeId(TypeReference tr) => _toTypeId.Convert(tr);
@@ -59,7 +70,7 @@ namespace Core.CecilToOutput
             }).ToArray();
         }
 
-        static string[]? GetGenericParameters(IList<GenericParameter> genericParameters)
+        static string[]? GetGenericParameters(IList<Mono.Cecil.GenericParameter> genericParameters)
         {
             return (genericParameters.Count == 0) ? null : genericParameters.Select(genericParameter => genericParameter.Name).ToArray();
         }
