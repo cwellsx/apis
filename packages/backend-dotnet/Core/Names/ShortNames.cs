@@ -1,4 +1,4 @@
-﻿namespace Core.ShortNames
+﻿namespace Core.Names
 {
     internal interface IShortName
     {

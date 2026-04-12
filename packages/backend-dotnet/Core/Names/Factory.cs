@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Core.ShortNames
+namespace Core.Names
 {
     internal static class Factory
     {
@@ -11,7 +11,7 @@ namespace Core.ShortNames
             var type = item.GetType();
             var factory = _factories[type];
             var shortName = factory.ToShortName(item);
-            return (factory.IsShortName(shortName) && factory.IsShortNameValid(shortName))
+            return factory.IsShortName(shortName) && factory.IsShortNameValid(shortName)
                 ? shortName
                 : throw new NotSupportedException($"Invalid short name: {shortName}");
         }

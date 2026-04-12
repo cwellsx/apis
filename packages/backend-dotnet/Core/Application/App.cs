@@ -80,7 +80,7 @@ namespace Core.Application
 
             var empty = new AssemblyMap<AssemblyInfo>();
             var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, empty);
-            all = MicrosoftNames.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
+            all = AllMicrosoftNames.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
             return all;
         }
 

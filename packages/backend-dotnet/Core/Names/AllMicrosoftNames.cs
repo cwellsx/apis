@@ -7,12 +7,12 @@ using Core.Serializer;
 
 namespace Core.Names
 {
-    internal class MicrosoftNames : AllNames
+    internal class AllMicrosoftNames : AllNames
     {
         internal static All Iterate(All all, IEnumerable<AssemblyData> microsoft)
         {
             var result = new Dictionary<string, List<TypeInfo>>();
-            var self = new MicrosoftNames(all, microsoft, result);
+            var self = new AllMicrosoftNames(all, microsoft, result);
 
             all.ToYaml(self);
 
@@ -42,7 +42,7 @@ namespace Core.Names
 
         readonly AssemblyMap<List<TypeInfo>> _added = [];
 
-        internal MicrosoftNames(
+        internal AllMicrosoftNames(
             All all,
             IEnumerable<AssemblyData> microsoft,
             Dictionary<string, List<TypeInfo>> result
