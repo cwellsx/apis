@@ -1,6 +1,7 @@
 ﻿using Core.Cecil;
 using Core.Filter;
 using Core.Output;
+using Core.Output.Ids;
 
 using Mono.Cecil;
 using System.Collections.Generic;
@@ -29,13 +30,19 @@ namespace Core.CecilToOutput
                 );
         }
 
+        static bool _once;
         private MethodId[]? ToMethodIds(IEnumerable<MethodReference> methodReferences, IFilter filter)
         {
+            if (!_once)
+            {
+                _once = true;
+                Logger.Log("TODO: Review whether calls to Microsoft methods are captured in output");
+            }
             return methodReferences
                 .Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
                 .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
                 .Select(_toMethodId.Convert)
-                .Where(methodId => !filter.IsMicrosoftAssemblyPath(methodId.AssemblyName))
+                //.Where(methodId => !filter.IsMicrosoftAssemblyPath(methodId.AssemblyName))
                 .ToArrayOrNull();
         }
     }

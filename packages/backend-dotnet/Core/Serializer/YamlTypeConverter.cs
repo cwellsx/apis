@@ -80,10 +80,6 @@ namespace Core.Serializer
                 case IId id:
                     WriteId(emitter, id, state, serializer);
                     return;
-
-                case MethodId methodId:
-                    WriteId(emitter, methodId.SerializeAs, methodId.FullName, state, serializer);
-                    return;
             }
 
             if (IsScalar(type))
@@ -149,7 +145,9 @@ namespace Core.Serializer
 
         private static object SerializeRecursive(object value) => value switch
         {
-            ITypeId typeId => SerializeRecursive(Factory.ToShortName(typeId)),
+            ITypeId typeId => SerializeRecursive(TypeFactory.ToShortName(typeId)),
+
+            IMethodId methodId => SerializeRecursive(MethodFactory.ToShortName(methodId)),
 
             Array arr => arr.Cast<object>()
                             .Select(SerializeRecursive)
@@ -173,18 +171,22 @@ namespace Core.Serializer
             switch (leafObject)
             {
                 case ITypeId typeId:
-                    shortName = Factory.ToShortName(typeId);
+                    shortName = TypeFactory.ToShortName(typeId);
                     if (_names != null)
                     {
                         var serialized = SerializeRecursive(typeId);
                         fullName = _names.GetTypeName(serialized, state.InAssemblyName);
                     }
                     break;
-                case Output.MethodId methodId:
-                    shortName = methodId.SerializeAs;
+                case IMethodId methodId:
+                    shortName = MethodFactory.ToShortName(methodId);
                     if (_names != null)
                     {
-                        fullName = methodId.FullName;
+                        var serialized = SerializeRecursive(shortName);
+                        fullName = _names.GetMethodName(serialized, state.InAssemblyName);
+
+                        // HACK
+                        fullName = id.FullName;
                     }
                     break;
                 default:
@@ -206,13 +208,6 @@ namespace Core.Serializer
             State state,
             ObjectSerializer serializer)
         {
-            //var obj = shortJson.SerializeAs;
-            //if (obj == null)
-            //{
-            //    emitter.Emit(new Scalar("null"));
-            //    return;
-            //}
-
             var inAssemblyName = state.InAssemblyName;
 
             // If obj is a sequence (array/list) and you want per-element comments:
@@ -238,13 +233,14 @@ namespace Core.Serializer
                     switch (element)
                     {
                         case ITypeId typeId:
-                            IId elementId = new Id<ITypeId>(IgnoreSyntheticFullName, typeId);
-                            serializer(new WrappedValue(childState, elementId));
+                            IId decoratedTypeId = new Id<ITypeId>(IgnoreSyntheticFullName, typeId);
+                            serializer(new WrappedValue(childState, decoratedTypeId));
                             break;
 
-                        //case Array array:
-                        //    serializer(new WrappedValue(childState, array));
-                        //    break;
+                        case IMethodId methodId:
+                            IId decoratedMethodId = new Id<IMethodId>(IgnoreSyntheticFullName, methodId);
+                            serializer(new WrappedValue(childState, decoratedMethodId));
+                            break;
 
                         case string s:
                             EmitScalar(emitter, s);
@@ -257,17 +253,6 @@ namespace Core.Serializer
                         default:
                             throw new NotSupportedException($"Unsupported element type in sequence: {element.GetType().FullName}");
                     }
-
-                    //if (element is IShortJson elementShortJson)
-                    //{
-                    //    var elementObj = elementShortJson.SerializeAs;
-                    //    EmitScalar(emitter, elementObj);
-                    //    EmitComment(emitter, fullName);
-                    //}
-                    //else
-                    //{
-                    //    EmitScalar(emitter, element);
-                    //}
 
                     if (isInSequence && first)
                     {
@@ -282,7 +267,6 @@ namespace Core.Serializer
             {
                 // Non-sequence: emit a scalar (or mapping) and then an inline comment
                 EmitScalar(emitter, obj);
-
                 EmitComment(emitter, fullName);
             }
         }

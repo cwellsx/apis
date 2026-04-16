@@ -66,10 +66,10 @@ namespace Core.Serializer.JsonConverters
                     switch (leafId)
                     {
                         case ITypeId typeId:
-                            shortName = Factory.ToShortName(typeId);
+                            shortName = TypeFactory.ToShortName(typeId);
                             break;
-                        case Output.MethodId methodId:
-                            shortName = methodId.SerializeAs;
+                        case IMethodId methodId:
+                            shortName = MethodFactory.ToShortName(methodId);
                             break;
                         default:
                             throw new NotSupportedException($"Unsupported leafId type: {leafId.GetType()}");

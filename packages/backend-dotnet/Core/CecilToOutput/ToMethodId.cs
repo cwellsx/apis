@@ -1,6 +1,9 @@
-﻿using Core.Output;
-using Mono.Cecil;
+﻿using Core.Id.Methods;
 using Core.Output.Ids;
+using Mono.Cecil;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace Core.CecilToOutput
 {
@@ -15,23 +18,77 @@ namespace Core.CecilToOutput
             _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal MethodId Convert(MethodReference mr)
-        {
-            var fullName = mr.FullName;
-            ITypeId[]? genericTypeArguments = null;
+        internal MethodId Convert(MethodReference mr) => new MethodId(mr.FullName, GetShortName(mr));
 
-            if (mr is GenericInstanceMethod gim)
+        internal IMethodId GetShortName(MethodReference mr)
+        {
+            if (mr is MethodDefinition md)
             {
-                mr = gim.ElementMethod;
-                genericTypeArguments = _toTypeId.ConvertGenericArguments(gim.GenericArguments);
+                if (md.Module.Assembly.Name.Name != _assemblyName)
+                {
+                    throw new Exception();
+                }
+                if (md.DeclaringType is not TypeDefinition)
+                {
+                    throw new Exception();
+                }
+                // referenced method definition => cannot have generic aruments
+                return new LocalMethod(md.MetadataToken.ToInt32());
             }
 
-            var md = mr.Resolve();
+            md = mr.Resolve();
+            var methodId = new RemoteMethod(md.DeclaringType.Module.Assembly.Name.Name, md.MetadataToken.ToInt32());
+            var genericMethodArguments = GetGenericTypeArguments(
+                md.GenericParameters,
+                (mr as GenericInstanceMethod)?.GenericArguments
+                );
 
-            var assemblyName = md.DeclaringType.Module.Assembly.Name.Name;
-            bool isLocalAssmbly = (assemblyName == _assemblyName);
+            TypeReference typeReference = mr.DeclaringType.NotNull();
+            var genericTypeArguments = GetGenericTypeArguments(
+                 typeReference.Resolve().GenericParameters,
+                 (typeReference as GenericInstanceType)?.GenericArguments
+                );
 
-            return new MethodId(assemblyName, md.MetadataToken.ToInt32(), isLocalAssmbly, genericTypeArguments, md.FullName);
+            // all generic type arguments (and parameters) were inherited from their declaring types by the nested type of which the method is a member
+            // the declaring types of such a nest type are type definitions without futuer generic arguments
+            var enclosingType = typeReference.DeclaringType;
+            while (enclosingType != null)
+            {
+                if (enclosingType is GenericInstanceType)
+                {
+                    throw new Exception();
+                }
+                enclosingType = enclosingType.DeclaringType;
+            }
+
+            // concaterate -- method generic arguments, then type generic arguments
+            var genericArguments = genericMethodArguments.Concat(genericTypeArguments).ToArrayOrNull();
+            return (genericArguments == null) ? methodId : new GenericMethod(methodId, genericArguments);
         }
+
+        ITypeId[] GetGenericTypeArguments(
+            IList<GenericParameter> genericParameters,
+            IList<TypeReference>? genericArguments
+            )
+        {
+            if (genericArguments == null)
+            {
+                if (genericParameters.Count != 0)
+                {
+                    throw new Exception();
+                }
+                return [];
+            }
+            if (genericParameters.Count == 0)
+            {
+                throw new Exception();
+            }
+            if (genericParameters.Count != genericArguments.Count)
+            {
+                throw new Exception();
+            }
+            return _toTypeId.ConvertGenericArguments(genericArguments) ?? [];
+        }
+
     }
 }

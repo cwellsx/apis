@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using static Core.Id.Factory;
 using Core.Output.Ids;
 using Core.Id.Types;
+using Core.Id.Factory;
 
 namespace Core.Id.TypeFactories
 {
@@ -98,9 +98,9 @@ namespace Core.Id.TypeFactories
                 ? items.Skip(1).Take(items.Length - 2)
                 : items.Skip(1);
 
-            var genericTypeArguments = genericTypeItems.Select(item => Factory.FromShortName(item)).ToArray();
+            var genericTypeArguments = genericTypeItems.Select(item => TypeFactory.FromShortName(item)).ToArray();
 
-            var resolved = (IBaseTypeId)Factory.FromShortName(items[0]);
+            var resolved = (IBaseTypeId)TypeFactory.FromShortName(items[0]);
 
             return new SpecificationType(resolved, genericTypeArguments, suffix);
         }

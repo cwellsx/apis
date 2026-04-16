@@ -3,6 +3,7 @@ using Core.Output.Ids;
 using Mono.Cecil;
 using System;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Core.CecilToOutput
 {
@@ -17,7 +18,7 @@ namespace Core.CecilToOutput
 
         internal TypeId Convert(TypeReference tr) => new TypeId(tr.FullName, GetShortName(tr));
 
-        internal ITypeId[]? ConvertGenericArguments(Mono.Collections.Generic.Collection<TypeReference> genericArguments) => genericArguments
+        internal ITypeId[]? ConvertGenericArguments(IList<TypeReference> genericArguments) => genericArguments
             .Select(tr => Convert(tr).LeafId)
             .ToArrayOrNull();
 

@@ -1,7 +1,8 @@
-﻿using Core.Output;
-using Core.Output.Ids;
-using Core.Id;
+﻿using Core.Id;
+using Core.Id.Methods;
 using Core.Id.Types;
+using Core.Output;
+using Core.Output.Ids;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -11,16 +12,46 @@ namespace Core.FullNames
 {
     internal class AllNames : INames
     {
+        protected record MethodPair(MethodMember MethodMember, TypeInfo DeclaringType);
+        protected record MethodTriple(MethodMember MethodMember, TypeInfo DeclaringType, string AssemblyName)
+        {
+            internal MethodTriple(MethodPair methodPair, string assemblyName) : this(methodPair.MethodMember, methodPair.DeclaringType, assemblyName)
+            {
+            }
+        }
+
         readonly Dictionary<string, Dictionary<int, TypeInfo>> _assembliesTypeInfo;
         readonly Dictionary<string, Dictionary<int, TypeInfo>> _microsoftTypeInfo;
+
+        readonly Dictionary<string, Dictionary<int, MethodPair>> _assembliesMethodPair;
+        readonly Dictionary<string, Dictionary<int, MethodPair>> _microsoftMethodPair;
 
         internal AllNames(All all)
         {
             _assembliesTypeInfo = ToTypInfoDictionary(all.Assemblies);
             _microsoftTypeInfo = ToTypInfoDictionary(all.MicrosoftAssemblies);
+
+            _assembliesMethodPair = ToTMethodPairDictionary(all.Assemblies);
+            _microsoftMethodPair = ToTMethodPairDictionary(all.MicrosoftAssemblies);
         }
 
-        public string GetTypeName(object shortId, string? inAssemblyName) => GetTypeName(Factory.FromShortName(shortId), inAssemblyName, withArguments: false);
+        public string GetMethodName(object shortId, string? inAssemblyName)
+        {
+            var methodId = MethodFactory.FromShortName(shortId);
+            var methodTriple = GetMethodTriple(methodId, inAssemblyName);
+            var genericTypeArguments = methodId is GenericMethod genericMethod ? genericMethod.GenericTypeArguments : null;
+            return GetMethodName(methodTriple, genericTypeArguments);
+        }
+
+        private MethodTriple GetMethodTriple(IMethodId methodId, string? inAssemblyName) => methodId switch
+        {
+            LocalMethod localMethod => GetMethodTriple(inAssemblyName.NotNull(), localMethod.MetadataToken),
+            RemoteMethod remoteMethod => GetMethodTriple(remoteMethod.AssemblyName, remoteMethod.MetadataToken),
+            GenericMethod genericMethod => GetMethodTriple(genericMethod.Resolved, inAssemblyName),
+            _ => throw new NotSupportedException($"methodId: {methodId}")
+        };
+
+        public string GetTypeName(object shortId, string? inAssemblyName) => GetTypeName(TypeFactory.FromShortName(shortId), inAssemblyName, withArguments: false);
 
         private string GetTypeName(ITypeId shortName, string? inAssemblyName, bool withArguments) => shortName switch
         {
@@ -31,7 +62,7 @@ namespace Core.FullNames
 
         private TypeNameParts GetBaseTypeNameParts(IBaseTypeId baseShortName, string? inAssemblyName) => baseShortName switch
         {
-            LocalType localShortNeme => GetTypeNameParts(inAssemblyName ?? throw new ArgumentNullException(), localShortNeme.MetadataToken),
+            LocalType localShortNeme => GetTypeNameParts(inAssemblyName.NotNull(), localShortNeme.MetadataToken),
             RemoteType remoteShortNeme => GetTypeNameParts(remoteShortNeme.AssemblyName, remoteShortNeme.MetadataToken),
             GenericParameter genericParameterShortName => new TypeNameParts(genericParameterShortName.ParameterName, null),
             _ => throw new NotSupportedException($"baseShortName: {baseShortName}")
@@ -76,6 +107,24 @@ namespace Core.FullNames
             return new TypeNameParts(typeName, typeInfo.GenericTypeParameters);
         }
 
+        private MethodTriple GetMethodTriple(string assemblyName, int metadataToken) => new MethodTriple(GetMethodPair(assemblyName, metadataToken), assemblyName);
+
+        private MethodPair GetMethodPair(string assemblyName, int metadataToken)
+        {
+            MethodPair? methodPair;
+            if (TryGetValue(_assembliesMethodPair, assemblyName, metadataToken, out methodPair))
+            {
+                return methodPair;
+            }
+            if (TryGetValue(_microsoftMethodPair, assemblyName, metadataToken, out methodPair))
+            {
+                return methodPair;
+            }
+            methodPair = FetchMethodPair(assemblyName, metadataToken);
+            Add(_microsoftMethodPair, assemblyName, metadataToken, methodPair);
+            return methodPair;
+        }
+
         private TypeInfo GetTypeInfo(string assemblyName, int metadataToken)
         {
             TypeInfo? typeInfo;
@@ -93,6 +142,11 @@ namespace Core.FullNames
 
             return typeInfo;
         }
+
+        protected virtual MethodPair FetchMethodPair(string assemblyName, int metadataToken) => throw new Exception($"assemblyName: {assemblyName}, metadataToken: {metadataToken}");
+        protected virtual TypeInfo FetchTypeInfo(string assemblyName, int metadataToken) => throw new Exception($"assemblyName: {assemblyName}, metadataToken: {metadataToken}");
+
+        #region static methods for generic TryGetValue and Add
 
         private static bool TryGetValue<T>(Dictionary<string, Dictionary<int, T>> dictionary, string assemblyName, int metadataToken, [MaybeNullWhen(false)] out T value)
         {
@@ -114,7 +168,8 @@ namespace Core.FullNames
             inner.Add(metadataToken, value);
         }
 
-        protected virtual TypeInfo FetchTypeInfo(string assemblyName, int metadataToken) => throw new Exception($"assemblyName: {assemblyName}, metadataToken: {metadataToken}");
+        #endregion
+        #region static methods to initialize the dictionaries
 
         private static Dictionary<string, Dictionary<int, TypeInfo>> ToTypInfoDictionary(Dictionary<string, AssemblyInfo> assemblies) => assemblies.ToDictionary(
             kvp => kvp.Key,
@@ -122,57 +177,56 @@ namespace Core.FullNames
                 typeInfo => typeInfo.Id.LeafId.MetadataToken
             ));
 
-        private record TypeNameParts(string TypeName, string[]? GenericTypeParameters)
+        private static Dictionary<string, Dictionary<int, MethodPair>> ToTMethodPairDictionary(Dictionary<string, AssemblyInfo> assemblies) => assemblies.ToDictionary(
+            kvp => kvp.Key,
+            kvp => kvp.Value.TypeInfos
+            .SelectMany(
+                typeInfo => typeInfo.MethodMembers ?? [],
+                (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)
+                )
+            .ToDictionary(
+                methodPair => methodPair.MethodMember.MetadataToken
+            ));
+
+        #endregion
+
+        private string GetTypeName(
+            TypeInfo typeInfo,
+            string inAssemblyName,
+            bool withArguments
+            )
         {
-            internal string AsName(bool withArguments)
+            var typeName = typeInfo.DeclaringType != null
+                ? $"{GetTypeName(typeInfo.DeclaringType.LeafId, inAssemblyName, false)}/{typeInfo.Name}"
+                : typeInfo.Namespace != null
+                ? $"{typeInfo.Namespace}.{typeInfo.Name}"
+                : typeInfo.Name;
+
+            var typeNameParts = new TypeNameParts(typeName, typeInfo.GenericTypeParameters);
+            return typeNameParts.AsName(withArguments);
+        }
+
+        private string GetMethodName(
+            MethodTriple methodTriple,
+            ITypeId[]? genericTypeArguments
+            )
+        {
+            var (methodMember, declaringType, assemblyName) = methodTriple;
+
+            Func<ITypeId, string> getITypeIdName = typeId => GetTypeName(typeId, assemblyName, withArguments: true);
+            Func<TypeId, string> getTypeIdName = typeId => GetTypeName(typeId.LeafId, assemblyName, withArguments: true);
+            Func<TypeInfo, string> getTypeInfoName = typeInfo => GetTypeName(typeInfo, assemblyName, withArguments: true);
+
+            var returnTypeName = getTypeIdName(methodMember.ReturnType);
+            var declaringTypeName = getTypeInfoName(declaringType);
+            var parameterTypeNames = string.Join(",", methodMember.Parameters?.Select(parameter => getTypeIdName(parameter.Type)) ?? []);
+
+            if (genericTypeArguments != null)
             {
-                if (!withArguments)
-                {
-                    return TypeName;
-                }
-
-                var arity = GetTotalArity(TypeName);
-
-                if (GenericTypeParameters == null)
-                {
-                    if (arity != 0)
-                    {
-                        throw new Exception();
-                    }
-
-                    return TypeName;
-                }
-                else
-                {
-                    if (arity != GenericTypeParameters.Length)
-                    {
-                        throw new Exception();
-                    }
-
-                    return $"{TypeName}<{string.Join(",", GenericTypeParameters)}>";
-                }
+                Console.WriteLine("here");
             }
 
-            private static int GetTotalArity(string fullName)
-            {
-                var parts = fullName.Split("/");
-                return parts.Select(part => GetArity(part)).Sum();
-            }
-
-            private static int GetArity(string fullName)
-            {
-                var index = fullName.LastIndexOf("`");
-                if (index == -1)
-                {
-                    return 0;
-                }
-                var arity = int.Parse(fullName.Substring(index + 1));
-                if (arity < 1)
-                {
-                    throw new Exception();
-                }
-                return arity;
-            }
+            return $"{returnTypeName} {declaringTypeName}::{methodMember.Name}({parameterTypeNames})";
         }
     }
 }

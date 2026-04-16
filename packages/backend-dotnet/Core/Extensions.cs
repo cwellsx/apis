@@ -6,7 +6,7 @@ namespace Core
 {
     internal static class Extensions
     {
-        internal static string NotNull(this string? name)
+        internal static T NotNull<T>(this T? name)
         {
             if (name == null)
             {
