@@ -11,15 +11,14 @@ namespace Core.FullNames
     internal class AllNames : INames
     {
         protected record MethodPair(MethodMember MethodMember, TypeInfo DeclaringType);
-        protected record MethodTriple(MethodMember MethodMember, TypeInfo DeclaringType, string AssemblyName)
-        {
-            internal MethodTriple(MethodPair methodPair, string assemblyName) : this(methodPair.MethodMember, methodPair.DeclaringType, assemblyName)
-            {
-            }
-        }
+
+        private record AssemblyTypeInfo(string AssemblyName, TypeInfo TypeInfo, string InAssemblyName);
+        private record AssemblyMethodPair(string AssemblyName, TypeInfo DeclaringType, MethodMember MethodMember, string InAssemblyName);
 
         readonly TwoDictionaries<TypeInfo> _allTypeInfos;
         readonly TwoDictionaries<MethodPair> _allMethodPairs;
+
+        #region ctors
 
         internal AllNames(All all)
         {
@@ -45,119 +44,102 @@ namespace Core.FullNames
                 .ToDictionary(methodPair => methodPair.MethodMember.MetadataToken));
         }
 
-        public string GetMethodName(object shortId, string? inAssemblyName)
-        {
-            var methodId = MethodFactory.FromShortName(shortId);
-            var methodTriple = GetMethodTriple(methodId, inAssemblyName);
-            var genericTypeArguments = methodId is GenericMethod genericMethod ? genericMethod.GenericTypeArguments : null;
-            return GetMethodName(methodTriple, genericTypeArguments);
-        }
+        #endregion
 
-        private MethodTriple GetMethodTriple(IMethodId methodId, string? inAssemblyName) => methodId switch
-        {
-            LocalMethod localMethod => GetMethodTriple(inAssemblyName.NotNull(), localMethod.MetadataToken),
-            RemoteMethod remoteMethod => GetMethodTriple(remoteMethod.AssemblyName, remoteMethod.MetadataToken),
-            GenericMethod genericMethod => GetMethodTriple(genericMethod.Resolved, inAssemblyName),
-            _ => throw new NotSupportedException($"methodId: {methodId}")
-        };
+        public string GetTypeName(object shortId, string inAssemblyName) => GetTypeName(TypeFactory.FromShortName(shortId), inAssemblyName);
 
-        public string GetTypeName(object shortId, string? inAssemblyName) => GetTypeName(TypeFactory.FromShortName(shortId), inAssemblyName, withArguments: false);
+        public string GetMethodName(object shortId, string inAssemblyName) => GetMethodName(MethodFactory.FromShortName(shortId), inAssemblyName);
 
-        private string GetTypeName(ITypeId shortName, string? inAssemblyName, bool withArguments) => shortName switch
+        private string GetTypeName(ITypeId typeId, string inAssemblyName)
         {
-            FunctionType functionShortName => functionShortName.FunctionName,
-            SpecificationType specificationShortName => GetSpecificationTypeName(specificationShortName, inAssemblyName),
-            _ => GetBaseTypeNameParts((IBaseTypeId)shortName, inAssemblyName).AsName(withArguments)
-        };
-
-        private TypeNameParts GetBaseTypeNameParts(IBaseTypeId baseShortName, string? inAssemblyName) => baseShortName switch
-        {
-            LocalType localShortNeme => GetTypeNameParts(inAssemblyName.NotNull(), localShortNeme.MetadataToken),
-            RemoteType remoteShortNeme => GetTypeNameParts(remoteShortNeme.AssemblyName, remoteShortNeme.MetadataToken),
-            GenericParameter genericParameterShortName => new TypeNameParts(genericParameterShortName.ParameterName, null),
-            _ => throw new NotSupportedException($"baseShortName: {baseShortName}")
-        };
-
-        private string GetSpecificationTypeName(SpecificationType specificationShortName, string? inAssemblyName)
-        {
-            var typeNameParts = GetBaseTypeNameParts(specificationShortName.Resolved, inAssemblyName);
-            var genericTypeArguments = specificationShortName.GenericTypeArguments?.Select(arg => GetTypeName(arg, inAssemblyName, withArguments: true)).ToArrayOrNull();
-            if (typeNameParts.GenericTypeParameters == null)
+            // two special cases, with names encoded in the shortId, return immediately and don't try to find the TypeInfo
+            switch (typeId)
             {
-                if (genericTypeArguments != null)
+                case FunctionType functionType:
+                    return functionType.FunctionName;
+                case GenericParameter genericParameter:
+                    return genericParameter.ParameterName;
+            }
+
+            if (typeId is SpecificationType specificationType)
+            {
+                if (specificationType.Resolved is GenericParameter genericParameter)
                 {
-                    throw new Exception();
+                    Assert(specificationType.GenericTypeArguments == null);
+                    Assert(specificationType.Suffix != null);
+                    return genericParameter.ParameterName + specificationType.Suffix;
                 }
+
+                return GetTypeName(GetAssemblyTypeInfo(specificationType.Resolved, inAssemblyName), specificationType.GenericTypeArguments, specificationType.Suffix);
             }
             else
             {
-                if (genericTypeArguments == null)
-                {
-                    throw new Exception();
-                }
-                if (typeNameParts.GenericTypeParameters.Length != genericTypeArguments.Length)
-                {
-                    throw new Exception();
-                }
-                typeNameParts = new TypeNameParts(typeNameParts.TypeName, genericTypeArguments);
+                return GetTypeName(GetAssemblyTypeInfo(typeId, inAssemblyName), null, null);
             }
-            return typeNameParts.AsName(true) + specificationShortName.Suffix;
         }
 
-        private TypeNameParts GetTypeNameParts(string assemblyName, int metadataToken)
+        private AssemblyTypeInfo GetAssemblyTypeInfo(ITypeId typeId, string inAssemblyName)
         {
-            var typeInfo = GetTypeInfo(assemblyName, metadataToken);
+            var (assemblyName, metadataToken) = typeId switch
+            {
+                LocalType localType => (inAssemblyName, localType.MetadataToken),
+                RemoteType remoteType => (remoteType.AssemblyName, remoteType.MetadataToken),
+                _ => throw new NotSupportedException($"typeId: {typeId}")
+            };
+            var typeInfo = _allTypeInfos.Get(assemblyName, metadataToken);
+            return new AssemblyTypeInfo(assemblyName, typeInfo, inAssemblyName);
+        }
 
+        private string GetTypeName(AssemblyTypeInfo assemblyTypeInfo, ITypeId[]? genericTypeArguments, string? suffix)
+        {
+            var (assemblyName, typeInfo, inAssemblyName) = assemblyTypeInfo;
             var typeName = typeInfo.DeclaringType != null
-                ? $"{GetTypeName(typeInfo.DeclaringType.LeafId, assemblyName, false)}/{typeInfo.Name}"
+                ? $"{GetTypeName(typeInfo.DeclaringType.LeafId, assemblyName)}/{typeInfo.Name}"
                 : typeInfo.Namespace != null
                 ? $"{typeInfo.Namespace}.{typeInfo.Name}"
                 : typeInfo.Name;
-
-            return new TypeNameParts(typeName, typeInfo.GenericTypeParameters);
-        }
-
-        private MethodTriple GetMethodTriple(string assemblyName, int metadataToken) => new MethodTriple(GetMethodPair(assemblyName, metadataToken), assemblyName);
-
-        private MethodPair GetMethodPair(string assemblyName, int metadataToken) => _allMethodPairs.Get(assemblyName, metadataToken);
-
-        private TypeInfo GetTypeInfo(string assemblyName, int metadataToken) => _allTypeInfos.Get(assemblyName, metadataToken);
-
-        private string GetTypeName(
-            TypeInfo typeInfo,
-            string inAssemblyName,
-            bool withArguments
-            )
-        {
-            var typeName = typeInfo.DeclaringType != null
-                ? $"{GetTypeName(typeInfo.DeclaringType.LeafId, inAssemblyName, false)}/{typeInfo.Name}"
-                : typeInfo.Namespace != null
-                ? $"{typeInfo.Namespace}.{typeInfo.Name}"
-                : typeInfo.Name;
-
-            var typeNameParts = new TypeNameParts(typeName, typeInfo.GenericTypeParameters);
-            return typeNameParts.AsName(withArguments);
-        }
-
-        private string GetMethodName(
-            MethodTriple methodTriple,
-            ITypeId[]? genericTypeArguments
-            )
-        {
-            var (methodMember, declaringType, assemblyName) = methodTriple;
-
-            Func<ITypeId, string> getITypeIdName = typeId => GetTypeName(typeId, assemblyName, withArguments: true);
-            Func<TypeId, string> getTypeIdName = typeId => GetTypeName(typeId.LeafId, assemblyName, withArguments: true);
-            Func<TypeInfo, string> getTypeInfoName = typeInfo => GetTypeName(typeInfo, assemblyName, withArguments: true);
-
-            var returnTypeName = getTypeIdName(methodMember.ReturnType);
-            var declaringTypeName = getTypeInfoName(declaringType);
-            var parameterTypeNames = string.Join(",", methodMember.Parameters?.Select(parameter => getTypeIdName(parameter.Type)) ?? []);
 
             if (genericTypeArguments != null)
             {
-                Console.WriteLine("here");
+                typeName += $"<{string.Join(",", genericTypeArguments.Select(arg => GetTypeName(arg, inAssemblyName)))}>";
             }
+
+            return typeName + suffix;
+        }
+
+        private string GetMethodName(IMethodId methodId, string inAssemblyName)
+        {
+            if (methodId is GenericMethod genericMethod)
+            {
+                return GetMethodName(GetAssemblyMethodPair(genericMethod.Resolved, inAssemblyName), genericMethod.GenericTypeArguments);
+            }
+            else
+            {
+                return GetMethodName(GetAssemblyMethodPair(methodId, inAssemblyName), null);
+            }
+        }
+
+        private AssemblyMethodPair GetAssemblyMethodPair(IMethodId methodId, string inAssemblyName)
+        {
+            var (assemblyName, metadataToken) = methodId switch
+            {
+                LocalMethod localMethod => (inAssemblyName, localMethod.MetadataToken),
+                RemoteMethod remoteMethod => (remoteMethod.AssemblyName, remoteMethod.MetadataToken),
+                _ => throw new NotSupportedException($"methodId: {methodId}")
+            };
+            var methodPair = _allMethodPairs.Get(assemblyName, metadataToken);
+            return new AssemblyMethodPair(assemblyName, methodPair.DeclaringType, methodPair.MethodMember, inAssemblyName);
+        }
+
+        private string GetMethodName(AssemblyMethodPair assemblyMethodPair, ITypeId[]? genericTypeArguments)
+        {
+            var (assemblyName, declaringType, methodMember, inAssemblyName) = assemblyMethodPair;
+
+            Func<TypeId, string> getTypeIdName = typeId => GetTypeName(typeId.LeafId, assemblyName);
+
+            var returnTypeName = getTypeIdName(methodMember.ReturnType);
+            var declaringTypeName = GetTypeName(new AssemblyTypeInfo(assemblyName, declaringType, inAssemblyName), null, null);
+            var parameterTypeNames = string.Join(",", methodMember.Parameters?.Select(parameter => getTypeIdName(parameter.Type)) ?? []);
 
             return $"{returnTypeName} {declaringTypeName}::{methodMember.Name}({parameterTypeNames})";
         }

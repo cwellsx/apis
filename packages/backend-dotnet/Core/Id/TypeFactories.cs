@@ -98,7 +98,7 @@ namespace Core.Id.TypeFactories
                 ? items.Skip(1).Take(items.Length - 2)
                 : items.Skip(1);
 
-            var genericTypeArguments = genericTypeItems.Select(item => TypeFactory.FromShortName(item)).ToArray();
+            var genericTypeArguments = genericTypeItems.Select(item => TypeFactory.FromShortName(item)).ToArrayOrNull();
 
             var resolved = (IBaseTypeId)TypeFactory.FromShortName(items[0]);
 

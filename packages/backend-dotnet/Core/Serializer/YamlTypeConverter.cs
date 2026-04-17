@@ -175,7 +175,7 @@ namespace Core.Serializer
                     if (_names != null)
                     {
                         var serialized = SerializeRecursive(typeId);
-                        fullName = _names.GetTypeName(serialized, state.InAssemblyName);
+                        fullName = _names.GetTypeName(serialized, state.InAssemblyName.NotNull());
                     }
                     break;
                 case IMethodId methodId:
@@ -183,7 +183,7 @@ namespace Core.Serializer
                     if (_names != null)
                     {
                         var serialized = SerializeRecursive(shortName);
-                        fullName = _names.GetMethodName(serialized, state.InAssemblyName);
+                        fullName = _names.GetMethodName(serialized, state.InAssemblyName.NotNull());
 
                         // HACK
                         fullName = id.FullName;
