@@ -4,8 +4,6 @@ using Core.Id.Types;
 using Core.Output;
 using Core.Output.Ids;
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace Core.FullNames
@@ -20,19 +18,31 @@ namespace Core.FullNames
             }
         }
 
-        readonly Dictionary<string, Dictionary<int, TypeInfo>> _assembliesTypeInfo;
-        readonly Dictionary<string, Dictionary<int, TypeInfo>> _microsoftTypeInfo;
-
-        readonly Dictionary<string, Dictionary<int, MethodPair>> _assembliesMethodPair;
-        readonly Dictionary<string, Dictionary<int, MethodPair>> _microsoftMethodPair;
+        readonly TwoDictionaries<TypeInfo> _allTypeInfos;
+        readonly TwoDictionaries<MethodPair> _allMethodPairs;
 
         internal AllNames(All all)
         {
-            _assembliesTypeInfo = ToTypInfoDictionary(all.Assemblies);
-            _microsoftTypeInfo = ToTypInfoDictionary(all.MicrosoftAssemblies);
+            _allTypeInfos = new TwoDictionaries<TypeInfo>(all, typeInfos => typeInfos.ToDictionary(typeInfo => typeInfo.Id.LeafId.MetadataToken));
 
-            _assembliesMethodPair = ToTMethodPairDictionary(all.Assemblies);
-            _microsoftMethodPair = ToTMethodPairDictionary(all.MicrosoftAssemblies);
+            _allMethodPairs = new TwoDictionaries<MethodPair>(all, typeInfos => typeInfos
+                .SelectMany(
+                    typeInfo => typeInfo.MethodMembers ?? [],
+                    (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)
+                    )
+                .ToDictionary(methodPair => methodPair.MethodMember.MetadataToken));
+        }
+
+        protected AllNames(All all, TwoDictionaries<TypeInfo> allTypeInfos)
+        {
+            _allTypeInfos = allTypeInfos;
+
+            _allMethodPairs = new TwoDictionaries<MethodPair>(all, typeInfos => typeInfos
+                .SelectMany(
+                    typeInfo => typeInfo.MethodMembers ?? [],
+                    (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)
+                    )
+                .ToDictionary(methodPair => methodPair.MethodMember.MetadataToken));
         }
 
         public string GetMethodName(object shortId, string? inAssemblyName)
@@ -109,86 +119,9 @@ namespace Core.FullNames
 
         private MethodTriple GetMethodTriple(string assemblyName, int metadataToken) => new MethodTriple(GetMethodPair(assemblyName, metadataToken), assemblyName);
 
-        private MethodPair GetMethodPair(string assemblyName, int metadataToken)
-        {
-            MethodPair? methodPair;
-            if (TryGetValue(_assembliesMethodPair, assemblyName, metadataToken, out methodPair))
-            {
-                return methodPair;
-            }
-            if (TryGetValue(_microsoftMethodPair, assemblyName, metadataToken, out methodPair))
-            {
-                return methodPair;
-            }
-            methodPair = FetchMethodPair(assemblyName, metadataToken);
-            Add(_microsoftMethodPair, assemblyName, metadataToken, methodPair);
-            return methodPair;
-        }
+        private MethodPair GetMethodPair(string assemblyName, int metadataToken) => _allMethodPairs.Get(assemblyName, metadataToken);
 
-        private TypeInfo GetTypeInfo(string assemblyName, int metadataToken)
-        {
-            TypeInfo? typeInfo;
-            if (TryGetValue(_assembliesTypeInfo, assemblyName, metadataToken, out typeInfo))
-            {
-                return typeInfo;
-            }
-            if (TryGetValue(_microsoftTypeInfo, assemblyName, metadataToken, out typeInfo))
-            {
-                return typeInfo;
-            }
-
-            typeInfo = FetchTypeInfo(assemblyName, metadataToken);
-            Add(_microsoftTypeInfo, assemblyName, metadataToken, typeInfo);
-
-            return typeInfo;
-        }
-
-        protected virtual MethodPair FetchMethodPair(string assemblyName, int metadataToken) => throw new Exception($"assemblyName: {assemblyName}, metadataToken: {metadataToken}");
-        protected virtual TypeInfo FetchTypeInfo(string assemblyName, int metadataToken) => throw new Exception($"assemblyName: {assemblyName}, metadataToken: {metadataToken}");
-
-        #region static methods for generic TryGetValue and Add
-
-        private static bool TryGetValue<T>(Dictionary<string, Dictionary<int, T>> dictionary, string assemblyName, int metadataToken, [MaybeNullWhen(false)] out T value)
-        {
-            value = default;
-            if (!dictionary.TryGetValue(assemblyName, out var inner))
-            {
-                return false;
-            }
-            return inner.TryGetValue(metadataToken, out value);
-        }
-
-        private static void Add<T>(Dictionary<string, Dictionary<int, T>> dictionary, string assemblyName, int metadataToken, T value)
-        {
-            if (!dictionary.TryGetValue(assemblyName, out var inner))
-            {
-                inner = new Dictionary<int, T>();
-                dictionary.Add(assemblyName, inner);
-            }
-            inner.Add(metadataToken, value);
-        }
-
-        #endregion
-        #region static methods to initialize the dictionaries
-
-        private static Dictionary<string, Dictionary<int, TypeInfo>> ToTypInfoDictionary(Dictionary<string, AssemblyInfo> assemblies) => assemblies.ToDictionary(
-            kvp => kvp.Key,
-            kvp => kvp.Value.TypeInfos.ToDictionary(
-                typeInfo => typeInfo.Id.LeafId.MetadataToken
-            ));
-
-        private static Dictionary<string, Dictionary<int, MethodPair>> ToTMethodPairDictionary(Dictionary<string, AssemblyInfo> assemblies) => assemblies.ToDictionary(
-            kvp => kvp.Key,
-            kvp => kvp.Value.TypeInfos
-            .SelectMany(
-                typeInfo => typeInfo.MethodMembers ?? [],
-                (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)
-                )
-            .ToDictionary(
-                methodPair => methodPair.MethodMember.MetadataToken
-            ));
-
-        #endregion
+        private TypeInfo GetTypeInfo(string assemblyName, int metadataToken) => _allTypeInfos.Get(assemblyName, metadataToken);
 
         private string GetTypeName(
             TypeInfo typeInfo,
