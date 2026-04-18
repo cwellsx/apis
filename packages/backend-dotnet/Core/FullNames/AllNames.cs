@@ -4,6 +4,7 @@ using Core.Id.Types;
 using Core.Output;
 using Core.Output.Ids;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Core.FullNames
@@ -14,6 +15,8 @@ namespace Core.FullNames
 
         private record AssemblyTypeInfo(string AssemblyName, TypeInfo TypeInfo, string InAssemblyName);
         private record AssemblyMethodPair(string AssemblyName, TypeInfo DeclaringType, MethodMember MethodMember, string InAssemblyName);
+
+        private record TypeNameParts(string Name, string[]? GenericParameters);
 
         readonly TwoDictionaries<TypeInfo> _allTypeInfos;
         readonly TwoDictionaries<MethodPair> _allMethodPairs;
@@ -48,7 +51,7 @@ namespace Core.FullNames
 
         public string GetTypeName(object shortId, string inAssemblyName) => GetTypeName(TypeFactory.FromShortName(shortId), inAssemblyName);
 
-        public string GetMethodName(object shortId, string inAssemblyName) => GetMethodName(MethodFactory.FromShortName(shortId), inAssemblyName);
+        public (string, Dictionary<string, string>?) GetMethodName(object shortId, string inAssemblyName) => GetMethodName(MethodFactory.FromShortName(shortId), inAssemblyName);
 
         private string GetTypeName(ITypeId typeId, string inAssemblyName)
         {
@@ -93,21 +96,40 @@ namespace Core.FullNames
         private string GetTypeName(AssemblyTypeInfo assemblyTypeInfo, ITypeId[]? genericTypeArguments, string? suffix)
         {
             var (assemblyName, typeInfo, inAssemblyName) = assemblyTypeInfo;
-            var typeName = typeInfo.DeclaringType != null
-                ? $"{GetTypeName(typeInfo.DeclaringType.LeafId, assemblyName)}/{typeInfo.Name}"
-                : typeInfo.Namespace != null
-                ? $"{typeInfo.Namespace}.{typeInfo.Name}"
-                : typeInfo.Name;
-
-            if (genericTypeArguments != null)
-            {
-                typeName += $"<{string.Join(",", genericTypeArguments.Select(arg => GetTypeName(arg, inAssemblyName)))}>";
-            }
-
-            return typeName + suffix;
+            var typeName = GetTypeNameParts(typeInfo, assemblyName).Name;
+            var genericArguments = GetGenericTypeArguments(genericTypeArguments, inAssemblyName);
+            return typeName + genericArguments + suffix;
         }
 
-        private string GetMethodName(IMethodId methodId, string inAssemblyName)
+        private TypeNameParts GetTypeNameParts(TypeInfo typeInfo, string assemblyName)
+        {
+            if (typeInfo.DeclaringType != null)
+            {
+                var declaringTypeInfo = _allTypeInfos.Get(assemblyName, typeInfo.DeclaringType.LeafId.MetadataToken);
+                var declaringTypeNameParts = GetTypeNameParts(declaringTypeInfo, assemblyName);
+
+                var combinedTypeName = $"{declaringTypeNameParts.Name}/{typeInfo.Name}";
+
+                var combinedGenericParameters = new List<string>();
+                if (declaringTypeNameParts.GenericParameters != null)
+                {
+                    combinedGenericParameters.AddRange(declaringTypeNameParts.GenericParameters);
+                }
+                if (typeInfo.GenericTypeParameters != null)
+                {
+                    // nested type inherit parameter names => don't add those inherited names again
+                    combinedGenericParameters.AddRange(typeInfo.GenericTypeParameters.Where(name => !combinedGenericParameters.ToArray().Contains(name)));
+                }
+
+                return new TypeNameParts(combinedTypeName, combinedGenericParameters.ToArrayOrNull());
+            }
+
+            var typeName = typeInfo.Namespace != null ? $"{typeInfo.Namespace}.{typeInfo.Name}" : typeInfo.Name;
+
+            return new TypeNameParts(typeName, typeInfo.GenericTypeParameters);
+        }
+
+        private (string, Dictionary<string, string>?) GetMethodName(IMethodId methodId, string inAssemblyName)
         {
             if (methodId is GenericMethod genericMethod)
             {
@@ -131,17 +153,67 @@ namespace Core.FullNames
             return new AssemblyMethodPair(assemblyName, methodPair.DeclaringType, methodPair.MethodMember, inAssemblyName);
         }
 
-        private string GetMethodName(AssemblyMethodPair assemblyMethodPair, ITypeId[]? genericTypeArguments)
+        private (string, Dictionary<string, string>?) GetMethodName(AssemblyMethodPair assemblyMethodPair, ITypeId[]? genericTypeArguments)
         {
             var (assemblyName, declaringType, methodMember, inAssemblyName) = assemblyMethodPair;
 
-            Func<TypeId, string> getTypeIdName = typeId => GetTypeName(typeId.LeafId, assemblyName);
+            var typeNameParts = GetTypeNameParts(declaringType, assemblyName);
 
-            var returnTypeName = getTypeIdName(methodMember.ReturnType);
-            var declaringTypeName = GetTypeName(new AssemblyTypeInfo(assemblyName, declaringType, inAssemblyName), null, null);
-            var parameterTypeNames = string.Join(",", methodMember.Parameters?.Select(parameter => getTypeIdName(parameter.Type)) ?? []);
+            Dictionary<string, string>? genericParameterIndex = null;
 
-            return $"{returnTypeName} {declaringTypeName}::{methodMember.Name}({parameterTypeNames})";
+            ITypeId[]? genericMethodArguments = null;
+            if (genericTypeArguments != null)
+            {
+                var countTotal = genericTypeArguments.Length;
+
+                var countTypeArguments = typeNameParts.GenericParameters?.Length ?? 0;
+                genericMethodArguments = genericTypeArguments.Skip(countTypeArguments).ToArrayOrNull();
+                genericTypeArguments = genericTypeArguments.Take(countTypeArguments).ToArrayOrNull();
+
+                genericParameterIndex = new Dictionary<string, string>(
+                    GetGenericParameters(typeNameParts.GenericParameters, "!")
+                    .Concat(GetGenericParameters(methodMember.GenericParameters, "!!"))
+                    );
+
+                Assert((countTotal) == genericParameterIndex.Count);
+            }
+
+            string GetTypeIdName(TypeId typeId)
+            {
+                var leafId = typeId.LeafId;
+                return GetTypeName(typeId.LeafId, assemblyName);
+            }
+
+            var returnTypeName = GetTypeIdName(methodMember.ReturnType);
+
+            var parameterTypeNames = string.Join(",", methodMember.Parameters?.Select(parameter => GetTypeIdName(parameter.Type)) ?? []);
+
+            var genericTypeArgumentNames = GetGenericTypeArguments(genericTypeArguments, inAssemblyName);
+            var genericMethodArgumentNames = GetGenericTypeArguments(genericMethodArguments, inAssemblyName);
+
+            return (
+                $"{returnTypeName} {typeNameParts.Name}{genericTypeArgumentNames}::{methodMember.Name}{genericMethodArgumentNames}({parameterTypeNames})",
+                genericParameterIndex
+                );
+        }
+
+        private static IEnumerable<KeyValuePair<string, string>> GetGenericParameters(
+            string[]? genericParameters,
+            string prefix
+            )
+        {
+            if (genericParameters == null)
+            {
+                return [];
+            }
+            return genericParameters.Select((parameter, index) => new KeyValuePair<string, string>($"{prefix}{index}", parameter));
+        }
+
+        private string GetGenericTypeArguments(ITypeId[]? genericTypeArguments, string inAssemblyName)
+        {
+            return (genericTypeArguments == null)
+                ? ""
+                : $"<{string.Join(",", genericTypeArguments.Select(arg => GetTypeName(arg, inAssemblyName)))}>";
         }
     }
 }

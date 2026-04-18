@@ -4,7 +4,9 @@ using Core.Output;
 using Core.Output.Ids;
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -176,6 +178,7 @@ namespace Core.Serializer
                     {
                         var serialized = SerializeRecursive(typeId);
                         fullName = _names.GetTypeName(serialized, state.InAssemblyName.NotNull());
+                        AssertFullName(fullName, id.FullName, null);
                     }
                     break;
                 case IMethodId methodId:
@@ -183,22 +186,56 @@ namespace Core.Serializer
                     if (_names != null)
                     {
                         var serialized = SerializeRecursive(shortName);
-                        fullName = _names.GetMethodName(serialized, state.InAssemblyName.NotNull());
-
-                        // HACK
-                        fullName = id.FullName;
+                        (fullName, var genericParameterIndex) = _names.GetMethodName(serialized, state.InAssemblyName.NotNull());
+                        AssertFullName(fullName, id.FullName, genericParameterIndex);
                     }
                     break;
                 default:
                     throw new NotSupportedException($"Unsupported leafId type: {leafObject.GetType()}");
             }
 
-            if (fullName != null && id.FullName != IgnoreSyntheticFullName && fullName != id.FullName)
+            WriteId(emitter, shortName, fullName, state, serializer);
+        }
+
+        private static void AssertFullName(string calculatedFullName, string cecilFullName, Dictionary<string, string>? genericParameterIndex)
+        {
+            if (cecilFullName == IgnoreSyntheticFullName)
             {
-                throw new Exception($"Name mismatch: {fullName} != {id.FullName}");
+                return;
+            }
+            if (calculatedFullName != cecilFullName && genericParameterIndex != null)
+            {
+                cecilFullName = ReplaceGenericParameters(cecilFullName, genericParameterIndex);
+            }
+            if (calculatedFullName != cecilFullName)
+            {
+                // If they still don't match, it's a real mismatch
+                Logger.Log("");
+                Logger.Log(cecilFullName);
+                Logger.Log(calculatedFullName);
+            }
+            Assert(calculatedFullName == cecilFullName, $"Full name mismatch: expected {cecilFullName}, got {calculatedFullName}");
+        }
+
+        static string ReplaceGenericParameters(string fullName, Dictionary<string, string> genericParameterIndex)
+        {
+            string ReplaceArguments(string regex)
+            {
+                return Regex.Replace(fullName, regex, m =>
+                {
+                    var value = m.Groups[1].Value;
+                    return genericParameterIndex[value];
+                });
             }
 
-            WriteId(emitter, shortName, fullName, state, serializer);
+            // Replace method generic parameter indices: !!0, !!1, ...
+            fullName = ReplaceArguments(@"(!!\d+)");
+
+            // Replace type generic parameter indices: !0, !1, ...
+            // Safe because all "!!" were already replaced above
+            fullName = ReplaceArguments(@"(!\d+)");
+
+            return fullName;
         }
 
         private void WriteId(

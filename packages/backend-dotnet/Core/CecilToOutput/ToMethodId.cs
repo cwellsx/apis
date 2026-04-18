@@ -61,8 +61,8 @@ namespace Core.CecilToOutput
                 enclosingType = enclosingType.DeclaringType;
             }
 
-            // concaterate -- method generic arguments, then type generic arguments
-            var genericArguments = genericMethodArguments.Concat(genericTypeArguments).ToArrayOrNull();
+            // concaterate -- type generic arguments, then method generic arguments
+            var genericArguments = genericTypeArguments.Concat(genericMethodArguments).ToArrayOrNull();
             return (genericArguments == null) ? methodId : new GenericMethod(methodId, genericArguments);
         }
 
