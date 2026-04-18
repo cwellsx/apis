@@ -82,7 +82,7 @@ namespace Core
             connection.Listen();
         }
 
-        const string outputDirectory = @"output.new";
+        const string outputDirectory = @"output.now";
 
         static void FileWrite(string filename, string content) => File.WriteAllText(Path.Combine(outputDirectory, filename), content);
 

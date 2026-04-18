@@ -2,7 +2,6 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using static Core.Serializer.JsonConverters.AssemblyMapConverterFactory;
 
 namespace Core.Serializer
 {
@@ -20,7 +19,9 @@ namespace Core.Serializer
                 Encoder = prettyPrint ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
                 Converters =
                 {
-                    new IdConverterFactory(),
+                    new TypeIdConverter(),
+                    new LocalTypeIdConverter(),
+                    new MethodIdConverter(),
                     new AssemblyMapConverterFactory(),
                 }
             });

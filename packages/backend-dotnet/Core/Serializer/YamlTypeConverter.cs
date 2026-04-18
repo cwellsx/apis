@@ -145,19 +145,6 @@ namespace Core.Serializer
             emitter.Emit(new SequenceEnd());
         }
 
-        private static object SerializeRecursive(object value) => value switch
-        {
-            ITypeId typeId => SerializeRecursive(TypeFactory.ToShortName(typeId)),
-
-            IMethodId methodId => SerializeRecursive(MethodFactory.ToShortName(methodId)),
-
-            Array arr => arr.Cast<object>()
-                            .Select(SerializeRecursive)
-                            .ToArray(),
-
-            _ => value
-        };
-
         private const string IgnoreSyntheticFullName = "$";
 
         private void WriteId(
@@ -176,7 +163,7 @@ namespace Core.Serializer
                     shortName = TypeFactory.ToShortName(typeId);
                     if (_names != null)
                     {
-                        var serialized = SerializeRecursive(typeId);
+                        var serialized = Flatten.FromShortName(shortName);
                         fullName = _names.GetTypeName(serialized, state.InAssemblyName.NotNull());
                         AssertFullName(fullName, id.FullName, null);
                     }
@@ -185,7 +172,7 @@ namespace Core.Serializer
                     shortName = MethodFactory.ToShortName(methodId);
                     if (_names != null)
                     {
-                        var serialized = SerializeRecursive(shortName);
+                        var serialized = Flatten.FromShortName(shortName);
                         (fullName, var genericParameterIndex) = _names.GetMethodName(serialized, state.InAssemblyName.NotNull());
                         AssertFullName(fullName, id.FullName, genericParameterIndex);
                     }
