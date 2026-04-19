@@ -83,6 +83,7 @@ namespace Core.Output
     {
         internal AssemblyMap() { }
         internal AssemblyMap(IDictionary<string, T> rhs) : base(rhs) { }
+        internal AssemblyMap(IEnumerable<KeyValuePair<string, T>> rhs) : base(rhs) { }
     }
 
     public record All(

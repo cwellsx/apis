@@ -3,6 +3,7 @@ using Core.CecilToOutput;
 using Core.Output;
 using Core.Serializer;
 using Mono.Cecil;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -16,41 +17,119 @@ namespace Core.FullNames
             var fetchTypeInfos = new TwoDictionariesFetched<TypeInfo, TypeDefinition>(
                 all,
                 // Func<TypeInfo[], Dictionary<int, TValue>>
-                typeInfoConverter: typeInfos => typeInfos.ToDictionary(typeInfo => typeInfo.Id.LeafId.MetadataToken),
+                s_typeInfoConverter,
                 microsoft,
                 // Func<AssemblyData, Dictionary<int, TCecil>>
-                assemblyDataConverter: assemblyData => assemblyData.TypeDefinitions.ToDictionary(td => td.MetadataToken.ToInt32()),
+                assemblyDataConverter: assemblyData => assemblyData.TypeDefinitions
+                    .ToDictionary(typeDefinition => typeDefinition.MetadataToken.ToInt32()),
                 // Func<TCecil, string, TValue>
                 (typeDefinition, assemblyName) => ToTypeInfo.Transform(typeDefinition, assemblyName, true)
             );
 
-            var self = new AllNamesFetched(all, fetchTypeInfos);
+            // TValue: MethodPair, TCecil: MethodDefinition
+            var fetchMethodPairs = new TwoDictionariesFetched<MethodPair, MethodDefinition>(
+                all,
+                s_methodPairConverter,
+                microsoft,
+                // Func<AssemblyData, Dictionary<int, TCecil>>
+                assemblyDataConverter: assemblyData => assemblyData.TypeDefinitions
+                    .SelectMany(typeDefinition => typeDefinition.Methods)
+                    .ToDictionary(methodDefinition => methodDefinition.MetadataToken.ToInt32()),
+                // Func<TCecil, string, TValue>
+                (methodDefinition, assemblyName) =>
+                {
+                    var typeMetadataToken = methodDefinition.DeclaringType.MetadataToken.ToInt32();
+                    var typeInfo = fetchTypeInfos.Get(assemblyName, typeMetadataToken); // ensure the declaring type is fetched
+                    var methodMember = ToTypeInfo.Transform(methodDefinition, assemblyName);
+                    return new MethodPair(DeclaringType: typeInfo, MethodMember: methodMember);
+                }
+            );
+
+            var self = new AllNamesFetched(fetchTypeInfos, fetchMethodPairs);
 
             all.ToYaml(self);
 
-            while (fetchTypeInfos.Fetched.Count > 0)
+            while (fetchTypeInfos.Fetched.Count > 0 || fetchMethodPairs.Fetched.Count > 0)
             {
-                var added = new AssemblyMap<List<TypeInfo>>(fetchTypeInfos.Fetched);
+                var addedTypeInfos = new AssemblyMap<List<TypeInfo>>(fetchTypeInfos.Fetched);
                 fetchTypeInfos.Fetched.Clear();
                 // visit every element of these too
-                added.ToYaml(self);
+                addedTypeInfos.ToYaml(self);
+
+                var addedMethodPairs = new AssemblyMap<List<MethodPair>>(fetchMethodPairs.Fetched);
+                fetchMethodPairs.Fetched.Clear();
+                // visit every element of these too
+                addedMethodPairs.ToYaml(self);
             }
 
-            var results = fetchTypeInfos.GetMicrosoft();
+            var fetchedTypeInfos = fetchTypeInfos.GetMicrosoftValues();
+            var fetchedMethodPairs = fetchMethodPairs.GetMicrosoftValues();
 
-            var microsoftAssemblies = new AssemblyMap<AssemblyInfo>(results.ToDictionary(
-                result => result.AssemblyName,
-                result => new AssemblyInfo(
+            Assert(fetchedTypeInfos.Values.All(typeInfos => typeInfos.All(typeInfo => typeInfo.MethodMembers == null)));
+
+            var fetchedMethodMembers = fetchedMethodPairs.ToDictionary(
+                kvp => kvp.Key,
+                kvp =>
+                {
+                    var methodPairs = kvp.Value;
+                    var result = new Dictionary<int, List<MethodMember>>();
+                    foreach (var methodPair in methodPairs)
+                    {
+                        var key = methodPair.DeclaringType.Id.LeafId.MetadataToken;
+                        if (!result.TryGetValue(key, out var list))
+                        {
+                            list = new List<MethodMember>();
+                            result.Add(key, list);
+                        }
+                        list.Add(methodPair.MethodMember);
+                    }
+                    return result.ToDictionary(
+                        methodPairGroup => methodPairGroup.Key,
+                        methodPairGroup => methodPairGroup.Value.ToArray()
+                    );
+                });
+
+            //var fetchedMethodMembers = fetchedMethodPairs.ToDictionary(
+            //    kvp => kvp.Key,
+            //    kvp => kvp.Value
+            //    .GroupBy(methodPair => methodPair.DeclaringType.Id.LeafId.MetadataToken)
+            //    .ToDictionary(
+            //        methodPairGroup => methodPairGroup.Key,
+            //        methodPairGroup => methodPairGroup.Select(methodPair => methodPair.MethodMember).ToArray()
+            //        )
+            //    );
+
+            Func<string, int, MethodMember[]?> getMethodMembers = (assemblyName, id) =>
+            {
+                if (fetchedMethodMembers.TryGetValue(assemblyName, out var assemblyMethodMembers) && assemblyMethodMembers.TryGetValue(id, out var methodMembers))
+                {
+                    return methodMembers;
+                }
+                return null;
+            };
+
+            var microsoftAssemblies = new AssemblyMap<AssemblyInfo>(fetchedTypeInfos.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new AssemblyInfo(
                     ReferencedAssemblies: [], // could but need not return referenced assemblies
-                    TypeInfos: result.Values
+                    TypeInfos: kvp.Value.Select(typeInfo =>
+                    {
+                        var methodMembers = getMethodMembers(kvp.Key, typeInfo.Id.LeafId.MetadataToken);
+                        return typeInfo with { MethodMembers = methodMembers };
+                    }).ToArray()
                     )
                 ));
+
+            //var microsoftAssemblies = new AssemblyMap<AssemblyInfo>();
 
             return all with { MicrosoftAssemblies = microsoftAssemblies };
         }
 
-        AllNamesFetched(All all, TwoDictionariesFetched<TypeInfo, TypeDefinition> fetchTypeInfos)
-            : base(all, fetchTypeInfos)
+        AllNamesFetched(
+            TwoDictionariesFetched<TypeInfo, TypeDefinition> fetchTypeInfos,
+            TwoDictionariesFetched<MethodPair, MethodDefinition> fetchMethodPairs
+            )
+            : base(fetchTypeInfos, fetchMethodPairs)
         {
         }
     }

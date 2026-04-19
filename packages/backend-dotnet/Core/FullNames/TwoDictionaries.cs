@@ -50,7 +50,7 @@ namespace Core.FullNames
             return fetchedValue;
         }
 
-        internal IEnumerable<(string AssemblyName, TValue[] Values)> GetMicrosoft() => _microsoft.Select(kvp => (kvp.Key, kvp.Value.Values.ToArray()));
+        internal AssemblyMap<TValue[]> GetMicrosoftValues() => new AssemblyMap<TValue[]>(_microsoft.Select(kvp => new KeyValuePair<string, TValue[]>(kvp.Key, kvp.Value.Values.ToArray())));
 
         protected virtual TValue Fetch(string assemblyName, int metadataToken) => throw new Exception($"assemblyName: {assemblyName}, metadataToken: {metadataToken}");
     }

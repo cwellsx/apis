@@ -25,27 +25,25 @@ namespace Core.FullNames
 
         internal AllNames(All all)
         {
-            _allTypeInfos = new TwoDictionaries<TypeInfo>(all, typeInfos => typeInfos.ToDictionary(typeInfo => typeInfo.Id.LeafId.MetadataToken));
-
-            _allMethodPairs = new TwoDictionaries<MethodPair>(all, typeInfos => typeInfos
-                .SelectMany(
-                    typeInfo => typeInfo.MethodMembers ?? [],
-                    (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)
-                    )
-                .ToDictionary(methodPair => methodPair.MethodMember.MetadataToken));
+            _allTypeInfos = new TwoDictionaries<TypeInfo>(all, s_typeInfoConverter);
+            _allMethodPairs = new TwoDictionaries<MethodPair>(all, s_methodPairConverter);
         }
 
-        protected AllNames(All all, TwoDictionaries<TypeInfo> allTypeInfos)
+        protected AllNames(TwoDictionaries<TypeInfo> allTypeInfos, TwoDictionaries<MethodPair> allMethodPairs)
         {
             _allTypeInfos = allTypeInfos;
-
-            _allMethodPairs = new TwoDictionaries<MethodPair>(all, typeInfos => typeInfos
-                .SelectMany(
-                    typeInfo => typeInfo.MethodMembers ?? [],
-                    (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)
-                    )
-                .ToDictionary(methodPair => methodPair.MethodMember.MetadataToken));
+            _allMethodPairs = allMethodPairs;
         }
+
+        protected static Func<TypeInfo[], Dictionary<int, TypeInfo>> s_typeInfoConverter => typeInfos => typeInfos
+            .ToDictionary(typeInfo => typeInfo.Id.LeafId.MetadataToken);
+
+        protected static Func<TypeInfo[], Dictionary<int, MethodPair>> s_methodPairConverter => typeInfos => typeInfos
+            .SelectMany(
+                typeInfo => typeInfo.MethodMembers ?? [],
+                (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)
+                )
+            .ToDictionary(methodPair => methodPair.MethodMember.MetadataToken);
 
         #endregion
 

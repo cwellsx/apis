@@ -37,6 +37,14 @@ namespace Core.CecilToOutput
             }
 
             md = mr.Resolve();
+
+            if (md.DeclaringType.Name != mr.DeclaringType.Name)
+            {
+                Logger.Log("");
+                Logger.Log(md.DeclaringType.Name);
+                Logger.Log(mr.DeclaringType.Name);
+            }
+
             var methodId = new RemoteMethod(md.DeclaringType.Module.Assembly.Name.Name, md.MetadataToken.ToInt32());
             var genericMethodArguments = GetGenericTypeArguments(
                 md.GenericParameters,

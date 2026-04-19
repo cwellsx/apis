@@ -39,11 +39,25 @@ namespace Core.CecilToOutput
                 Logger.Log("TODO: Review whether calls to Microsoft methods are captured in output");
             }
             return methodReferences
-                .Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
+                //.Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
+                .Where(methodReference => !IsSynthetic(methodReference))
                 .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
                 .Select(_toMethodId.Convert)
                 //.Where(methodId => !filter.IsMicrosoftAssemblyPath(methodId.AssemblyName))
                 .ToArrayOrNull();
+        }
+
+        private static bool IsSynthetic(MethodReference mr)
+        {
+            var dt = mr.DeclaringType;
+
+            return dt.IsArray
+                || dt.IsPointer
+                || dt.IsByReference
+                || dt is FunctionPointerType
+                || dt is GenericParameter
+                //|| dt.ContainsGenericParameter
+                || mr.CallingConvention == MethodCallingConvention.VarArg;
         }
     }
 }

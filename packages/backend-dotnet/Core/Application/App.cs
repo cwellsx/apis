@@ -49,11 +49,11 @@ namespace Core.Application
                     var assemblyName = assemblyData.Name;
                     Logger.Log(assemblyName);
 
-                    var toTypeInfo = new ToTypeInfo(assemblyName, false);
+                    var toTypeInfo = new ToTypeInfo(assemblyName);
 
                     var assemblyInfo = new AssemblyInfo(
                         ReferencedAssemblies: assemblyData.AssemblyReferences.Select(assemblyReference => assemblyReference.Name).ToArray(),
-                        TypeInfos: assemblyData.TypeDefinitions.Select(toTypeInfo.Transform).ToArray()
+                        TypeInfos: assemblyData.TypeDefinitions.Select(typeDefinition => toTypeInfo.Transform(typeDefinition, false)).ToArray()
                         );
 
                     assemblies.Add(assemblyName, assemblyInfo);

@@ -12,22 +12,26 @@ namespace Core.CecilToOutput
     {
         internal static TypeInfo Transform(TypeDefinition typeDefinition, string assemblyName, bool isMicrosoft)
         {
-            var self = new ToTypeInfo(assemblyName, isMicrosoft);
-            return self.Transform(typeDefinition);
+            var self = new ToTypeInfo(assemblyName);
+            return self.Transform(typeDefinition, isMicrosoft);
+        }
+
+        internal static MethodMember Transform(MethodDefinition methodDefinition, string assemblyName)
+        {
+            var self = new ToTypeInfo(assemblyName);
+            return self.GetMethod(methodDefinition);
         }
 
         readonly string _assemblyName;
-        readonly bool _isMicrosoft;
         readonly ToTypeId _toTypeId;
 
-        internal ToTypeInfo(string assemblyName, bool isMicrosoft)
+        internal ToTypeInfo(string assemblyName)
         {
             _assemblyName = assemblyName;
-            _isMicrosoft = isMicrosoft;
             _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal TypeInfo Transform(TypeDefinition typeDefinition)
+        internal TypeInfo Transform(TypeDefinition typeDefinition, bool isMicrosoft)
         {
             return new TypeInfo(
                 Id: ToLocalTypeId(typeDefinition),
@@ -40,11 +44,11 @@ namespace Core.CecilToOutput
                 GenericTypeParameters: GetGenericParameters(typeDefinition.GenericParameters),
                 Access: GetAccess(typeDefinition),
                 // Members
-                FieldMembers: _isMicrosoft ? null : typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
-                EventMembers: _isMicrosoft ? null : typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
-                PropertyMembers: _isMicrosoft ? null : typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
-                TypeMembers: _isMicrosoft ? null : typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType)).ToArrayOrNull(),
-                MethodMembers: _isMicrosoft ? null : typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
+                FieldMembers: isMicrosoft ? null : typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
+                EventMembers: isMicrosoft ? null : typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
+                PropertyMembers: isMicrosoft ? null : typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
+                TypeMembers: isMicrosoft ? null : typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType)).ToArrayOrNull(),
+                MethodMembers: isMicrosoft ? null : typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
                 );
         }
 
