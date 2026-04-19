@@ -31,6 +31,8 @@
 
     public interface IMethodId;
     public interface IBaseMethodId : IMethodId;
+    public interface ILocalMethodId : IBaseMethodId;
 
     public record MethodId(string FullName, IMethodId LeafId) : Id<IMethodId>(FullName, LeafId);
+    public record LocalMethodId(string FullName, ILocalMethodId LeafId) : Id<ILocalMethodId>(FullName, LeafId);
 }

@@ -22,6 +22,7 @@ namespace Core.Serializer
                     new TypeIdConverter(),
                     new LocalTypeIdConverter(),
                     new MethodIdConverter(),
+                    new LocalMethodIdConverter(),
                     new AssemblyMapConverterFactory(),
                 }
             });

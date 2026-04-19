@@ -3,7 +3,7 @@
 namespace Core.Id.Methods
 {
     // token in this assembly
-    internal sealed record LocalMethod(int MetadataToken) : IBaseMethodId;
+    internal sealed record LocalMethod(int MetadataToken) : ILocalMethodId;
 
     // resolved TypeRef -> remote TypeDef
     internal sealed record RemoteMethod(string AssemblyName, int MetadataToken) : IBaseMethodId;

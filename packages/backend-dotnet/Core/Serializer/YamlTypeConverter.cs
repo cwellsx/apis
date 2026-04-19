@@ -113,8 +113,20 @@ namespace Core.Serializer
                 object key = kvp.Key;
                 object? value = kvp.Value;
 
+                string? fullName = null;
+                if (key is IId id)
+                {
+                    key = Flatten.FromIId(id);
+                    fullName = _names?.GetMethodName(key, state.InAssemblyName.NotNull()).Item1;
+                }
+
                 // Emit the key
                 EmitScalar(emitter, key);
+
+                if (fullName != null)
+                {
+                    EmitComment(emitter, fullName, false);
+                }
 
                 // Wrap the value with AssemblyName = key
                 var childState = isAssemblyMap ? new State(false, (string)key) : state with { IsInSequence = false };

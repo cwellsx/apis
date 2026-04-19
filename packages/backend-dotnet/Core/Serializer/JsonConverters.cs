@@ -49,28 +49,21 @@ namespace Core.Serializer.JsonConverters
 
         public override void Write(Utf8JsonWriter writer, TId value, JsonSerializerOptions options)
         {
-            var leafId = value.LeafId;
-
-            object shortName;
-            switch (leafId)
-            {
-                case ITypeId typeId:
-                    shortName = TypeFactory.ToShortName(typeId);
-                    break;
-                case IMethodId methodId:
-                    shortName = MethodFactory.ToShortName(methodId);
-                    break;
-                default:
-                    throw new NotSupportedException($"Unsupported leafId type: {leafId.GetType()}");
-            }
-
-            shortName = Flatten.FromShortName(shortName);
-
+            object shortName = GetShortName(value);
             JsonSerializer.Serialize(writer, shortName, shortName.GetType(), options);
         }
+
+        public override void WriteAsPropertyName(Utf8JsonWriter writer, TId value, JsonSerializerOptions options)
+        {
+            object shortName = GetShortName(value);
+            writer.WritePropertyName(shortName.ToString()!);
+        }
+
+        private static object GetShortName(TId value) => Flatten.FromIId(value);
     }
 
     public class TypeIdConverter : IdConverter<TypeId, ITypeId> { }
     public class LocalTypeIdConverter : IdConverter<LocalTypeId, ILocalTypeId> { }
     public class MethodIdConverter : IdConverter<MethodId, IMethodId> { }
+    public class LocalMethodIdConverter : IdConverter<LocalMethodId, ILocalMethodId> { }
 }

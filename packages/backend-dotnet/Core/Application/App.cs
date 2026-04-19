@@ -1,6 +1,7 @@
 ﻿using Core.CecilToOutput;
 using Core.FullNames;
 using Core.Output;
+using Core.Output.Ids;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -39,7 +40,7 @@ namespace Core.Application
             var assemblies = new AssemblyMap<AssemblyInfo>();
             var exceptions = new List<string>();
             var compilerMethods = new AssemblyMap<Dictionary<int, int>>();
-            var assemblyMethods = new AssemblyMap<Dictionary<int, MethodInfo>>();
+            var assemblyMethods = new AssemblyMap<Dictionary<LocalMethodId, MethodInfo>>();
 
             var filter = loadedAssemblies.Filter;
             foreach (var assemblyData in loadedAssemblies.GetAssemblies(filter))
@@ -64,7 +65,7 @@ namespace Core.Application
 
                     var toMethodInfo = new ToMethodInfo(assemblyName);
                     assemblyMethods.Add(assemblyName, assemblyData.MethodData.ToDictionary(
-                        methodData => methodData.MetadataToken.ToInt32(),
+                        methodData => methodData.LocalMethodId,
                         methodData =>
                         {
                             var asText = methodData.IsCompilerGenerated()
@@ -80,11 +81,11 @@ namespace Core.Application
                 }
             }
 
-            Logger.Log("Resolving System references");
+            Logger.Write("Resolving System references... ");
             var empty = new AssemblyMap<AssemblyInfo>();
             var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, empty);
             all = AllNamesFetched.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
-            Logger.Log("Done");
+            Logger.Log("done.");
             return all;
         }
 

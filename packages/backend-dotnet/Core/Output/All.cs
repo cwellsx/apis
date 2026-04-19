@@ -1,5 +1,5 @@
-﻿using System.Collections.Generic;
-using Core.Output.Ids;
+﻿using Core.Output.Ids;
+using System.Collections.Generic;
 
 namespace Core.Output
 {
@@ -91,7 +91,7 @@ namespace Core.Output
         List<string> Exceptions,
         string Version,
         string[] Exes,
-        AssemblyMap<Dictionary<int, MethodInfo>> AssemblyMethods,
+        AssemblyMap<Dictionary<LocalMethodId, MethodInfo>> AssemblyMethods,
         AssemblyMap<Dictionary<int, int>> CompilerMethods,
         AssemblyMap<AssemblyInfo> MicrosoftAssemblies
         );

@@ -18,5 +18,12 @@ namespace Core.Id
 
             _ => value
         };
+
+        internal static object FromIId(IId value) => Flatten.FromShortName(value.LeafObject switch
+        {
+            ITypeId typeId => TypeFactory.ToShortName(typeId),
+            IMethodId methodId => MethodFactory.ToShortName(methodId),
+            _ => throw new NotSupportedException($"Unsupported leafId type: {value.LeafObject.GetType()}"),
+        });
     }
 }

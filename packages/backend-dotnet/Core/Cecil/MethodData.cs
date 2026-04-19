@@ -3,6 +3,8 @@ using Mono.Cecil.Cil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.Output.Ids;
+using Core.Id.Methods;
 
 namespace Core.Cecil
 {
@@ -11,6 +13,7 @@ namespace Core.Cecil
         private MethodDefinition _methodDefinition;
 
         internal MetadataToken MetadataToken => _methodDefinition.MetadataToken;
+        internal LocalMethodId LocalMethodId => new LocalMethodId(FullName, new LocalMethod(MetadataToken.ToInt32()));
         internal TypeDefinition DeclaringType => _methodDefinition.DeclaringType;
         internal bool IsCompilerGenerated() => DeclaringType.IsCompilerGenerated();
         internal string FullName => _methodDefinition.FullName;
