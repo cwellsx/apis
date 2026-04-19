@@ -18,9 +18,7 @@ namespace Core.CecilToOutput
             _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal MethodId Convert(MethodReference mr) => new MethodId(mr.FullName, GetShortName(mr));
-
-        internal IMethodId GetShortName(MethodReference mr)
+        internal MethodId Convert(MethodReference mr)
         {
             if (mr is MethodDefinition md)
             {
@@ -33,16 +31,19 @@ namespace Core.CecilToOutput
                     throw new Exception();
                 }
                 // referenced method definition => cannot have generic aruments
-                return new LocalMethod(md.MetadataToken.ToInt32());
+                return new MethodId(mr.FullName, new LocalMethod(md.MetadataToken.ToInt32()));
             }
 
+            var cecilFullName0 = mr.FullName;
             md = mr.Resolve();
+            var cecilFullName = mr.FullName;
 
             if (md.DeclaringType.Name != mr.DeclaringType.Name)
             {
-                Logger.Log("");
-                Logger.Log(md.DeclaringType.Name);
-                Logger.Log(mr.DeclaringType.Name);
+                // this happens rarely but for historical reasons a reference might say System.Type where the declaring type is really System.Reflection.TypeInfo
+                // our reconstruction of FullName uses the type definition so munge Cecil's FullName which uses the reference's declaring type (i.e. prefer the declaring type)
+                Func<TypeReference, string> getTypeName = typeReference => string.IsNullOrEmpty(typeReference.Namespace) ? typeReference.Name : $"{typeReference.Namespace}.{typeReference.Name}";
+                cecilFullName = cecilFullName.Replace(getTypeName(mr.DeclaringType), getTypeName(md.DeclaringType));
             }
 
             var methodId = new RemoteMethod(md.DeclaringType.Module.Assembly.Name.Name, md.MetadataToken.ToInt32());
@@ -71,7 +72,8 @@ namespace Core.CecilToOutput
 
             // concaterate -- type generic arguments, then method generic arguments
             var genericArguments = genericTypeArguments.Concat(genericMethodArguments).ToArrayOrNull();
-            return (genericArguments == null) ? methodId : new GenericMethod(methodId, genericArguments);
+            IMethodId leafId = (genericArguments == null) ? methodId : new GenericMethod(methodId, genericArguments);
+            return new MethodId(cecilFullName, leafId);
         }
 
         ITypeId[] GetGenericTypeArguments(

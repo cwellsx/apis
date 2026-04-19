@@ -194,13 +194,6 @@ namespace Core.Serializer
             {
                 cecilFullName = ReplaceGenericParameters(cecilFullName, genericParameterIndex);
             }
-            if (calculatedFullName != cecilFullName)
-            {
-                // If they still don't match, it's a real mismatch
-                Logger.Log("");
-                Logger.Log(cecilFullName);
-                Logger.Log(calculatedFullName);
-            }
             Assert(calculatedFullName == cecilFullName, $"Full name mismatch: expected {cecilFullName}, got {calculatedFullName}");
         }
 
