@@ -7,7 +7,7 @@ namespace Core.Serializer
 {
     internal static class AsYaml
     {
-        internal static string ToYaml<T>(this T value, INames? names) where T : notnull
+        internal static string ToYaml<T>(this T value, INames? names, bool prettyPrint) where T : notnull
         {
             var defaultValuesHandling = DefaultValuesHandling.OmitNull;
             var serializer = new SerializerBuilder()
@@ -19,6 +19,11 @@ namespace Core.Serializer
             string yaml = serializer.Serialize(
                 YamlTypeConverter.WrapRoot(value)
                 );
+
+            if (!prettyPrint)
+            {
+                return yaml;
+            }
 
             // postprocess the "special" comments to change this
             //

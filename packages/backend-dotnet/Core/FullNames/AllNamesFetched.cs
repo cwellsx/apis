@@ -47,19 +47,19 @@ namespace Core.FullNames
 
             var self = new AllNamesFetched(fetchTypeInfos, fetchMethodPairs);
 
-            all.ToYaml(self);
+            all.ToYaml(self, false);
 
             while (fetchTypeInfos.Fetched.Count > 0 || fetchMethodPairs.Fetched.Count > 0)
             {
                 var addedTypeInfos = new AssemblyMap<List<TypeInfo>>(fetchTypeInfos.Fetched);
                 fetchTypeInfos.Fetched.Clear();
                 // visit every element of these too
-                addedTypeInfos.ToYaml(self);
+                addedTypeInfos.ToYaml(self, false);
 
                 var addedMethodPairs = new AssemblyMap<List<MethodPair>>(fetchMethodPairs.Fetched);
                 fetchMethodPairs.Fetched.Clear();
                 // visit every element of these too
-                addedMethodPairs.ToYaml(self);
+                addedMethodPairs.ToYaml(self, false);
             }
 
             var fetchedTypeInfos = fetchTypeInfos.GetMicrosoftValues();

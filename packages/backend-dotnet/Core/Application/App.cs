@@ -1,10 +1,10 @@
 ﻿using Core.CecilToOutput;
+using Core.FullNames;
 using Core.Output;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Core.FullNames;
 
 namespace Core.Application
 {
@@ -80,9 +80,11 @@ namespace Core.Application
                 }
             }
 
+            Logger.Log("Resolving System references");
             var empty = new AssemblyMap<AssemblyInfo>();
             var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, empty);
             all = AllNamesFetched.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
+            Logger.Log("Done");
             return all;
         }
 
