@@ -67,7 +67,9 @@ namespace Core.Application
                         methodData => methodData.MetadataToken.ToInt32(),
                         methodData =>
                         {
-                            var asText = decompiler.DecompileMethod(methodData.MetadataToken.ToInt32());
+                            var asText = methodData.IsCompilerGenerated()
+                                ? "**compiler-generated**"
+                                : decompiler.DecompileMethod(methodData.MetadataToken.ToInt32());
                             return toMethodInfo.Transform(methodData, asText, filter);
                         }
                         ));

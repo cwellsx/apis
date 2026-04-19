@@ -12,6 +12,7 @@ namespace Core.Cecil
 
         internal MetadataToken MetadataToken => _methodDefinition.MetadataToken;
         internal TypeDefinition DeclaringType => _methodDefinition.DeclaringType;
+        internal bool IsCompilerGenerated() => DeclaringType.IsCompilerGenerated();
         internal string FullName => _methodDefinition.FullName;
         internal string Name => _methodDefinition.Name;
 
