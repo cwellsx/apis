@@ -112,6 +112,8 @@ namespace Core.CecilToOutput
                     }
                 }
 
+                Assert(!tryNeeded || tryUseful, "Some compiler-generated types could not be resolved");
+
             } while (tryNeeded && tryUseful);
 
             MethodData GetTypeOwner(TypeDefinition typeDefinition)
@@ -134,6 +136,10 @@ namespace Core.CecilToOutput
                 {
                     if (mapMethods.TryGetValue(methodData.MetadataToken, out var ownerMethodData))
                     {
+                        if (ownerMethodData.DeclaringType.IsLambdaCache())
+                        {
+                            return GetMethodOwner(ownerMethodData);
+                        }
                         return ownerMethodData;
                     }
                     throw new Exception();
@@ -156,7 +162,12 @@ namespace Core.CecilToOutput
                 }
                 if (ownerMethodData.DeclaringType.IsCompilerGenerated())
                 {
-                    throw new Exception();
+                    Logger.Log("");
+                    Logger.Log(compilerMethodDefinition.MetadataToken.ToInt32().ToString());
+                    Logger.Log(compilerMethodDefinition.FullName);
+                    Logger.Log(ownerMethodData.MetadataToken.ToInt32().ToString());
+                    Logger.Log(ownerMethodData.FullName);
+                    //throw new Exception();
                 }
                 result.Add(compilerMethodDefinition.MetadataToken.ToInt32(), ownerMethodData.MetadataToken.ToInt32());
             }

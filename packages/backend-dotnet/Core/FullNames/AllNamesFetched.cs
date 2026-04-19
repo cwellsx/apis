@@ -69,35 +69,13 @@ namespace Core.FullNames
 
             var fetchedMethodMembers = fetchedMethodPairs.ToDictionary(
                 kvp => kvp.Key,
-                kvp =>
-                {
-                    var methodPairs = kvp.Value;
-                    var result = new Dictionary<int, List<MethodMember>>();
-                    foreach (var methodPair in methodPairs)
-                    {
-                        var key = methodPair.DeclaringType.Id.LeafId.MetadataToken;
-                        if (!result.TryGetValue(key, out var list))
-                        {
-                            list = new List<MethodMember>();
-                            result.Add(key, list);
-                        }
-                        list.Add(methodPair.MethodMember);
-                    }
-                    return result.ToDictionary(
-                        methodPairGroup => methodPairGroup.Key,
-                        methodPairGroup => methodPairGroup.Value.ToArray()
-                    );
-                });
-
-            //var fetchedMethodMembers = fetchedMethodPairs.ToDictionary(
-            //    kvp => kvp.Key,
-            //    kvp => kvp.Value
-            //    .GroupBy(methodPair => methodPair.DeclaringType.Id.LeafId.MetadataToken)
-            //    .ToDictionary(
-            //        methodPairGroup => methodPairGroup.Key,
-            //        methodPairGroup => methodPairGroup.Select(methodPair => methodPair.MethodMember).ToArray()
-            //        )
-            //    );
+                kvp => kvp.Value
+                .GroupBy(methodPair => methodPair.DeclaringType.Id.LeafId.MetadataToken)
+                .ToDictionary(
+                    methodPairGroup => methodPairGroup.Key,
+                    methodPairGroup => methodPairGroup.Select(methodPair => methodPair.MethodMember).ToArray()
+                    )
+                );
 
             Func<string, int, MethodMember[]?> getMethodMembers = (assemblyName, id) =>
             {

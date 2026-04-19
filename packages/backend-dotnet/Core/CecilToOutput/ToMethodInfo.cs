@@ -30,14 +30,8 @@ namespace Core.CecilToOutput
                 );
         }
 
-        static bool _once;
         private MethodId[]? ToMethodIds(IEnumerable<MethodReference> methodReferences, IFilter filter)
         {
-            if (!_once)
-            {
-                _once = true;
-                Logger.Log("TODO: Review whether calls to Microsoft methods are captured in output");
-            }
             return methodReferences
                 //.Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
                 .Where(methodReference => !IsSynthetic(methodReference))
