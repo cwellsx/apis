@@ -11,7 +11,7 @@ namespace Core.Application
 {
     static class App
     {
-        const string version = "2024-07-04"; // see also src\main\shared-types\loaded\loadedVersion.ts
+        const string version = "2026-04-22"; // see also src\main\shared-types\loaded\loadedVersion.ts
 
         internal static All LoadAssemblies(string directory)
         {

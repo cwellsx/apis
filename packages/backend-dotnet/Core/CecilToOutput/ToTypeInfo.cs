@@ -47,7 +47,7 @@ namespace Core.CecilToOutput
                 FieldMembers: isMicrosoft ? null : typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
                 EventMembers: isMicrosoft ? null : typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
                 PropertyMembers: isMicrosoft ? null : typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
-                TypeMembers: isMicrosoft ? null : typeDefinition.NestedTypes.Select(nestedType => GetTypeId(nestedType)).ToArrayOrNull(),
+                NestedTypes: isMicrosoft ? null : typeDefinition.NestedTypes.Select(nestedType => ToLocalTypeId(nestedType)).ToArrayOrNull(),
                 MethodMembers: isMicrosoft ? null : typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
                 );
         }

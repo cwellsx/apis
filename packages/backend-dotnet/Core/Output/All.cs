@@ -61,7 +61,7 @@ namespace Core.Output
         FieldMember[]? FieldMembers,
         EventMember[]? EventMembers,
         PropertyMember[]? PropertyMembers,
-        TypeId[]? TypeMembers,
+        LocalTypeId[]? NestedTypes,
         MethodMember[]? MethodMembers
      );
 

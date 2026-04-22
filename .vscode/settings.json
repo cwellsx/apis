@@ -17,5 +17,6 @@
   "eslint.run": "onType",
   "eslint.validate": ["javascript", "javascriptreact", "typescript", "typescriptreact"],
   "spellright.documentTypes": ["latex", "plaintext", "markdown"],
-  "spellright.language": ["en-US"]
+  "spellright.language": ["en-US"],
+  "js/ts.tsdk.path": "node_modules\\typescript\\lib"
 }

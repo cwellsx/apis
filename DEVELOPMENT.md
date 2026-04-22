@@ -19,6 +19,26 @@
   - [Launch `vscode-ext`](#launch-vscode-ext)
   - [Tasks (referenced by `preLaunchTask` in launch configs)](#tasks-referenced-by-prelaunchtask-in-launch-configs)
 
+## TypeScript version
+
+Currently a down-level version of TypeScript.
+
+Avoid problems by pinning VS Code to the version used in the repo,
+i.e. this in `./.vscode/settings.json`
+
+```json
+"js/ts.tsdk.path": "node_modules\\typescript\\lib"
+```
+
+It's also built in a strange way:
+
+- The backend package has no package.json of its own
+- Instead it's included in the tsconfig.json of other projects which include it in their build
+
+I found this was the only way to merge the source maps of the projects to get TypeScript-aware debugging of both packages in a process.
+
+This works fine for not; another was to try to reimplement this in future might be by using TypeScript "project references".
+
 ## Packages
 
 This monorepo includes these packages subfolders:
@@ -46,10 +66,12 @@ packages/vscode-ext/package.json
 
 ### `backend`
 
-The `packages/backend` folder contains source code but no `package.json` -- because is not built as an independent package:
+The `packages/backend` folder contains source code but no `package.json` -- because is not built as an independent package.
 
-- Instead it's included in the build of `electron-app` and `vscode-ext`
-- If you search for `backend/src` you will find that referenced in the `webpack.*` and `tsconfig.json` of the two main packages
+Instead it's included in the build of `electron-app` and `vscode-ext` --
+if you search for `backend/src` you will find that referenced in the `webpack.*` and `tsconfig.json` of these two main packages.
+
+It's also included in the `tsconfig.json` of `backend-test` -- which doesn't use webpack.
 
 This backend contains most of the logic -- `electron-app` and `vscode-ext` are the two UI front ends.
 

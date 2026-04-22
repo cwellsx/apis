@@ -42,15 +42,7 @@ namespace Core.CecilToOutput
             // Function pointer is not a base type so don't recurse for it
             if (tr is FunctionPointerType fptr)
             {
-                //// function pointer formatting is complex; represent as a token-like suffix
-                //var inner = Recurse(fptr.ReturnType);
-                //// you may want to render parameters; here we append a placeholder suffix
-                //return new RecurseResult(inner.Simple, inner.Suffix + Optional(" unmanagedcallconv*"), inner.GenericArgs);
-                //var funcTypeId = new FuncTypeId(
-                //    returnType: Convert(fptr.ReturnType),
-                //    parameterTypes: fptr.Parameters.Select(p => Convert(p.ParameterType)).ToArray(),
-                //    callingConvention: fptr.CallingConvention
-                //);
+                // function pointer formatting is complex; use Cecil FullName as its representation
                 return new FunctionType(fptr.FullName);
             }
 

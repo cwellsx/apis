@@ -82,7 +82,16 @@
       "type": "pwa-node",
       "request": "launch",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "test", "-w", "backend-test", "--", "--inspect-brk=9229", "--require", "ts-node/register"],
+      "runtimeArgs": [
+        "run",
+        "test2",
+        "-w",
+        "backend-test",
+        "--",
+        "--inspect-brk=9229",
+        "--require",
+        "ts-node/register"
+      ],
       "cwd": "${workspaceFolder}",
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",

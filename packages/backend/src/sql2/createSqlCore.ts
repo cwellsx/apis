@@ -1,0 +1,35 @@
+import type { All } from "../../contracts/dotnet2";
+import { isAll } from "../../contracts/dotnet2";
+import { DataSource } from "../contracts-app";
+import * as dotNetApi from "../dotNetApi";
+import { getAppFilename, jsonParse, readJsonT, whenFile } from "../utils";
+import { hash } from "./hash";
+
+type GetAll = (dataSource: DataSource) => Promise<All>;
+
+const getAllFromCoreExe = async (dataSource: DataSource) => {
+  const json = await dotNetApi.getJson(dataSource.path);
+  return jsonParse<All>(json);
+};
+
+const getAllFromCoreJson = async (dataSource: DataSource) => await readJsonT(dataSource.path, isAll);
+
+const onType = async (dataSource: DataSource): Promise<{ when: string; getAll: GetAll }> => {
+  switch (dataSource.type) {
+    case "loadedAssemblies":
+      return { when: await dotNetApi.getWhen(dataSource.path), getAll: getAllFromCoreExe };
+    case "coreJson":
+      return { when: await whenFile(dataSource.path), getAll: getAllFromCoreJson };
+    default:
+      throw new Error(`Unexpected dataSource.type: {dataSource.type}`);
+  }
+};
+
+export const createSqlCore = async (dataSource: DataSource): Promise<All> => {
+  const { when, getAll } = await onType(dataSource);
+
+  const dbFilename = getAppFilename(`${dataSource.type}-${hash(dataSource.path)}.db`);
+
+  const all = await getAll(dataSource);
+  return all;
+};
