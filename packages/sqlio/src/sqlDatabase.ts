@@ -12,7 +12,7 @@ export class SqlDatabase {
     this.newSqlTable = <T extends object>(
       tableName: string,
       primaryKey: keyof T | (keyof T)[],
-      isNullable: ((key: keyof T) => boolean) | boolean,
+      isNullable: (keyof T)[],
       t: T
     ): SqlTable<T> => {
       return new SqlTable(this.db, tableName, primaryKey, isNullable, t);
@@ -34,7 +34,7 @@ export class SqlDatabase {
   newSqlTable: <T extends object>(
     tableName: string,
     primaryKey: keyof T | (keyof T)[],
-    isNullable: ((key: keyof T) => boolean) | boolean,
+    isNullable: (keyof T)[],
     t: T
   ) => SqlTable<T>;
 

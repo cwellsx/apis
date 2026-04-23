@@ -1,9 +1,11 @@
+import { createSqlDatabase } from "sqlio";
 import type { All } from "../../contracts/dotnet2";
 import { isAll } from "../../contracts/dotnet2";
 import { DataSource } from "../contracts-app";
 import * as dotNetApi from "../dotNetApi";
-import { getAppFilename, jsonParse, readJsonT, whenFile } from "../utils";
+import { getAppFilename, getSqlNodePath, jsonParse, log, readJsonT, whenFile } from "../utils";
 import { hash } from "./hash";
+import { createTables, dropTables } from "./schema";
 
 type GetAll = (dataSource: DataSource) => Promise<All>;
 
@@ -28,8 +30,14 @@ const onType = async (dataSource: DataSource): Promise<{ when: string; getAll: G
 export const createSqlCore = async (dataSource: DataSource): Promise<All> => {
   const { when, getAll } = await onType(dataSource);
 
-  const dbFilename = getAppFilename(`${dataSource.type}-${hash(dataSource.path)}.db`);
+  const filename = getAppFilename(`${dataSource.type}-${hash(dataSource.path)}.db`);
+  log(`db filename: ${filename}`);
 
   const all = await getAll(dataSource);
+
+  const db = createSqlDatabase(filename, getSqlNodePath());
+  dropTables(db);
+  const tables = createTables(db);
+  tables.close();
   return all;
 };

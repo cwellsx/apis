@@ -1,28 +1,20 @@
 import { SqlDatabase } from "sqlio";
 
-type ConfigColumns = {
-  name: string;
-  value: string;
-};
+type ConfigColumns = { name: string; value: string };
 
 class SqlConfigTable {
   getConfig: () => ConfigColumns[];
   setConfig: (config: ConfigColumns) => void;
 
   constructor(db: SqlDatabase) {
-    const configTable = db.newSqlTable<ConfigColumns>("config", "name", () => false, {
-      name: "dataSource",
-      value: "bar",
-    });
+    const configTable = db.newSqlTable<ConfigColumns>("config", "name", [], { name: "dataSource", value: "bar" });
 
     this.getConfig = () => configTable.selectAll();
     this.setConfig = (config: ConfigColumns) => configTable.upsert(config);
   }
 }
 
-type IValues = {
-  [key: string]: string | undefined;
-};
+type IValues = { [key: string]: string | undefined };
 
 export class ConfigCache {
   private _sqlConfig: SqlConfigTable;

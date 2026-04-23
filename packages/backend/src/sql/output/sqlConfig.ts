@@ -14,7 +14,7 @@ export class SqlConfig implements AppConfig {
     this._cache = new ConfigCache(db);
     this._db = db;
 
-    const recentTable = db.newSqlTable<RecentColumns>("recent", "path", () => false, {
+    const recentTable = db.newSqlTable<RecentColumns>("recent", "path", [], {
       path: "foo",
       type: "loadedAssemblies",
       when: 0,

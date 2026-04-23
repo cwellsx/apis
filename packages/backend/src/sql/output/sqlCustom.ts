@@ -43,10 +43,7 @@ export class SqlCustom {
     // don't bother to store the data in normalized tables
     // because there isn't much of the data (it's hand-written)
     // also a schema mismatch doesn't drop and recreate the table
-    const configTable = db.newSqlTable<ConfigColumns>("configCustom", "name", () => false, {
-      name: "foo",
-      value: "bar",
-    });
+    const configTable = db.newSqlTable<ConfigColumns>("configCustom", "name", [], { name: "foo", value: "bar" });
 
     configTable.deleteAll();
 

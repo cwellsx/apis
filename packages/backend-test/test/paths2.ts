@@ -27,7 +27,7 @@ export const dirDbRaw = path.join(dirTestRoot, "db.raw");
 pathMkdir(dirDbRaw);
 export const fileDbRawJsonl = (tableName: string) => path.join(dirDbRaw, tableName + ".jsonl");
 
-export const dirDbData = path.join(dirTestRoot, "db.data");
+export const dirDbData = path.join(dirTestRoot, "db.2.data");
 pathMkdir(dirDbData);
 export const fileDbDataJsonl = (tableName: string) => path.join(dirDbData, tableName + ".jsonl");
 

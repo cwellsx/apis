@@ -3,14 +3,16 @@ import { Database, Statement } from "better-sqlite3";
 // this is an application-independent wrapper which encapsulate the better-sqlite3 API
 // could support https://www.sqlite.org/withoutrowid.html but records for this application include JSON so they're large
 
-type columnType = "TEXT" | "INT" | "REAL";
+type columnType = "TEXT" | "INTEGER" | "REAL";
 
 function getColumnType(value: unknown): columnType {
   switch (typeof value) {
     case "string":
       return "TEXT";
     case "number":
-      return Number.isInteger(value) ? "INT" : "REAL";
+      return Number.isInteger(value) ? "INTEGER" : "REAL";
+    case "bigint":
+      return "INTEGER";
     case "object":
       return "TEXT";
     case "boolean":
@@ -59,6 +61,7 @@ const sqlJson = <T extends object>(t: T): { toSql: (t: T) => object; fromSql: (t
     };
     const fromSql = (t: unknown) => {
       const result = { ...(t as object) } as Stringified;
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-return
       keys.forEach((key) => (result[key] = JSON.parse(result[key] as string)));
       return result as T;
     };
@@ -70,13 +73,7 @@ export class SqlTable<T extends object> {
   // we need to list of keys in T to create corresponding SQL columns
   // but type info is only available at compile-time, it doesn't exist at run-time
   // so instead this API expects a sample run-time instance of T
-  constructor(
-    db: Database,
-    tableName: string,
-    primaryKey: keyof T | (keyof T)[],
-    isNullable: ((key: keyof T) => boolean) | boolean,
-    t: T
-  ) {
+  constructor(db: Database, tableName: string, primaryKey: keyof T | (keyof T)[], isNullable: (keyof T)[], t: T) {
     // do everything using arrow functions in the constructor, avoid using this anywhere
     // https://github.com/WiseLibs/better-sqlite3/issues/589#issuecomment-1336812715
     if (typeof primaryKey !== "string" && !Array.isArray(primaryKey)) throw new Error("primaryKey must be a string");
@@ -84,8 +81,7 @@ export class SqlTable<T extends object> {
     if (!primaryKeys.length) throw new Error("must have at least one primaryKey");
 
     function isKeyNullable(key: string): boolean {
-      if (typeof isNullable === "boolean") return isNullable;
-      return isNullable(key as keyof T);
+      return isNullable.includes(key as keyof T);
     }
 
     const entries = Object.entries(t) as [string, unknown][];
