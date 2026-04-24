@@ -19,5 +19,5 @@ export const mochaHooks = {
 
 // Your one-time setup logic here
 const paths: Paths = { appDataPath: dirAppData, coreExePath: fileCoreExe, sqlNodePath: fileNativeSqlite };
-console.log("🔧 Global setup before any test runs");
+console.log(`🔧 Global2 setup using ${dirAppData}`);
 setPaths(paths);

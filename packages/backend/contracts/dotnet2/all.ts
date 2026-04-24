@@ -1,24 +1,24 @@
 import { Access } from "./access";
-import { Id, MetadataToken, MethodId, TypeId } from "./id";
+import { LocalTypeId, MetadataToken, MethodId, TypeId } from "./id";
 import { EventMember, FieldMember, MethodMember, PropertyMember } from "./members";
 
 type AssemblyMap<T> = { [assemblyName: string]: T };
 
-type TypeInfo = {
-  localTypeId: Id;
+export type TypeInfo = {
+  id: LocalTypeId;
   namespace?: string;
   name: string;
-  declaringType?: Id;
+  declaringType?: LocalTypeId;
   attributes?: string[];
-  baseType?: Id;
-  interfaces?: Id[];
+  baseType?: TypeId;
+  interfaces?: TypeId[];
   genericTypeParameters?: string;
   access: Access;
   // members
   fieldMembers?: FieldMember[];
   eventMembers?: EventMember[];
   propertyMembers?: PropertyMember[];
-  nestedTypes?: TypeId[];
+  nestedTypes?: LocalTypeId[];
   methodMembers?: MethodMember[];
 };
 

@@ -3,8 +3,9 @@ import type { All } from "../../contracts/dotnet2";
 import { isAll } from "../../contracts/dotnet2";
 import { DataSource } from "../contracts-app";
 import * as dotNetApi from "../dotNetApi";
-import { getAppFilename, getSqlNodePath, jsonParse, log, readJsonT, whenFile } from "../utils";
+import { assert, getAppFilename, getSqlNodePath, jsonParse, log, readJsonT, whenFile } from "../utils";
 import { hash } from "./hash";
+import { insertAll } from "./insertAll";
 import { createTables, dropTables } from "./schema";
 
 type GetAll = (dataSource: DataSource) => Promise<All>;
@@ -34,10 +35,12 @@ export const createSqlCore = async (dataSource: DataSource): Promise<All> => {
   log(`db filename: ${filename}`);
 
   const all = await getAll(dataSource);
+  assert(Object.keys(all.assemblies).length != 0);
 
   const db = createSqlDatabase(filename, getSqlNodePath());
   dropTables(db);
   const tables = createTables(db);
+  insertAll(all, tables);
   tables.close();
   return all;
 };

@@ -1,18 +1,27 @@
 import { SqlDatabase, SqlTable } from "sqlio";
+import * as DotNet from "../../contracts/dotnet2";
+import type { AnyId, AssemblyId, MemberId, MethodId, NamespaceId, TypeId, ViewId } from "./bigIds";
+import * as BigId from "./bigIds";
 
-export type Id = bigint;
 export type Boolean = 0 | 1;
+export type ViewType = "assemblies" | "namespaces";
 
-export type Assemblies = { id: Id; name: string; isMicrosoft: Boolean };
-export type Namespaces = { id: Id; name: string };
-export type TypeInfos = { id: Id; namespace?: Id; name: string; declaringType?: Id };
-export type Members = { id: Id; typeId: Id; name: string; json: string };
-export type FullNames = { id: Id; fullName: string };
+// properties except name and metadataToken of "members" types are stored as JSON
+export type NameAndMetadataToken = { name: string; metadataToken: DotNet.MetadataToken };
+export type WithoutNameAndMetadataToken<T> = Omit<T, "name" | "metadataToken">;
+export type AnyDotNetMembers = DotNet.FieldMember | DotNet.EventMember | DotNet.PropertyMember | DotNet.MethodMember;
+export type MembersJson = WithoutNameAndMetadataToken<AnyDotNetMembers>;
 
-export type Views = { id: Id; name: string };
-export type ViewStates = { viewId: Id; id: Id; isHidden: Boolean; isExpanded: Boolean };
+export type Assemblies = { id: AssemblyId; name: string; isMicrosoft: Boolean };
+export type Namespaces = { id: NamespaceId; name: string };
+export type TypeInfos = { id: TypeId; namespace?: NamespaceId; name: string; declaringType?: TypeId };
+export type Members = { id: MemberId; typeId: TypeId; name: string; json: MembersJson };
+export type FullNames = { id: AnyId; fullName: string };
 
-export type Calls = { fromId: Id; toId: Id };
+export type Views = { id: ViewId; name: string; viewType: ViewType };
+export type ViewStates = { viewId: ViewId; id: AnyId; isHidden: Boolean; isExpanded: Boolean };
+
+export type Calls = { fromId: MethodId; toId: MethodId };
 
 export const tableNames = [
   "assemblies",
@@ -49,25 +58,38 @@ export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { close: () =
 
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 
+const zero = {
+  // number
+  assemblyId: BigId.castAssemblyId(0),
+  namespaceId: BigId.castNamespaceId(0),
+  viewId: BigId.castViewId(0),
+  // bigint
+  typeId: BigId.castTypeId(0n),
+  methodId: BigId.castMethodId(0n),
+  memberId: BigId.castMemberId(0n),
+  anyId: BigId.castTypeId(0n),
+};
+
+const row = {
+  assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
+  namespaces: { id: zero.namespaceId, name: "foo" },
+  typeInfos: { id: zero.typeId, name: "foo", namespace: zero.namespaceId, declaringType: zero.typeId },
+  members: { id: zero.memberId, typeId: zero.typeId, name: "foo", json: {} as MembersJson },
+  fullNames: { id: zero.anyId, fullName: "foo" },
+  views: { id: zero.viewId, name: "foo", viewType: "assemblies" as ViewType },
+  viewsStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
+  calls: { fromId: zero.methodId, toId: zero.methodId },
+};
+
 export const createTables = (db: SqlDatabase): Tables => {
-  const assemblies = db.newSqlTable<Assemblies>("assemblies", "id", [], { id: 0n, name: "foo", isMicrosoft: 0 });
-  const namespaces = db.newSqlTable<Namespaces>("namespaces", "id", [], { id: 0n, name: "foo" });
-  const typeInfos = db.newSqlTable<TypeInfos>("typeInfos", "id", ["namespace", "declaringType"], {
-    id: 0n,
-    name: "foo",
-    namespace: 0n,
-    declaringType: 0n,
-  });
-  const members = db.newSqlTable<Members>("members", "id", [], { id: 0n, typeId: 0n, name: "foo", json: "" });
-  const fullNames = db.newSqlTable<FullNames>("fullNames", "id", [], { id: 0n, fullName: "foo" });
-  const views = db.newSqlTable<Views>("views", "id", [], { id: 0n, name: "foo" });
-  const viewStates = db.newSqlTable<ViewStates>("viewStates", "id", [], {
-    id: 0n,
-    viewId: 0n,
-    isHidden: 0,
-    isExpanded: 0,
-  });
-  const calls = db.newSqlTable<Calls>("calls", "fromId", [], { fromId: 0n, toId: 0n });
+  const assemblies = db.newSqlTable<Assemblies>("assemblies", "id", [], row.assemblies);
+  const namespaces = db.newSqlTable<Namespaces>("namespaces", "id", [], row.namespaces);
+  const typeInfos = db.newSqlTable<TypeInfos>("typeInfos", "id", ["namespace", "declaringType"], row.typeInfos);
+  const members = db.newSqlTable<Members>("members", "id", [], row.members);
+  const fullNames = db.newSqlTable<FullNames>("fullNames", "id", [], row.fullNames);
+  const views = db.newSqlTable<Views>("views", "id", [], row.views);
+  const viewStates = db.newSqlTable<ViewStates>("viewStates", "id", [], row.viewsStates);
+  const calls = db.newSqlTable<Calls>("calls", "fromId", [], row.calls);
 
   const close = () => {
     db.done();

@@ -1,3 +1,4 @@
+export * from "./assert";
 export * from "./error";
 export * from "./fs";
 export { jsonParse } from "./jsonParse";
