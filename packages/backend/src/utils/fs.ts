@@ -1,6 +1,8 @@
 import fs from "fs";
 import fsPromises from "fs/promises";
 import path from "path";
+import { assert } from "./assert";
+import { Asserter, jsonParseT } from "./jsonParse";
 import { getAppDataPath } from "./paths";
 
 export const pathJoin = (directory: string, filename: string): string => path.join(directory, filename);
@@ -34,21 +36,13 @@ export const readFile = (path: string): Promise<string> => fsPromises.readFile(p
 export const writeFileSync = (path: string, data: string): void => fs.writeFileSync(path, data);
 
 export const whenFile = async (path: string): Promise<string> => {
-  if (!existsSync(path)) throw new Error(`File not found: ${path}`);
+  assert(existsSync(path), `File not found: ${path}`);
   const stats = await stat(path);
   return stats.mtime.toISOString();
 };
 
-type TypeGuard<T> = (json: unknown) => json is T;
-
-const parseJsonT = <T>(text: string, typeGuard: TypeGuard<T>): T => {
-  const json = JSON.parse(text) as unknown;
-  if (typeGuard(json)) return json;
-  throw new Error("Unexpected"); // the type guard should return true or throw an explicit exception
-};
-
-export const readJsonT = async <T>(path: string, typeGuard: TypeGuard<T>): Promise<T> => {
-  if (!existsSync(path)) throw new Error(`File not found: ${path}`);
+export const readJsonT = async <T>(path: string, assertT: Asserter<T>): Promise<T> => {
+  assert(existsSync(path), `File not found: ${path}`);
   const text = await readFile(path);
-  return parseJsonT(text, typeGuard);
+  return jsonParseT(text, assertT);
 };

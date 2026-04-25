@@ -2,7 +2,7 @@ import { createSqlDatabase } from "sqlio";
 import type { AppConfig, DataSource } from "../../contracts-app";
 import type { Reflected } from "../../contracts-dotnet";
 import { isReflected } from "../../contracts-dotnet";
-import { fixCustomJson, isCustomJson } from "../../customJson";
+import { assertCustomJson, fixCustomJson } from "../../customJson";
 import * as dotNetApi from "../../dotNetApi";
 import {
   getAppFilename,
@@ -93,7 +93,7 @@ export const createSqlCustomFromJson = async (dataSource: DataSource): Promise<S
   const when = await whenFile(dataSource.path);
 
   if (options.alwaysReload || sqlCustom.shouldReload(when)) {
-    const nodes = await readJsonT(dataSource.path, isCustomJson);
+    const nodes = await readJsonT(dataSource.path, assertCustomJson);
     const errors = fixCustomJson(nodes);
     sqlCustom.save(nodes, errors, when);
   }

@@ -1,3 +1,4 @@
+import { assert } from "../../src";
 import type { All } from "./all";
 import { version } from "./version";
 
@@ -7,17 +8,16 @@ import { version } from "./version";
   https://typia.io/docs/pure/
 */
 
-export const isAll = (json: unknown): json is All => {
-  if (!json) throw new Error("Expect json is truthy");
-  if (typeof json !== "object") throw new Error("Expect json is object");
+export const isAll = (json: unknown): asserts json is All => {
+  assert(!!json, "Expect json is truthy");
+  assert(typeof json == "object", "Expect json is object");
   const o = json as All;
-  if (!o.version) throw new Error("Expect `version` property");
-  if (o.version != version) throw new Error(`Expect version ${version} actually ${o.version}`);
+  assert(!!o.version, "Expect `version` property");
+  assert(o.version == version, `Expect version ${version} actually ${o.version}`);
 
-  if (!o.exes) throw new Error("Expect `exes` property");
-  if (!o.assemblies) throw new Error("Expect `assemblies` property");
-  if (!o.assemblyMethods) throw new Error("Expect `assemblyMethods` property");
-  if (!o.compilerMethods) throw new Error("Expect `compilerMethods` property");
-  if (!o.microsoftAssemblies) throw new Error("Expect `microsoftAssemblies` property");
-  return true;
+  assert(!!o.exes, "Expect `exes` property");
+  assert(!!o.assemblies, "Expect `assemblies` property");
+  assert(!!o.assemblyMethods, "Expect `assemblyMethods` property");
+  assert(!!o.compilerMethods, "Expect `compilerMethods` property");
+  assert(!!o.microsoftAssemblies, "Expect `microsoftAssemblies` property");
 };

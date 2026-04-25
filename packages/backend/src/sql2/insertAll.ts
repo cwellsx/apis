@@ -1,7 +1,7 @@
 import * as DotNet from "../../contracts/dotnet2";
 import { assert, getOrThrow } from "../utils";
 import type { AssemblyId, NamespaceId } from "./bigIds";
-import { castAssemblyId, castNamespaceId, packMemberId, packTypeId } from "./bigIds";
+import { castAssemblyId, castNamespaceId, packMemberId, packTypeDefId } from "./bigIds";
 import {
   AnyDotNetMembers,
   Assemblies,
@@ -40,16 +40,18 @@ const getTypeInfos = (
   namespaceIds: Map<string, NamespaceId>
 ): TypeInfos[] =>
   assemblyAndTypeInfos.map((value) => ({
-    id: packTypeId(value.id, getOrThrow(assemblyIds, value.assemblyName)),
+    id: packTypeDefId(value.id, getOrThrow(assemblyIds, value.assemblyName)),
     namespace: value.namespace ? namespaceIds.get(value.namespace) : undefined,
     name: value.name,
-    declaringType: value.declaringType ? packTypeId(value.id, getOrThrow(assemblyIds, value.assemblyName)) : undefined,
+    declaringType: value.declaringType
+      ? packTypeDefId(value.id, getOrThrow(assemblyIds, value.assemblyName))
+      : undefined,
   }));
 
 const getMembers = (assemblyAndTypeInfos: AssemblyAndTypeInfo[], assemblyIds: Map<string, AssemblyId>): Members[] =>
   assemblyAndTypeInfos.flatMap((value) => {
     const assemblyId = getOrThrow(assemblyIds, value.assemblyName);
-    const typeId = packTypeId(value.id, assemblyId);
+    const typeId = packTypeDefId(value.id, assemblyId);
 
     const getFieldMemberJson = (value: DotNet.FieldMember): WithoutNameAndMetadataToken<DotNet.FieldMember> => ({
       fieldType: value.fieldType,
@@ -68,7 +70,7 @@ const getMembers = (assemblyAndTypeInfos: AssemblyAndTypeInfo[], assemblyIds: Ma
     const getPropertyMemberJson = (
       value: DotNet.PropertyMember
     ): WithoutNameAndMetadataToken<DotNet.PropertyMember> => ({
-      prropertyType: value.prropertyType,
+      propertyType: value.propertyType,
       access: value.access,
       isStatic: value.isStatic,
       parameters: value.parameters,

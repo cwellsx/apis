@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import os from "os";
 import { CustomError } from "./contracts-ui";
-import { remove } from "./utils";
+import { assert, remove } from "./utils";
 
 type CustomDependency = { id: string; label: string } & { [key: string]: boolean };
 
@@ -39,10 +39,7 @@ const createCustomError = (element: CustomNode, message: string): CustomError =>
 });
 
 const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
-  const customError: CustomError = {
-    messages: [],
-    elementJson: jsonStringify(element),
-  };
+  const customError: CustomError = { messages: [], elementJson: jsonStringify(element) };
 
   const error = (message: string) => customError.messages.push(message);
 
@@ -143,18 +140,16 @@ export const fixCustomJson = (nodes: CustomNode[]): CustomError[] => {
   return customErrors;
 };
 
-export const isCustomJson = (json: unknown): json is CustomNode[] => {
-  if (!json) throw new Error("Expect json is truthy");
-  if (!Array.isArray(json)) throw new Error("Expect json is array");
-  if (!json.length) throw new Error("Expect json array is not empty");
+export const assertCustomJson = (json: unknown): asserts json is CustomNode[] => {
+  assert(!!json, "Expect json is truthy");
+  assert(Array.isArray(json), "Expect json is array");
+  assert(json.length != 0, "Expect json array is not empty");
   const first = json[0] as unknown;
-  if (!precondition(first)) throw new Error("Expect json array of objects");
+  assert(precondition(first), "Expect json array of objects");
 
   // do the validation is two stages
   // 1. here, return true or false depending on whether the first node is error-free
   // 2. later, sanitize all the nodes, correct them if needed, return error messages
   const customError = findAndFixErrors(first as CustomNode);
-
-  if (customError) throw new Error([...customError.messages, customError.elementJson].join(os.EOL));
-  return true;
+  if (customError) assert(!customError, [...customError.messages, customError.elementJson].join(os.EOL));
 };

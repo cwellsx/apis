@@ -1,6 +1,6 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as DotNet from "../../contracts/dotnet2";
-import type { AnyId, AssemblyId, MemberId, MethodId, NamespaceId, TypeId, ViewId } from "./bigIds";
+import type { AnyId, AssemblyId, MemberId, MethodId, NamespaceId, TypeDefId, ViewId } from "./bigIds";
 import * as BigId from "./bigIds";
 
 export type Boolean = 0 | 1;
@@ -14,8 +14,8 @@ export type MembersJson = WithoutNameAndMetadataToken<AnyDotNetMembers>;
 
 export type Assemblies = { id: AssemblyId; name: string; isMicrosoft: Boolean };
 export type Namespaces = { id: NamespaceId; name: string };
-export type TypeInfos = { id: TypeId; namespace?: NamespaceId; name: string; declaringType?: TypeId };
-export type Members = { id: MemberId; typeId: TypeId; name: string; json: MembersJson };
+export type TypeInfos = { id: TypeDefId; namespace?: NamespaceId; name: string; declaringType?: TypeDefId };
+export type Members = { id: MemberId; typeId: TypeDefId; name: string; json: MembersJson };
 export type FullNames = { id: AnyId; fullName: string };
 
 export type Views = { id: ViewId; name: string; viewType: ViewType };
@@ -64,17 +64,17 @@ const zero = {
   namespaceId: BigId.castNamespaceId(0),
   viewId: BigId.castViewId(0),
   // bigint
-  typeId: BigId.castTypeId(0n),
+  typeDefId: BigId.castTypeDefId(0n),
   methodId: BigId.castMethodId(0n),
   memberId: BigId.castMemberId(0n),
-  anyId: BigId.castTypeId(0n),
+  anyId: BigId.castMAnyId(0n),
 };
 
 const row = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
   namespaces: { id: zero.namespaceId, name: "foo" },
-  typeInfos: { id: zero.typeId, name: "foo", namespace: zero.namespaceId, declaringType: zero.typeId },
-  members: { id: zero.memberId, typeId: zero.typeId, name: "foo", json: {} as MembersJson },
+  typeInfos: { id: zero.typeDefId, name: "foo", namespace: zero.namespaceId, declaringType: zero.typeDefId },
+  members: { id: zero.memberId, typeId: zero.typeDefId, name: "foo", json: {} as MembersJson },
   fullNames: { id: zero.anyId, fullName: "foo" },
   views: { id: zero.viewId, name: "foo", viewType: "assemblies" as ViewType },
   viewsStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },

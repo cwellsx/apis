@@ -23,7 +23,7 @@ export type EventMember = {
 
 export type PropertyMember = {
   name: string;
-  prropertyType: TypeId;
+  propertyType: TypeId;
   access: Access;
   isStatic?: boolean;
   parameters?: Parameter[];
