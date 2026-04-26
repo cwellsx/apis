@@ -41,7 +41,7 @@ namespace Core.CecilToOutput
                 Attributes: GetAttributes(typeDefinition.CustomAttributes),
                 BaseType: typeDefinition.BaseType == null ? null : GetTypeId(typeDefinition.BaseType),
                 Interfaces: typeDefinition.Interfaces.Select(interfaceImlementation => GetTypeId(interfaceImlementation.InterfaceType)).ToArrayOrNull(),
-                GenericTypeParameters: GetGenericParameters(typeDefinition.GenericParameters),
+                GenericParameters: GetGenericParameters(typeDefinition.GenericParameters),
                 Access: GetAccess(typeDefinition),
                 // Members
                 FieldMembers: isMicrosoft ? null : typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),

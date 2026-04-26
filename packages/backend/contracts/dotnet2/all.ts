@@ -12,7 +12,7 @@ export type TypeInfo = {
   attributes?: string[];
   baseType?: TypeId;
   interfaces?: TypeId[];
-  genericTypeParameters?: string[];
+  genericParameters?: string[];
   access: Access;
   // members
   fieldMembers?: FieldMember[];

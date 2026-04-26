@@ -113,10 +113,10 @@ namespace Core.FullNames
                 {
                     combinedGenericParameters.AddRange(declaringTypeNameParts.GenericParameters);
                 }
-                if (typeInfo.GenericTypeParameters != null)
+                if (typeInfo.GenericParameters != null)
                 {
                     // nested type inherit parameter names => don't add those inherited names again
-                    combinedGenericParameters.AddRange(typeInfo.GenericTypeParameters.Where(name => !combinedGenericParameters.ToArray().Contains(name)));
+                    combinedGenericParameters.AddRange(typeInfo.GenericParameters.Where(name => !combinedGenericParameters.ToArray().Contains(name)));
                 }
 
                 return new TypeNameParts(combinedTypeName, combinedGenericParameters.ToArrayOrNull());
@@ -124,7 +124,7 @@ namespace Core.FullNames
 
             var typeName = typeInfo.Namespace != null ? $"{typeInfo.Namespace}.{typeInfo.Name}" : typeInfo.Name;
 
-            return new TypeNameParts(typeName, typeInfo.GenericTypeParameters);
+            return new TypeNameParts(typeName, typeInfo.GenericParameters);
         }
 
         private (string, Dictionary<string, string>?) GetMethodName(IMethodId methodId, string inAssemblyName)

@@ -16,10 +16,12 @@ export type MethodDefId = bigint & { __brand: "MethodDefId" };
 export type MethodRefId = bigint & { __brand: "MethodRefId" };
 export type MemberId = bigint & { __brand: "MemberId" };
 
-export type TypeId = TypeDefId | TypeRefId | GenericParamId;
+export type BaseTypeId = TypeDefId | GenericParamId;
+export type TypeId = BaseTypeId | TypeRefId;
 export type MethodId = MethodDefId | MethodRefId;
 
 export type AnyDefId = TypeDefId | MethodDefId;
+export type AnyOwnerId = TypeRefId | MethodRefId | MethodDefId;
 export type AnyId = TypeId | MethodId;
 
 // cast

@@ -10,8 +10,13 @@ export type Namespaces = { id: Id.NamespaceId; name: string };
 export type TypeNames = { id: Id.TypeDefId; namespace?: Id.NamespaceId; name: string; declaringType?: Id.TypeDefId };
 export type Members = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
 
-export type TypeReferences = { id: Id.TypeRefId; resolved: Id.TypeDefId; suffix?: string };
-export type TypeArguments = { id: Id.TypeRefId; seqno: number; argument: Id.TypeId };
+export type MethodNames = { id: Id.MethodDefId; name: string; returnType: Id.TypeId };
+
+export type TypeReferences = { id: Id.TypeRefId; resolved: Id.BaseTypeId; suffix?: string };
+
+// used for generic type arguments, method parameters, and generic method arguments
+export type SignatureTypes = { ownerId: Id.AnyOwnerId; seqno: number; argument: Id.TypeId };
+
 export type GenericParams = { id: Id.GenericParamId; owner: Id.AnyDefId; seqno: number; name: string };
 
 export type FullNames = { id: Id.AnyId; fullName: string };
@@ -27,8 +32,10 @@ export const tableNames = [
   "typeNames",
   "members",
 
+  "methodNames",
+
   "typeReferences",
-  "typeArguments",
+  "signatureTypes",
   "genericParams",
 
   "fullNames",
@@ -39,29 +46,22 @@ export const tableNames = [
 
 export type TableName = (typeof tableNames)[number];
 
-export type TableRow<K extends TableName> = K extends "assemblies"
-  ? Assemblies
-  : K extends "namespaces"
-    ? Namespaces
-    : K extends "typeNames"
-      ? TypeNames
-      : K extends "members"
-        ? Members
-        : K extends "typeReferences"
-          ? TypeReferences
-          : K extends "typeArguments"
-            ? TypeArguments
-            : K extends "genericParams"
-              ? GenericParams
-              : K extends "fullNames"
-                ? FullNames
-                : K extends "views"
-                  ? Views
-                  : K extends "viewStates"
-                    ? ViewStates
-                    : K extends "calls"
-                      ? Calls
-                      : never;
+type TableRowMap = {
+  assemblies: Assemblies;
+  namespaces: Namespaces;
+  typeNames: TypeNames;
+  members: Members;
+  methodNames: MethodNames;
+  typeReferences: TypeReferences;
+  signatureTypes: SignatureTypes;
+  genericParams: GenericParams;
+  fullNames: FullNames;
+  views: Views;
+  viewStates: ViewStates;
+  calls: Calls;
+};
+
+export type TableRow<K extends TableName> = TableRowMap[K];
 
 export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { close: () => void };
 
@@ -78,6 +78,7 @@ const zero = {
   genericParamId: Id.castGenericParamId(0n),
 
   typeId: Id.castTypeRefId(0n),
+  methodDefId: Id.castMethodDefId(0n),
   methodId: Id.castMethodDefId(0n),
   memberId: Id.castMemberId(0n),
   anyId: Id.castMAnyId(0n),
@@ -89,8 +90,10 @@ const row = {
   typeNames: { id: zero.typeDefId, name: "foo", namespace: zero.namespaceId, declaringType: zero.typeDefId },
   members: { id: zero.memberId, typeId: zero.typeDefId, name: "foo", json: {} as MembersJson },
 
+  methodNames: { id: zero.methodDefId, name: "foo", returnType: zero.typeId },
+
   typeReferences: { id: zero.typeRefId, resolved: zero.typeDefId, suffix: "foo" },
-  typeArguments: { id: zero.typeRefId, seqno: 0, argument: zero.typeId },
+  signatureTypes: { ownerId: zero.typeRefId, seqno: 0, argument: zero.typeId },
   genericParams: { id: zero.genericParamId, owner: zero.typeDefId, seqno: 0, name: "foo" },
 
   fullNames: { id: zero.anyId, fullName: "foo" },
@@ -104,9 +107,10 @@ export const createTables = (db: SqlDatabase): Tables => {
   const namespaces = db.newSqlTable<Namespaces>("namespaces", "id", [], row.namespaces);
   const typeNames = db.newSqlTable<TypeNames>("typeNames", "id", ["namespace", "declaringType"], row.typeNames);
   const members = db.newSqlTable<Members>("members", "id", [], row.members);
+  const methodNames = db.newSqlTable<MethodNames>("methodNames", "id", [], row.methodNames);
 
   const typeReferences = db.newSqlTable<TypeReferences>("typeReferences", "id", ["suffix"], row.typeReferences);
-  const typeArguments = db.newSqlTable<TypeArguments>("typeArguments", ["id", "seqno"], [], row.typeArguments);
+  const signatureTypes = db.newSqlTable<SignatureTypes>("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
   const genericParams = db.newSqlTable<GenericParams>("genericParams", ["id", "seqno"], [], row.genericParams);
 
   const fullNames = db.newSqlTable<FullNames>("fullNames", "id", [], row.fullNames);
@@ -124,8 +128,9 @@ export const createTables = (db: SqlDatabase): Tables => {
     namespaces,
     typeNames,
     members,
+    methodNames,
     typeReferences,
-    typeArguments,
+    signatureTypes,
     genericParams,
     fullNames,
     views,

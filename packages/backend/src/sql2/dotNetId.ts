@@ -1,8 +1,10 @@
 import * as DotNet from "../../contracts/dotnet2";
 import { assert, getOrThrow } from "../utils";
-import type { AnyDefId, AssemblyId, GenericParamId, TypeDefId, TypeId, TypeRefId } from "./bigIds";
+import type { AnyDefId, AnyOwnerId, AssemblyId, BaseTypeId, GenericParamId, TypeId, TypeRefId } from "./bigIds";
 import { addGenericParamTableId, addTypeRefTableId, packGenericParamId, packTypeDefId, packTypeRefId } from "./bigIds";
-import type { GenericParams, TypeArguments, TypeReferences } from "./schema";
+import type { GenericParams, SignatureTypes, TypeReferences } from "./schema";
+
+type ToTypeId = (id: DotNet.TypeId) => TypeId;
 
 export const getLocalTypeId = (id: DotNet.LocalTypeId): number => {
   assert((typeof id as unknown) === "number", `${id} must be a number`);
@@ -40,66 +42,75 @@ export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
   const getAssemblyId = (assemblyName: string): AssemblyId => getOrThrow(assemblyIds, assemblyName);
 
   const typeReferences: TypeReferences[] = [];
-  const typeArguments: TypeArguments[] = [];
+  const signatureTypes: SignatureTypes[] = [];
   const genericParams: GenericParams[] = [];
-
-  // id is number | string => TypeDefId
-  const toTypeDefId = (id: number | string, assemblyName: string): TypeDefId => {
-    if (typeof id === "string") {
-      const split = id.split("|");
-      id = Number.parseInt(split[1]);
-      assemblyName = split[0];
-    }
-    return packTypeDefId(id, getAssemblyId(assemblyName));
-  };
+  const mapGenericParams = new Map<AnyDefId, GenericParams[]>();
 
   const toGenericParams = (
     owner: AnyDefId,
     assemblyName: string,
-    genericTypeParameters: string[]
-  ): Map<string, GenericParamId> =>
-    new Map<string, GenericParamId>(
-      genericTypeParameters.map((value, index) => {
-        const paramId = newGenericParamId(getAssemblyId(assemblyName));
-        genericParams.push({ id: paramId, owner, seqno: index, name: value });
-        return [value, paramId];
-      })
-    );
+    genericParameters: string[],
+    previousOwner?: AnyDefId
+  ): Map<string, GenericParamId> => {
+    const result = genericParameters.map((value, index) => ({
+      id: newGenericParamId(getAssemblyId(assemblyName)),
+      owner,
+      seqno: index,
+      name: value,
+    }));
+    genericParams.push(...result);
+    mapGenericParams.set(owner, result);
 
-  const toTypeId = (
-    id: DotNet.TypeId,
-    assemblyName: string,
-    genericTypeParameters: Map<string, GenericParamId>
-  ): TypeId => {
-    if (typeof id === "string" && genericTypeParameters.has(id)) return getOrThrow(genericTypeParameters, id);
-
-    if (!Array.isArray(id)) return toTypeDefId(id, assemblyName);
-
-    // first element is resolved
-    const firstElement = id[0];
-    assert(!Array.isArray(firstElement), "First element is resolved TypeDefId");
-    const resolved = toTypeDefId(firstElement, assemblyName);
-
-    const typeRefId = newTypeRefId(getAssemblyId(assemblyName));
-    id.shift();
-
-    const last = id[id.length - 1];
-    const suffix: string | undefined = typeof last === "string" && !last.includes("|") ? last : undefined;
-    if (suffix) id.pop();
-    typeReferences.push({ id: typeRefId, resolved, suffix });
-
-    id.forEach((argument, index) =>
-      typeArguments.push({
-        id: typeRefId,
-        seqno: index,
-        argument: toTypeId(argument, assemblyName, genericTypeParameters),
-      })
-    );
-
-    return resolved;
+    const previous = previousOwner ? mapGenericParams.get(previousOwner) : undefined;
+    const combined = [...(previous ? previous : []), ...result];
+    return new Map<string, GenericParamId>(combined.map((value) => [value.name, value.id]));
   };
 
-  const getTypeReferences = () => ({ typeReferences, typeArguments, genericParams });
+  const toSignatureTypes = (ownerId: AnyOwnerId, typeIds: DotNet.TypeId[], toTypeId: ToTypeId) => {
+    typeIds.forEach((argument, index) => signatureTypes.push({ ownerId, seqno: index, argument: toTypeId(argument) }));
+  };
 
-  return { toGenericParams, toTypeId, getTypeReferences };
+  const getToTypeId = (assemblyName: string, genericParameters: Map<string, GenericParamId>): ToTypeId => {
+    // toTypeId is closure
+    const toTypeId = (id: DotNet.TypeId) => {
+      // id is number | string => TypeDefId
+      const toTypeDefId = (id: number | string): BaseTypeId => {
+        if (typeof id === "string") {
+          const genericParamId =
+            id[0] === "!" ? getOrThrow(genericParameters, id.substring(1)) : genericParameters.get(id);
+          if (genericParamId) return genericParamId;
+          const split = id.split("|");
+          assert(split.length == 2, `Expect ${id} to contain "|"`);
+          id = Number.parseInt(split[1]);
+          assemblyName = split[0];
+        }
+        return packTypeDefId(id, getAssemblyId(assemblyName));
+      };
+
+      if (!Array.isArray(id)) return toTypeDefId(id);
+
+      // first element is resolved
+      const firstElement = id[0];
+      assert(!Array.isArray(firstElement), "First element is resolved TypeDefId");
+      const resolved = toTypeDefId(firstElement);
+      const typeRefId = newTypeRefId(getAssemblyId(assemblyName));
+
+      // last element is optionally suffix
+      const last = id[id.length - 1];
+      const suffix: string | undefined = typeof last === "string" && !last.includes("|") ? last : undefined;
+
+      // remove front and optionally remove back
+      const array = id.slice(1, suffix ? -1 : undefined);
+
+      typeReferences.push({ id: typeRefId, resolved, suffix });
+      toSignatureTypes(typeRefId, array, toTypeId);
+      return resolved;
+    };
+
+    return toTypeId;
+  };
+
+  const getTypeReferences = () => ({ typeReferences, signatureTypes, genericParams });
+
+  return { toGenericParams, getToTypeId, getTypeReferences, toSignatureTypes };
 };

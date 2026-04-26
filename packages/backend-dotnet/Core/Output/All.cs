@@ -55,7 +55,7 @@ namespace Core.Output
         string[]? Attributes,
         TypeId? BaseType,
         TypeId[]? Interfaces,
-        string[]? GenericTypeParameters,
+        string[]? GenericParameters,
         Access Access,
         // Members
         FieldMember[]? FieldMembers,
