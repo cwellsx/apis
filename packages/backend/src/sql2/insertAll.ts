@@ -1,19 +1,12 @@
 import * as DotNet from "../../contracts/dotnet2";
 import { assert, getOrThrow } from "../utils";
-import type { AssemblyId, NamespaceId } from "./bigIds";
+import type { AssemblyId, NamespaceId, TypeDefId } from "./bigIds";
 import { castAssemblyId, castNamespaceId, packMemberId, packTypeDefId } from "./bigIds";
-import {
-  AnyDotNetMembers,
-  Assemblies,
-  Boolean,
-  Members,
-  Namespaces,
-  Tables,
-  TypeInfos,
-  WithoutNameAndMetadataToken,
-} from "./schema";
+import { parseTypeIds } from "./dotNetId";
+import * as GetMemberJson from "./memberJson";
+import { Assemblies, Boolean, Members, Namespaces, Tables, TypeNames } from "./schema";
 
-type AssemblyAndTypeInfo = { assemblyName: string } & DotNet.TypeInfo;
+type AllTypeInfo = { typeDefId: TypeDefId; assemblyName: string } & DotNet.TypeInfo;
 
 const getAssemblies = (all: DotNet.All): Assemblies[] =>
   Object.keys(all.assemblies)
@@ -21,12 +14,18 @@ const getAssemblies = (all: DotNet.All): Assemblies[] =>
     .concat(Object.keys(all.microsoftAssemblies).map((value) => ({ name: value, isMicrosoft: 1 as Boolean })))
     .map((value, index) => ({ id: castAssemblyId(index + 1), ...value }));
 
-const getAssemblyAndTypeInfos = (all: DotNet.All): AssemblyAndTypeInfo[] =>
+const getAllTypeInfos = (all: DotNet.All, assemblyIds: Map<string, AssemblyId>): AllTypeInfo[] =>
   Object.entries(all.assemblies)
     .concat(Object.entries(all.microsoftAssemblies))
-    .flatMap((entry) => entry[1].typeInfos.map((typeInfo) => ({ assemblyName: entry[0], ...typeInfo })));
+    .flatMap(([assemblyName, assemblyInfo]) =>
+      assemblyInfo.typeInfos.map((value) => ({
+        assemblyName,
+        typeDefId: packTypeDefId(value.id, getOrThrow(assemblyIds, assemblyName)),
+        ...value,
+      }))
+    );
 
-const getNamespaces = (assemblyAndTypeInfos: AssemblyAndTypeInfo[]): Namespaces[] => {
+const getNamespaces = (assemblyAndTypeInfos: AllTypeInfo[]): Namespaces[] => {
   const distinctNamespaces = new Set<string>();
   assemblyAndTypeInfos.forEach((value) => {
     if (value.namespace) distinctNamespaces.add(value.namespace);
@@ -34,12 +33,12 @@ const getNamespaces = (assemblyAndTypeInfos: AssemblyAndTypeInfo[]): Namespaces[
   return [...distinctNamespaces].sort().map((value, index) => ({ id: castNamespaceId(index + 1), name: value }));
 };
 
-const getTypeInfos = (
-  assemblyAndTypeInfos: AssemblyAndTypeInfo[],
+const getTypeNames = (
+  allTypeInfos: AllTypeInfo[],
   assemblyIds: Map<string, AssemblyId>,
   namespaceIds: Map<string, NamespaceId>
-): TypeInfos[] =>
-  assemblyAndTypeInfos.map((value) => ({
+): TypeNames[] =>
+  allTypeInfos.map((value) => ({
     id: packTypeDefId(value.id, getOrThrow(assemblyIds, value.assemblyName)),
     namespace: value.namespace ? namespaceIds.get(value.namespace) : undefined,
     name: value.name,
@@ -48,48 +47,14 @@ const getTypeInfos = (
       : undefined,
   }));
 
-const getMembers = (assemblyAndTypeInfos: AssemblyAndTypeInfo[], assemblyIds: Map<string, AssemblyId>): Members[] =>
-  assemblyAndTypeInfos.flatMap((value) => {
+const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: Map<string, AssemblyId>): Members[] =>
+  allTypeInfos.flatMap((value) => {
     const assemblyId = getOrThrow(assemblyIds, value.assemblyName);
     const typeId = packTypeDefId(value.id, assemblyId);
 
-    const getFieldMemberJson = (value: DotNet.FieldMember): WithoutNameAndMetadataToken<DotNet.FieldMember> => ({
-      fieldType: value.fieldType,
-      access: value.access,
-      isStatic: value.isStatic,
-      attributes: value.attributes,
-    });
-
-    const getEventMemberJson = (value: DotNet.EventMember): WithoutNameAndMetadataToken<DotNet.EventMember> => ({
-      eventHandlerType: value.eventHandlerType,
-      access: value.access,
-      isStatic: value.isStatic,
-      attributes: value.attributes,
-    });
-
-    const getPropertyMemberJson = (
-      value: DotNet.PropertyMember
-    ): WithoutNameAndMetadataToken<DotNet.PropertyMember> => ({
-      propertyType: value.propertyType,
-      access: value.access,
-      isStatic: value.isStatic,
-      parameters: value.parameters,
-      attributes: value.attributes,
-    });
-
-    const getMethodMemberJson = (value: DotNet.MethodMember): WithoutNameAndMetadataToken<DotNet.MethodMember> => ({
-      access: value.access,
-      isStatic: value.isStatic,
-      isConstruct: value.isConstruct,
-      genericParameters: value.genericParameters,
-      parameters: value.parameters,
-      returnType: value.returnType,
-      attributes: value.attributes,
-    });
-
-    const getMembers = <T extends AnyDotNetMembers>(
+    const getMembers = <T extends GetMemberJson.AnyDotNetMembers>(
       members: T[] | undefined,
-      getJson: (value: T) => WithoutNameAndMetadataToken<T>
+      getJson: (value: T) => GetMemberJson.WithoutNameAndMetadataToken<T>
     ): Members[] =>
       members?.map((value) => ({
         name: value.name,
@@ -101,10 +66,10 @@ const getMembers = (assemblyAndTypeInfos: AssemblyAndTypeInfo[], assemblyIds: Ma
     const empty: Members[] = [];
 
     return empty
-      .concat(getMembers(value.fieldMembers, getFieldMemberJson))
-      .concat(getMembers(value.eventMembers, getEventMemberJson))
-      .concat(getMembers(value.propertyMembers, getPropertyMemberJson))
-      .concat(getMembers(value.methodMembers, getMethodMemberJson));
+      .concat(getMembers(value.fieldMembers, GetMemberJson.getFieldMemberJson))
+      .concat(getMembers(value.eventMembers, GetMemberJson.getEventMemberJson))
+      .concat(getMembers(value.propertyMembers, GetMemberJson.getPropertyMemberJson))
+      .concat(getMembers(value.methodMembers, GetMemberJson.getMethodMemberJson));
   });
 
 export const insertAll = (all: DotNet.All, tables: Tables) => {
@@ -116,14 +81,33 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
   assert(assemblies.length != 0);
   assert(assemblyIds.size != 0);
 
-  const assemblyAndTypeInfos = getAssemblyAndTypeInfos(all);
+  // assemblyAndTypeInfos
+  const allTypeInfos = getAllTypeInfos(all, assemblyIds);
+
+  // convert DotNet.Id to TypeDefId or TypeRefId -- call toTypeId before getTypeReferences
+  const { toGenericParams, toTypeId, getTypeReferences } = parseTypeIds(assemblyIds);
+  for (const value of allTypeInfos) {
+    const genericTypeParameters = toGenericParams(
+      value.typeDefId,
+      value.assemblyName,
+      value.genericTypeParameters ?? []
+    );
+    const subTypes = [...(value.baseType ? [value.baseType] : []), ...(value.interfaces ?? [])];
+    subTypes.forEach((subType) => toTypeId(subType, value.assemblyName, genericTypeParameters));
+  }
+
+  // typeReferences and typeArguments
+  const { typeReferences, typeArguments, genericParams } = getTypeReferences();
+  tables.typeReferences.insertMany(typeReferences);
+  tables.typeArguments.insertMany(typeArguments);
+  tables.genericParams.insertMany(genericParams);
 
   // namespaces
-  const namespaces = getNamespaces(assemblyAndTypeInfos);
+  const namespaces = getNamespaces(allTypeInfos);
   tables.namespaces.insertMany(namespaces);
   const namespaceIds = new Map<string, NamespaceId>(namespaces.map((it) => [it.name, it.id]));
 
-  tables.typeInfos.insertMany(getTypeInfos(assemblyAndTypeInfos, assemblyIds, namespaceIds));
+  tables.typeNames.insertMany(getTypeNames(allTypeInfos, assemblyIds, namespaceIds));
 
-  tables.members.insertMany(getMembers(assemblyAndTypeInfos, assemblyIds));
+  tables.members.insertMany(getMembers(allTypeInfos, assemblyIds));
 };
