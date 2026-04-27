@@ -1,12 +1,13 @@
 import * as DotNet from "../../contracts/dotnet2";
 import { getOrThrow } from "../utils";
-import type { AssemblyId, NamespaceId, TypeDefId } from "./bigIds";
+import type { AssemblyId, MethodDefId, NamespaceId, TypeDefId } from "./bigIds";
 import { castAssemblyId, castNamespaceId, packMemberId, packMethodDefId, packTypeDefId } from "./bigIds";
 import { parseTypeIds } from "./dotNetId";
 import * as GetMemberJson from "./memberJson";
 import { Assemblies, Boolean, Members, Namespaces, Tables, TypeNames } from "./schema";
 
 type AllTypeInfo = { typeDefId: TypeDefId; assemblyName: string } & DotNet.TypeInfo;
+type AllMethodInfo = { methodDefId: MethodDefId; assemblyName: string } & DotNet.MethodInfo;
 
 const getAssemblies = (all: DotNet.All): Assemblies[] =>
   Object.keys(all.assemblies)
@@ -24,6 +25,15 @@ const getAllTypeInfos = (all: DotNet.All, assemblyIds: Map<string, AssemblyId>):
         ...value,
       }))
     );
+
+const getAllMethodInfos = (all: DotNet.All, assemblyIds: Map<string, AssemblyId>): AllMethodInfo[] =>
+  Object.entries(all.assemblyMethods).flatMap(([assemblyName, tokenMap]) =>
+    Object.entries(tokenMap).map(([metadataToken, methodInfo]) => ({
+      ...methodInfo,
+      methodDefId: packMethodDefId(+metadataToken, getOrThrow(assemblyIds, assemblyName)),
+      assemblyName,
+    }))
+  );
 
 const getNamespaces = (assemblyAndTypeInfos: AllTypeInfo[]): Namespaces[] => {
   const distinctNamespaces = new Set<string>();
@@ -95,6 +105,7 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
   // convert DotNet.Id to TypeDefId or TypeRefId -- call toTypeId before getTypeReferences
   const { toGenericParams, getToTypeId, getTypeReferences, toSignatureTypes } = parseTypeIds(assemblyIds);
 
+  // generic type parameters and subtypes
   for (const value of allTypeInfos) {
     // generic type parameters
     const genericParameters = toGenericParams(value.typeDefId, value.assemblyName, value.genericParameters ?? []);
@@ -104,6 +115,7 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
     subTypes.forEach((subType) => toTypeId(subType));
   }
 
+  // method names
   const methodNames = allTypeInfos.flatMap((allTypeInfo) =>
     (allTypeInfo.methodMembers ?? []).map((value) => {
       const assemblyName = allTypeInfo.assemblyName;
@@ -116,19 +128,26 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
         allTypeInfo.typeDefId
       );
       const toTypeId = getToTypeId(assemblyName, genericParameters);
+      // method parameters
       if (value.parameters)
         toSignatureTypes(
           methodDefId,
           value.parameters.map((value) => value.type),
           toTypeId
         );
+      //method name
       return { id: methodDefId, name: value.name, returnType: toTypeId(value.returnType) };
     })
   );
-
   tables.methodNames.insertMany(methodNames);
 
-  // typeReferences and typeArguments
+  // method info
+  const allMethodInfos = getAllMethodInfos(all, assemblyIds);
+  tables.decompiled.insertMany(allMethodInfos.map((value) => ({ id: value.methodDefId, asText: value.asText })));
+
+  //allMethodInfos.flatMap(value=>([...(value.called??[]),...(value.argued??[])])).map(value=>)
+
+  // typeReferences, signatureTypes, genericParams
   const { typeReferences, signatureTypes, genericParams } = getTypeReferences();
   tables.typeReferences.insertMany(typeReferences);
   tables.signatureTypes.insertMany(signatureTypes);

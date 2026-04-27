@@ -19,6 +19,8 @@ export type SignatureTypes = { ownerId: Id.AnyOwnerId; seqno: number; argument: 
 
 export type GenericParams = { id: Id.GenericParamId; owner: Id.AnyDefId; seqno: number; name: string };
 
+export type Decompiled = { id: Id.MethodDefId; asText: string };
+
 export type FullNames = { id: Id.AnyId; fullName: string };
 
 export type Views = { id: Id.ViewId; name: string; viewType: ViewType };
@@ -38,6 +40,8 @@ export const tableNames = [
   "signatureTypes",
   "genericParams",
 
+  "decompiled",
+
   "fullNames",
   "views",
   "viewStates",
@@ -55,6 +59,7 @@ type TableRowMap = {
   typeReferences: TypeReferences;
   signatureTypes: SignatureTypes;
   genericParams: GenericParams;
+  decompiled: Decompiled;
   fullNames: FullNames;
   views: Views;
   viewStates: ViewStates;
@@ -96,6 +101,8 @@ const row = {
   signatureTypes: { ownerId: zero.typeRefId, seqno: 0, argument: zero.typeId },
   genericParams: { id: zero.genericParamId, owner: zero.typeDefId, seqno: 0, name: "foo" },
 
+  decompiled: { id: zero.methodDefId, asText: "foo" },
+
   fullNames: { id: zero.anyId, fullName: "foo" },
   views: { id: zero.viewId, name: "foo", viewType: "assemblies" as ViewType },
   viewsStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
@@ -112,6 +119,8 @@ export const createTables = (db: SqlDatabase): Tables => {
   const typeReferences = db.newSqlTable<TypeReferences>("typeReferences", "id", ["suffix"], row.typeReferences);
   const signatureTypes = db.newSqlTable<SignatureTypes>("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
   const genericParams = db.newSqlTable<GenericParams>("genericParams", ["id", "seqno"], [], row.genericParams);
+
+  const decompiled = db.newSqlTable<Decompiled>("decompiled", "id", [], row.decompiled);
 
   const fullNames = db.newSqlTable<FullNames>("fullNames", "id", [], row.fullNames);
   const views = db.newSqlTable<Views>("views", "id", [], row.views);
@@ -132,6 +141,7 @@ export const createTables = (db: SqlDatabase): Tables => {
     typeReferences,
     signatureTypes,
     genericParams,
+    decompiled,
     fullNames,
     views,
     viewStates,

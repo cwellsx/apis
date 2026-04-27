@@ -24,7 +24,7 @@ export type TypeInfo = {
 
 type AssemblyInfo = { referencedAssemblies: string[]; typeInfos: TypeInfo[] };
 
-type MethodInfo = { asText: string; called?: MethodId[]; argued?: MethodId[]; locals?: TypeId[] };
+export type MethodInfo = { asText: string; called?: MethodId[]; argued?: MethodId[]; locals?: TypeId[] };
 
 export type All = {
   assemblies: AssemblyMap<AssemblyInfo>;
