@@ -103,7 +103,7 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
   tables.members.insertMany(getMembers(allTypeInfos, assemblyIds));
 
   // convert DotNet.Id to TypeDefId or TypeRefId -- call toTypeId before getTypeReferences
-  const { toGenericParams, getToTypeId, getTypeReferences, toSignatureTypes } = parseTypeIds(assemblyIds);
+  const { toGenericParams, getToTypeId, getTypeReferences, toSignatureTypes, toMethodId } = parseTypeIds(assemblyIds);
 
   // generic type parameters and subtypes
   for (const value of allTypeInfos) {
@@ -136,20 +136,36 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
           toTypeId
         );
       //method name
-      return { id: methodDefId, name: value.name, returnType: toTypeId(value.returnType) };
+      return {
+        id: methodDefId,
+        typeId: allTypeInfo.typeDefId,
+        name: value.name,
+        returnType: toTypeId(value.returnType),
+      };
     })
   );
   tables.methodNames.insertMany(methodNames);
 
+  //const allMethodTypeIds = new Map<MethodDefId, TypeDefId>(methodNames.map((value) => [value.id, value.typeId]));
+
   // method info
   const allMethodInfos = getAllMethodInfos(all, assemblyIds);
+  // decompiled
   tables.decompiled.insertMany(allMethodInfos.map((value) => ({ id: value.methodDefId, asText: value.asText })));
-
-  //allMethodInfos.flatMap(value=>([...(value.called??[]),...(value.argued??[])])).map(value=>)
+  // calls
+  tables.calls.insertMany(
+    allMethodInfos.flatMap((value) => {
+      const fromId = value.methodDefId;
+      // .NET guarantees that these IDs are unique
+      const toIds = [...(value.called ?? []), ...(value.argued ?? [])];
+      return toIds.map((id) => ({ fromId, toId: toMethodId(id, value.assemblyName, fromId) }));
+    })
+  );
 
   // typeReferences, signatureTypes, genericParams
-  const { typeReferences, signatureTypes, genericParams } = getTypeReferences();
+  const { typeReferences, signatureTypes, genericParams, methodReferences } = getTypeReferences();
   tables.typeReferences.insertMany(typeReferences);
   tables.signatureTypes.insertMany(signatureTypes);
   tables.genericParams.insertMany(genericParams);
+  tables.methodReferences.insertMany(methodReferences);
 };

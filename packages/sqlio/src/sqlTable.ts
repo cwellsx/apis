@@ -108,9 +108,10 @@ export class SqlTable<T extends object> {
       keys.splice(index, 1);
       values.splice(index, 1);
     });
+
     const wherePrimaryKeys = whereKeys(primaryKeys);
     const update = `UPDATE ${tableName} SET (${quoteAndJoin(keys)}) = (${values.join(", ")}) WHERE ${wherePrimaryKeys}`;
-    const updateStmt = db.prepare(update);
+    const updateStmt = keys.length ? db.prepare(update) : undefined;
 
     const upsert = `INSERT OR REPLACE ${insertParameters}`;
     const upsertStmt = db.prepare(upsert);
@@ -128,8 +129,9 @@ export class SqlTable<T extends object> {
     });
     this.update = db.transaction((t: T) => {
       const u = toSql(t);
+      if (!updateStmt) throw new Error("update undefined");
       const info = updateStmt.run(u);
-      if (info.changes !== 1) throw new Error("insert failed");
+      if (info.changes !== 1) throw new Error("update failed");
       verbose(`updated row #${info.lastInsertRowid}`);
     });
     this.upsert = db.transaction((t: T) => {

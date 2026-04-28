@@ -1,5 +1,6 @@
 ﻿using Core.Cecil;
 using Core.Filter;
+using Core.Id.Comparers;
 using Core.Output;
 using Core.Output.Ids;
 
@@ -14,6 +15,8 @@ namespace Core.CecilToOutput
         readonly ToTypeId _toTypeId;
         readonly ToMethodId _toMethodId;
 
+        readonly static FullMethodIdComparer s_FullMethodIdComparer = new();
+
         internal ToMethodInfo(string assemblyName)
         {
             _toTypeId = new ToTypeId(assemblyName);
@@ -22,24 +25,22 @@ namespace Core.CecilToOutput
 
         internal MethodInfo Transform(MethodData methodData, string asText, IFilter filter)
         {
+            // Need to ensure references are unique -- they're stored in an SQLite table with from+to as a key field.
+            var called = ToMethodIds(methodData.Called, filter).ToHashSet(s_FullMethodIdComparer);
+            var argued = ToMethodIds(methodData.Argued, filter).Distinct(s_FullMethodIdComparer).Where(value => !called.Contains(value));
+
             return new MethodInfo(
                 AsText: asText,
-                Called: ToMethodIds(methodData.Called, filter),
-                Argued: ToMethodIds(methodData.Argued, filter),
+                Called: called.ToArrayOrNull(),
+                Argued: argued.ToArrayOrNull(),
                 Locals: methodData.Locals.Select(local => _toTypeId.Convert(local.VariableType)).ToArrayOrNull()
                 );
         }
 
-        private MethodId[]? ToMethodIds(IEnumerable<MethodReference> methodReferences, IFilter filter)
-        {
-            return methodReferences
-                //.Where(methodReference => !filter.IsMicrosoftAssemblyName(methodReference.DeclaringType.Scope.Name)) // don't know the Module yet
-                .Where(methodReference => !IsSynthetic(methodReference))
-                .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
-                .Select(_toMethodId.Convert)
-                //.Where(methodId => !filter.IsMicrosoftAssemblyPath(methodId.AssemblyName))
-                .ToArrayOrNull();
-        }
+        private IEnumerable<MethodId> ToMethodIds(IEnumerable<MethodReference> methodReferences, IFilter filter) => methodReferences
+            .Where(methodReference => !IsSynthetic(methodReference))
+            .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
+            .Select(_toMethodId.Convert);
 
         private static bool IsSynthetic(MethodReference mr)
         {

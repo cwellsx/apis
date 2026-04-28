@@ -10,23 +10,22 @@ export type Namespaces = { id: Id.NamespaceId; name: string };
 export type TypeNames = { id: Id.TypeDefId; namespace?: Id.NamespaceId; name: string; declaringType?: Id.TypeDefId };
 export type Members = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
 
-export type MethodNames = { id: Id.MethodDefId; name: string; returnType: Id.TypeId };
+export type MethodNames = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnType: Id.TypeId };
 
 export type TypeReferences = { id: Id.TypeRefId; resolved: Id.BaseTypeId; suffix?: string };
+export type MethodReferences = { id: Id.MethodRefId; resolved: Id.MethodDefId };
 
 // used for generic type arguments, method parameters, and generic method arguments
 export type SignatureTypes = { ownerId: Id.AnyOwnerId; seqno: number; argument: Id.TypeId };
-
 export type GenericParams = { id: Id.GenericParamId; owner: Id.AnyDefId; seqno: number; name: string };
 
 export type Decompiled = { id: Id.MethodDefId; asText: string };
+export type Calls = { fromId: Id.MethodDefId; toId: Id.MethodId };
 
 export type FullNames = { id: Id.AnyId; fullName: string };
 
 export type Views = { id: Id.ViewId; name: string; viewType: ViewType };
 export type ViewStates = { viewId: Id.ViewId; id: Id.AnyId; isHidden: Boolean; isExpanded: Boolean };
-
-export type Calls = { fromId: Id.MethodId; toId: Id.MethodId };
 
 export const tableNames = [
   "assemblies",
@@ -37,15 +36,18 @@ export const tableNames = [
   "methodNames",
 
   "typeReferences",
+  "methodReferences",
+
   "signatureTypes",
   "genericParams",
 
   "decompiled",
+  "calls",
 
   "fullNames",
+
   "views",
   "viewStates",
-  "calls",
 ] as const;
 
 export type TableName = (typeof tableNames)[number];
@@ -57,13 +59,14 @@ type TableRowMap = {
   members: Members;
   methodNames: MethodNames;
   typeReferences: TypeReferences;
+  methodReferences: MethodReferences;
   signatureTypes: SignatureTypes;
   genericParams: GenericParams;
   decompiled: Decompiled;
+  calls: Calls;
   fullNames: FullNames;
   views: Views;
   viewStates: ViewStates;
-  calls: Calls;
 };
 
 export type TableRow<K extends TableName> = TableRowMap[K];
@@ -84,6 +87,7 @@ const zero = {
 
   typeId: Id.castTypeRefId(0n),
   methodDefId: Id.castMethodDefId(0n),
+  methodRefId: Id.castMethodRefId(0n),
   methodId: Id.castMethodDefId(0n),
   memberId: Id.castMemberId(0n),
   anyId: Id.castMAnyId(0n),
@@ -95,19 +99,26 @@ const row = {
   typeNames: { id: zero.typeDefId, name: "foo", namespace: zero.namespaceId, declaringType: zero.typeDefId },
   members: { id: zero.memberId, typeId: zero.typeDefId, name: "foo", json: {} as MembersJson },
 
-  methodNames: { id: zero.methodDefId, name: "foo", returnType: zero.typeId },
+  methodNames: { id: zero.methodDefId, typeId: zero.typeDefId, name: "foo", returnType: zero.typeId },
 
   typeReferences: { id: zero.typeRefId, resolved: zero.typeDefId, suffix: "foo" },
+  methodReferences: { id: zero.methodRefId, resolved: zero.methodDefId },
   signatureTypes: { ownerId: zero.typeRefId, seqno: 0, argument: zero.typeId },
   genericParams: { id: zero.genericParamId, owner: zero.typeDefId, seqno: 0, name: "foo" },
 
   decompiled: { id: zero.methodDefId, asText: "foo" },
+  calls: { fromId: zero.methodDefId, toId: zero.methodId },
 
   fullNames: { id: zero.anyId, fullName: "foo" },
   views: { id: zero.viewId, name: "foo", viewType: "assemblies" as ViewType },
   viewsStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
-  calls: { fromId: zero.methodId, toId: zero.methodId },
 };
+
+// CREATE TABLE Child (
+//     id INTEGER PRIMARY KEY,
+//     parent_id INTEGER NOT NULL,
+//     FOREIGN KEY (parent_id) REFERENCES Parent(id)
+// );
 
 export const createTables = (db: SqlDatabase): Tables => {
   const assemblies = db.newSqlTable<Assemblies>("assemblies", "id", [], row.assemblies);
@@ -117,15 +128,16 @@ export const createTables = (db: SqlDatabase): Tables => {
   const methodNames = db.newSqlTable<MethodNames>("methodNames", "id", [], row.methodNames);
 
   const typeReferences = db.newSqlTable<TypeReferences>("typeReferences", "id", ["suffix"], row.typeReferences);
+  const methodReferences = db.newSqlTable<MethodReferences>("methodReferences", "id", [], row.methodReferences);
   const signatureTypes = db.newSqlTable<SignatureTypes>("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
   const genericParams = db.newSqlTable<GenericParams>("genericParams", ["id", "seqno"], [], row.genericParams);
 
   const decompiled = db.newSqlTable<Decompiled>("decompiled", "id", [], row.decompiled);
+  const calls = db.newSqlTable<Calls>("calls", ["fromId", "toId"], [], row.calls);
 
   const fullNames = db.newSqlTable<FullNames>("fullNames", "id", [], row.fullNames);
   const views = db.newSqlTable<Views>("views", "id", [], row.views);
   const viewStates = db.newSqlTable<ViewStates>("viewStates", "id", [], row.viewsStates);
-  const calls = db.newSqlTable<Calls>("calls", "fromId", [], row.calls);
 
   const close = () => {
     db.done();
@@ -139,13 +151,14 @@ export const createTables = (db: SqlDatabase): Tables => {
     members,
     methodNames,
     typeReferences,
+    methodReferences,
     signatureTypes,
     genericParams,
     decompiled,
+    calls,
     fullNames,
     views,
     viewStates,
-    calls,
     close,
   };
 };
