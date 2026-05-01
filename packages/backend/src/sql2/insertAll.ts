@@ -1,12 +1,13 @@
 import * as DotNet from "../../contracts/dotnet2";
 import { getOrThrow } from "../utils";
-import { parseTypeIds } from "./dotNetId";
-import { fullNames } from "./fullNames";
 import type { IdCreate } from "./idCreate";
 import { createIds } from "./idCreate";
 import type { AssemblyId, MethodDefId, NamespaceId, TypeDefId } from "./idTypes";
-import * as GetMemberJson from "./memberJson";
+import { parseTypeIds } from "./insertDotNetId";
+import { fullNames } from "./insertFullNames";
+import * as GetMemberJson from "./insertMemberJson";
 import { Assemblies, Boolean, Members, Namespaces, Tables, TypeNames } from "./schema";
+import * as MemberJson from "./schemaMemberJson";
 
 type AllTypeInfo = { typeDefId: TypeDefId; assemblyName: string } & DotNet.TypeInfo;
 type AllMethodMember = { typeDefId: TypeDefId; methodDefId: MethodDefId; assemblyName: string } & DotNet.MethodMember;
@@ -86,9 +87,9 @@ const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: Map<string, Assemb
     const assemblyId = getOrThrow(assemblyIds, value.assemblyName);
     const typeId = value.typeDefId;
 
-    const getMembers = <T extends GetMemberJson.AnyDotNetMembers>(
+    const getMembers = <T extends MemberJson.AnyDotNetMembers>(
       members: T[] | undefined,
-      getJson: (value: T) => GetMemberJson.WithoutNameAndMetadataToken<T>
+      getJson: (value: T) => MemberJson.WithoutNameAndMetadataToken<T>
     ): Members[] =>
       members?.map((value) => ({
         name: value.name,

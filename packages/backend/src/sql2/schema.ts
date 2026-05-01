@@ -1,7 +1,7 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as IdCast from "./idCast";
 import * as Id from "./idTypes";
-import { MembersJson } from "./memberJson";
+import { MembersJson } from "./schemaMemberJson";
 
 export type Boolean = 0 | 1;
 export type ViewType = "assemblies" | "namespaces";
@@ -22,6 +22,7 @@ export type GenericParams = { id: Id.GenericParamId; ownerId: Id.AnyDefId; seqno
 
 export type Decompiled = { id: Id.MethodDefId; asText: string };
 export type Calls = { fromId: Id.MethodDefId; toId: Id.MethodId };
+export type CompilerMethods = { compilerMethodId: Id.MethodDefId; ownedById: Id.MethodId };
 
 export type FullNames = { id: Id.AnyId; fullName: string };
 
