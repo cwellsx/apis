@@ -1,5 +1,6 @@
 import { SqlDatabase, SqlTable } from "sqlio";
-import * as Id from "./bigIds";
+import * as IdCast from "./idCast";
+import * as Id from "./idTypes";
 import { MembersJson } from "./memberJson";
 
 export type Boolean = 0 | 1;
@@ -15,9 +16,9 @@ export type MethodNames = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: stri
 export type TypeReferences = { id: Id.TypeRefId; resolved: Id.BaseTypeId; suffix?: string };
 export type MethodReferences = { id: Id.MethodRefId; resolved: Id.MethodDefId };
 
-// used for generic type arguments, method parameters, and generic method arguments
+// SignatureTypes is used for generic type arguments, for method parameters, and for generic method arguments
 export type SignatureTypes = { ownerId: Id.AnyOwnerId; seqno: number; argument: Id.TypeId };
-export type GenericParams = { id: Id.GenericParamId; owner: Id.AnyDefId; seqno: number; name: string };
+export type GenericParams = { id: Id.GenericParamId; ownerId: Id.AnyDefId; seqno: number; name: string };
 
 export type Decompiled = { id: Id.MethodDefId; asText: string };
 export type Calls = { fromId: Id.MethodDefId; toId: Id.MethodId };
@@ -77,20 +78,20 @@ export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) =>
 
 const zero = {
   // number
-  assemblyId: Id.castAssemblyId(0),
-  namespaceId: Id.castNamespaceId(0),
-  viewId: Id.castViewId(0),
+  assemblyId: IdCast.castAssemblyId(0),
+  namespaceId: IdCast.castNamespaceId(0),
+  viewId: IdCast.castViewId(0),
   // bigint
-  typeDefId: Id.castTypeDefId(0n),
-  typeRefId: Id.castTypeRefId(0n),
-  genericParamId: Id.castGenericParamId(0n),
+  typeDefId: IdCast.castTypeDefId(0n),
+  typeRefId: IdCast.castTypeRefId(0n),
+  genericParamId: IdCast.castGenericParamId(0n),
 
-  typeId: Id.castTypeRefId(0n),
-  methodDefId: Id.castMethodDefId(0n),
-  methodRefId: Id.castMethodRefId(0n),
-  methodId: Id.castMethodDefId(0n),
-  memberId: Id.castMemberId(0n),
-  anyId: Id.castMAnyId(0n),
+  typeId: IdCast.castTypeRefId(0n),
+  methodDefId: IdCast.castMethodDefId(0n),
+  methodRefId: IdCast.castMethodRefId(0n),
+  methodId: IdCast.castMethodDefId(0n),
+  memberId: IdCast.castMemberId(0n),
+  anyId: IdCast.castAnyId(0n),
 };
 
 const row = {
@@ -104,7 +105,7 @@ const row = {
   typeReferences: { id: zero.typeRefId, resolved: zero.typeDefId, suffix: "foo" },
   methodReferences: { id: zero.methodRefId, resolved: zero.methodDefId },
   signatureTypes: { ownerId: zero.typeRefId, seqno: 0, argument: zero.typeId },
-  genericParams: { id: zero.genericParamId, owner: zero.typeDefId, seqno: 0, name: "foo" },
+  genericParams: { id: zero.genericParamId, ownerId: zero.typeDefId, seqno: 0, name: "foo" },
 
   decompiled: { id: zero.methodDefId, asText: "foo" },
   calls: { fromId: zero.methodDefId, toId: zero.methodId },

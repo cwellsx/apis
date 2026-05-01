@@ -1,5 +1,7 @@
 import * as DotNet from "../../contracts/dotnet2";
 import { assert, getOrThrow } from "../utils";
+import type { IdCreate } from "./idCreate";
+
 import type {
   AnyDefId,
   AnyOwnerId,
@@ -8,52 +10,14 @@ import type {
   GenericParamId,
   MethodDefId,
   MethodId,
-  MethodRefId,
   TypeId,
-  TypeRefId,
-} from "./bigIds";
-import {
-  addGenericParamTableId,
-  addMethodRefTableId,
-  addTypeRefTableId,
-  packGenericParamId,
-  packMethodDefId,
-  packMethodRefId,
-  packTypeDefId,
-  packTypeRefId,
-} from "./bigIds";
+} from "./idTypes";
 import type { GenericParams, MethodReferences, SignatureTypes, TypeReferences } from "./schema";
 
-type ToSyntheticId<T> = (id: number, assemblyId: AssemblyId) => T;
 type ToTypeId = (id: DotNet.TypeId) => TypeId;
 type MapGenericParams = Map<string, GenericParamId>;
 
-const createSyntheticIds = <T>(pack: ToSyntheticId<T>) => {
-  const allocated = new Map<AssemblyId, number>();
-
-  const newSyntheticId = (assemblyId: AssemblyId): T => {
-    let id = allocated.get(assemblyId);
-    id = !id ? 1 : id + 1;
-    allocated.set(assemblyId, id);
-    return pack(id, assemblyId);
-  };
-  return newSyntheticId;
-};
-
-const createTypeRefIds = () =>
-  createSyntheticIds<TypeRefId>((id, assemblyId) => packTypeRefId(addTypeRefTableId(id), assemblyId));
-
-const createGenericParamIds = () =>
-  createSyntheticIds<GenericParamId>((id, assemblyId) => packGenericParamId(addGenericParamTableId(id), assemblyId));
-
-const createMethodRefIds = () =>
-  createSyntheticIds<MethodRefId>((id, assemblyId) => packMethodRefId(addMethodRefTableId(id), assemblyId));
-
 export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
-  const newTypeRefId = createTypeRefIds();
-  const newGenericParamId = createGenericParamIds();
-  const newMethodRefId = createMethodRefIds();
-
   const getAssemblyId = (assemblyName: string): AssemblyId => getOrThrow(assemblyIds, assemblyName);
 
   const typeReferences: TypeReferences[] = [];
@@ -65,24 +29,25 @@ export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
   const allGenericParams = new Map<AnyDefId, MapGenericParams>();
 
   const toGenericParams = (
-    owner: AnyDefId,
+    ownerId: AnyDefId,
     assemblyName: string,
     genericParameters: string[],
+    idCreate: IdCreate,
     previousOwner?: AnyDefId
   ): MapGenericParams => {
     const result = genericParameters.map((value, index) => ({
-      id: newGenericParamId(getAssemblyId(assemblyName)),
-      owner,
+      id: idCreate.newGenericParamId(getAssemblyId(assemblyName)),
+      ownerId,
       seqno: index,
       name: value,
     }));
     genericParams.push(...result);
-    ownGenericParams.set(owner, result);
+    ownGenericParams.set(ownerId, result);
 
     const previous = previousOwner ? ownGenericParams.get(previousOwner) : undefined;
     const combined = [...(previous ? previous : []), ...result];
     const map = new Map<string, GenericParamId>(combined.map((value) => [value.name, value.id]));
-    allGenericParams.set(owner, map);
+    allGenericParams.set(ownerId, map);
     return map;
   };
 
@@ -90,30 +55,36 @@ export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
     typeIds.forEach((argument, index) => signatureTypes.push({ ownerId, seqno: index, argument: toTypeId(argument) }));
   };
 
-  const getToTypeId = (assemblyName: string, genericParameters: MapGenericParams): ToTypeId => {
+  const getToTypeId = (assemblyName: string, genericParameters: MapGenericParams, idCreate: IdCreate): ToTypeId => {
     // toTypeId is closure
     const toTypeId = (id: DotNet.TypeId) => {
-      // id is number | string => TypeDefId
-      const toTypeDefId = (id: number | string): BaseTypeId => {
+      const toTypeDefId = (
+        // shadow so don't overwrite value of assemblyName at closure scope
+        assemblyName: string,
+        // id is number | string => TypeDefId
+        id: number | string
+      ): BaseTypeId => {
         if (typeof id === "string") {
           const genericParamId =
             id[0] === "!" ? getOrThrow(genericParameters, id.substring(1)) : genericParameters.get(id);
           if (genericParamId) return genericParamId;
+
           const split = id.split("|");
           assert(split.length == 2, `Expect ${id} to contain "|"`);
           id = Number.parseInt(split[1]);
           assemblyName = split[0];
         }
-        return packTypeDefId(id, getAssemblyId(assemblyName));
+
+        return idCreate.makeTypeDefId(id, getAssemblyId(assemblyName), false);
       };
 
-      if (!Array.isArray(id)) return toTypeDefId(id);
+      if (!Array.isArray(id)) return toTypeDefId(assemblyName, id);
 
       // first element is resolved
       const firstElement = id[0];
       assert(!Array.isArray(firstElement), "First element is resolved TypeDefId");
-      const resolved = toTypeDefId(firstElement);
-      const typeRefId = newTypeRefId(getAssemblyId(assemblyName));
+      const resolved = toTypeDefId(assemblyName, firstElement);
+      const typeRefId = idCreate.newTypeRefId(getAssemblyId(assemblyName));
 
       // last element is optionally suffix
       const last = id[id.length - 1];
@@ -130,31 +101,31 @@ export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
     return toTypeId;
   };
 
-  const toMethodId = (id: DotNet.MethodId, assemblyName: string, fromId: MethodDefId): MethodId => {
+  const toMethodId = (id: DotNet.MethodId, assemblyName: string, fromId: MethodDefId, idCreate: IdCreate): MethodId => {
     // id is number | string => MethodDefId
-    const toMethodeDefId = (id: number | string): MethodDefId => {
+    const toMethodeDefId = (assemblyName: string, id: number | string): MethodDefId => {
       if (typeof id === "string") {
         const split = id.split("|");
         assert(split.length == 2, `Expect ${id} to contain "|"`);
         id = Number.parseInt(split[1]);
         assemblyName = split[0];
       }
-      return packMethodDefId(id, getAssemblyId(assemblyName));
+      return idCreate.makeMethodDefId(id, getAssemblyId(assemblyName), false);
     };
 
-    if (!Array.isArray(id)) return toMethodeDefId(id);
+    if (!Array.isArray(id)) return toMethodeDefId(assemblyName, id);
 
     // first element is resolved
     const firstElement = id[0];
     assert(!Array.isArray(firstElement), "First element is resolved MethodDefId");
-    const resolved = toMethodeDefId(firstElement);
+    const resolved = toMethodeDefId(assemblyName, firstElement);
     const array = id.slice(1); // remove front
 
-    const methodRefId = newMethodRefId(getAssemblyId(assemblyName));
+    const methodRefId = idCreate.newMethodRefId(getAssemblyId(assemblyName));
     methodReferences.push({ id: methodRefId, resolved });
 
     const genericParameters = getOrThrow(allGenericParams, fromId);
-    const toTypeId = getToTypeId(assemblyName, genericParameters);
+    const toTypeId = getToTypeId(assemblyName, genericParameters, idCreate);
     toSignatureTypes(methodRefId, array, toTypeId);
 
     return methodRefId;

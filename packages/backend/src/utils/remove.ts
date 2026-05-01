@@ -34,10 +34,10 @@ export const getOrSet = <K, V>(map: Map<K, V>, key: K, create: () => V) => {
   return found;
 };
 
-export const getOrThrow = <K extends string | number | bigint, V>(map: Map<K, V>, key: K) => {
+export const getOrThrow = <K, V>(map: Map<K, V>, key: K) => {
   const found = map.get(key);
   if (found) return found;
-  throw new Error(`key not found: ${key}`);
+  throw new Error(`key not found: ${String(key)}`);
 };
 
 export const mapOfMaps = <K, K2, V>(records: [K, K2, V][]): Map<K, Map<K2, V>> => {
