@@ -12,6 +12,9 @@ export const enum TableId {
   GenericParam = 0x2a,
 }
 
+// assemblyId begins at 1 and namespaceId begins at 1000001
+export const namespaceOffset = 1000000;
+
 export const isTableId = (id: number, tableId: TableId): boolean => (id & 0xff000000) == (tableId as number) << 24;
 
 const strip = (id: bigint): number => Number(id & 0xffffffffn);

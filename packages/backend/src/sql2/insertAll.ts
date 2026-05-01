@@ -191,10 +191,21 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
   // typeReferences, signatureTypes, genericParams
   const { typeReferences, signatureTypes, genericParams, methodReferences } = getTypeReferences();
 
-  fullNames({ assemblies, namespaces, genericParams, signatureTypes, typeNames, typeReferences, methodNames });
+  const allFullNames = fullNames({
+    assemblies,
+    namespaces,
+    genericParams,
+    signatureTypes,
+    typeNames,
+    typeReferences,
+    methodNames,
+    methodReferences,
+  });
 
   tables.typeReferences.insertMany(typeReferences);
   tables.signatureTypes.insertMany(signatureTypes);
   tables.genericParams.insertMany(genericParams);
   tables.methodReferences.insertMany(methodReferences);
+
+  tables.fullNames.insertMany(allFullNames);
 };

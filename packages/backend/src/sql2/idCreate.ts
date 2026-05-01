@@ -1,6 +1,6 @@
 import { assert } from "../utils";
 import * as IdCast from "./idCast";
-import { TableId, isTableId } from "./idTest";
+import { TableId, isTableId, namespaceOffset } from "./idTest";
 import type * as Id from "./idTypes";
 
 const assertTableId = (id: number, tableId: TableId) => assert(isTableId(id, tableId));
@@ -93,7 +93,7 @@ export const createIds = (): IdCreate => {
     assertSet(allMethodDefIds, id, create);
 
   const makeAssemblyId = (id: number): Id.AssemblyId => IdCast.castAssemblyId(id);
-  const makeNamespaceId = (id: number): Id.NamespaceId => IdCast.castNamespaceId(id);
+  const makeNamespaceId = (id: number): Id.NamespaceId => IdCast.castNamespaceId(id + namespaceOffset);
 
   const makeTypeDefId = (id: number, assemblyId: Id.AssemblyId, create: boolean): Id.TypeDefId =>
     assertTypeDefId(packTypeDefId(id, assemblyId), create);

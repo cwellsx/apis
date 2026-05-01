@@ -6,6 +6,7 @@ import {
   FullNames,
   GenericParams,
   MethodNames,
+  MethodReferences,
   Namespaces,
   SignatureTypes,
   TypeNames,
@@ -20,6 +21,7 @@ type Tables = {
   typeNames: TypeNames[];
   typeReferences: TypeReferences[];
   methodNames: MethodNames[];
+  methodReferences: MethodReferences[];
 };
 
 const mapArrays = <TKey, TValue, T extends { ownerId: TKey; seqno: number }>(
@@ -99,52 +101,82 @@ export const fullNames = (tables: Tables): FullNames[] => {
 
   const mapTypeDefFullNames = makeNameResolver(
     tables.typeNames,
-    (typeNames) => typeNames.id,
-    (typeNames, resolve) =>
-      (typeNames.declaringType
-        ? `${resolve(typeNames.declaringType)}.${typeNames.name}` // recurse
-        : typeNames.namespace
-          ? `${getOrThrow(mapNamespaces, typeNames.namespace)}.${typeNames.name}`
-          : typeNames.name) + ownedGenericParamArray(typeNames.id)
+    (value) => value.id,
+    (value, resolve) =>
+      (value.declaringType
+        ? `${resolve(value.declaringType)}.${value.name}` // recurse
+        : value.namespace
+          ? `${getOrThrow(mapNamespaces, value.namespace)}.${value.name}`
+          : value.name) + ownedGenericParamArray(value.id)
   );
+
+  const makeGetTypeIdName = (resolve: (id: Id.TypeRefId) => string) => {
+    const getTypeIdName = (id: Id.TypeId): string =>
+      isTypeDefId(id)
+        ? getOrThrow(mapTypeDefFullNames, id)
+        : isGenericParamId(id)
+          ? getOrThrow(allGenericParameters, id)
+          : resolve(id);
+    return getTypeIdName;
+  };
 
   const mapTypeRefFullNames = makeNameResolver(
     tables.typeReferences,
-    (typeReferences) => typeReferences.id,
-    (typeReferences, resolve) => {
-      const getTypeIdName = (id: Id.TypeId): string =>
-        isTypeDefId(id)
-          ? getOrThrow(mapTypeDefFullNames, id)
-          : isGenericParamId(id)
-            ? getOrThrow(allGenericParameters, id)
-            : resolve(id);
-
-      const resolvedName = getTypeIdName(typeReferences.resolved);
-      const typeArguments = ownedSignatureTypeArray(typeReferences.id, getTypeIdName);
-      return `${resolvedName}${typeArguments}${typeReferences.suffix}}`;
+    (value) => value.id,
+    (value, resolve) => {
+      const getTypeIdName = makeGetTypeIdName(resolve);
+      const resolvedName = getTypeIdName(value.resolved);
+      const typeArguments = ownedSignatureTypeArray(value.id, getTypeIdName);
+      const suffix = value.suffix ?? "";
+      return `${resolvedName}${typeArguments}${suffix}`;
     }
   );
 
-  //   const [getMethodDefName, mapMethodDefFullNames] = makeNameResolver(
-  //     tables.methodNames,
-  //     (methodNames) => methodNames.id,
-  //     (methodNames, resolve) => `${"foo"}`
-  //   );
-  //   tables.typeNames.forEach((value) => getTypeDefName(value));
+  const mapMethodDefFullNames = makeNameResolver(
+    tables.methodNames,
+    (value) => value.id,
+    (value) => {
+      const getTypeRefId = (id: Id.TypeRefId): string => getOrThrow(mapTypeRefFullNames, id);
+      const getTypeIdName = makeGetTypeIdName(getTypeRefId);
+      const returnType = getTypeIdName(value.returnType);
+      const genericParameters = ownedGenericParamArray(value.id);
+      const parameters = ownedSignatureTypeArray(value.id, getTypeIdName);
+      return `${returnType} ${value.name}${genericParameters}${parameters}`;
+    }
+  );
 
-  //   // similarly calculate the names of type references on-demand
-  //   const mapTypeReferences = new Map<Id.TypeRefId, TypeReferences>(
-  //     tables.typeReferences.map((value) => [value.id, value])
-  //   );
-  //   const mapTypeRefFullNames = new Map<Id.TypeRefId, string>();
+  const mapMethodNames = new Map<Id.MethodDefId, MethodNames>(tables.methodNames.map((value) => [value.id, value]));
 
-  //   const getTypeRefName = (typeReferences: TypeReferences): string => {
-  //     const typeRefId = typeReferences.id;
-  //     let fullName = mapTypeRefFullNames.get(typeRefId);
-  //     if (fullName) return fullName;
-  //     const genericArguments = mapSignatureTypes.get(typeRefId);
-  //   };
+  const mapMethodRefFullNames = makeNameResolver(
+    tables.methodReferences,
+    (value) => value.id,
+    (methodRef) => {
+      const getTypeRefId = (id: Id.TypeRefId): string => getOrThrow(mapTypeRefFullNames, id);
+      const getTypeIdName = makeGetTypeIdName(getTypeRefId);
+      const value = getOrThrow(mapMethodNames, methodRef.resolved);
+      const returnType = getTypeIdName(value.returnType);
+      const genericArguments = ownedSignatureTypeArray(methodRef.id, getTypeIdName);
+      const parameters = ownedSignatureTypeArray(value.id, getTypeIdName);
+      return `${returnType} ${value.name}${genericArguments}${parameters}`;
+    }
+  );
 
   const typeDefFullNames = [...mapTypeDefFullNames.entries()].map((entry) => ({ id: entry[0], fullName: entry[1] }));
-  return [...assemblies, ...namespaces, ...typeDefFullNames];
+  const typeRefFullNames = [...mapTypeRefFullNames.entries()].map((entry) => ({ id: entry[0], fullName: entry[1] }));
+  const methodDefFullNames = [...mapMethodDefFullNames.entries()].map((entry) => ({
+    id: entry[0],
+    fullName: entry[1],
+  }));
+  const methodRefFullNames = [...mapMethodRefFullNames.entries()].map((entry) => ({
+    id: entry[0],
+    fullName: entry[1],
+  }));
+  return [
+    ...assemblies,
+    ...namespaces,
+    ...typeDefFullNames,
+    ...typeRefFullNames,
+    ...methodDefFullNames,
+    ...methodRefFullNames,
+  ];
 };
