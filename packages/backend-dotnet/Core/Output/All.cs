@@ -92,7 +92,6 @@ namespace Core.Output
         string Version,
         string[] Exes,
         AssemblyMap<Dictionary<LocalMethodId, MethodInfo>> AssemblyMethods,
-        AssemblyMap<Dictionary<int, int>> CompilerMethods,
         AssemblyMap<AssemblyInfo> MicrosoftAssemblies
         );
 }

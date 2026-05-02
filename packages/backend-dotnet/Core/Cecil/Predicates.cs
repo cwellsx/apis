@@ -26,7 +26,13 @@ namespace Core.Cecil
             typeDefinition.HasMethods &&
             // ignore e.g. "Microsoft.CodeAnalysis.EmbeddedAttribute
             typeDefinition.BaseType.FullName != "System.Attribute" &&
-            !typeDefinition.FullName.StartsWith("<PrivateImplementationDetails>");
+            !IsPrivateImplementationDetails(typeDefinition.FullName);
+
+        internal static bool IsInsignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
+            typeDefinition.IsCompilerGenerated() &&
+            (typeDefinition.BaseType.FullName == "System.Attribute" || IsPrivateImplementationDetails(typeDefinition.FullName));
+
+        internal static bool IsPrivateImplementationDetails(string FullName) => FullName.StartsWith("<PrivateImplementationDetails>");
 
         internal static bool IsConstructor(this MethodReference methodReference) => methodReference.Name == ".ctor" || methodReference.Name == ".cctor";
 

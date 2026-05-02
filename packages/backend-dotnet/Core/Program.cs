@@ -95,7 +95,6 @@ namespace Core
             FileWrite("All.yaml", all.ToYaml(null, false));
             FileWrite("Assemblies.yaml", all.Assemblies.ToYaml(allNames, true));
             FileWrite("Methods.yaml", all.AssemblyMethods.ToYaml(allNames, true));
-            FileWrite("Compiler.yaml", all.CompilerMethods.ToYaml(allNames, true));
             FileWrite("Microsoft.yaml", all.MicrosoftAssemblies.ToYaml(allNames, true));
 
             FileWrite("All.json", all.ToJson(true));

@@ -1,4 +1,5 @@
-﻿using Core.Id.Methods;
+﻿using Core.Cecil;
+using Core.Id.Methods;
 using Core.Output.Ids;
 using Mono.Cecil;
 using System;
@@ -18,7 +19,26 @@ namespace Core.CecilToOutput
             _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal MethodId Convert(MethodReference mr)
+        internal IEnumerable<MethodId> Convert(IEnumerable<MethodReference> methodReferences) => methodReferences
+            .Where(methodReference => !IsSynthetic(methodReference))
+            .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
+            .Select(Convert);
+
+        private static bool IsSynthetic(MethodReference mr)
+        {
+            var dt = mr.DeclaringType;
+
+            return dt.IsArray
+                || dt.IsPointer
+                || dt.IsByReference
+                || dt is FunctionPointerType
+                || dt is GenericParameter
+                //|| dt.ContainsGenericParameter
+                || mr.CallingConvention == MethodCallingConvention.VarArg
+                || Predicates.IsPrivateImplementationDetails(dt.FullName);
+        }
+
+        private MethodId Convert(MethodReference mr)
         {
             if (mr is MethodDefinition md)
             {

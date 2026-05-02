@@ -39,7 +39,6 @@ namespace Core.Application
 
             var assemblies = new AssemblyMap<AssemblyInfo>();
             var exceptions = new List<string>();
-            var compilerMethods = new AssemblyMap<Dictionary<int, int>>();
             var assemblyMethods = new AssemblyMap<Dictionary<LocalMethodId, MethodInfo>>();
 
             var filter = loadedAssemblies.Filter;
@@ -58,21 +57,15 @@ namespace Core.Application
                         );
 
                     assemblies.Add(assemblyName, assemblyInfo);
+                    var compilerMethods = CompilerMethods.Transform(assemblyData);
 
-                    compilerMethods.Add(assemblyName, CompilerMethods.Transform(assemblyData));
+                    var methodSummaries = MethodSummary.Transform(assemblyData.MethodData, assemblyName, compilerMethods);
 
                     var decompiler = new Decompiler.AssemblyDecompiler(assemblyName, ilspyAssemblyResolver);
 
-                    var toMethodInfo = new ToMethodInfo(assemblyName);
-                    assemblyMethods.Add(assemblyName, assemblyData.MethodData.ToDictionary(
-                        methodData => methodData.LocalMethodId,
-                        methodData =>
-                        {
-                            var asText = methodData.IsCompilerGenerated()
-                                ? "**compiler-generated**"
-                                : decompiler.DecompileMethod(methodData.MetadataToken.ToInt32());
-                            return toMethodInfo.Transform(methodData, asText, filter);
-                        }
+                    assemblyMethods.Add(assemblyName, methodSummaries.ToDictionary(
+                        value => value.LocalMethodId,
+                        value => value.GetMethodInfo(decompiler.DecompileMethod(value.MetadataToken.ToInt32()))
                         ));
                 }
                 catch (Exception e)
@@ -83,7 +76,7 @@ namespace Core.Application
 
             Logger.Write("Resolving System references... ");
             var empty = new AssemblyMap<AssemblyInfo>();
-            var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, compilerMethods, empty);
+            var all = new All(assemblies, exceptions, version, [loadedAssemblies.ExeFileName], assemblyMethods, empty);
             all = AllNamesFetched.Iterate(all, loadedAssemblies.GetMicrosoftAssemblies(filter));
             Logger.Log("done.");
             return all;

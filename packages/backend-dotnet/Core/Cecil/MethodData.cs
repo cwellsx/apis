@@ -28,7 +28,6 @@ namespace Core.Cecil
         private List<TypeDefinition> OwnCompilerTypes { get; } = [];
         private List<MethodDefinition> OwnCompilerMethods { get; } = [];
 
-
         internal IEnumerable<TypeDefinition> CompilerGeneratedTypes =>
             StateMachineTypes
             .Concat(OwnCompilerTypes)
@@ -38,6 +37,7 @@ namespace Core.Cecil
         internal IEnumerable<MethodDefinition> CompilerGeneratedMethods => OwnCompilerMethods.Distinct();
 
         internal bool IsLambdaCacheStaticCtor => _methodDefinition.Name == ".cctor" && _methodDefinition.DeclaringType.IsLambdaCache();
+        internal bool IsLambdaCacheCtor => _methodDefinition.Name == ".ctor" && _methodDefinition.DeclaringType.IsLambdaCache();
 
         internal MethodData(MethodDefinition methodDefinition)
         {
