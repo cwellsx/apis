@@ -19,25 +19,33 @@ namespace Core.Cecil
         internal string FullName => _methodDefinition.FullName;
         internal string Name => _methodDefinition.Name;
 
-        internal List<MethodReference> Called { get; } = [];
-        internal List<MethodReference> Argued { get; } = [];
+        internal List<MethodReference> _called { get; } = [];
+        internal List<MethodReference> _argued { get; } = [];
+        internal IEnumerable<MethodReference> Called => _called;
+        internal IEnumerable<MethodReference> Argued => _argued;
         internal List<VariableReference> Locals { get; } = [];
 
-        private List<MethodReference> Newobj { get; } = [];
-        private List<TypeDefinition> StateMachineTypes { get; } = [];
-        private List<TypeDefinition> OwnCompilerTypes { get; } = [];
-        private List<MethodDefinition> OwnCompilerMethods { get; } = [];
+        private List<MethodReference> _newobj { get; } = [];
 
+        // method has AsyncStateMachineAttribute or IteratorStateMachineAttribute
+        private readonly List<TypeDefinition> _stateMachineTypes = [];
+        // method uses Newobj to construct a compiler-generated type
+        private readonly List<TypeDefinition> _ownCompilerTypes = [];
         internal IEnumerable<TypeDefinition> CompilerGeneratedTypes =>
-            StateMachineTypes
-            .Concat(OwnCompilerTypes)
+            _stateMachineTypes
+            .Concat(_ownCompilerTypes)
+            .Where(typeDefinition => typeDefinition.IsSignificantCompilerGenerated())
             .Distinct();
 
         // probably don't need Distinct() -- probably the delegate is constructed once even if it's called multiple times
-        internal IEnumerable<MethodDefinition> CompilerGeneratedMethods => OwnCompilerMethods.Distinct();
+        private List<MethodDefinition> _ownCompilerMethods { get; } = [];
+        internal IEnumerable<MethodDefinition> CompilerGeneratedMethods =>
+            _ownCompilerMethods
+            .Where(methodDefinition => methodDefinition.DeclaringType.IsSignificantCompilerGenerated())
+            .Distinct();
 
-        internal bool IsLambdaCacheStaticCtor => _methodDefinition.Name == ".cctor" && _methodDefinition.DeclaringType.IsLambdaCache();
-        internal bool IsLambdaCacheCtor => _methodDefinition.Name == ".ctor" && _methodDefinition.DeclaringType.IsLambdaCache();
+        internal bool IsLambdaCacheStaticCtor => _methodDefinition.IsLambdaCacheStaticCtor();
+        internal bool IsInsignificantCompilerGenerated => _methodDefinition.IsInsignificantCompilerGenerated();
 
         internal MethodData(MethodDefinition methodDefinition)
         {
@@ -67,31 +75,26 @@ namespace Core.Cecil
         {
             foreach (var methodReference in Argued)
             {
-                var declaringType = methodReference.DeclaringType;
-                if (declaringType == null)
-                {
-                    throw new Exception();
-                }
-                if (declaringType.Module.Assembly != _methodDefinition.Module.Assembly)
+                if (methodReference.DeclaringType.Module.Assembly != _methodDefinition.Module.Assembly)
                 {
                     // compiler-generated typed are necessarily in the same assembly
                     continue;
                 }
-                if (declaringType.IsLambdaCache())
+                if (methodReference.DeclaringType.IsLambdaCache())
                 {
                     var resolvedMethod = methodReference.Resolve();
                     if (resolvedMethod == null)
                     {
                         throw new Exception();
                     }
-                    OwnCompilerMethods.Add(resolvedMethod);
+                    _ownCompilerMethods.Add(resolvedMethod);
                 }
             }
         }
 
         private void ParseNewobj()
         {
-            foreach (var methodReference in Newobj)
+            foreach (var methodReference in _newobj)
             {
                 var declaringType = methodReference.DeclaringType;
                 if (declaringType.Module.Assembly != _methodDefinition.Module.Assembly)
@@ -106,7 +109,7 @@ namespace Core.Cecil
                     {
                         throw new Exception();
                     }
-                    OwnCompilerTypes.Add(resolvedType);
+                    _ownCompilerTypes.Add(resolvedType);
                 }
             }
         }
@@ -143,7 +146,7 @@ namespace Core.Cecil
                 {
                     throw new Exception();
                 }
-                StateMachineTypes.Add(resolvedType);
+                _stateMachineTypes.Add(resolvedType);
             }
         }
 
@@ -158,15 +161,15 @@ namespace Core.Cecil
                     case Code.Jmp: // this too is rare but its operand is a MethodReference
                         {
                             var target = (MethodReference)instr.Operand;
-                            Called.Add(target);
+                            _called.Add(target);
                             break;
                         }
 
                     case Code.Newobj:
                         {
                             var target = (MethodReference)instr.Operand;
-                            Called.Add(target);
-                            Newobj.Add(target);
+                            _called.Add(target);
+                            _newobj.Add(target);
                             break;
                         }
 
@@ -174,7 +177,7 @@ namespace Core.Cecil
                     case Code.Ldvirtftn: // similar, but for virtual methods
                         {
                             var target = (MethodReference)instr.Operand;
-                            Argued.Add(target);
+                            _argued.Add(target);
                             break;
                         }
 

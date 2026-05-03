@@ -19,7 +19,7 @@ namespace Core.CecilToOutput
             var toMethodId = new ToMethodId(assemblyName);
 
             var map = assemblyMethodData
-                .Where(value => !value.IsLambdaCacheStaticCtor && !value.IsLambdaCacheCtor && !value.DeclaringType.IsInsignificantCompilerGenerated())
+                .Where(value => !value.IsInsignificantCompilerGenerated)
                 .ToDictionary(
                 methodData => methodData.MetadataToken.ToInt32(),
                 methodData => new MethodSummary(methodData, toTypeId, toMethodId)

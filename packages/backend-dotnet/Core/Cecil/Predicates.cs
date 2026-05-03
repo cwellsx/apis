@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using ICSharpCode.Decompiler.CSharp.Syntax;
+using Mono.Cecil;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -20,19 +21,29 @@ namespace Core.Cecil
             // maybe the IteratorInsideLocalExample example needs this
             typeDefinition.Name.StartsWith("<");
 
+        // used in CompilerMethods to filter types whose methods are resolved
         internal static bool IsSignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
             typeDefinition.IsCompilerGenerated() &&
-            // maybe some types like Foo/<>O which have no methods and aren't used at runtime
+            typeDefinition.IsSignificant();
+
+        private static bool IsInsignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
+            typeDefinition.IsCompilerGenerated() &&
+            !typeDefinition.IsSignificant();
+
+        internal static bool IsInsignificantCompilerGenerated(this MethodDefinition methodDefinition) =>
+            methodDefinition.DeclaringType.IsInsignificantCompilerGenerated() ||
+            methodDefinition.IsLambdaCacheStaticCtor() ||
+            methodDefinition.IsLambdaCacheCtor();
+
+        private static bool IsSignificant(this TypeDefinition typeDefinition) =>
             typeDefinition.HasMethods &&
             // ignore e.g. "Microsoft.CodeAnalysis.EmbeddedAttribute
             typeDefinition.BaseType.FullName != "System.Attribute" &&
-            !IsPrivateImplementationDetails(typeDefinition.FullName);
+            !typeDefinition.FullName.StartsWith("<PrivateImplementationDetails>") &&
+            !typeDefinition.FullName.StartsWith("<>f__AnonymousType");
 
-        internal static bool IsInsignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
-            typeDefinition.IsCompilerGenerated() &&
-            (typeDefinition.BaseType.FullName == "System.Attribute" || IsPrivateImplementationDetails(typeDefinition.FullName));
-
-        internal static bool IsPrivateImplementationDetails(string FullName) => FullName.StartsWith("<PrivateImplementationDetails>");
+        internal static bool IsLambdaCacheStaticCtor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".cctor" && methodDefinition.DeclaringType.IsLambdaCache();
+        internal static bool IsLambdaCacheCtor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".ctor" && methodDefinition.DeclaringType.IsLambdaCache();
 
         internal static bool IsConstructor(this MethodReference methodReference) => methodReference.Name == ".ctor" || methodReference.Name == ".cctor";
 

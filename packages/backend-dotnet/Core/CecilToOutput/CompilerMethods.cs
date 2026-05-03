@@ -10,10 +10,14 @@ namespace Core.CecilToOutput
     {
         internal static Dictionary<int, int> Transform(AssemblyData assemblyData)
         {
-            // compiler types which are referenced via Newobj in methods
-            var resolvedTypes = assemblyData.MethodData
+            var allMethodData = assemblyData.MethodData
                 // exclude the <>c class which is not really a static class, it's a singleton with a static constructor
                 .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
+                .ToArray();
+
+            // compiler types which are referenced via Newobj in methods
+            // or via AsyncStateMachineAttribute or IteratorStateMachineAttribute
+            var resolvedTypes = allMethodData
                 .SelectMany(methodData => methodData.CompilerGeneratedTypes
                 .Select(typeDefinition => (methodData, typeDefinition))
                 ).ToArray();
@@ -26,10 +30,9 @@ namespace Core.CecilToOutput
                 throw new Exception("Some compiler-generated types were not resolved");
             }
 
-            var resolvedMethods = assemblyData.MethodData
+            var resolvedMethods = allMethodData
                 // we want to know who's calling which methods of the <>c class
                 // it's not really a static class, it's a singleton with a static constructor
-                .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
                 .SelectMany(ownerMethodData => ownerMethodData.CompilerGeneratedMethods
                 .Select(compilerMethodDefinition => (ownerMethodData, compilerMethodDefinition))
                 ).ToArray();

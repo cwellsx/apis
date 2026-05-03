@@ -21,7 +21,7 @@ namespace Core.CecilToOutput
 
         internal IEnumerable<MethodId> Convert(IEnumerable<MethodReference> methodReferences) => methodReferences
             .Where(methodReference => !IsSynthetic(methodReference))
-            .Where(methodReference => !(methodReference.DeclaringType.IsLambdaCache() && methodReference.IsConstructor()))
+            .Where(methodReference => !methodReference.Resolve().IsInsignificantCompilerGenerated())
             .Select(Convert);
 
         private static bool IsSynthetic(MethodReference mr)
@@ -35,7 +35,7 @@ namespace Core.CecilToOutput
                 || dt is GenericParameter
                 //|| dt.ContainsGenericParameter
                 || mr.CallingConvention == MethodCallingConvention.VarArg
-                || Predicates.IsPrivateImplementationDetails(dt.FullName);
+                ;
         }
 
         private MethodId Convert(MethodReference mr)
@@ -119,6 +119,5 @@ namespace Core.CecilToOutput
             }
             return _toTypeId.ConvertGenericArguments(genericArguments) ?? [];
         }
-
     }
 }
