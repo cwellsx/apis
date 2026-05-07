@@ -20,23 +20,9 @@ namespace Core.CecilToOutput
         }
 
         internal IEnumerable<MethodId> Convert(IEnumerable<MethodReference> methodReferences) => methodReferences
-            .Where(methodReference => !IsSynthetic(methodReference))
+            .Where(methodReference => !methodReference.IsSynthetic())
             .Where(methodReference => !methodReference.Resolve().IsInsignificantCompilerGenerated())
             .Select(Convert);
-
-        private static bool IsSynthetic(MethodReference mr)
-        {
-            var dt = mr.DeclaringType;
-
-            return dt.IsArray
-                || dt.IsPointer
-                || dt.IsByReference
-                || dt is FunctionPointerType
-                || dt is GenericParameter
-                //|| dt.ContainsGenericParameter
-                || mr.CallingConvention == MethodCallingConvention.VarArg
-                ;
-        }
 
         private MethodId Convert(MethodReference mr)
         {

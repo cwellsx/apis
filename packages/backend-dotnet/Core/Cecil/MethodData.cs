@@ -15,34 +15,36 @@ namespace Core.Cecil
         internal MetadataToken MetadataToken => _methodDefinition.MetadataToken;
         internal LocalMethodId LocalMethodId => new LocalMethodId(FullName, new LocalMethod(MetadataToken.ToInt32()));
         internal TypeDefinition DeclaringType => _methodDefinition.DeclaringType;
-        internal bool IsCompilerGenerated() => DeclaringType.IsCompilerGenerated();
         internal string FullName => _methodDefinition.FullName;
         internal string Name => _methodDefinition.Name;
 
-        internal List<MethodReference> _called { get; } = [];
-        internal List<MethodReference> _argued { get; } = [];
+        internal bool IsCompilerOrLocalFunction => _methodDefinition.DeclaringType.IsCompilerGenerated()
+            || _methodDefinition.IsLocalFunction()
+            ;
+
+        internal bool IsLambdaOrLocalFunction => _methodDefinition.DeclaringType.IsLambdaCache()
+            || _methodDefinition.IsLocalFunction()
+            ;
+
+        internal bool IsLocalFunction => _methodDefinition.IsLocalFunction();
+
+        private List<MethodReference> _called { get; } = [];
+        private List<MethodReference> _argued { get; } = [];
+        private List<MethodReference> _newobj { get; } = [];
+
         internal IEnumerable<MethodReference> Called => _called;
         internal IEnumerable<MethodReference> Argued => _argued;
         internal List<VariableReference> Locals { get; } = [];
+        
+        private readonly List<TypeDefinition> _ownStateMachineTypes = []; // method has AsyncStateMachineAttribute or IteratorStateMachineAttribute
+        private readonly List<TypeDefinition> _ownCompilerTypes = []; // method uses Newobj to construct a compiler-generated type
+        internal IEnumerable<TypeDefinition> OwnCompilerTypes => _ownStateMachineTypes.Concat(_ownCompilerTypes).Distinct();
 
-        private List<MethodReference> _newobj { get; } = [];
+        private List<MethodDefinition> _ownLambdaMethods { get; } = [];
+        internal IEnumerable<MethodDefinition> OwnLamdaMethods => _ownLambdaMethods.Distinct();
 
-        // method has AsyncStateMachineAttribute or IteratorStateMachineAttribute
-        private readonly List<TypeDefinition> _stateMachineTypes = [];
-        // method uses Newobj to construct a compiler-generated type
-        private readonly List<TypeDefinition> _ownCompilerTypes = [];
-        internal IEnumerable<TypeDefinition> CompilerGeneratedTypes =>
-            _stateMachineTypes
-            .Concat(_ownCompilerTypes)
-            .Where(typeDefinition => typeDefinition.IsSignificantCompilerGenerated())
-            .Distinct();
-
-        // probably don't need Distinct() -- probably the delegate is constructed once even if it's called multiple times
-        private List<MethodDefinition> _ownCompilerMethods { get; } = [];
-        internal IEnumerable<MethodDefinition> CompilerGeneratedMethods =>
-            _ownCompilerMethods
-            .Where(methodDefinition => methodDefinition.DeclaringType.IsSignificantCompilerGenerated())
-            .Distinct();
+        private List<MethodDefinition> _ownLocalFunctions { get; } = [];
+        internal IEnumerable<MethodDefinition> OwnLocalFunctions => _ownLocalFunctions.Distinct();
 
         internal bool IsLambdaCacheStaticCtor => _methodDefinition.IsLambdaCacheStaticCtor();
         internal bool IsInsignificantCompilerGenerated => _methodDefinition.IsInsignificantCompilerGenerated();
@@ -73,21 +75,28 @@ namespace Core.Cecil
 
         private void ParseLdftn()
         {
-            foreach (var methodReference in Argued)
+            foreach (var methodReference in Argued.Concat(Called))
             {
                 if (methodReference.DeclaringType.Module.Assembly != _methodDefinition.Module.Assembly)
                 {
                     // compiler-generated typed are necessarily in the same assembly
                     continue;
                 }
-                if (methodReference.DeclaringType.IsLambdaCache())
+                if (methodReference.IsSynthetic())
                 {
-                    var resolvedMethod = methodReference.Resolve();
-                    if (resolvedMethod == null)
-                    {
-                        throw new Exception();
-                    }
-                    _ownCompilerMethods.Add(resolvedMethod);
+                    // synthetic => no method definition => can't resolve
+                    continue;
+                }
+
+                var resolvedMethod = methodReference.Resolve();
+
+                if (resolvedMethod.DeclaringType.IsLambdaCache())
+                {
+                    _ownLambdaMethods.Add(resolvedMethod);
+                }
+                if (resolvedMethod.IsLocalFunction())
+                {
+                    _ownLocalFunctions.Add(resolvedMethod);
                 }
             }
         }
@@ -103,7 +112,7 @@ namespace Core.Cecil
                     continue;
                 }
                 var resolvedType = declaringType.Resolve();
-                if (resolvedType.IsCompilerGenerated())
+                if (resolvedType.IsSignificantCompilerGenerated())
                 {
                     if (resolvedType.IsLambdaCache() && !IsLambdaCacheStaticCtor)
                     {
@@ -116,16 +125,20 @@ namespace Core.Cecil
 
         private void ParseAttributes()
         {
+            bool found = false;
             foreach (var customAttribute in _methodDefinition.CustomAttributes)
             {
                 switch (customAttribute.AttributeType.FullName)
                 {
-                    case "System.Runtime.CompilerServices.AsyncStateMachineAttribute":
-                    case "System.Runtime.CompilerServices.IteratorStateMachineAttribute":
+                    case "System.Runtime.CompilerServices.AsyncStateMachineAttribute": // method returns async Task
+                    case "System.Runtime.CompilerServices.IteratorStateMachineAttribute": // method returns IEnumerable
                         break;
                     default:
                         continue;
                 }
+
+                Assert(!found); // assert each method is one or the other
+                found = true;
 
                 if (customAttribute.ConstructorArguments.Count != 1)
                 {
@@ -146,7 +159,7 @@ namespace Core.Cecil
                 {
                     throw new Exception();
                 }
-                _stateMachineTypes.Add(resolvedType);
+                _ownStateMachineTypes.Add(resolvedType);
             }
         }
 
@@ -187,5 +200,7 @@ namespace Core.Cecil
                 }
             }
         }
+
+        public override string ToString() => _methodDefinition.ToString();
     }
 }

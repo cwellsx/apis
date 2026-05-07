@@ -98,7 +98,7 @@ namespace Core.CecilToOutput
             Called = toMethodId.Convert(methodData.Called).ToList();
             Argued = toMethodId.Convert(methodData.Argued).ToList();
             Locals = methodData.Locals.Select(local => toTypeId.Convert(local.VariableType)).ToList();
-            IsCompilerGenerated = methodData.IsCompilerGenerated();
+            IsCompilerGenerated = methodData.IsCompilerOrLocalFunction;
         }
 
         private void AddFrom(MethodSummary compiler)

@@ -5,6 +5,7 @@ using Core.Id.Types;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.Cecil;
 
 namespace Core.CecilToOutput
 {
@@ -47,8 +48,8 @@ namespace Core.CecilToOutput
                 FieldMembers: isMicrosoft ? null : typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
                 EventMembers: isMicrosoft ? null : typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
                 PropertyMembers: isMicrosoft ? null : typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
-                NestedTypes: isMicrosoft ? null : typeDefinition.NestedTypes.Select(nestedType => ToLocalTypeId(nestedType)).ToArrayOrNull(),
-                MethodMembers: isMicrosoft ? null : typeDefinition.Methods.Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
+                NestedTypes: isMicrosoft ? null : typeDefinition.NestedTypes.Where(Predicates.IsNotCompilerGenerated).Select(nestedType => ToLocalTypeId(nestedType)).ToArrayOrNull(),
+                MethodMembers: isMicrosoft ? null : typeDefinition.Methods.Where(methodDefinition => true/*!methodDefinition.IsC*/).Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
                 );
         }
 

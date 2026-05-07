@@ -2,6 +2,7 @@
 using System;
 using System.Linq;
 using Core.Loader;
+using System.Collections.Generic;
 
 namespace Core.Cecil
 {
@@ -25,7 +26,11 @@ namespace Core.Cecil
             .Select(assemblyNameReference => new AssemblyReference(assemblyNameReference))
             .ToArray();
 
-        internal TypeDefinition[] TypeDefinitions => _types.Value.SelectMany(typeData => typeData.TypeDefinitions).ToArray();
+        internal TypeDefinition[] TypeDefinitions => GetTypeDefinitions(Predicates.IsNotCompilerGenerated).ToArray();
+
+        internal IEnumerable<TypeDefinition> GetTypeDefinitions(Func<TypeDefinition, bool> predicate) => _types.Value
+            .SelectMany(typeData => typeData.TypeDefinitions)
+            .Where(predicate);
 
         internal MethodData[] MethodData => _types.Value.SelectMany(typeData => typeData.Methods).ToArray();
 
