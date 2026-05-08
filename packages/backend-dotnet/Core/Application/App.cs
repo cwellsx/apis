@@ -57,9 +57,9 @@ namespace Core.Application
                         );
 
                     assemblies.Add(assemblyName, assemblyInfo);
-                    var compilerMethods = CompilerMethods.Transform(assemblyData);
+                    var compilerGenerated = CompilerGenerated.Transform(assemblyData);
 
-                    var methodSummaries = MethodSummary.Transform(assemblyData.MethodData, assemblyName, compilerMethods);
+                    var methodSummaries = MethodSummary.Transform(assemblyData.MethodData, assemblyName, compilerGenerated);
 
                     var decompiler = new Decompiler.AssemblyDecompiler(assemblyName, ilspyAssemblyResolver);
 

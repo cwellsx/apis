@@ -13,8 +13,10 @@ namespace Core.CecilToOutput
     // this is an intermediary between Core.Cecil.MethodData and Core.Output.MethodInfo
     internal class MethodSummary
     {
-        internal static MethodSummary[] Transform(MethodData[] assemblyMethodData, string assemblyName, Dictionary<int, int> compilerMethods)
+        internal static MethodSummary[] Transform(MethodData[] assemblyMethodData, string assemblyName, CompilerGenerated compilerGenerated)
         {
+            var (compilerTypes, compilerMethods) = compilerGenerated;
+
             var toTypeId = new ToTypeId(assemblyName);
             var toMethodId = new ToMethodId(assemblyName);
 
@@ -22,7 +24,7 @@ namespace Core.CecilToOutput
                 .Where(value => !value.IsInsignificantCompilerGenerated)
                 .ToDictionary(
                 methodData => methodData.MetadataToken.ToInt32(),
-                methodData => new MethodSummary(methodData, toTypeId, toMethodId)
+                methodData => new MethodSummary(methodData, toTypeId, toMethodId, IsSignificant(methodData, compilerTypes))
                 );
 
             // replace calls from compiler methods
@@ -90,16 +92,66 @@ namespace Core.CecilToOutput
             return new MethodInfo(asText, called.ToArrayOrNull(), argued.ToArrayOrNull(), Locals.ToArrayOrNull());
         }
 
-        private MethodSummary(MethodData methodData, ToTypeId toTypeId, ToMethodId toMethodId)
+        private MethodSummary(MethodData methodData, ToTypeId toTypeId, ToMethodId toMethodId, Func<MethodReference, bool> isSignificant)
         {
             Assert(!methodData.IsLambdaCacheStaticCtor);
+
             MetadataToken = methodData.MetadataToken;
             FullName = methodData.FullName;
-            Called = toMethodId.Convert(methodData.Called).ToList();
-            Argued = toMethodId.Convert(methodData.Argued).ToList();
+            Called = toMethodId.Convert(methodData.Called.Where(isSignificant)).ToList();
+            Argued = toMethodId.Convert(methodData.Argued.Where(isSignificant)).ToList();
             Locals = methodData.Locals.Select(local => toTypeId.Convert(local.VariableType)).ToList();
             IsCompilerGenerated = methodData.IsCompilerOrLocalFunction;
         }
+
+        private static Func<MethodReference, bool> IsSignificant(MethodData methodData, HashSet<int> compilerTypes) => (MethodReference methodReference) =>
+        {
+            var isCompilerType = compilerTypes.Contains(methodData.DeclaringType.MetadataToken.ToInt32());
+
+            var methodDefinition = methodReference.Resolve();
+            var declaringType = methodDefinition.DeclaringType;
+            if (declaringType.Namespace != "System.Runtime.CompilerServices")
+            {
+                return true;
+            }
+            if (isCompilerType)
+            {
+                return false;
+            }
+
+            switch (declaringType.Name)
+            {
+                case "AsyncTaskMethodBuilder":
+                case "AsyncTaskMethodBuilder`1":
+                case "AsyncValueTaskMethodBuilder":
+                case "AsyncValueTaskMethodBuilder`1":
+                case "AsyncVoidMethodBuilder":
+                    // all builder methods except Create, Start, and get_Task are used inside the compiler-generated types
+                    switch (methodDefinition.Name)
+                    {
+                        case "Create":
+                        case "Start":
+                        case "get_Task":
+                            break;
+                        default:
+                            Logger.Log($"? {methodReference}");
+                            break;
+                    }
+                    return false;
+                case "DefaultInterpolatedStringHandler":
+                case "RuntimeHelpers":
+                case "Unsafe":
+                case "TaskAwaiter":
+                case "TaskAwaiter`1":
+                case "ConditionalWeakTable`2":
+                case "CallSite":
+                case "CallSite`1":
+                    return true;
+            default:
+                    Logger.Log($"? {methodReference}");
+                    return false;
+            }
+        };
 
         private void AddFrom(MethodSummary compiler)
         {

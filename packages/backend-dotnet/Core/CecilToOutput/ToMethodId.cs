@@ -20,7 +20,6 @@ namespace Core.CecilToOutput
         }
 
         internal IEnumerable<MethodId> Convert(IEnumerable<MethodReference> methodReferences) => methodReferences
-            .Where(methodReference => !methodReference.IsSynthetic())
             .Where(methodReference => !methodReference.Resolve().IsInsignificantCompilerGenerated())
             .Select(Convert);
 

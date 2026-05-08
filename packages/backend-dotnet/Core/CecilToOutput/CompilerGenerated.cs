@@ -1,16 +1,14 @@
 ﻿using Core.Cecil;
-using ElectronCgi.DotNet;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 
 namespace Core.CecilToOutput
 {
-    internal static class CompilerMethods
+    internal record CompilerGenerated(HashSet<int> Types, Dictionary<int, int> Methods)
     {
-        internal static Dictionary<int, int> Transform(AssemblyData assemblyData)
+        internal static CompilerGenerated Transform(AssemblyData assemblyData)
         {
             // can use this to debug-trace a compiler method that's escaping into the Output
             var watch = ("XX Newtonsoft.Json", 100664323);
@@ -304,7 +302,9 @@ namespace Core.CecilToOutput
             // none of the owners should themselves be compiler methods which MethodSummary.Transform will delete
             Assert(!result.Values.Any(value=>result.ContainsKey(value)));
 
-            return result;
+            return new CompilerGenerated(
+                ownedCompilerTypes.Select(pair => pair.typeDefinition.MetadataToken.ToInt32()).ToHashSet(),
+                result);
         }
     }
 }

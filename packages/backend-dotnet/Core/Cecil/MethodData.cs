@@ -82,11 +82,6 @@ namespace Core.Cecil
                     // compiler-generated typed are necessarily in the same assembly
                     continue;
                 }
-                if (methodReference.IsSynthetic())
-                {
-                    // synthetic => no method definition => can't resolve
-                    continue;
-                }
 
                 var resolvedMethod = methodReference.Resolve();
 
@@ -174,15 +169,15 @@ namespace Core.Cecil
                     case Code.Jmp: // this too is rare but its operand is a MethodReference
                         {
                             var target = (MethodReference)instr.Operand;
-                            _called.Add(target);
+                            Add(_called, target);
                             break;
                         }
 
                     case Code.Newobj:
                         {
                             var target = (MethodReference)instr.Operand;
-                            _called.Add(target);
-                            _newobj.Add(target);
+                            Add(_called, target);
+                            Add(_newobj, target);
                             break;
                         }
 
@@ -190,7 +185,7 @@ namespace Core.Cecil
                     case Code.Ldvirtftn: // similar, but for virtual methods
                         {
                             var target = (MethodReference)instr.Operand;
-                            _argued.Add(target);
+                            Add(_argued, target);
                             break;
                         }
 
@@ -198,6 +193,15 @@ namespace Core.Cecil
                     default:
                         continue;
                 }
+            }
+        }
+
+        private static void Add(List<MethodReference> list, MethodReference methodReference)
+        {
+            // synthetic => no method definition => can't resolve
+            if (!methodReference.IsSynthetic())
+            {
+                list.Add(methodReference);
             }
         }
 
