@@ -4,7 +4,7 @@ using Mono.Cecil;
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using Core.Cecil;
+using Core.CecilToLifted;
 
 namespace Core.CecilToOutput
 {
@@ -150,7 +150,7 @@ namespace Core.CecilToOutput
                     ? ((MethodDefinition)owner).MetadataToken.ToInt32()
                     : ((TypeDefinition)owner).MetadataToken.ToInt32();
 
-                string ownerAssembly = gp.ReferencedAssemblyName();
+                //string ownerAssembly = gp.ReferencedAssemblyName();
 
                 return new Core.Id.Types.GenericParameter(
                     //ownerAssembly: ownerAssembly,

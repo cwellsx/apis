@@ -3,8 +3,9 @@ using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.CecilToLifted.Private;
 
-namespace Core.CecilToOutput
+namespace Core.CecilToLifted
 {
     // this is an intermediary between Core.Cecil.MethodData and Core.Output.MethodInfo
     internal class MethodSummary
@@ -14,7 +15,7 @@ namespace Core.CecilToOutput
             var (_, compilerTypes, compilerMethods) = compilerGenerated;
 
             var map = assemblyMethodData
-                .Where(value => !value.IsInsignificantCompilerGenerated)
+                .Where(value => !value.IsInsignificantCompilerGenerated())
                 .ToDictionary(
                 methodData => methodData.MetadataToken.ToInt32(),
                 methodData => new MethodSummary(methodData)
@@ -84,7 +85,7 @@ namespace Core.CecilToOutput
 
         private MethodSummary(MethodData methodData)
         {
-            Assert(!methodData.IsLambdaCacheStaticCtor);
+            Assert(!methodData.IsLambdaCacheStaticCtor());
 
             MetadataToken = methodData.MetadataToken;
             FullName = methodData.FullName;
@@ -93,7 +94,7 @@ namespace Core.CecilToOutput
             Argued = methodData.Argued.ToList();
             Locals = methodData.Locals.Select(variableReference => variableReference.VariableType).ToList();
 
-            IsCompilerGenerated = methodData.IsCompilerOrLocalFunction;
+            IsCompilerGenerated = methodData.IsCompilerOrLocalFunction();
 
             _declaringType = methodData.DeclaringType;
         }

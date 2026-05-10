@@ -1,10 +1,11 @@
 ﻿global using static Core.Assertions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Core
 {
     internal static class Assertions
     {
-        internal static void Assert(bool condition, string message)
+        internal static void Assert([DoesNotReturnIf(false)] bool condition, string message)
         {
             if (!condition)
             {
@@ -12,7 +13,7 @@ namespace Core
             }
         }
 
-        internal static void Assert(bool condition)
+        internal static void Assert([DoesNotReturnIf(false)] bool condition)
         {
             if (!condition)
             {

@@ -3,8 +3,9 @@ using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Core.CecilToLifted.Private;
 
-namespace Core.CecilToOutput
+namespace Core.CecilToLifted
 {
     internal record CompilerGenerated(string AssemblyName, HashSet<int> Types, Dictionary<int, int> Methods)
     {
@@ -70,7 +71,7 @@ namespace Core.CecilToOutput
         {
             var methodDefinition = methodReference.Resolve();
             var declaringType = methodDefinition.DeclaringType;
-            return (declaringType.Namespace == "System.Runtime.CompilerServices");
+            return declaringType.Namespace == "System.Runtime.CompilerServices";
         }
 
         internal bool IsUserDefined(MethodReference methodReference)
@@ -144,13 +145,13 @@ namespace Core.CecilToOutput
 
             var allMethodData = assemblyData.MethodData
                 // exclude the <>c class which is not really a static class, it's a singleton with a static constructor
-                .Where(methodData => !methodData.IsLambdaCacheStaticCtor)
+                .Where(methodData => !methodData.IsLambdaCacheStaticCtor())
                 .ToArray();
 
             // compiler types which are referenced via Newobj in methods
             // or via AsyncStateMachineAttribute or IteratorStateMachineAttribute
             var ownedCompilerTypes = allMethodData
-                .SelectMany(methodData => methodData.OwnCompilerTypes
+                .SelectMany(methodData => methodData.OwnCompilerTypes()
                 .Select(typeDefinition => (methodData, typeDefinition))
                 ).ToArray();
 
@@ -165,19 +166,19 @@ namespace Core.CecilToOutput
             var ownedLambdaMethods = allMethodData
                 // we want to know who's calling which methods of the <>c class
                 // it's not really a static class, it's a singleton with a static constructor
-                .SelectMany(ownerMethodData => ownerMethodData.OwnLamdaMethods
+                .SelectMany(ownerMethodData => ownerMethodData.OwnLamdaMethods()
                 .Select(ownLambdaMethod => (ownerMethodData, ownLambdaMethod))
                 ).ToArray();
 
             var ownedLocalFunctions = allMethodData
                 // we want to know who's calling which local functions
-                .SelectMany(ownerMethodData => ownerMethodData.OwnLocalFunctions
+                .SelectMany(ownerMethodData => ownerMethodData.OwnLocalFunctions()
                 .Select(ownLocalFunction => (ownerMethodData, ownLocalFunction))
                 ).ToArray();
 
             // assert that resolvedMethods includes all compiler-generated methods of the <>c class
             var allCompilerMethodIds = allCompilerTypes
-                .Where(Predicates.IsLambdaCache)
+                .Where(PrivateExtensions.IsLambdaCache)
                 .SelectMany(typeDefinition => typeDefinition.Methods)
                 .Where(methodDefinition => !methodDefinition.IsConstructor)
                 .Select(methodDefinition => methodDefinition.MetadataToken)
@@ -282,20 +283,20 @@ namespace Core.CecilToOutput
                     {
                         continue;
                     }
-                    if (!ownerMethodData.IsCompilerOrLocalFunction)
+                    if (!ownerMethodData.IsCompilerOrLocalFunction())
                     {
                         mapMethods.Add(ownLocalFunction.MetadataToken, ownerMethodData);
                         tryUseful = true;
                     }
                     else if (mapMethods.TryGetValue(ownerMethodData.MetadataToken, out var ownerOfCompilerMethod))
                     {
-                        Assert(!ownerOfCompilerMethod.IsCompilerOrLocalFunction);
+                        Assert(!ownerOfCompilerMethod.IsCompilerOrLocalFunction());
                         mapMethods.Add(ownLocalFunction.MetadataToken, ownerOfCompilerMethod);
                         tryUseful = true;
                     }
                     else if (mapTypes.TryGetValue(ownerMethodData.DeclaringType.MetadataToken, out var ownerOfCompilerType))
                     {
-                        if (ownerOfCompilerType.IsLocalFunction)
+                        if (ownerOfCompilerType.IsLocalFunction())
                         {
                             // the owner of the compiler-generated type which calls this function is itself another local function
                             if (mapMethods.TryGetValue(ownerOfCompilerType.MetadataToken, out var trueOwner))
@@ -308,7 +309,7 @@ namespace Core.CecilToOutput
                             }
                             continue;
                         }
-                        Assert(!ownerOfCompilerType.IsCompilerOrLocalFunction);
+                        Assert(!ownerOfCompilerType.IsCompilerOrLocalFunction());
                         mapMethods.Add(ownLocalFunction.MetadataToken, ownerOfCompilerType);
                         tryUseful = true;
                     }
@@ -339,15 +340,15 @@ namespace Core.CecilToOutput
             MethodData GetMethodOwner(MethodData methodData)
             {
                 TypeDefinition typeDefinition = methodData.DeclaringType;
-                if (!methodData.IsCompilerOrLocalFunction)
+                if (!methodData.IsCompilerOrLocalFunction())
                 {
                     return methodData;
                 }
-                if (methodData.IsLambdaOrLocalFunction)
+                if (methodData.IsLambdaOrLocalFunction())
                 {
                     if (mapMethods.TryGetValue(methodData.MetadataToken, out var ownerMethodData))
                     {
-                        if (ownerMethodData.IsLambdaOrLocalFunction)
+                        if (ownerMethodData.IsLambdaOrLocalFunction())
                         {
                             return GetMethodOwner(ownerMethodData);
                         }
@@ -371,7 +372,7 @@ namespace Core.CecilToOutput
                 {
                     throw new Exception();
                 }
-                if (ownerMethodData.IsCompilerOrLocalFunction)
+                if (ownerMethodData.IsCompilerOrLocalFunction())
                 {
                     Logger.Log("");
                     Logger.Log(compilerMethodDefinition.MetadataToken.ToInt32().ToString());
@@ -417,7 +418,7 @@ namespace Core.CecilToOutput
                     continue;
                 }
                 var owner = GetMethodOwner(ownerMethodData);
-                Assert(!owner.IsCompilerOrLocalFunction);
+                Assert(!owner.IsCompilerOrLocalFunction());
                 AddResult(compilerMethodDefinition, owner);
             }
 

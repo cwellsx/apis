@@ -2,9 +2,9 @@
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace Core.Cecil
+namespace Core.CecilToLifted.Private
 {
-    internal static class Predicates
+    internal static class PrivateExtensions
     {
         // this is the only compiler-generated type that isn't wholly-owned by a single user methods
         // instead each of its methods is owned by various user methods
@@ -24,7 +24,8 @@ namespace Core.Cecil
 
         //
 
-        internal static string AssemblyName(this TypeDefinition typeDefinition) => typeDefinition.Module.Assembly.Name.Name;
+        internal static string AssemblyName(this MethodDefinition methodDefinition) => methodDefinition.Module.Assembly.Name.Name;
+
         internal static string ReferencedAssemblyName(this TypeReference typeReference) => GetReferencedAssembly(typeReference)?.Name ?? "?";
 
         private static AssemblyNameReference? GetReferencedAssembly(TypeReference typeReference)
@@ -65,20 +66,6 @@ namespace Core.Cecil
             (typeDefinition.DeclaringType != null && IsCompilerGenerated(typeDefinition.DeclaringType)) ||
             // maybe the IteratorInsideLocalExample example needs this
             typeDefinition.Name.StartsWith("<");
-
-        internal static bool IsSynthetic(this MethodReference mr)
-        {
-            var dt = mr.DeclaringType;
-
-            return dt.IsArray
-                || dt.IsPointer
-                || dt.IsByReference
-                || dt is FunctionPointerType
-                || dt is GenericParameter
-                //|| dt.ContainsGenericParameter
-                || mr.CallingConvention == MethodCallingConvention.VarArg
-                ;
-        }
 
         // used in CompilerMethods to filter types whose methods are resolved
         internal static bool IsSignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
