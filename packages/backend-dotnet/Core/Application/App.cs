@@ -50,7 +50,7 @@ namespace Core.Application
                     var assemblyName = assemblyData.Name;
                     Logger.Log(assemblyName);
 
-                    var compilerGenerated = CompilerGenerated.Transform(assemblyData);
+                    var compilerGenerated = CompilerGeneratedFactory.Create(assemblyData);
 
                     var assemblyInfo = ToAssemblyInfo.Transform(assemblyData, compilerGenerated);
                     assemblies.Add(assemblyName, assemblyInfo);

@@ -1,4 +1,5 @@
-﻿using Mono.Cecil;
+﻿using Core.Cecil;
+using Mono.Cecil;
 using System.Linq;
 using System.Text.RegularExpressions;
 
@@ -6,6 +7,17 @@ namespace Core.CecilToLifted.Private
 {
     internal static class PrivateExtensions
     {
+        // extensions of MethodData
+        internal static bool IsCompilerOrLocalFunction(this MethodData methodData) => methodData.DeclaringType.IsCompilerGenerated()
+            || methodData.MethodDefinition.IsLocalFunction()
+            ;
+        internal static bool IsLambdaOrLocalFunction(this MethodData methodData) => methodData.DeclaringType.IsLambdaCache()
+            || methodData.MethodDefinition.IsLocalFunction()
+            ;
+        internal static bool IsLocalFunction(this MethodData methodData) => methodData.MethodDefinition.IsLocalFunction();
+        internal static bool IsLambdaCacheStaticCtor(this MethodData methodData) => methodData.MethodDefinition.IsLambdaCacheStaticCtor();
+        internal static bool IsInsignificantCompilerGenerated(this MethodData methodData) => methodData.MethodDefinition.IsInsignificantCompilerGenerated();
+
         // this is the only compiler-generated type that isn't wholly-owned by a single user methods
         // instead each of its methods is owned by various user methods
         private static readonly Regex LambdaCachePattern = new(@"^<>c(__\d+)?(`\d+)?$", RegexOptions.Compiled);
@@ -95,6 +107,5 @@ namespace Core.CecilToLifted.Private
         internal static bool IsConstructor(this MethodReference methodReference) => methodReference.Name == ".ctor" || methodReference.Name == ".cctor";
 
         internal static bool IsModuleType(Mono.Cecil.TypeDefinition type) => type.Name == "<Module>" && type.Namespace == "";
-
     }
 }
