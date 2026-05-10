@@ -4,6 +4,7 @@ using Mono.Cecil;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using Core.Cecil;
 
 namespace Core.CecilToOutput
 {
@@ -126,7 +127,7 @@ namespace Core.CecilToOutput
             // 1. Local type definition
             if (tr is TypeDefinition td)
             {
-                if (td.Module.Assembly.Name.Name != _assemblyName)
+                if (td.AssemblyName() != _assemblyName)
                 {
                     throw new Exception();
                 }
@@ -149,7 +150,7 @@ namespace Core.CecilToOutput
                     ? ((MethodDefinition)owner).MetadataToken.ToInt32()
                     : ((TypeDefinition)owner).MetadataToken.ToInt32();
 
-                string ownerAssembly = gp.Module.Assembly.Name.Name;
+                string ownerAssembly = gp.ReferencedAssemblyName();
 
                 return new Core.Id.Types.GenericParameter(
                     //ownerAssembly: ownerAssembly,
@@ -171,7 +172,7 @@ namespace Core.CecilToOutput
                     );
                 }
 
-                return new RemoteType(resolved.Module.Assembly.Name.Name, resolved.MetadataToken.ToInt32());
+                return new RemoteType(resolved.AssemblyName(), resolved.MetadataToken.ToInt32());
             }
         }
     }

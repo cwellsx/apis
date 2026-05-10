@@ -19,11 +19,7 @@ namespace Core.CecilToOutput
             _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal IEnumerable<MethodId> Convert(IEnumerable<MethodReference> methodReferences) => methodReferences
-            .Where(methodReference => !methodReference.Resolve().IsInsignificantCompilerGenerated())
-            .Select(Convert);
-
-        private MethodId Convert(MethodReference mr)
+        internal MethodId Convert(MethodReference mr)
         {
             if (mr is MethodDefinition md)
             {
@@ -51,7 +47,7 @@ namespace Core.CecilToOutput
                 cecilFullName = cecilFullName.Replace(getTypeName(mr.DeclaringType), getTypeName(md.DeclaringType));
             }
 
-            var methodId = new RemoteMethod(md.DeclaringType.Module.Assembly.Name.Name, md.MetadataToken.ToInt32());
+            var methodId = new RemoteMethod(md.DeclaringType.AssemblyName(), md.MetadataToken.ToInt32());
             var genericMethodArguments = GetGenericTypeArguments(
                 md.GenericParameters,
                 (mr as GenericInstanceMethod)?.GenericArguments

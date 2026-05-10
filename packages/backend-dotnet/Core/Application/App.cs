@@ -49,24 +49,15 @@ namespace Core.Application
                     var assemblyName = assemblyData.Name;
                     Logger.Log(assemblyName);
 
-                    var toTypeInfo = new ToTypeInfo(assemblyName);
-
-                    var assemblyInfo = new AssemblyInfo(
-                        ReferencedAssemblies: assemblyData.AssemblyReferences.Select(assemblyReference => assemblyReference.Name).ToArray(),
-                        TypeInfos: assemblyData.TypeDefinitions.Select(typeDefinition => toTypeInfo.Transform(typeDefinition, false)).ToArray()
-                        );
-
-                    assemblies.Add(assemblyName, assemblyInfo);
                     var compilerGenerated = CompilerGenerated.Transform(assemblyData);
 
+                    var assemblyInfo = ToAssemblyInfo.Transform(assemblyData, compilerGenerated);
+                    assemblies.Add(assemblyName, assemblyInfo);
+
                     var methodSummaries = MethodSummary.Transform(assemblyData.MethodData, assemblyName, compilerGenerated);
-
                     var decompiler = new Decompiler.AssemblyDecompiler(assemblyName, ilspyAssemblyResolver);
-
-                    assemblyMethods.Add(assemblyName, methodSummaries.ToDictionary(
-                        value => value.LocalMethodId,
-                        value => value.GetMethodInfo(decompiler.DecompileMethod(value.MetadataToken.ToInt32()))
-                        ));
+                    var methodInfos = ToMethodInfo.Convert(assemblyName, methodSummaries, decompiler.DecompileMethod);
+                    assemblyMethods.Add(assemblyName, methodInfos);
                 }
                 catch (Exception e)
                 {

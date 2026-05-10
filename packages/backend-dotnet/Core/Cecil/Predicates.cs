@@ -11,8 +11,48 @@ namespace Core.Cecil
         private static readonly Regex LambdaCachePattern = new(@"^<>c(__\d+)?(`\d+)?$", RegexOptions.Compiled);
         internal static bool IsLambdaCache(this TypeReference typeReference) => LambdaCachePattern.IsMatch(typeReference.Name);
 
-        // used to remove compiler-generated type definitions from the output
-        internal static bool IsNotCompilerGenerated(TypeDefinition typeDefinition) => true || !typeDefinition.IsCompilerGenerated();
+        // this is strange because it's a compiler-defined method added to a user-defined type
+        private static readonly Regex LocalFunctionPattern = new(@"^<[^>]+>g__.*\d+_\d+$", RegexOptions.Compiled);
+        internal static bool IsLocalFunction(this MethodDefinition methodDefinition) =>
+            !methodDefinition.DeclaringType.IsCompilerGenerated() &&
+            methodDefinition.CustomAttributes.IsCompilerGenerated() &&
+            LocalFunctionPattern.IsMatch(methodDefinition.Name);
+
+        // this is strange because its methods aren't called from anywhere
+        private static readonly Regex FixedBufferPattern = new(@"^<[^>]+>e__FixedBuffer$", RegexOptions.Compiled);
+        internal static bool IsFixedBuffer(this TypeDefinition typeDefinition) => FixedBufferPattern.IsMatch(typeDefinition.Name);
+
+        //
+
+        internal static string AssemblyName(this TypeDefinition typeDefinition) => typeDefinition.Module.Assembly.Name.Name;
+        internal static string ReferencedAssemblyName(this TypeReference typeReference) => GetReferencedAssembly(typeReference)?.Name ?? "?";
+
+        private static AssemblyNameReference? GetReferencedAssembly(TypeReference typeReference)
+        {
+            var scope = typeReference.Scope;
+
+            while (true)
+            {
+                switch (scope)
+                {
+                    case AssemblyNameReference anr:
+                        return anr;
+
+                    case ModuleDefinition modDef:
+                        return modDef.Assembly.Name;
+
+                    case TypeReference tr:
+                        // TypeSpec wrappers (ArrayType, GenericInstanceType, etc.)
+                        scope = tr.Scope;
+                        continue;
+
+                    case ModuleReference modRef: // when it's P/Invoke or similar then there's no assembly
+                    default:
+                        Logger.Log($"Unexpected scope type: {scope.GetType().FullName}");
+                        return null;
+                }
+            }
+        }
 
         internal static bool IsCompilerGenerated(this Mono.Collections.Generic.Collection<CustomAttribute> customAttributes) =>
             customAttributes
@@ -40,19 +80,12 @@ namespace Core.Cecil
                 ;
         }
 
-        private static readonly Regex LocalFunctionPattern = new(@"^<[^>]+>g__.*\d+_\d+$", RegexOptions.Compiled);
-
-        internal static bool IsLocalFunction(this MethodDefinition methodDefinition) =>
-            !methodDefinition.DeclaringType.IsCompilerGenerated() &&
-            methodDefinition.CustomAttributes.IsCompilerGenerated() &&
-            LocalFunctionPattern.IsMatch(methodDefinition.Name);
-
         // used in CompilerMethods to filter types whose methods are resolved
         internal static bool IsSignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
             typeDefinition.IsCompilerGenerated() &&
             typeDefinition.IsSignificant();
 
-        private static bool IsInsignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
+        internal static bool IsInsignificantCompilerGenerated(this TypeDefinition typeDefinition) =>
             typeDefinition.IsCompilerGenerated() &&
             !typeDefinition.IsSignificant();
 
@@ -66,7 +99,8 @@ namespace Core.Cecil
             // ignore e.g. "Microsoft.CodeAnalysis.EmbeddedAttribute
             typeDefinition.BaseType.FullName != "System.Attribute" &&
             !typeDefinition.FullName.StartsWith("<PrivateImplementationDetails>") &&
-            !typeDefinition.FullName.StartsWith("<>f__AnonymousType");
+            !typeDefinition.FullName.StartsWith("<>f__AnonymousType") &&
+            !typeDefinition.IsFixedBuffer();
 
         internal static bool IsLambdaCacheStaticCtor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".cctor" && methodDefinition.DeclaringType.IsLambdaCache();
         internal static bool IsLambdaCacheCtor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".ctor" && methodDefinition.DeclaringType.IsLambdaCache();

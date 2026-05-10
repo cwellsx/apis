@@ -1,39 +1,77 @@
-﻿using Mono.Cecil;
+﻿using Core.Cecil;
+using Core.Id.Types;
 using Core.Output;
 using Core.Output.Ids;
-using Core.Id.Types;
+using Mono.Cecil;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Core.Cecil;
 
 namespace Core.CecilToOutput
 {
-    internal class ToTypeInfo
+    internal abstract class ToTypeInfo
     {
-        internal static TypeInfo Transform(TypeDefinition typeDefinition, string assemblyName, bool isMicrosoft)
+        internal static TypeInfo TransformMicrosoft(TypeDefinition typeDefinition, string assemblyName)
         {
-            var self = new ToTypeInfo(assemblyName);
-            return self.Transform(typeDefinition, isMicrosoft);
+            var self = new ToMicrosoftTypeInfo(assemblyName);
+            return self.Transform(typeDefinition);
         }
 
-        internal static MethodMember Transform(MethodDefinition methodDefinition, string assemblyName)
+        internal static MethodMember TransformMicrosoft(MethodDefinition methodDefinition, string assemblyName)
         {
-            var self = new ToTypeInfo(assemblyName);
+            var self = new ToMicrosoftTypeInfo(assemblyName);
             return self.GetMethod(methodDefinition);
         }
+
+        internal static ToTypeInfo IsUserDefined(string assemblyName, CompilerGenerated compilerGenerated) => new ToOutputTypeInfo(assemblyName, compilerGenerated);
+
+        private class ToMicrosoftTypeInfo : ToTypeInfo
+        {
+            internal ToMicrosoftTypeInfo(string assemblyName) : base(assemblyName) { }
+
+            protected override Members GetMembers(TypeDefinition typeDefinition) => new Members(null, null, null, null, null);
+        }
+
+        private class ToOutputTypeInfo : ToTypeInfo
+        {
+            readonly CompilerGenerated _compilerGenerated;
+
+            internal ToOutputTypeInfo(string assemblyName, CompilerGenerated compilerGenerated) : base(assemblyName)
+            {
+                _compilerGenerated = compilerGenerated;
+            }
+
+            protected override Members GetMembers(TypeDefinition typeDefinition) => new Members(
+                typeDefinition.Fields.Where(fieldDefinition => _compilerGenerated.IsUserDefined(fieldDefinition.FieldType)).Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
+                typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
+                typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
+                typeDefinition.NestedTypes.Where(_compilerGenerated.IsUserDefined).Select(nestedType => ToLocalTypeId(nestedType)).ToArrayOrNull(),
+                typeDefinition.Methods.Where(_compilerGenerated.IsUserDefined).Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
+                );
+        }
+
+        protected record Members(
+            FieldMember[]? FieldMembers,
+            EventMember[]? EventMembers,
+            PropertyMember[]? PropertyMembers,
+            LocalTypeId[]? NestedTypes,
+            MethodMember[]? MethodMembers
+            );
 
         readonly string _assemblyName;
         readonly ToTypeId _toTypeId;
 
-        internal ToTypeInfo(string assemblyName)
+        protected ToTypeInfo(string assemblyName)
         {
             _assemblyName = assemblyName;
             _toTypeId = new ToTypeId(assemblyName);
         }
 
-        internal TypeInfo Transform(TypeDefinition typeDefinition, bool isMicrosoft)
+        protected abstract Members GetMembers(TypeDefinition typeDefinition);
+
+        internal TypeInfo Transform(TypeDefinition typeDefinition)
         {
+            var members = GetMembers(typeDefinition);
             return new TypeInfo(
                 Id: ToLocalTypeId(typeDefinition),
                 Namespace: typeDefinition.Namespace.ToStringOrNull(),
@@ -45,19 +83,19 @@ namespace Core.CecilToOutput
                 GenericParameters: GetGenericParameters(typeDefinition.GenericParameters),
                 Access: GetAccess(typeDefinition),
                 // Members
-                FieldMembers: isMicrosoft ? null : typeDefinition.Fields.Select(fieldDefinition => GetField(fieldDefinition)).ToArrayOrNull(),
-                EventMembers: isMicrosoft ? null : typeDefinition.Events.Select(eventdDefinition => GetEvent(eventdDefinition)).ToArrayOrNull(),
-                PropertyMembers: isMicrosoft ? null : typeDefinition.Properties.Select(propertyDefinition => GetProperty(propertyDefinition)).ToArrayOrNull(),
-                NestedTypes: isMicrosoft ? null : typeDefinition.NestedTypes.Where(Predicates.IsNotCompilerGenerated).Select(nestedType => ToLocalTypeId(nestedType)).ToArrayOrNull(),
-                MethodMembers: isMicrosoft ? null : typeDefinition.Methods.Where(methodDefinition => true/*!methodDefinition.IsC*/).Select(methodDefinition => GetMethod(methodDefinition)).ToArrayOrNull()
+                FieldMembers: members.FieldMembers,
+                EventMembers: members.EventMembers,
+                PropertyMembers: members.PropertyMembers,
+                NestedTypes: members.NestedTypes,
+                MethodMembers: members.MethodMembers
                 );
         }
 
         LocalTypeId ToLocalTypeId(TypeDefinition typeDefinition)
         {
-            if (typeDefinition.Module.Assembly.Name.Name != _assemblyName)
+            if (typeDefinition.AssemblyName() != _assemblyName)
             {
-                throw new ArgumentException($"Expected type definition from assembly {_assemblyName} but got {typeDefinition.Module.Assembly.Name.Name}");
+                throw new ArgumentException($"Expected type definition from assembly {_assemblyName} but got {typeDefinition.AssemblyName()}");
             }
             return new LocalTypeId(typeDefinition.FullName, new LocalType(typeDefinition.MetadataToken.ToInt32()));
         }

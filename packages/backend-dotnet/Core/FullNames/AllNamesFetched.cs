@@ -11,6 +11,8 @@ namespace Core.FullNames
 {
     internal class AllNamesFetched : AllNames
     {
+        internal static IEnumerable<TypeDefinition> AllTypeDefinitions(AssemblyData assemblyData) => assemblyData.GetTypeDefinitions(typeDefinition => true);
+
         internal static All Iterate(All all, IEnumerable<AssemblyData> microsoft)
         {
             // TValue: TypeInfo, TCecil: TypeDefinition
@@ -20,10 +22,10 @@ namespace Core.FullNames
                 s_typeInfoConverter,
                 microsoft,
                 // Func<AssemblyData, Dictionary<int, TCecil>>
-                assemblyDataConverter: assemblyData => assemblyData.TypeDefinitions
+                assemblyDataConverter: assemblyData => AllTypeDefinitions(assemblyData)
                     .ToDictionary(typeDefinition => typeDefinition.MetadataToken.ToInt32()),
                 // Func<TCecil, string, TValue>
-                (typeDefinition, assemblyName) => ToTypeInfo.Transform(typeDefinition, assemblyName, true)
+                (typeDefinition, assemblyName) => ToTypeInfo.TransformMicrosoft(typeDefinition, assemblyName)
             );
 
             // TValue: MethodPair, TCecil: MethodDefinition
@@ -32,7 +34,7 @@ namespace Core.FullNames
                 s_methodPairConverter,
                 microsoft,
                 // Func<AssemblyData, Dictionary<int, TCecil>>
-                assemblyDataConverter: assemblyData => assemblyData.TypeDefinitions
+                assemblyDataConverter: assemblyData => AllTypeDefinitions(assemblyData)
                     .SelectMany(typeDefinition => typeDefinition.Methods)
                     .ToDictionary(methodDefinition => methodDefinition.MetadataToken.ToInt32()),
                 // Func<TCecil, string, TValue>
@@ -40,7 +42,7 @@ namespace Core.FullNames
                 {
                     var typeMetadataToken = methodDefinition.DeclaringType.MetadataToken.ToInt32();
                     var typeInfo = fetchTypeInfos.Get(assemblyName, typeMetadataToken); // ensure the declaring type is fetched
-                    var methodMember = ToTypeInfo.Transform(methodDefinition, assemblyName);
+                    var methodMember = ToTypeInfo.TransformMicrosoft(methodDefinition, assemblyName);
                     return new MethodPair(DeclaringType: typeInfo, MethodMember: methodMember);
                 }
             );

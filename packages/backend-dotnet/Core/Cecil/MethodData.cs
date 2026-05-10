@@ -28,6 +28,8 @@ namespace Core.Cecil
 
         internal bool IsLocalFunction => _methodDefinition.IsLocalFunction();
 
+        private string AssemblyName => _methodDefinition.Module.Assembly.Name.Name;
+
         private List<MethodReference> _called { get; } = [];
         private List<MethodReference> _argued { get; } = [];
         private List<MethodReference> _newobj { get; } = [];
@@ -77,7 +79,7 @@ namespace Core.Cecil
         {
             foreach (var methodReference in Argued.Concat(Called))
             {
-                if (methodReference.DeclaringType.Module.Assembly != _methodDefinition.Module.Assembly)
+                if (methodReference.DeclaringType.ReferencedAssemblyName() != AssemblyName)
                 {
                     // compiler-generated typed are necessarily in the same assembly
                     continue;
@@ -101,7 +103,7 @@ namespace Core.Cecil
             foreach (var methodReference in _newobj)
             {
                 var declaringType = methodReference.DeclaringType;
-                if (declaringType.Module.Assembly != _methodDefinition.Module.Assembly)
+                if (declaringType.ReferencedAssemblyName() != AssemblyName)
                 {
                     // compiler-generated typed are necessarily in the same assembly
                     continue;

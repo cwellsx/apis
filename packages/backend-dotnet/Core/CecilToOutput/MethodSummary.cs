@@ -1,8 +1,4 @@
 ﻿using Core.Cecil;
-using Core.Id.Comparers;
-using Core.Id.Methods;
-using Core.Output;
-using Core.Output.Ids;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
@@ -15,16 +11,13 @@ namespace Core.CecilToOutput
     {
         internal static MethodSummary[] Transform(MethodData[] assemblyMethodData, string assemblyName, CompilerGenerated compilerGenerated)
         {
-            var (compilerTypes, compilerMethods) = compilerGenerated;
-
-            var toTypeId = new ToTypeId(assemblyName);
-            var toMethodId = new ToMethodId(assemblyName);
+            var (_, compilerTypes, compilerMethods) = compilerGenerated;
 
             var map = assemblyMethodData
                 .Where(value => !value.IsInsignificantCompilerGenerated)
                 .ToDictionary(
                 methodData => methodData.MetadataToken.ToInt32(),
-                methodData => new MethodSummary(methodData, toTypeId, toMethodId, IsSignificant(methodData, compilerTypes))
+                methodData => new MethodSummary(methodData)
                 );
 
             // replace calls from compiler methods
@@ -41,14 +34,17 @@ namespace Core.CecilToOutput
             {
                 var fromId = kvp.Key;
 
-                Predicate<MethodId> isMatch = (methodId) =>
+                Predicate<MethodReference> isMatch = (methodReference) =>
                 {
-                    var leafId = methodId.LeafId;
-                    var (foundAssemblyName, metadataToken) = GetMetadataToken(leafId, assemblyName);
-                    if (foundAssemblyName != assemblyName)
+                    if (methodReference.DeclaringType.ReferencedAssemblyName() != assemblyName)
                     {
+                        // compiler-generated typed are necessarily in the same assembly
                         return false;
                     }
+                    var methodDefinition = methodReference.Resolve();
+                    Assert(methodDefinition.DeclaringType.AssemblyName() == assemblyName);
+
+                    var metadataToken = methodDefinition.MetadataToken.ToInt32();
                     if (!compilerMethods.TryGetValue(metadataToken, out var foundId))
                     {
                         return false;
@@ -62,101 +58,50 @@ namespace Core.CecilToOutput
                 methodSummary.Argued.RemoveAll(isMatch);
             }
 
-            return map.Values.ToArray();
+            // remove remaining compiler-generated types and methods
+            var methodSummaries = map.Values.ToList();
+
+            methodSummaries.RemoveAll(methodSummary => !compilerGenerated.IsUserDefined(methodSummary._declaringType));
+            methodSummaries.ForEach(methodSummary =>
+            {
+                methodSummary.Called.RemoveAll(methodReference => !compilerGenerated.IsUserDefined(methodReference));
+                methodSummary.Argued.RemoveAll(methodReference => !compilerGenerated.IsUserDefined(methodReference));
+                methodSummary.Locals.RemoveAll(typeReference => !compilerGenerated.IsUserDefined(typeReference));
+            });
+
+            return methodSummaries.ToArray();
         }
-
-        private static (string, int) GetMetadataToken(IMethodId methodId, string assemblyName) => methodId switch
-        {
-            LocalMethod localMethod => (assemblyName, localMethod.MetadataToken),
-            RemoteMethod remoteMethod => (remoteMethod.AssemblyName, remoteMethod.MetadataToken),
-            GenericMethod genericMethod => GetMetadataToken(genericMethod.Resolved, assemblyName),
-            _ => throw new System.Exception()
-        };
-
-        readonly static FullMethodIdComparer s_FullMethodIdComparer = new();
 
         internal MetadataToken MetadataToken { get; }
+
         internal string FullName { get; }
-        internal List<MethodId> Called { get; }
-        internal List<MethodId> Argued { get; }
-        internal List<TypeId> Locals { get; }
+        internal List<MethodReference> Called { get; }
+        internal List<MethodReference> Argued { get; }
+        internal List<TypeReference> Locals { get; }
         internal bool IsCompilerGenerated { get; }
-        internal LocalMethodId LocalMethodId => new LocalMethodId(FullName, new LocalMethod(MetadataToken.ToInt32()));
-        internal MethodInfo GetMethodInfo(string asText)
-        {
-            Assert(!IsCompilerGenerated);
-            // Need to ensure references are unique -- they're stored in an SQLite table with from+to as a key field.
-            var called = Called.ToHashSet(s_FullMethodIdComparer);
-            var argued = Argued.Distinct(s_FullMethodIdComparer).Where(value => !called.Contains(value));
 
-            return new MethodInfo(asText, called.ToArrayOrNull(), argued.ToArrayOrNull(), Locals.ToArrayOrNull());
-        }
+        private readonly TypeDefinition _declaringType;
 
-        private MethodSummary(MethodData methodData, ToTypeId toTypeId, ToMethodId toMethodId, Func<MethodReference, bool> isSignificant)
+        private MethodSummary(MethodData methodData)
         {
             Assert(!methodData.IsLambdaCacheStaticCtor);
 
             MetadataToken = methodData.MetadataToken;
             FullName = methodData.FullName;
-            Called = toMethodId.Convert(methodData.Called.Where(isSignificant)).ToList();
-            Argued = toMethodId.Convert(methodData.Argued.Where(isSignificant)).ToList();
-            Locals = methodData.Locals.Select(local => toTypeId.Convert(local.VariableType)).ToList();
+
+            Called = methodData.Called.ToList();
+            Argued = methodData.Argued.ToList();
+            Locals = methodData.Locals.Select(variableReference => variableReference.VariableType).ToList();
+
             IsCompilerGenerated = methodData.IsCompilerOrLocalFunction;
+
+            _declaringType = methodData.DeclaringType;
         }
-
-        private static Func<MethodReference, bool> IsSignificant(MethodData methodData, HashSet<int> compilerTypes) => (MethodReference methodReference) =>
-        {
-            var isCompilerType = compilerTypes.Contains(methodData.DeclaringType.MetadataToken.ToInt32());
-
-            var methodDefinition = methodReference.Resolve();
-            var declaringType = methodDefinition.DeclaringType;
-            if (declaringType.Namespace != "System.Runtime.CompilerServices")
-            {
-                return true;
-            }
-            if (isCompilerType)
-            {
-                return false;
-            }
-
-            switch (declaringType.Name)
-            {
-                case "AsyncTaskMethodBuilder":
-                case "AsyncTaskMethodBuilder`1":
-                case "AsyncValueTaskMethodBuilder":
-                case "AsyncValueTaskMethodBuilder`1":
-                case "AsyncVoidMethodBuilder":
-                    // all builder methods except Create, Start, and get_Task are used inside the compiler-generated types
-                    switch (methodDefinition.Name)
-                    {
-                        case "Create":
-                        case "Start":
-                        case "get_Task":
-                            break;
-                        default:
-                            Logger.Log($"? {methodReference}");
-                            break;
-                    }
-                    return false;
-                case "DefaultInterpolatedStringHandler":
-                case "RuntimeHelpers":
-                case "Unsafe":
-                case "TaskAwaiter":
-                case "TaskAwaiter`1":
-                case "ConditionalWeakTable`2":
-                case "CallSite":
-                case "CallSite`1":
-                    return true;
-            default:
-                    Logger.Log($"? {methodReference}");
-                    return false;
-            }
-        };
 
         private void AddFrom(MethodSummary compiler)
         {
-            Called.AddRange(compiler.Called);
-            Argued.AddRange(compiler.Argued);
+            Called.AddRange(compiler.Called.Where(methodReference => !CompilerGenerated.IsCompilerService(methodReference)));
+            Argued.AddRange(compiler.Argued.Where(methodReference => !CompilerGenerated.IsCompilerService(methodReference)));
         }
     }
 }
