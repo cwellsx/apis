@@ -2,26 +2,26 @@ import { assert, getOrThrow } from "../utils";
 import { isGenericParamId, isMethodDefId, isTypeDefId } from "./idTest";
 import type * as Id from "./idTypes";
 import {
-  Assemblies,
-  FullNames,
-  GenericParams,
-  MethodNames,
-  MethodReferences,
-  Namespaces,
-  SignatureTypes,
-  TypeNames,
-  TypeReferences,
+  Assembly,
+  FullName,
+  GenericParam,
+  MethodName,
+  MethodReference,
+  Namespace,
+  SignatureType,
+  TypeName,
+  TypeReference,
 } from "./schema";
 
 type Tables = {
-  assemblies: Assemblies[];
-  namespaces: Namespaces[];
-  genericParams: GenericParams[];
-  signatureTypes: SignatureTypes[];
-  typeNames: TypeNames[];
-  typeReferences: TypeReferences[];
-  methodNames: MethodNames[];
-  methodReferences: MethodReferences[];
+  assemblies: Assembly[];
+  namespaces: Namespace[];
+  genericParams: GenericParam[];
+  signatureTypes: SignatureType[];
+  typeNames: TypeName[];
+  typeReferences: TypeReference[];
+  methodNames: MethodName[];
+  methodReferences: MethodReference[];
 };
 
 const mapArrays = <TKey, TValue, T extends { ownerId: TKey; seqno: number }>(
@@ -42,17 +42,14 @@ const mapArrays = <TKey, TValue, T extends { ownerId: TKey; seqno: number }>(
   return result;
 };
 
-export const fullNames = (tables: Tables): FullNames[] => {
+export const fullNames = (tables: Tables): FullName[] => {
   const assemblies = tables.assemblies.map((value) => ({ id: value.id, fullName: value.name }));
   const namespaces = tables.namespaces.map((value) => ({ id: value.id, fullName: value.name }));
 
   const mapNamespaces = new Map<Id.NamespaceId, string>(namespaces.map((value) => [value.id, value.fullName]));
 
-  const ownedGenericParamArrays = mapArrays<Id.AnyDefId, string, GenericParams>(
-    tables.genericParams,
-    (row) => row.name
-  );
-  const ownedSignatureTypeArrays = mapArrays<Id.AnyOwnerId, Id.TypeId, SignatureTypes>(
+  const ownedGenericParamArrays = mapArrays<Id.AnyDefId, string, GenericParam>(tables.genericParams, (row) => row.name);
+  const ownedSignatureTypeArrays = mapArrays<Id.AnyOwnerId, Id.TypeId, SignatureType>(
     tables.signatureTypes,
     (row) => row.argument
   );
@@ -145,7 +142,7 @@ export const fullNames = (tables: Tables): FullNames[] => {
     }
   );
 
-  const mapMethodNames = new Map<Id.MethodDefId, MethodNames>(tables.methodNames.map((value) => [value.id, value]));
+  const mapMethodNames = new Map<Id.MethodDefId, MethodName>(tables.methodNames.map((value) => [value.id, value]));
 
   const mapMethodRefFullNames = makeNameResolver(
     tables.methodReferences,

@@ -6,20 +6,22 @@ import type { AssemblyId, MethodDefId, NamespaceId, TypeDefId } from "./idTypes"
 import { parseTypeIds } from "./insertDotNetId";
 import { fullNames } from "./insertFullNames";
 import * as GetMemberJson from "./insertMemberJson";
-import { Assemblies, Boolean, Members, Namespaces, Tables, TypeNames } from "./schema";
+import { Assembly, Boolean, Member, Namespace, Tables, TypeName } from "./schema";
 import * as MemberJson from "./schemaMemberJson";
 
 type AllTypeInfo = { typeDefId: TypeDefId; assemblyName: string } & DotNet.TypeInfo;
 type AllMethodMember = { typeDefId: TypeDefId; methodDefId: MethodDefId; assemblyName: string } & DotNet.MethodMember;
 type AllMethodInfo = { methodDefId: MethodDefId; assemblyName: string } & DotNet.MethodInfo;
 
-const getAssemblies = (all: DotNet.All, idCreate: IdCreate): Assemblies[] =>
+type MapAssemblyIds = Map<string, AssemblyId>;
+
+const getAssemblies = (all: DotNet.All, idCreate: IdCreate): Assembly[] =>
   Object.keys(all.assemblies)
     .map((value) => ({ name: value, isMicrosoft: 0 as Boolean }))
     .concat(Object.keys(all.microsoftAssemblies).map((value) => ({ name: value, isMicrosoft: 1 as Boolean })))
     .map((value, index) => ({ id: idCreate.makeAssemblyId(index + 1), ...value }));
 
-const getAllTypeInfos = (all: DotNet.All, assemblyIds: Map<string, AssemblyId>, idCreate: IdCreate): AllTypeInfo[] =>
+const getAllTypeInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds, idCreate: IdCreate): AllTypeInfo[] =>
   Object.entries(all.assemblies)
     .concat(Object.entries(all.microsoftAssemblies))
     .flatMap(([assemblyName, assemblyInfo]) =>
@@ -32,7 +34,7 @@ const getAllTypeInfos = (all: DotNet.All, assemblyIds: Map<string, AssemblyId>, 
 
 const getAllMethodMembers = (
   allTypeInfos: AllTypeInfo[],
-  assemblyIds: Map<string, AssemblyId>,
+  assemblyIds: MapAssemblyIds,
   idCreate: IdCreate
 ): AllMethodMember[] =>
   allTypeInfos.flatMap((allTypeInfo) =>
@@ -44,11 +46,7 @@ const getAllMethodMembers = (
     })
   );
 
-const getAllMethodInfos = (
-  all: DotNet.All,
-  assemblyIds: Map<string, AssemblyId>,
-  idCreate: IdCreate
-): AllMethodInfo[] =>
+const getAllMethodInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds, idCreate: IdCreate): AllMethodInfo[] =>
   Object.entries(all.assemblyMethods).flatMap(([assemblyName, tokenMap]) =>
     Object.entries(tokenMap).map(([metadataToken, methodInfo]) => ({
       ...methodInfo,
@@ -57,7 +55,7 @@ const getAllMethodInfos = (
     }))
   );
 
-const getNamespaces = (assemblyAndTypeInfos: AllTypeInfo[], idCreate: IdCreate): Namespaces[] => {
+const getNamespaces = (assemblyAndTypeInfos: AllTypeInfo[], idCreate: IdCreate): Namespace[] => {
   const distinctNamespaces = new Set<string>();
   assemblyAndTypeInfos.forEach((value) => {
     if (value.namespace) distinctNamespaces.add(value.namespace);
@@ -69,10 +67,10 @@ const getNamespaces = (assemblyAndTypeInfos: AllTypeInfo[], idCreate: IdCreate):
 
 const getTypeNames = (
   allTypeInfos: AllTypeInfo[],
-  assemblyIds: Map<string, AssemblyId>,
+  assemblyIds: MapAssemblyIds,
   namespaceIds: Map<string, NamespaceId>,
   idCreate: IdCreate
-): TypeNames[] =>
+): TypeName[] =>
   allTypeInfos.map((value) => ({
     id: value.typeDefId,
     namespace: value.namespace ? namespaceIds.get(value.namespace) : undefined,
@@ -82,7 +80,7 @@ const getTypeNames = (
       : undefined,
   }));
 
-const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: Map<string, AssemblyId>, idCreate: IdCreate): Members[] =>
+const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: MapAssemblyIds, idCreate: IdCreate): Member[] =>
   allTypeInfos.flatMap((value) => {
     const assemblyId = getOrThrow(assemblyIds, value.assemblyName);
     const typeId = value.typeDefId;
@@ -90,7 +88,7 @@ const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: Map<string, Assemb
     const getMembers = <T extends MemberJson.AnyDotNetMembers>(
       members: T[] | undefined,
       getJson: (value: T) => MemberJson.WithoutNameAndMetadataToken<T>
-    ): Members[] =>
+    ): Member[] =>
       members?.map((value) => ({
         name: value.name,
         id: idCreate.makeMemberId(value.metadataToken, assemblyId),
@@ -98,7 +96,7 @@ const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: Map<string, Assemb
         json: getJson(value),
       })) ?? [];
 
-    const empty: Members[] = [];
+    const empty: Member[] = [];
 
     return empty
       .concat(getMembers(value.fieldMembers, GetMemberJson.getFieldMemberJson))
@@ -179,15 +177,16 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
   const allMethodInfos = getAllMethodInfos(all, assemblyIds, idCreate);
   // decompiled
   tables.decompiled.insertMany(allMethodInfos.map((value) => ({ id: value.methodDefId, asText: value.asText })));
+
   // calls
-  tables.calls.insertMany(
-    allMethodInfos.flatMap((value) => {
-      const fromId = value.methodDefId;
-      // .NET guarantees that these IDs are unique
-      const toIds = [...(value.called ?? []), ...(value.argued ?? [])];
-      return toIds.map((id) => ({ fromId, toId: toMethodId(id, value.assemblyName, fromId, idCreate) }));
-    })
-  );
+  const calls = allMethodInfos.flatMap((value) => {
+    const fromId = value.methodDefId;
+    // .NET guarantees that these IDs are unique
+    const toIds = [...(value.called ?? []), ...(value.argued ?? [])];
+    return toIds.map((id) => ({ fromId, toId: toMethodId(id, value.assemblyName, fromId, idCreate) }));
+  });
+
+  tables.calls.insertMany(calls);
 
   // typeReferences, signatureTypes, genericParams
   const { typeReferences, signatureTypes, genericParams, methodReferences } = getTypeReferences();

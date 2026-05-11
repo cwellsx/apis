@@ -12,7 +12,7 @@ import type {
   MethodId,
   TypeId,
 } from "./idTypes";
-import type { GenericParams, MethodReferences, SignatureTypes, TypeReferences } from "./schema";
+import type { GenericParam, MethodReference, SignatureType, TypeReference } from "./schema";
 
 type ToTypeId = (id: DotNet.TypeId) => TypeId;
 type MapGenericParams = Map<string, GenericParamId>;
@@ -20,12 +20,12 @@ type MapGenericParams = Map<string, GenericParamId>;
 export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
   const getAssemblyId = (assemblyName: string): AssemblyId => getOrThrow(assemblyIds, assemblyName);
 
-  const typeReferences: TypeReferences[] = [];
-  const methodReferences: MethodReferences[] = [];
-  const signatureTypes: SignatureTypes[] = [];
-  const genericParams: GenericParams[] = [];
+  const typeReferences: TypeReference[] = [];
+  const methodReferences: MethodReference[] = [];
+  const signatureTypes: SignatureType[] = [];
+  const genericParams: GenericParam[] = [];
 
-  const ownGenericParams = new Map<AnyDefId, GenericParams[]>();
+  const ownGenericParams = new Map<AnyDefId, GenericParam[]>();
   const allGenericParams = new Map<AnyDefId, MapGenericParams>();
 
   const toGenericParams = (

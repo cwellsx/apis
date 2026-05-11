@@ -18,6 +18,5 @@ export const isAll = (json: unknown): asserts json is All => {
   assert(!!o.exes, "Expect `exes` property");
   assert(!!o.assemblies, "Expect `assemblies` property");
   assert(!!o.assemblyMethods, "Expect `assemblyMethods` property");
-  assert(!!o.compilerMethods, "Expect `compilerMethods` property");
   assert(!!o.microsoftAssemblies, "Expect `microsoftAssemblies` property");
 };

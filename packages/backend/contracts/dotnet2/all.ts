@@ -1,8 +1,8 @@
 import { Access } from "./access";
-import { LocalTypeId, MetadataToken, MethodId, TypeId } from "./id";
+import { LocalTypeId, MethodId, TypeId } from "./id";
 import { EventMember, FieldMember, MethodMember, PropertyMember } from "./members";
 
-type AssemblyMap<T> = { [assemblyName: string]: T };
+export type AssemblyMap<T> = { [assemblyName: string]: T };
 
 export type TypeInfo = {
   id: LocalTypeId;
@@ -31,6 +31,5 @@ export type All = {
   version: string;
   exes: string[];
   assemblyMethods: AssemblyMap<{ [metadataToken: string]: MethodInfo }>;
-  compilerMethods: AssemblyMap<{ [metadataToken: string]: MetadataToken }>;
   microsoftAssemblies: AssemblyMap<AssemblyInfo>;
 };

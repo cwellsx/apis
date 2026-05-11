@@ -6,28 +6,27 @@ import { MembersJson } from "./schemaMemberJson";
 export type Boolean = 0 | 1;
 export type ViewType = "assemblies" | "namespaces";
 
-export type Assemblies = { id: Id.AssemblyId; name: string; isMicrosoft: Boolean };
-export type Namespaces = { id: Id.NamespaceId; name: string };
-export type TypeNames = { id: Id.TypeDefId; namespace?: Id.NamespaceId; name: string; declaringType?: Id.TypeDefId };
-export type Members = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
+export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: Boolean };
+export type Namespace = { id: Id.NamespaceId; name: string };
+export type TypeName = { id: Id.TypeDefId; namespace?: Id.NamespaceId; name: string; declaringType?: Id.TypeDefId };
+export type Member = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
 
-export type MethodNames = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnType: Id.TypeId };
+export type MethodName = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnType: Id.TypeId };
 
-export type TypeReferences = { id: Id.TypeRefId; resolved: Id.BaseTypeId; suffix?: string };
-export type MethodReferences = { id: Id.MethodRefId; resolved: Id.MethodDefId };
+export type TypeReference = { id: Id.TypeRefId; resolved: Id.BaseTypeId; suffix?: string };
+export type MethodReference = { id: Id.MethodRefId; resolved: Id.MethodDefId };
 
 // SignatureTypes is used for generic type arguments, for method parameters, and for generic method arguments
-export type SignatureTypes = { ownerId: Id.AnyOwnerId; seqno: number; argument: Id.TypeId };
-export type GenericParams = { id: Id.GenericParamId; ownerId: Id.AnyDefId; seqno: number; name: string };
+export type SignatureType = { ownerId: Id.AnyOwnerId; seqno: number; argument: Id.TypeId };
+export type GenericParam = { id: Id.GenericParamId; ownerId: Id.AnyDefId; seqno: number; name: string };
 
 export type Decompiled = { id: Id.MethodDefId; asText: string };
-export type Calls = { fromId: Id.MethodDefId; toId: Id.MethodId };
-export type CompilerMethods = { compilerMethodId: Id.MethodDefId; ownedById: Id.MethodId };
+export type Call = { fromId: Id.MethodDefId; toId: Id.MethodId };
 
-export type FullNames = { id: Id.AnyId; fullName: string };
+export type FullName = { id: Id.AnyId; fullName: string };
 
-export type Views = { id: Id.ViewId; name: string; viewType: ViewType };
-export type ViewStates = { viewId: Id.ViewId; id: Id.AnyId; isHidden: Boolean; isExpanded: Boolean };
+export type View = { id: Id.ViewId; name: string; viewType: ViewType };
+export type ViewState = { viewId: Id.ViewId; id: Id.AnyId; isHidden: Boolean; isExpanded: Boolean };
 
 export const tableNames = [
   "assemblies",
@@ -55,20 +54,20 @@ export const tableNames = [
 export type TableName = (typeof tableNames)[number];
 
 type TableRowMap = {
-  assemblies: Assemblies;
-  namespaces: Namespaces;
-  typeNames: TypeNames;
-  members: Members;
-  methodNames: MethodNames;
-  typeReferences: TypeReferences;
-  methodReferences: MethodReferences;
-  signatureTypes: SignatureTypes;
-  genericParams: GenericParams;
+  assemblies: Assembly;
+  namespaces: Namespace;
+  typeNames: TypeName;
+  members: Member;
+  methodNames: MethodName;
+  typeReferences: TypeReference;
+  methodReferences: MethodReference;
+  signatureTypes: SignatureType;
+  genericParams: GenericParam;
   decompiled: Decompiled;
-  calls: Calls;
-  fullNames: FullNames;
-  views: Views;
-  viewStates: ViewStates;
+  calls: Call;
+  fullNames: FullName;
+  views: View;
+  viewStates: ViewState;
 };
 
 export type TableRow<K extends TableName> = TableRowMap[K];
@@ -123,23 +122,23 @@ const row = {
 // );
 
 export const createTables = (db: SqlDatabase): Tables => {
-  const assemblies = db.newSqlTable<Assemblies>("assemblies", "id", [], row.assemblies);
-  const namespaces = db.newSqlTable<Namespaces>("namespaces", "id", [], row.namespaces);
-  const typeNames = db.newSqlTable<TypeNames>("typeNames", "id", ["namespace", "declaringType"], row.typeNames);
-  const members = db.newSqlTable<Members>("members", "id", [], row.members);
-  const methodNames = db.newSqlTable<MethodNames>("methodNames", "id", [], row.methodNames);
+  const assemblies = db.newSqlTable<Assembly>("assemblies", "id", [], row.assemblies);
+  const namespaces = db.newSqlTable<Namespace>("namespaces", "id", [], row.namespaces);
+  const typeNames = db.newSqlTable<TypeName>("typeNames", "id", ["namespace", "declaringType"], row.typeNames);
+  const members = db.newSqlTable<Member>("members", "id", [], row.members);
+  const methodNames = db.newSqlTable<MethodName>("methodNames", "id", [], row.methodNames);
 
-  const typeReferences = db.newSqlTable<TypeReferences>("typeReferences", "id", ["suffix"], row.typeReferences);
-  const methodReferences = db.newSqlTable<MethodReferences>("methodReferences", "id", [], row.methodReferences);
-  const signatureTypes = db.newSqlTable<SignatureTypes>("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
-  const genericParams = db.newSqlTable<GenericParams>("genericParams", ["id", "seqno"], [], row.genericParams);
+  const typeReferences = db.newSqlTable<TypeReference>("typeReferences", "id", ["suffix"], row.typeReferences);
+  const methodReferences = db.newSqlTable<MethodReference>("methodReferences", "id", [], row.methodReferences);
+  const signatureTypes = db.newSqlTable<SignatureType>("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
+  const genericParams = db.newSqlTable<GenericParam>("genericParams", ["id", "seqno"], [], row.genericParams);
 
   const decompiled = db.newSqlTable<Decompiled>("decompiled", "id", [], row.decompiled);
-  const calls = db.newSqlTable<Calls>("calls", ["fromId", "toId"], [], row.calls);
+  const calls = db.newSqlTable<Call>("calls", ["fromId", "toId"], [], row.calls);
 
-  const fullNames = db.newSqlTable<FullNames>("fullNames", "id", [], row.fullNames);
-  const views = db.newSqlTable<Views>("views", "id", [], row.views);
-  const viewStates = db.newSqlTable<ViewStates>("viewStates", "id", [], row.viewsStates);
+  const fullNames = db.newSqlTable<FullName>("fullNames", "id", [], row.fullNames);
+  const views = db.newSqlTable<View>("views", "id", [], row.views);
+  const viewStates = db.newSqlTable<ViewState>("viewStates", "id", [], row.viewsStates);
 
   const close = () => {
     db.done();
