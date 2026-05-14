@@ -28,6 +28,9 @@ export type FullName = { id: Id.AnyId; fullName: string };
 export type View = { id: Id.ViewId; name: string; viewType: ViewType };
 export type ViewState = { viewId: Id.ViewId; id: Id.AnyId; isHidden: Boolean; isExpanded: Boolean };
 
+export type AssemblyGroup = { id: Id.AssemblyGroupId; name: string };
+export type NamespaceGroup = { id: Id.NamespaceGroupId; name: string };
+
 export const tableNames = [
   "assemblies",
   "namespaces",
@@ -49,6 +52,9 @@ export const tableNames = [
 
   "views",
   "viewStates",
+
+  "assemblyGroups",
+  "namespaceGroups",
 ] as const;
 
 export type TableName = (typeof tableNames)[number];
@@ -68,6 +74,8 @@ type TableRowMap = {
   fullNames: FullName;
   views: View;
   viewStates: ViewState;
+  assemblyGroups: AssemblyGroup;
+  namespaceGroups: NamespaceGroup;
 };
 
 export type TableRow<K extends TableName> = TableRowMap[K];
@@ -80,6 +88,8 @@ const zero = {
   // number
   assemblyId: IdCast.castAssemblyId(0),
   namespaceId: IdCast.castNamespaceId(0),
+  assemblyGroupId: IdCast.castAssemblyGroupId(0),
+  namespaceGroupId: IdCast.castNamespaceGroupId(0),
   viewId: IdCast.castViewId(0),
   // bigint
   typeDefId: IdCast.castTypeDefId(0n),
@@ -113,6 +123,9 @@ const row = {
   fullNames: { id: zero.anyId, fullName: "foo" },
   views: { id: zero.viewId, name: "foo", viewType: "assemblies" as ViewType },
   viewsStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
+
+  assemblyGroups: { id: zero.assemblyGroupId, name: "foo" },
+  namespaceGroups: { id: zero.namespaceGroupId, name: "foo" },
 };
 
 // CREATE TABLE Child (
@@ -140,6 +153,9 @@ export const createTables = (db: SqlDatabase): Tables => {
   const views = db.newSqlTable<View>("views", "id", [], row.views);
   const viewStates = db.newSqlTable<ViewState>("viewStates", "id", [], row.viewsStates);
 
+  const assemblyGroups = db.newSqlTable<AssemblyGroup>("assemblyGroups", "id", [], row.assemblyGroups);
+  const namespaceGroups = db.newSqlTable<NamespaceGroup>("namespaceGroups", "id", [], row.namespaceGroups);
+
   const close = () => {
     db.done();
     db.close();
@@ -160,6 +176,8 @@ export const createTables = (db: SqlDatabase): Tables => {
     fullNames,
     views,
     viewStates,
+    assemblyGroups,
+    namespaceGroups,
     close,
   };
 };

@@ -5,6 +5,7 @@ import { createIds } from "./idCreate";
 import type { AssemblyId, MethodDefId, NamespaceId, TypeDefId } from "./idTypes";
 import { parseTypeIds } from "./insertDotNetId";
 import { fullNames } from "./insertFullNames";
+import { getGroupNames } from "./insertGroups";
 import * as GetMemberJson from "./insertMemberJson";
 import { Assembly, Boolean, Member, Namespace, Tables, TypeName } from "./schema";
 import * as MemberJson from "./schemaMemberJson";
@@ -208,4 +209,16 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
   tables.methodReferences.insertMany(methodReferences);
 
   tables.fullNames.insertMany(allFullNames);
+
+  const assemblyGroups = getGroupNames(assemblies.map((value) => value.name)).map((value) => ({
+    id: idCreate.newAssemblyGroupId(),
+    name: value,
+  }));
+  tables.assemblyGroups.insertMany(assemblyGroups);
+
+  const namespaceGroups = getGroupNames(namespaces.map((value) => value.name)).map((value) => ({
+    id: idCreate.newNamespaceGroupId(),
+    name: value,
+  }));
+  tables.namespaceGroups.insertMany(namespaceGroups);
 };
