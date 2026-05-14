@@ -73,9 +73,9 @@ const getTypeNames = (
 ): TypeName[] =>
   allTypeInfos.map((value) => ({
     id: value.typeDefId,
-    namespace: value.namespace ? namespaceIds.get(value.namespace) : undefined,
+    namespaceId: value.namespace ? namespaceIds.get(value.namespace) : undefined,
     name: value.name,
-    declaringType: value.declaringType
+    declaringTypeId: value.declaringType
       ? idCreate.makeTypeDefId(value.declaringType, getOrThrow(assemblyIds, value.assemblyName), false)
       : undefined,
   }));
@@ -169,7 +169,7 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
         toTypeId
       );
     //method name
-    return { id: methodDefId, typeId: typeDefId, name: value.name, returnType: toTypeId(value.returnType) };
+    return { id: methodDefId, typeId: typeDefId, name: value.name, returnTypeId: toTypeId(value.returnType) };
   });
   tables.methodNames.insertMany(methodNames);
 

@@ -8,16 +8,16 @@ export type ViewType = "assemblies" | "namespaces";
 
 export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: Boolean };
 export type Namespace = { id: Id.NamespaceId; name: string };
-export type TypeName = { id: Id.TypeDefId; namespace?: Id.NamespaceId; name: string; declaringType?: Id.TypeDefId };
+export type TypeName = { id: Id.TypeDefId; namespaceId?: Id.NamespaceId; name: string; declaringTypeId?: Id.TypeDefId };
 export type Member = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
 
-export type MethodName = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnType: Id.TypeId };
+export type MethodName = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnTypeId: Id.TypeId };
 
-export type TypeReference = { id: Id.TypeRefId; resolved: Id.BaseTypeId; suffix?: string };
-export type MethodReference = { id: Id.MethodRefId; resolved: Id.MethodDefId };
+export type TypeReference = { id: Id.TypeRefId; resolvedId: Id.BaseTypeId; suffix?: string };
+export type MethodReference = { id: Id.MethodRefId; resolvedId: Id.MethodDefId };
 
 // SignatureTypes is used for generic type arguments, for method parameters, and for generic method arguments
-export type SignatureType = { ownerId: Id.AnyOwnerId; seqno: number; argument: Id.TypeId };
+export type SignatureType = { ownerId: Id.AnyOwnerId; seqno: number; argumentId: Id.TypeId };
 export type GenericParam = { id: Id.GenericParamId; ownerId: Id.AnyDefId; seqno: number; name: string };
 
 export type Decompiled = { id: Id.MethodDefId; asText: string };
@@ -97,14 +97,14 @@ const zero = {
 const row = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
   namespaces: { id: zero.namespaceId, name: "foo" },
-  typeNames: { id: zero.typeDefId, name: "foo", namespace: zero.namespaceId, declaringType: zero.typeDefId },
+  typeNames: { id: zero.typeDefId, name: "foo", namespaceId: zero.namespaceId, declaringTypeId: zero.typeDefId },
   members: { id: zero.memberId, typeId: zero.typeDefId, name: "foo", json: {} as MembersJson },
 
-  methodNames: { id: zero.methodDefId, typeId: zero.typeDefId, name: "foo", returnType: zero.typeId },
+  methodNames: { id: zero.methodDefId, typeId: zero.typeDefId, name: "foo", returnTypeId: zero.typeId },
 
-  typeReferences: { id: zero.typeRefId, resolved: zero.typeDefId, suffix: "foo" },
-  methodReferences: { id: zero.methodRefId, resolved: zero.methodDefId },
-  signatureTypes: { ownerId: zero.typeRefId, seqno: 0, argument: zero.typeId },
+  typeReferences: { id: zero.typeRefId, resolvedId: zero.typeDefId, suffix: "foo" },
+  methodReferences: { id: zero.methodRefId, resolvedId: zero.methodDefId },
+  signatureTypes: { ownerId: zero.typeRefId, seqno: 0, argumentId: zero.typeId },
   genericParams: { id: zero.genericParamId, ownerId: zero.typeDefId, seqno: 0, name: "foo" },
 
   decompiled: { id: zero.methodDefId, asText: "foo" },
@@ -124,7 +124,7 @@ const row = {
 export const createTables = (db: SqlDatabase): Tables => {
   const assemblies = db.newSqlTable<Assembly>("assemblies", "id", [], row.assemblies);
   const namespaces = db.newSqlTable<Namespace>("namespaces", "id", [], row.namespaces);
-  const typeNames = db.newSqlTable<TypeName>("typeNames", "id", ["namespace", "declaringType"], row.typeNames);
+  const typeNames = db.newSqlTable<TypeName>("typeNames", "id", ["namespaceId", "declaringTypeId"], row.typeNames);
   const members = db.newSqlTable<Member>("members", "id", [], row.members);
   const methodNames = db.newSqlTable<MethodName>("methodNames", "id", [], row.methodNames);
 

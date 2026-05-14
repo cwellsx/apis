@@ -52,7 +52,9 @@ export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
   };
 
   const toSignatureTypes = (ownerId: AnyOwnerId, typeIds: DotNet.TypeId[], toTypeId: ToTypeId) => {
-    typeIds.forEach((argument, index) => signatureTypes.push({ ownerId, seqno: index, argument: toTypeId(argument) }));
+    typeIds.forEach((argument, index) =>
+      signatureTypes.push({ ownerId, seqno: index, argumentId: toTypeId(argument) })
+    );
   };
 
   const getToTypeId = (assemblyName: string, genericParameters: MapGenericParams, idCreate: IdCreate): ToTypeId => {
@@ -93,7 +95,7 @@ export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
       // remove front and optionally remove back
       const array = id.slice(1, suffix ? -1 : undefined);
 
-      typeReferences.push({ id: typeRefId, resolved, suffix });
+      typeReferences.push({ id: typeRefId, resolvedId: resolved, suffix });
       toSignatureTypes(typeRefId, array, toTypeId);
       return resolved;
     };
@@ -122,7 +124,7 @@ export const parseTypeIds = (assemblyIds: Map<string, AssemblyId>) => {
     const array = id.slice(1); // remove front
 
     const methodRefId = idCreate.newMethodRefId(getAssemblyId(assemblyName));
-    methodReferences.push({ id: methodRefId, resolved });
+    methodReferences.push({ id: methodRefId, resolvedId: resolved });
 
     const genericParameters = getOrThrow(allGenericParams, fromId);
     const toTypeId = getToTypeId(assemblyName, genericParameters, idCreate);

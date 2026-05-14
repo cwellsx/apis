@@ -51,7 +51,7 @@ export const fullNames = (tables: Tables): FullName[] => {
   const ownedGenericParamArrays = mapArrays<Id.AnyDefId, string, GenericParam>(tables.genericParams, (row) => row.name);
   const ownedSignatureTypeArrays = mapArrays<Id.AnyOwnerId, Id.TypeId, SignatureType>(
     tables.signatureTypes,
-    (row) => row.argument
+    (row) => row.argumentId
   );
 
   const allGenericParameters = new Map<Id.GenericParamId, string>(
@@ -100,10 +100,10 @@ export const fullNames = (tables: Tables): FullName[] => {
     tables.typeNames,
     (value) => value.id,
     (value, resolve) =>
-      (value.declaringType
-        ? `${resolve(value.declaringType)}.${value.name}` // recurse
-        : value.namespace
-          ? `${getOrThrow(mapNamespaces, value.namespace)}.${value.name}`
+      (value.declaringTypeId
+        ? `${resolve(value.declaringTypeId)}.${value.name}` // recurse
+        : value.namespaceId
+          ? `${getOrThrow(mapNamespaces, value.namespaceId)}.${value.name}`
           : value.name) + ownedGenericParamArray(value.id)
   );
 
@@ -122,7 +122,7 @@ export const fullNames = (tables: Tables): FullName[] => {
     (value) => value.id,
     (value, resolve) => {
       const getTypeIdName = makeGetTypeIdName(resolve);
-      const resolvedName = getTypeIdName(value.resolved);
+      const resolvedName = getTypeIdName(value.resolvedId);
       const typeArguments = ownedSignatureTypeArray(value.id, getTypeIdName);
       const suffix = value.suffix ?? "";
       return `${resolvedName}${typeArguments}${suffix}`;
@@ -135,7 +135,7 @@ export const fullNames = (tables: Tables): FullName[] => {
     (value) => {
       const getTypeRefId = (id: Id.TypeRefId): string => getOrThrow(mapTypeRefFullNames, id);
       const getTypeIdName = makeGetTypeIdName(getTypeRefId);
-      const returnType = getTypeIdName(value.returnType);
+      const returnType = getTypeIdName(value.returnTypeId);
       const genericParameters = ownedGenericParamArray(value.id);
       const parameters = ownedSignatureTypeArray(value.id, getTypeIdName);
       return `${returnType} ${value.name}${genericParameters}${parameters}`;
@@ -150,8 +150,8 @@ export const fullNames = (tables: Tables): FullName[] => {
     (methodRef) => {
       const getTypeRefId = (id: Id.TypeRefId): string => getOrThrow(mapTypeRefFullNames, id);
       const getTypeIdName = makeGetTypeIdName(getTypeRefId);
-      const value = getOrThrow(mapMethodNames, methodRef.resolved);
-      const returnType = getTypeIdName(value.returnType);
+      const value = getOrThrow(mapMethodNames, methodRef.resolvedId);
+      const returnType = getTypeIdName(value.returnTypeId);
       const genericArguments = ownedSignatureTypeArray(methodRef.id, getTypeIdName);
       const parameters = ownedSignatureTypeArray(value.id, getTypeIdName);
       return `${returnType} ${value.name}${genericArguments}${parameters}`;

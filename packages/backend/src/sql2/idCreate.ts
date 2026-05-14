@@ -1,6 +1,6 @@
 import { assert } from "../utils";
 import * as IdCast from "./idCast";
-import { TableId, isTableId, namespaceOffset } from "./idTest";
+import { BoxedId, isTableId, TableId } from "./idTest";
 import type * as Id from "./idTypes";
 
 const assertTableId = (id: number, tableId: TableId) => assert(isTableId(id, tableId));
@@ -27,14 +27,20 @@ const packMethodRefId = (id: number, assemblyId: Id.AssemblyId): Id.MethodRefId 
 
 const packMemberId = (id: number, assemblyId: Id.AssemblyId): Id.MemberId => IdCast.castMemberId(pack(id, assemblyId));
 
+// synthesize by adding a
+
 const addTypeRefTableId = (id: number) => id + ((TableId.TypeRef as number) << 24);
 const addMethodRefTableId = (id: number) => id + ((TableId.MethodSpec as number) << 24);
 const addGenericParamTableId = (id: number) => id + ((TableId.GenericParam as number) << 24);
 
+const addAssemblyId = (id: number): Id.AssemblyId => (id + ((BoxedId.Assembly as number) << 24)) as Id.AssemblyId;
+const addNamespaceId = (id: number) => (id + ((BoxedId.Namespace as number) << 24)) as Id.NamespaceId;
+const addAssemblyGroupId = (id: number) => (id + ((BoxedId.AssemblyGroup as number) << 24)) as Id.AssemblyGroupId;
+const addNamespaceGroupId = (id: number) => (id + ((BoxedId.NamespaceGroup as number) << 24)) as Id.NamespaceGroupId;
+
 // synthetic
 
 type ToSyntheticId<T> = (id: number, assemblyId: Id.AssemblyId) => T;
-
 const createSyntheticIds = <T>(pack: ToSyntheticId<T>) => {
   const allocated = new Map<Id.AssemblyId, number>();
 
@@ -56,24 +62,31 @@ const createGenericParamIds = () =>
 const createMethodRefIds = () =>
   createSyntheticIds<Id.MethodRefId>((id, assemblyId) => packMethodRefId(addMethodRefTableId(id), assemblyId));
 
-export type MakeAssemblyId = (id: number) => Id.AssemblyId;
-export type MakeNamespaceId = (id: number) => Id.NamespaceId;
-export type MakeTypeDefId = (id: number, assemblyId: Id.AssemblyId, create: boolean) => Id.TypeDefId;
-export type MakeMethodDefId = (id: number, assemblyId: Id.AssemblyId, create: boolean) => Id.MethodDefId;
-export type MakeMemberId = (id: number, assemblyId: Id.AssemblyId) => Id.MemberId;
-export type NewTypeRefId = (assemblyId: Id.AssemblyId) => Id.TypeRefId;
-export type NewGenericParamId = (assemblyId: Id.AssemblyId) => Id.GenericParamId;
-export type NewMethodRefId = (assemblyId: Id.AssemblyId) => Id.MethodRefId;
+type ToBoxedId<T> = (id: number) => T;
+const createBoxedIds = <T>(pack: ToBoxedId<T>) => {
+  let allocated = 0;
+
+  const newBoxedId = (): T => {
+    const id = ++allocated;
+    return pack(id);
+  };
+  return newBoxedId;
+};
+
+const createAssemblyGroupIds = () => createBoxedIds<Id.AssemblyGroupId>((id) => addAssemblyGroupId(id));
+const createNamespaceGroupIds = () => createBoxedIds<Id.NamespaceGroupId>((id) => addNamespaceGroupId(id));
 
 export type IdCreate = {
-  makeAssemblyId: MakeAssemblyId;
-  makeNamespaceId: MakeNamespaceId;
-  makeTypeDefId: MakeTypeDefId;
-  makeMethodDefId: MakeMethodDefId;
-  makeMemberId: MakeMemberId;
-  newTypeRefId: NewTypeRefId;
-  newGenericParamId: NewGenericParamId;
-  newMethodRefId: NewMethodRefId;
+  makeAssemblyId: (id: number) => Id.AssemblyId;
+  makeNamespaceId: (id: number) => Id.NamespaceId;
+  newAssemblyGroupId: () => Id.AssemblyGroupId;
+  newNamespaceGroupId: () => Id.NamespaceGroupId;
+  makeTypeDefId: (id: number, assemblyId: Id.AssemblyId, create: boolean) => Id.TypeDefId;
+  makeMethodDefId: (id: number, assemblyId: Id.AssemblyId, create: boolean) => Id.MethodDefId;
+  makeMemberId: (id: number, assemblyId: Id.AssemblyId) => Id.MemberId;
+  newTypeRefId: (assemblyId: Id.AssemblyId) => Id.TypeRefId;
+  newGenericParamId: (assemblyId: Id.AssemblyId) => Id.GenericParamId;
+  newMethodRefId: (assemblyId: Id.AssemblyId) => Id.MethodRefId;
 };
 
 export const createIds = (): IdCreate => {
@@ -92,8 +105,10 @@ export const createIds = (): IdCreate => {
   const assertMethodDefId = (id: Id.MethodDefId, create: boolean): Id.MethodDefId =>
     assertSet(allMethodDefIds, id, create);
 
-  const makeAssemblyId = (id: number): Id.AssemblyId => IdCast.castAssemblyId(id);
-  const makeNamespaceId = (id: number): Id.NamespaceId => IdCast.castNamespaceId(id + namespaceOffset);
+  const makeAssemblyId = (id: number): Id.AssemblyId => IdCast.castAssemblyId(addAssemblyId(id));
+  const makeNamespaceId = (id: number): Id.NamespaceId => IdCast.castNamespaceId(addNamespaceId(id));
+  const newAssemblyGroupId = createAssemblyGroupIds();
+  const newNamespaceGroupId = createNamespaceGroupIds();
 
   const makeTypeDefId = (id: number, assemblyId: Id.AssemblyId, create: boolean): Id.TypeDefId =>
     assertTypeDefId(packTypeDefId(id, assemblyId), create);
@@ -110,9 +125,13 @@ export const createIds = (): IdCreate => {
   return {
     makeAssemblyId,
     makeNamespaceId,
+    newAssemblyGroupId,
+    newNamespaceGroupId,
+
     makeTypeDefId,
     makeMethodDefId,
     makeMemberId,
+
     newTypeRefId,
     newGenericParamId,
     newMethodRefId,

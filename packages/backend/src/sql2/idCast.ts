@@ -1,26 +1,17 @@
-import {
-  AnyId,
-  AssemblyId,
-  GenericParamId,
-  MemberId,
-  MethodDefId,
-  MethodRefId,
-  NamespaceId,
-  TypeDefId,
-  TypeRefId,
-  ViewId,
-} from "./idTypes";
+import * as Id from "./idTypes";
 
-export const castAssemblyId = (id: number): AssemblyId => id as AssemblyId;
-export const castNamespaceId = (id: number): NamespaceId => id as NamespaceId;
-export const castViewId = (id: number): ViewId => id as ViewId;
+export const castAssemblyId = (id: number): Id.AssemblyId => id as Id.AssemblyId;
+export const castNamespaceId = (id: number): Id.NamespaceId => id as Id.NamespaceId;
+export const castAssemblyGroupId = (id: number): Id.AssemblyGroupId => id as Id.AssemblyGroupId;
+export const castNamespaceGroupId = (id: number): Id.NamespaceGroupId => id as Id.NamespaceGroupId;
+export const castViewId = (id: number): Id.ViewId => id as Id.ViewId;
 
-export const castTypeDefId = (id: bigint): TypeDefId => id as TypeDefId;
-export const castTypeRefId = (id: bigint): TypeRefId => id as TypeRefId;
-export const castGenericParamId = (id: bigint): GenericParamId => id as GenericParamId;
+export const castTypeDefId = (id: bigint): Id.TypeDefId => id as Id.TypeDefId;
+export const castTypeRefId = (id: bigint): Id.TypeRefId => id as Id.TypeRefId;
+export const castGenericParamId = (id: bigint): Id.GenericParamId => id as Id.GenericParamId;
 
-export const castMethodDefId = (id: bigint): MethodDefId => id as MethodDefId;
-export const castMethodRefId = (id: bigint): MethodRefId => id as MethodRefId;
-export const castMemberId = (id: bigint): MemberId => id as MemberId;
+export const castMethodDefId = (id: bigint): Id.MethodDefId => id as Id.MethodDefId;
+export const castMethodRefId = (id: bigint): Id.MethodRefId => id as Id.MethodRefId;
+export const castMemberId = (id: bigint): Id.MemberId => id as Id.MemberId;
 
-export const castAnyId = (id: bigint): AnyId => id as TypeDefId;
+export const castAnyId = (id: bigint): Id.AnyId => id as Id.TypeDefId;
