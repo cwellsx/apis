@@ -25,7 +25,7 @@ export type Call = { fromId: Id.MethodDefId; toId: Id.MethodId };
 
 export type FullName = { id: Id.AnyId; fullName: string };
 
-export type View = { id: Id.ViewId; name: string; viewType: ViewType };
+export type View = { id: Id.ViewId; viewType: ViewType }; // in future could add `name: string` column to support multiple view instance
 export type ViewState = { viewId: Id.ViewId; id: Id.AnyId; isHidden: Boolean; isExpanded: Boolean };
 
 export type AssemblyGroup = { id: Id.AssemblyGroupId; name: string };
@@ -78,7 +78,7 @@ type TableRowMap = {
   namespaceGroups: NamespaceGroup;
 };
 
-export type TableRow<K extends TableName> = TableRowMap[K];
+type TableRow<K extends TableName> = TableRowMap[K];
 
 export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { close: () => void };
 
@@ -104,7 +104,7 @@ const zero = {
   anyId: IdCast.castAnyId(0n),
 };
 
-const row = {
+const row: TableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
   namespaces: { id: zero.namespaceId, name: "foo" },
   typeNames: { id: zero.typeDefId, name: "foo", namespaceId: zero.namespaceId, declaringTypeId: zero.typeDefId },
@@ -121,8 +121,8 @@ const row = {
   calls: { fromId: zero.methodDefId, toId: zero.methodId },
 
   fullNames: { id: zero.anyId, fullName: "foo" },
-  views: { id: zero.viewId, name: "foo", viewType: "assemblies" as ViewType },
-  viewsStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
+  views: { id: zero.viewId, viewType: "assemblies" as ViewType },
+  viewStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
 
   assemblyGroups: { id: zero.assemblyGroupId, name: "foo" },
   namespaceGroups: { id: zero.namespaceGroupId, name: "foo" },
@@ -135,26 +135,26 @@ const row = {
 // );
 
 export const createTables = (db: SqlDatabase): Tables => {
-  const assemblies = db.newSqlTable<Assembly>("assemblies", "id", [], row.assemblies);
-  const namespaces = db.newSqlTable<Namespace>("namespaces", "id", [], row.namespaces);
-  const typeNames = db.newSqlTable<TypeName>("typeNames", "id", ["namespaceId", "declaringTypeId"], row.typeNames);
-  const members = db.newSqlTable<Member>("members", "id", [], row.members);
-  const methodNames = db.newSqlTable<MethodName>("methodNames", "id", [], row.methodNames);
+  const assemblies = db.newSqlTable("assemblies", "id", [], row.assemblies);
+  const namespaces = db.newSqlTable("namespaces", "id", [], row.namespaces);
+  const typeNames = db.newSqlTable("typeNames", "id", ["namespaceId", "declaringTypeId"], row.typeNames);
+  const members = db.newSqlTable("members", "id", [], row.members);
+  const methodNames = db.newSqlTable("methodNames", "id", [], row.methodNames);
 
-  const typeReferences = db.newSqlTable<TypeReference>("typeReferences", "id", ["suffix"], row.typeReferences);
-  const methodReferences = db.newSqlTable<MethodReference>("methodReferences", "id", [], row.methodReferences);
-  const signatureTypes = db.newSqlTable<SignatureType>("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
-  const genericParams = db.newSqlTable<GenericParam>("genericParams", ["id", "seqno"], [], row.genericParams);
+  const typeReferences = db.newSqlTable("typeReferences", "id", ["suffix"], row.typeReferences);
+  const methodReferences = db.newSqlTable("methodReferences", "id", [], row.methodReferences);
+  const signatureTypes = db.newSqlTable("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
+  const genericParams = db.newSqlTable("genericParams", ["id", "seqno"], [], row.genericParams);
 
-  const decompiled = db.newSqlTable<Decompiled>("decompiled", "id", [], row.decompiled);
-  const calls = db.newSqlTable<Call>("calls", ["fromId", "toId"], [], row.calls);
+  const decompiled = db.newSqlTable("decompiled", "id", [], row.decompiled);
+  const calls = db.newSqlTable("calls", ["fromId", "toId"], [], row.calls);
 
-  const fullNames = db.newSqlTable<FullName>("fullNames", "id", [], row.fullNames);
-  const views = db.newSqlTable<View>("views", "id", [], row.views);
-  const viewStates = db.newSqlTable<ViewState>("viewStates", "id", [], row.viewsStates);
+  const fullNames = db.newSqlTable("fullNames", "id", [], row.fullNames);
+  const views = db.newSqlTable("views", "id", [], row.views);
+  const viewStates = db.newSqlTable("viewStates", "id", [], row.viewStates);
 
-  const assemblyGroups = db.newSqlTable<AssemblyGroup>("assemblyGroups", "id", [], row.assemblyGroups);
-  const namespaceGroups = db.newSqlTable<NamespaceGroup>("namespaceGroups", "id", [], row.namespaceGroups);
+  const assemblyGroups = db.newSqlTable("assemblyGroups", "id", [], row.assemblyGroups);
+  const namespaceGroups = db.newSqlTable("namespaceGroups", "id", [], row.namespaceGroups);
 
   const close = () => {
     db.done();

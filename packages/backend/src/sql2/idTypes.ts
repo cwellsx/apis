@@ -22,4 +22,7 @@ export type MethodId = MethodDefId | MethodRefId;
 
 export type AnyDefId = TypeDefId | MethodDefId; // ownerId of a GenericParam
 export type AnyOwnerId = TypeRefId | MethodRefId | MethodDefId; // ownerId of a SignatureType
-export type AnyId = TypeId | MethodId | AssemblyId | NamespaceId;
+
+export type AnyRootId = AssemblyId | NamespaceId;
+export type AnyGroupId = AssemblyGroupId | NamespaceGroupId;
+export type AnyId = TypeId | MethodId | AnyRootId | AnyGroupId;

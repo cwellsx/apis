@@ -221,4 +221,7 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
     name: value,
   }));
   tables.namespaceGroups.insertMany(namespaceGroups);
+
+  tables.views.insertAuto({ viewType: "assemblies" });
+  tables.views.insertAuto({ viewType: "namespaces" });
 };

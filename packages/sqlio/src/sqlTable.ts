@@ -113,6 +113,9 @@ export class SqlTable<T extends object> {
     const update = `UPDATE ${tableName} SET (${quoteAndJoin(keys)}) = (${values.join(", ")}) WHERE ${wherePrimaryKeys}`;
     const updateStmt = keys.length ? db.prepare(update) : undefined;
 
+    const insertAuto = `INSERT INTO "${tableName}" (${quoteAndJoin(keys)}) VALUES (${values.join(", ")})`;
+    const insertAutoStmt = keys.length ? db.prepare(insertAuto) : undefined;
+
     const upsert = `INSERT OR REPLACE ${insertParameters}`;
     const upsertStmt = db.prepare(upsert);
 
@@ -126,6 +129,15 @@ export class SqlTable<T extends object> {
       const info = insertStmt.run(u);
       if (info.changes !== 1) throw new Error("insert failed");
       verbose(`inserted row #${info.lastInsertRowid}`);
+    });
+    this.insertAuto = db.transaction((t: Partial<T>) => {
+      const { toSql } = sqlJson(t);
+      const u = toSql(t);
+      if (!insertAutoStmt) throw new Error("insertAuto undefined");
+      const info = insertAutoStmt.run(u);
+      if (info.changes !== 1) throw new Error("insert failed");
+      verbose(`inserted row #${info.lastInsertRowid}`);
+      return BigInt(info.lastInsertRowid);
     });
     this.update = db.transaction((t: T) => {
       const u = toSql(t);
@@ -187,6 +199,7 @@ export class SqlTable<T extends object> {
   }
 
   insert: (t: T) => void;
+  insertAuto: (t: Partial<T>) => bigint;
   update: (t: T) => void;
   upsert: (t: T) => void;
   insertMany: (many: T[]) => void;

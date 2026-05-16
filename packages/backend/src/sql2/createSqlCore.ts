@@ -6,7 +6,7 @@ import * as dotNetApi from "../dotNetApi";
 import { assert, getAppFilename, getSqlNodePath, jsonParse, log, readJsonT, whenFile } from "../utils";
 import { hash } from "./hash";
 import { insertAll } from "./insertAll";
-import { createTables, dropTables } from "./schema";
+import { createTables, dropTables, Tables } from "./schema";
 
 type GetAll = (dataSource: DataSource) => Promise<All>;
 
@@ -28,7 +28,7 @@ const onType = async (dataSource: DataSource): Promise<{ when: string; getAll: G
   }
 };
 
-export const createSqlCore = async (dataSource: DataSource): Promise<All> => {
+export const createSqlCore = async (dataSource: DataSource): Promise<{ all: All; tables: Tables }> => {
   const { when, getAll } = await onType(dataSource);
 
   const filename = getAppFilename(`${dataSource.type}-${hash(dataSource.path)}.db`);
@@ -41,6 +41,5 @@ export const createSqlCore = async (dataSource: DataSource): Promise<All> => {
   dropTables(db);
   const tables = createTables(db);
   insertAll(all, tables);
-  tables.close();
-  return all;
+  return { all, tables };
 };
