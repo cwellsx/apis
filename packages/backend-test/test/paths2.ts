@@ -15,6 +15,12 @@ export const fileSutJson = path.join(dirTestRoot, "Core2.json");
 export const dirAppData = path.join(dirTestRoot, "appData");
 pathMkdir(dirAppData);
 
+// viewState
+
+const dirViewState = path.join(dirTestRoot, "viewState");
+pathMkdir(dirViewState);
+export const fileViewState = (filename: string) => path.join(dirViewState, filename);
+
 // db files
 
 export const fileTempDb = path.join(dirAppData, "temp.db");
