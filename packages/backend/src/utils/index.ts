@@ -1,4 +1,5 @@
 export * from "./assert";
+export { compareOrdinal } from "./compareOrdinal";
 export * from "./error";
 export * from "./fs";
 export { jsonParse } from "./jsonParse";

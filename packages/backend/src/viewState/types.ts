@@ -4,7 +4,9 @@ export type NodeId = Id.AnyId;
 
 export type NodeState = { isHidden?: boolean; isExpanded?: boolean };
 
-export type Node = { id: NodeId; label: string; children?: Node[]; parent?: Node } & NodeState;
+export type NodeType = "g" | "a" | "n" | "t" | "m";
+export type NodeItem = { id: NodeId; label: string; type: NodeType };
+export type Node = NodeItem & { children?: Node[]; parent?: Node } & NodeState;
 
 export type ViewType = Sql.ViewType;
 

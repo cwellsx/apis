@@ -5,7 +5,7 @@ export const printForest = (nodes: Node[]): string[] => {
 
   const printNode = (node: Node, prefix: string, isLast: boolean, isRoot: boolean): void => {
     const branch = isRoot ? "" : prefix + (isLast ? "└── " : "├── ");
-    result.push(branch + node.label);
+    result.push(branch + `${node.type} ${node.label}`);
 
     const children = node.children ?? [];
 
