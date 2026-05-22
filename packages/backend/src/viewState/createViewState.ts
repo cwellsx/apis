@@ -1,7 +1,13 @@
+import type { Node } from "../contracts-ui";
 import { Sql } from "../sql2";
 import { createDatabase } from "./createDatabase";
 import { getTrunk } from "./getTrunk";
-import type { Node, NodeId, NodeState, ViewState, ViewType } from "./types";
+import type { ViewType } from "./viewType";
+
+export type ViewState = {
+  getTree: () => Node[];
+  // setNodeState: (id: NodeId, nodeState: NodeState) => void
+};
 
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
   const database = createDatabase(sqlTables, viewType);
@@ -10,7 +16,10 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
 
   const getTree = (): Node[] => trunk;
 
-  const setNodeState = (id: NodeId, nodeState: NodeState): void => {};
+  // const setNodeState = (id: NodeId, nodeState: NodeState): void => {};
 
-  return { getTree, setNodeState };
+  return {
+    getTree,
+    // setNodeState
+  };
 };

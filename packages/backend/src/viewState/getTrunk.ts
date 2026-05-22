@@ -1,6 +1,7 @@
+import type { Node, Parent } from "../contracts-ui";
+import { isParent } from "../contracts-ui";
 import { compareOrdinal } from "../utils";
 import type { Database } from "./createDatabase";
-import type { Node, NodeItem } from "./types";
 
 export const getTrunk = (database: Database): Node[] => {
   const top: Node[] = [];
@@ -12,13 +13,21 @@ export const getTrunk = (database: Database): Node[] => {
     nodes.sort((x, y) => compareOrdinal(x.label, y.label));
   };
 
-  const findParent = (nodeItem: NodeItem) => {
+  const findParent = (node: Node): Parent | undefined => {
     const callbackfn = (previous: Node | undefined, current: Node): Node | undefined => {
-      if (!nodeItem.label.startsWith(current.label)) return previous;
+      if (!node.label.startsWith(current.label)) return previous;
       if (previous && previous.label.length > current.label.length) return previous;
       return current;
     };
-    return both().reduce(callbackfn, undefined);
+    const result = both().reduce(callbackfn, undefined);
+    if (!result) return result;
+    // convert Node to Parent
+    if (!isParent(result)) {
+      const parent = result as Parent;
+      parent.children = [];
+      return parent;
+    }
+    return result;
   };
 
   const insert = (array: Node[], node: Node): void => {
@@ -37,13 +46,14 @@ export const getTrunk = (database: Database): Node[] => {
     array.splice(lo, 0, node);
   };
 
+  // const isParent = (node: Node): node is Parent => "children" in node;
+
   const findParents = (layer: Node[]): void => {
     const pairs = layer.map((value) => ({ node: value, parent: findParent(value) }));
     pairs.forEach((pair) => {
       const { node, parent } = pair;
       if (parent) {
-        if (!parent.children) parent.children = [node];
-        else insert(parent.children, node);
+        insert(parent.children, node);
         node.parent = parent;
         more.push(node);
       } else insert(top, node);

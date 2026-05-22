@@ -1,4 +1,5 @@
-import type { Node } from "./types";
+import type { Node } from "../contracts-ui";
+import { isParent } from "../contracts-ui";
 
 export const printForest = (nodes: Node[]): string[] => {
   const result: string[] = [];
@@ -7,7 +8,7 @@ export const printForest = (nodes: Node[]): string[] => {
     const branch = isRoot ? "" : prefix + (isLast ? "└── " : "├── ");
     result.push(branch + `${node.type} ${node.label}`);
 
-    const children = node.children ?? [];
+    const children = isParent(node) ? node.children : [];
 
     // For roots, children start with empty prefix.
     // For non-roots, children inherit prefix plus vertical/space.

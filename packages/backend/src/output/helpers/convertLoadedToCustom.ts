@@ -1,5 +1,5 @@
 import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
-import { isCustomManual, isParent } from "../../contracts-ui";
+import { isCustomManual, isParent, NodeType } from "../../contracts-ui";
 import { CustomNode } from "../../customJson";
 import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "../../nodeIds";
 import { getOrThrow, last, log, options } from "../../utils";
@@ -30,8 +30,8 @@ export const convertLoadedToCustom = (
       return;
     }
     const leaf = !isCustomFolder(node)
-      ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id), parent: null }
-      : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id), parent: null };
+      ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id), parent: null, type: NodeType.Group }
+      : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id), parent: null, type: NodeType.Group };
     leafNodes.set(node.id, leaf);
     if (node.shape) {
       const shape: Shape = node.shape as Shape;
@@ -101,7 +101,13 @@ export const convertLoadedToCustom = (
         groupName = "" + groupName;
         let parent: Parent = parents[groupName];
         if (!parent) {
-          parent = { label: groupName, nodeId: toGroupByNodeId(groupedBy, groupName), parent: null, children: [] };
+          parent = {
+            label: groupName,
+            nodeId: toGroupByNodeId(groupedBy, groupName),
+            parent: null,
+            children: [],
+            type: NodeType.Group,
+          };
           roots.push(parent);
           parents[groupName] = parent;
         }

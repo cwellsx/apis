@@ -19,6 +19,7 @@ export type { MethodName } from "./methodName";
 export { isParent } from "./node";
 export type { Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
+export * from "./nodeTypes";
 export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./types";
 export { defaultView } from "./view";
 export type { View, ViewCustomErrors, ViewGraph, ViewGraphData, ViewGreeting, ViewText } from "./view";

@@ -1,27 +1,32 @@
+import type { AnyNodeType, Node } from "../contracts-ui";
+import { NodeType, textToNodeId } from "../contracts-ui";
 import { Id, Sql } from "../sql2";
 import { assert } from "../utils";
-import type { NodeId, NodeItem, NodeType, ViewType } from "./types";
+import type { ViewType } from "./viewType";
 
-export type Database = { groups: NodeItem[]; roots: NodeItem[]; viewId: Id.ViewId; nodeType: NodeType };
+export type Database = { groups: Node[]; roots: Node[]; viewId: Id.ViewId };
 
 export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Database => {
   const groupsTable = viewType == "assemblies" ? sqlTables.assemblyGroups : sqlTables.namespaceGroups;
   const rootsTable = viewType == "assemblies" ? sqlTables.assemblies : sqlTables.namespaces;
-  const nodeType: NodeType = viewType == "assemblies" ? "a" : "n";
+  const rootNodeType = viewType == "assemblies" ? NodeType.Assembly : NodeType.Namespace;
 
   const views = sqlTables.views.selectAll();
   const found = views.find((view) => view.viewType == viewType);
   assert(!!found);
 
-  type Item = { id: NodeId; name: string };
+  type Item<T> = { id: T; name: string };
 
-  const getNodeItems = (items: Item[], type: NodeType): NodeItem[] =>
-    items.map((item) => ({ id: item.id, label: item.name, type }));
+  const getTopItems = (items: Item<number>[], type: AnyNodeType): Node[] =>
+    items.map((item) => {
+      const text = item.id.toString();
+      const nodeId = textToNodeId(text);
+      return { nodeId, label: item.name, parent: null, type };
+    });
 
   return {
-    groups: getNodeItems(groupsTable.selectAll(), "g"),
-    roots: getNodeItems(rootsTable.selectAll(), "a"),
+    groups: getTopItems(groupsTable.selectAll(), NodeType.Group),
+    roots: getTopItems(rootsTable.selectAll(), rootNodeType),
     viewId: found.id,
-    nodeType,
   };
 };
