@@ -114,6 +114,25 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
   tables.assemblies.insertMany(assemblies);
   const assemblyIds = new Map<string, AssemblyId>(assemblies.map((it) => [it.name, it.id]));
 
+  // references
+  tables.references.insertMany(
+    Object.entries(all.assemblies).flatMap(([assemblyName, assemblyInfo]) => {
+      const fromId = getOrThrow(assemblyIds, assemblyName);
+      return (
+        assemblyInfo.referencedAssemblies
+          // there are assembly references for which we have no types etc
+          // - "System.Runtime" -- compiler-generated types removed from the view
+          // - "netstandard" -- contains type forwarders
+          // - "System.Memory" -- contains System.Span`1
+          .filter((referenced) => assemblyIds.has(referenced))
+          .map((referenced) => {
+            const toId = getOrThrow(assemblyIds, referenced);
+            return { fromId, toId };
+          })
+      );
+    })
+  );
+
   // assemblyName & typeDefId & DotNet.TypeInfo
   const allTypeInfos = getAllTypeInfos(all, assemblyIds, idCreate);
 

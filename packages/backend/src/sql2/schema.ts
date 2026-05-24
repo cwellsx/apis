@@ -17,6 +17,8 @@ export type TypeName = {
 };
 export type Member = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
 
+export type Reference = { fromId: Id.AssemblyId; toId: Id.AssemblyId };
+
 export type MethodName = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnTypeId: Id.TypeId };
 
 export type TypeReference = { id: Id.TypeRefId; resolvedId: Id.BaseTypeId; suffix?: string };
@@ -42,6 +44,8 @@ export const tableNames = [
   "namespaces",
   "typeNames",
   "members",
+
+  "references",
 
   "methodNames",
 
@@ -70,6 +74,7 @@ type TableRowMap = {
   namespaces: Namespace;
   typeNames: TypeName;
   members: Member;
+  references: Reference;
   methodNames: MethodName;
   typeReferences: TypeReference;
   methodReferences: MethodReference;
@@ -122,6 +127,8 @@ const row: TableRowMap = {
   },
   members: { id: zero.memberId, typeId: zero.typeDefId, name: "foo", json: {} as MembersJson },
 
+  references: { fromId: zero.assemblyId, toId: zero.assemblyId },
+
   methodNames: { id: zero.methodDefId, typeId: zero.typeDefId, name: "foo", returnTypeId: zero.typeId },
 
   typeReferences: { id: zero.typeRefId, resolvedId: zero.typeDefId, suffix: "foo" },
@@ -151,6 +158,9 @@ export const createTables = (db: SqlDatabase): Tables => {
   const namespaces = db.newSqlTable("namespaces", "id", [], row.namespaces);
   const typeNames = db.newSqlTable("typeNames", "id", ["namespaceId", "declaringTypeId"], row.typeNames);
   const members = db.newSqlTable("members", "id", [], row.members);
+
+  const references = db.newSqlTable("references", ["fromId", "toId"], [], row.references);
+
   const methodNames = db.newSqlTable("methodNames", "id", [], row.methodNames);
 
   const typeReferences = db.newSqlTable("typeReferences", "id", ["suffix"], row.typeReferences);
@@ -178,6 +188,7 @@ export const createTables = (db: SqlDatabase): Tables => {
     namespaces,
     typeNames,
     members,
+    references,
     methodNames,
     typeReferences,
     methodReferences,
