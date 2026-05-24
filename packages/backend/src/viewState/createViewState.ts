@@ -1,9 +1,8 @@
 import type { AnyNodeType, Node, NodeId } from "../contracts-ui";
 import { Sql } from "../sql2";
-import { cloneTrunk } from "./cloneTrunk";
 import { createDatabase } from "./createDatabase";
 import type { Forest } from "./forest";
-import { addLeafs, getTrunk } from "./getTrunk";
+import { addLeafs, cloneTrunk, getTrunk } from "./forest";
 import { NodeState } from "./nodeState";
 import { toAnyId } from "./toAnyId";
 import type { ViewType } from "./viewType";
