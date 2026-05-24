@@ -4,7 +4,7 @@ import * as Id from "./idTypes";
 import { MembersJson } from "./schemaMemberJson";
 
 export type Boolean = 0 | 1;
-export type ViewType = "assemblies" | "namespaces";
+export type ViewType = "assemblies" | "namespaces" | "references";
 
 export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: Boolean };
 export type Namespace = { id: Id.NamespaceId; name: string };

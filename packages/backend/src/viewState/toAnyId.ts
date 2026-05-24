@@ -9,11 +9,12 @@ import {
   castNamespaceId,
   castTypeDefId,
 } from "../sql2";
-import { ViewType } from "./viewType";
+import { ViewType } from "./createDatabase";
 
 const toGroupId = (id: number, viewType: ViewType): Id.AnyId => {
   switch (viewType) {
     case "assemblies":
+    case "references":
       return castAssemblyGroupId(id);
     case "namespaces":
       return castNamespaceGroupId(id);

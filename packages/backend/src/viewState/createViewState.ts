@@ -1,11 +1,12 @@
 import type { AnyNodeType, Node, NodeId } from "../contracts-ui";
+import { NodeType, textToNodeId } from "../contracts-ui";
 import { Sql } from "../sql2";
+import type { Item, Numeric, ViewType } from "./createDatabase";
 import { createDatabase } from "./createDatabase";
 import type { Forest } from "./forest";
 import { addLeafs, cloneTrunk, getTrunk } from "./forest";
 import { NodeState } from "./nodeState";
 import { toAnyId } from "./toAnyId";
-import type { ViewType } from "./viewType";
 
 /*
 To work with the existing front end we need to call this method
@@ -45,17 +46,34 @@ export type ViewState = {
   setNodeState: (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState) => void;
 };
 
+const toNodesFromItems = <TId extends Numeric>(items: Item<TId>[], type: AnyNodeType): Node[] =>
+  items.map((item) => {
+    const text = item.id.toString();
+    const nodeId = textToNodeId(text);
+    return { nodeId, label: item.name, parent: null, type };
+  });
+
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
   const { rootNodeType, top, getNodeStates, setAnyNodeState, getLeafs } = createDatabase(sqlTables, viewType);
 
-  const trunk: Forest = getTrunk(top);
+  const trunk: Forest = getTrunk({
+    groups: toNodesFromItems<number>(top.groups, NodeType.Group),
+    roots: toNodesFromItems<number>(top.roots, rootNodeType),
+  });
+
   const getForest = cloneTrunk(trunk);
 
   const getNewForest = (): Forest => {
     const trunk = getForest();
     const nodeStates = getNodeStates();
     const leafs = getLeafs(nodeStates);
-    addLeafs(trunk, leafs);
+    addLeafs(trunk, {
+      typeNames: toNodesFromItems<bigint>(leafs.typeNames, NodeType.Type),
+      methodNames: toNodesFromItems<bigint>(leafs.methodNames, NodeType.Method),
+      parents: new Map<string, string>(
+        [...leafs.parents.entries()].map(([key, value]) => [key.toString(), value.toString()])
+      ),
+    });
     return trunk;
   };
 
