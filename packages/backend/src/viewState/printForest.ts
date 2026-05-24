@@ -1,7 +1,8 @@
 import type { Node } from "../contracts-ui";
 import { isParent } from "../contracts-ui";
+import { Forest } from "./forest";
 
-export const printForest = (nodes: Node[]): string[] => {
+export const printForest = (forest: Forest): string[] => {
   const result: string[] = [];
 
   const printNode = (node: Node, prefix: string, isLast: boolean, isRoot: boolean): void => {
@@ -20,7 +21,7 @@ export const printForest = (nodes: Node[]): string[] => {
     });
   };
 
-  nodes.filter((n) => !n.parent).forEach((root) => printNode(root, "", true, true));
+  forest.roots.forEach((root) => printNode(root, "", true, true));
 
   return result;
 };

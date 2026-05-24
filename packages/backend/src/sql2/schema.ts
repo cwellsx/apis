@@ -8,7 +8,13 @@ export type ViewType = "assemblies" | "namespaces";
 
 export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: Boolean };
 export type Namespace = { id: Id.NamespaceId; name: string };
-export type TypeName = { id: Id.TypeDefId; namespaceId?: Id.NamespaceId; name: string; declaringTypeId?: Id.TypeDefId };
+export type TypeName = {
+  id: Id.TypeDefId;
+  assemblyId: Id.AssemblyId;
+  namespaceId?: Id.NamespaceId;
+  name: string;
+  declaringTypeId?: Id.TypeDefId;
+};
 export type Member = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
 
 export type MethodName = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnTypeId: Id.TypeId };
@@ -107,7 +113,13 @@ const zero = {
 const row: TableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
   namespaces: { id: zero.namespaceId, name: "foo" },
-  typeNames: { id: zero.typeDefId, name: "foo", namespaceId: zero.namespaceId, declaringTypeId: zero.typeDefId },
+  typeNames: {
+    id: zero.typeDefId,
+    name: "foo",
+    assemblyId: zero.assemblyId,
+    namespaceId: zero.namespaceId,
+    declaringTypeId: zero.typeDefId,
+  },
   members: { id: zero.memberId, typeId: zero.typeDefId, name: "foo", json: {} as MembersJson },
 
   methodNames: { id: zero.methodDefId, typeId: zero.typeDefId, name: "foo", returnTypeId: zero.typeId },

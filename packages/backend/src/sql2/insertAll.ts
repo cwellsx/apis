@@ -10,7 +10,7 @@ import * as GetMemberJson from "./insertMemberJson";
 import { Assembly, Boolean, Member, Namespace, Tables, TypeName } from "./schema";
 import * as MemberJson from "./schemaMemberJson";
 
-type AllTypeInfo = { typeDefId: TypeDefId; assemblyName: string } & DotNet.TypeInfo;
+type AllTypeInfo = { typeDefId: TypeDefId; assemblyId: AssemblyId; assemblyName: string } & DotNet.TypeInfo;
 type AllMethodMember = { typeDefId: TypeDefId; methodDefId: MethodDefId; assemblyName: string } & DotNet.MethodMember;
 type AllMethodInfo = { methodDefId: MethodDefId; assemblyName: string } & DotNet.MethodInfo;
 
@@ -26,11 +26,10 @@ const getAllTypeInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds, idCreate:
   Object.entries(all.assemblies)
     .concat(Object.entries(all.microsoftAssemblies))
     .flatMap(([assemblyName, assemblyInfo]) =>
-      assemblyInfo.typeInfos.map((value) => ({
-        assemblyName,
-        typeDefId: idCreate.makeTypeDefId(value.id, getOrThrow(assemblyIds, assemblyName), true),
-        ...value,
-      }))
+      assemblyInfo.typeInfos.map((value) => {
+        const assemblyId = getOrThrow(assemblyIds, assemblyName);
+        return { assemblyId, assemblyName, typeDefId: idCreate.makeTypeDefId(value.id, assemblyId, true), ...value };
+      })
     );
 
 const getAllMethodMembers = (
@@ -74,6 +73,7 @@ const getTypeNames = (
 ): TypeName[] =>
   allTypeInfos.map((value) => ({
     id: value.typeDefId,
+    assemblyId: value.assemblyId,
     namespaceId: value.namespace ? namespaceIds.get(value.namespace) : undefined,
     name: value.name,
     declaringTypeId: value.declaringType

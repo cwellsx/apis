@@ -6,6 +6,8 @@ export type AssemblyGroupId = number & { __brand: "AssemblyGroupId" };
 export type NamespaceGroupId = number & { __brand: "NamespaceGroupId" };
 export type ViewId = number & { __brand: "ViewId" };
 
+export type CustomId = number & { __brand: "CustomId" };
+
 // bigint
 
 export type TypeDefId = bigint & { __brand: "TypeDefId" };
@@ -25,4 +27,4 @@ export type AnyOwnerId = TypeRefId | MethodRefId | MethodDefId; // ownerId of a 
 
 export type AnyRootId = AssemblyId | NamespaceId;
 export type AnyGroupId = AssemblyGroupId | NamespaceGroupId;
-export type AnyId = TypeId | MethodId | AnyRootId | AnyGroupId;
+export type AnyId = TypeId | MethodId | AnyRootId | AnyGroupId | CustomId;

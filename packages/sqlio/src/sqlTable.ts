@@ -196,6 +196,18 @@ export class SqlTable<T extends object> {
       }
       return statement;
     };
+
+    this.selectWhereIn = <K extends keyof T>(key: K, values: readonly NonNullable<T[K]>[]): T[] => {
+      if (values.length === 0) return [];
+
+      const placeholders = values.map(() => "?").join(",");
+      const sql = `SELECT * FROM "${tableName}" WHERE "${String(key)}" IN (${placeholders})`;
+
+      return db
+        .prepare(sql)
+        .all(...values)
+        .map(fromSql);
+    };
   }
 
   insert: (t: T) => void;
@@ -209,4 +221,5 @@ export class SqlTable<T extends object> {
   selectOne: (where: Partial<T>) => T | undefined;
   selectCustom: (distinct: boolean, custom: string, where?: object) => T[];
   selectCustomSpecific: (u: Partial<T>, distinct: boolean, custom: string, where?: object) => Partial<T>[];
+  selectWhereIn: <K extends keyof T>(key: K, values: readonly NonNullable<T[K]>[]) => T[];
 }
