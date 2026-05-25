@@ -69,6 +69,29 @@ const sqlJson = <T extends object>(t: T): { toSql: (t: T) => object; fromSql: (t
   }
 };
 
+const detectIntegerMode = (t: object): "bigint" | "number" | "mixed" | "none" => {
+  let sawBigint = false;
+  let sawNumber = false;
+
+  for (const value of Object.values(t)) {
+    if (typeof value === "bigint") sawBigint = true;
+    if (typeof value === "number") sawNumber = true;
+  }
+
+  return sawBigint && sawNumber ? "mixed" : sawBigint ? "bigint" : sawNumber ? "number" : "none";
+};
+
+const needSafeIntegers = (t: object): boolean => {
+  switch (detectIntegerMode(t)) {
+    case "bigint":
+    case "mixed":
+      return true;
+    case "number":
+    case "none":
+      return false;
+  }
+};
+
 export class SqlTable<T extends object> {
   // we need to list of keys in T to create corresponding SQL columns
   // but type info is only available at compile-time, it doesn't exist at run-time
@@ -83,6 +106,8 @@ export class SqlTable<T extends object> {
     function isKeyNullable(key: string): boolean {
       return isNullable.includes(key as keyof T);
     }
+
+    const useSafeIntegers = needSafeIntegers(t);
 
     const entries = Object.entries(t) as [string, unknown][];
     const columnDefs = entries.map((entry) => {
@@ -120,6 +145,8 @@ export class SqlTable<T extends object> {
     const upsertStmt = db.prepare(upsert);
 
     const selectStmt = db.prepare(`SELECT * FROM "${tableName}"`);
+    if (useSafeIntegers) selectStmt.safeIntegers(true);
+
     const deleteAllStmt = db.prepare(`DELETE FROM "${tableName}"`);
 
     const { fromSql, toSql } = sqlJson(t);
@@ -215,18 +242,26 @@ export class SqlTable<T extends object> {
       localKey: keyof T & string,
       options?: { optional?: boolean }
     ): JoinQuery<T & U> => {
-      return new JoinQuery(db, [
-        {
-          leftTable: tableName,
-          rightTable: other.tableName,
-          leftKey: localKey,
-          rightKey: foreignKey,
-          optional: !!options?.optional,
-        },
-      ]);
+      return new JoinQuery(
+        db,
+        [
+          {
+            leftTable: tableName,
+            rightTable: other.tableName,
+            leftKey: localKey,
+            rightKey: foreignKey,
+            optional: !!options?.optional,
+          },
+        ],
+        [],
+        [],
+        false,
+        this.useSafeIntegers || other.useSafeIntegers
+      );
     };
 
     this.tableName = tableName;
+    this.useSafeIntegers = useSafeIntegers;
   }
 
   insert: (t: T) => void;
@@ -250,6 +285,7 @@ export class SqlTable<T extends object> {
   ) => JoinQuery<T & U>;
 
   tableName: string;
+  useSafeIntegers: boolean;
 }
 
 type Join = { leftTable: string; rightTable: string; leftKey: string; rightKey: string; optional: boolean };
@@ -261,8 +297,10 @@ class JoinQuery<T extends object> {
   constructor(
     private readonly db: Database,
     private readonly joins: Join[],
-    private readonly whereClauses: string[] = [],
-    private readonly whereParams: unknown[] = []
+    private readonly whereClauses: string[],
+    private readonly whereParams: unknown[],
+    private readonly isDistinct: boolean,
+    private readonly useSafeIntegers: boolean // default is true if any table in the join has useSafeIntegers
   ) {}
 
   join<U extends object, L extends object>(
@@ -285,12 +323,29 @@ class JoinQuery<T extends object> {
         },
       ],
       this.whereClauses,
-      this.whereParams
+      this.whereParams,
+      this.isDistinct,
+      this.useSafeIntegers || other.useSafeIntegers
     );
   }
 
+  distinct(): JoinQuery<T> {
+    return new JoinQuery(this.db, this.joins, this.whereClauses, this.whereParams, true, this.useSafeIntegers);
+  }
+
   where(clause: string, ...params: unknown[]): JoinQuery<T> {
-    return new JoinQuery(this.db, this.joins, [...this.whereClauses, clause], [...this.whereParams, ...params]);
+    return new JoinQuery(
+      this.db,
+      this.joins,
+      [...this.whereClauses, clause],
+      [...this.whereParams, ...params],
+      this.isDistinct,
+      this.useSafeIntegers
+    );
+  }
+
+  safeIntegers(b: boolean): JoinQuery<T> {
+    return new JoinQuery(this.db, this.joins, this.whereClauses, this.whereParams, true, b);
   }
 
   selectAll<R extends object>(columns: Record<keyof R, string>): R[] {
@@ -298,8 +353,9 @@ class JoinQuery<T extends object> {
       .map(([alias, expr]) => `${expr} AS ${alias}`)
       .join(", ");
 
+    const selectKeyword = this.isDistinct ? "SELECT DISTINCT" : "SELECT";
     const firstTable = this.joins[0].leftTable;
-    let sql = `SELECT ${selectSql} FROM ${firstTable}`;
+    let sql = `${selectKeyword} ${selectSql} FROM ${firstTable}`;
 
     for (const j of this.joins) {
       const joinType = j.optional ? "LEFT JOIN" : "JOIN";
@@ -310,6 +366,8 @@ class JoinQuery<T extends object> {
       sql += " WHERE " + this.whereClauses.join(" AND ");
     }
 
-    return this.db.prepare(sql).all(...this.whereParams) as R[];
+    const prepared = this.db.prepare(sql);
+    if (this.useSafeIntegers) prepared.safeIntegers(true);
+    return prepared.all(...this.whereParams) as R[];
   }
 }
