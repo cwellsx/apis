@@ -208,6 +208,25 @@ export class SqlTable<T extends object> {
         .all(...values)
         .map(fromSql);
     };
+
+    this.join = <U extends object>(
+      other: SqlTable<U>,
+      foreignKey: keyof U & string,
+      localKey: keyof T & string,
+      options?: { optional?: boolean }
+    ): JoinQuery<T & U> => {
+      return new JoinQuery(db, [
+        {
+          leftTable: tableName,
+          rightTable: other.tableName,
+          leftKey: localKey,
+          rightKey: foreignKey,
+          optional: !!options?.optional,
+        },
+      ]);
+    };
+
+    this.tableName = tableName;
   }
 
   insert: (t: T) => void;
@@ -222,4 +241,75 @@ export class SqlTable<T extends object> {
   selectCustom: (distinct: boolean, custom: string, where?: object) => T[];
   selectCustomSpecific: (u: Partial<T>, distinct: boolean, custom: string, where?: object) => Partial<T>[];
   selectWhereIn: <K extends keyof T>(key: K, values: readonly NonNullable<T[K]>[]) => T[];
+
+  join: <U extends object>(
+    other: SqlTable<U>,
+    foreignKey: keyof U & string,
+    localKey: keyof T & string,
+    options?: { optional?: boolean }
+  ) => JoinQuery<T & U>;
+
+  tableName: string;
+}
+
+type Join = { leftTable: string; rightTable: string; leftKey: string; rightKey: string; optional: boolean };
+
+// this creates a new prepared statement just in time
+// cost to create an prepared statement is independent of table size
+// but might want to change this in future to return a reusable prepared statement, if this is called frequently by users at run-time
+class JoinQuery<T extends object> {
+  constructor(
+    private readonly db: Database,
+    private readonly joins: Join[],
+    private readonly whereClauses: string[] = [],
+    private readonly whereParams: unknown[] = []
+  ) {}
+
+  join<U extends object, L extends object>(
+    other: SqlTable<U>,
+    foreignKey: keyof U & string,
+    localTable: SqlTable<L>, // one of the existing tables in T
+    localKey: keyof L & string,
+    options?: { optional?: boolean }
+  ): JoinQuery<T & U> {
+    return new JoinQuery(
+      this.db,
+      [
+        ...this.joins,
+        {
+          leftTable: localTable.tableName,
+          rightTable: other.tableName,
+          leftKey: localKey,
+          rightKey: foreignKey,
+          optional: !!options?.optional,
+        },
+      ],
+      this.whereClauses,
+      this.whereParams
+    );
+  }
+
+  where(clause: string, ...params: unknown[]): JoinQuery<T> {
+    return new JoinQuery(this.db, this.joins, [...this.whereClauses, clause], [...this.whereParams, ...params]);
+  }
+
+  selectAll<R extends object>(columns: Record<keyof R, string>): R[] {
+    const selectSql = Object.entries(columns as Record<string, string>)
+      .map(([alias, expr]) => `${expr} AS ${alias}`)
+      .join(", ");
+
+    const firstTable = this.joins[0].leftTable;
+    let sql = `SELECT ${selectSql} FROM ${firstTable}`;
+
+    for (const j of this.joins) {
+      const joinType = j.optional ? "LEFT JOIN" : "JOIN";
+      sql += ` ${joinType} ${j.rightTable} ON ${j.leftTable}.${j.leftKey} = ${j.rightTable}.${j.rightKey}`;
+    }
+
+    if (this.whereClauses.length > 0) {
+      sql += " WHERE " + this.whereClauses.join(" AND ");
+    }
+
+    return this.db.prepare(sql).all(...this.whereParams) as R[];
+  }
 }

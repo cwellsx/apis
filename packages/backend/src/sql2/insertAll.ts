@@ -7,6 +7,7 @@ import { parseTypeIds } from "./insertDotNetId";
 import { fullNames } from "./insertFullNames";
 import { getGroupNames } from "./insertGroups";
 import * as GetMemberJson from "./insertMemberJson";
+import { printCalls } from "./printCalls";
 import { Assembly, Boolean, Member, Namespace, Tables, TypeName } from "./schema";
 import * as MemberJson from "./schemaMemberJson";
 
@@ -243,4 +244,7 @@ export const insertAll = (all: DotNet.All, tables: Tables) => {
 
   tables.views.insertAuto({ viewType: "assemblies" });
   tables.views.insertAuto({ viewType: "namespaces" });
+  tables.views.insertAuto({ viewType: "references" });
+
+  printCalls(tables, "Core");
 };
