@@ -288,7 +288,15 @@ export class SqlTable<T extends object> {
   useSafeIntegers: boolean;
 }
 
-type Join = { leftTable: string; rightTable: string; leftKey: string; rightKey: string; optional: boolean };
+type Join = {
+  leftTable: string;
+  rightTable: string;
+  leftKey: string;
+  rightKey: string;
+  optional: boolean;
+  leftAlias?: string;
+  rightAlias?: string;
+};
 
 // this creates a new prepared statement just in time
 // cost to create an prepared statement is independent of table size
@@ -308,7 +316,7 @@ class JoinQuery<T extends object> {
     foreignKey: keyof U & string,
     localTable: SqlTable<L>, // one of the existing tables in T
     localKey: keyof L & string,
-    options?: { optional?: boolean }
+    options?: { optional?: boolean; leftAlias?: string; rightAlias?: string }
   ): JoinQuery<T & U> {
     return new JoinQuery(
       this.db,
@@ -320,6 +328,8 @@ class JoinQuery<T extends object> {
           leftKey: localKey,
           rightKey: foreignKey,
           optional: !!options?.optional,
+          leftAlias: options?.leftAlias,
+          rightAlias: options?.rightAlias,
         },
       ],
       this.whereClauses,
@@ -354,12 +364,19 @@ class JoinQuery<T extends object> {
       .join(", ");
 
     const selectKeyword = this.isDistinct ? "SELECT DISTINCT" : "SELECT";
-    const firstTable = this.joins[0].leftTable;
-    let sql = `${selectKeyword} ${selectSql} FROM ${firstTable}`;
+
+    const nameAsAlias = (name: string, alias: string | undefined): string => (alias ? `${name} AS ${alias}` : name);
+    const nameOrAlias = (name: string, alias: string | undefined): string => (alias ? alias : name);
+
+    const leftNameAsAlias = nameAsAlias(this.joins[0].leftTable, this.joins[0].leftAlias);
+    let sql = `${selectKeyword} ${selectSql} FROM ${leftNameAsAlias}`;
 
     for (const j of this.joins) {
       const joinType = j.optional ? "LEFT JOIN" : "JOIN";
-      sql += ` ${joinType} ${j.rightTable} ON ${j.leftTable}.${j.leftKey} = ${j.rightTable}.${j.rightKey}`;
+      const rightNameAsAlias = nameAsAlias(j.rightTable, j.rightAlias);
+      const leftAlias = nameOrAlias(j.leftTable, j.leftAlias);
+      const rightAlias = nameOrAlias(j.rightTable, j.rightAlias);
+      sql += ` ${joinType} ${rightNameAsAlias} ON ${leftAlias}.${j.leftKey} = ${rightAlias}.${j.rightKey}`;
     }
 
     if (this.whereClauses.length > 0) {
