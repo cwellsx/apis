@@ -51,13 +51,34 @@ namespace Core.Application
                     Logger.Log(assemblyName);
 
                     var compilerGenerated = CompilerGeneratedFactory.Create(assemblyData);
+                    var methodSummaries = MethodSummary.Transform(assemblyData.MethodData, assemblyName, compilerGenerated);
 
-                    var assemblyInfo = ToAssemblyInfo.Transform(assemblyData, compilerGenerated);
+                    // create AssemblyInfo
+
+                    var tokenMaps = TokenMaps.CreateNew();
+
+                    var toTypeInfo = ToTypeInfo.CreateToOutputTypeInfo(assemblyData.Name, compilerGenerated, tokenMaps);
+
+                    var typeInfos = assemblyData
+                        .GetTypeDefinitions(compilerGenerated.IsUserDefined)
+                        .Select(typeDefinition => toTypeInfo.Transform(typeDefinition))
+                        .ToArray();
+
+                    var assemblyInfo = new AssemblyInfo(
+                        ReferencedAssemblies: assemblyData.AssemblyReferences.Select(assemblyReference => assemblyReference.Name).ToArray(),
+                        TypeInfos: typeInfos,
+                        tokenMaps.TypeSpecs,
+                        tokenMaps.MethodSpecs
+                        );
+
                     assemblies.Add(assemblyName, assemblyInfo);
 
-                    var methodSummaries = MethodSummary.Transform(assemblyData.MethodData, assemblyName, compilerGenerated);
+                    // create Dictionary<LocalMethodId, MethodInfo>
+
                     var decompiler = new Decompiler.AssemblyDecompiler(assemblyName, ilspyAssemblyResolver);
-                    var methodInfos = ToMethodInfo.Convert(assemblyName, methodSummaries, decompiler.DecompileMethod);
+
+                    var methodInfos = ToMethodInfo.Convert(assemblyName, methodSummaries, decompiler.DecompileMethod, tokenMaps);
+
                     assemblyMethods.Add(assemblyName, methodInfos);
                 }
                 catch (Exception e)

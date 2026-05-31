@@ -11,8 +11,6 @@ namespace Core.FullNames
 {
     internal class AllNames : INames
     {
-        protected record MethodPair(MethodMember MethodMember, TypeInfo DeclaringType);
-
         private record AssemblyTypeInfo(string AssemblyName, TypeInfo TypeInfo, string InAssemblyName);
         private record AssemblyMethodPair(string AssemblyName, TypeInfo DeclaringType, MethodMember MethodMember, string InAssemblyName);
 
@@ -23,22 +21,22 @@ namespace Core.FullNames
 
         #region ctors
 
-        internal AllNames(All all)
+        internal AllNames(All all, IFetch? fetch = null)
         {
             _allTypeInfos = new TwoDictionaries<TypeInfo>(all, s_typeInfoConverter);
             _allMethodPairs = new TwoDictionaries<MethodPair>(all, s_methodPairConverter);
+
+            if (fetch != null)
+            {
+                _allTypeInfos.Fetch = fetch.FetchTypeInfo;
+                _allMethodPairs.Fetch = fetch.FetchMethodPair;
+            }
         }
 
-        protected AllNames(TwoDictionaries<TypeInfo> allTypeInfos, TwoDictionaries<MethodPair> allMethodPairs)
-        {
-            _allTypeInfos = allTypeInfos;
-            _allMethodPairs = allMethodPairs;
-        }
-
-        protected static Func<TypeInfo[], Dictionary<int, TypeInfo>> s_typeInfoConverter => typeInfos => typeInfos
+        private static Func<TypeInfo[], Dictionary<int, TypeInfo>> s_typeInfoConverter => typeInfos => typeInfos
             .ToDictionary(typeInfo => typeInfo.Id.LeafId.MetadataToken);
 
-        protected static Func<TypeInfo[], Dictionary<int, MethodPair>> s_methodPairConverter => typeInfos => typeInfos
+        private static Func<TypeInfo[], Dictionary<int, MethodPair>> s_methodPairConverter => typeInfos => typeInfos
             .SelectMany(
                 typeInfo => typeInfo.MethodMembers ?? [],
                 (typeInfo, methodMember) => new MethodPair(methodMember, typeInfo)

@@ -10,13 +10,15 @@ namespace Core.CecilToOutput
 {
     internal class ToMethodId
     {
-        string _assemblyName;
-        ToTypeId _toTypeId;
+        readonly string _assemblyName;
+        readonly TokenMaps _tokenMaps;
+        readonly ToTypeId _toTypeId;
 
-        internal ToMethodId(string assemblyName)
+        internal ToMethodId(string assemblyName, TokenMaps tokenMaps)
         {
             _assemblyName = assemblyName;
-            _toTypeId = new ToTypeId(assemblyName);
+            _tokenMaps = tokenMaps;
+            _toTypeId = new ToTypeId(assemblyName, tokenMaps);
         }
 
         internal MethodId Convert(MethodReference mr)

@@ -14,10 +14,11 @@ namespace Core.CecilToOutput
         internal static Dictionary<LocalMethodId, MethodInfo> Convert(
             string assemblyName,
             MethodSummary[] methodSummaries,
-            Func<int, string> decompile
+            Func<int, string> decompile,
+            TokenMaps tokenMaps
             )
         {
-            var toMethodInfo = new ToMethodInfo(assemblyName);
+            var toMethodInfo = new ToMethodInfo(assemblyName, tokenMaps);
             return methodSummaries.ToDictionary(
                 methodSummary => new LocalMethodId(methodSummary.FullName, new LocalMethod(methodSummary.MetadataToken.ToInt32())),
                 methodSummary => toMethodInfo.Convert(methodSummary, decompile(methodSummary.MetadataToken.ToInt32()))
@@ -29,10 +30,10 @@ namespace Core.CecilToOutput
         ToTypeId _toTypeId;
         ToMethodId _toMethodId;
 
-        internal ToMethodInfo(string assemblyName)
+        internal ToMethodInfo(string assemblyName, TokenMaps tokenMaps)
         {
-            _toTypeId = new ToTypeId(assemblyName);
-            _toMethodId = new ToMethodId(assemblyName);
+            _toTypeId = new ToTypeId(assemblyName, tokenMaps);
+            _toMethodId = new ToMethodId(assemblyName, tokenMaps);
         }
 
         internal MethodInfo Convert(MethodSummary methodSummary, string asText)

@@ -1,5 +1,14 @@
 ﻿namespace Core.Output.Ids
 {
+    /*
+     * LeafObject is ITypeId or IMethodId
+     * 
+     * What's serialized into the JSON is the LeafObject and not the FullName.
+     * The FullName is reconstructed from the LeafObject after deserialization.
+     * 
+     * JsonConverters converts to JSON using Flatten.FromIId
+     */
+
     public interface IId
     {
         string FullName { get; }

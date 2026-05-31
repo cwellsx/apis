@@ -11,23 +11,15 @@ namespace Core.CecilToOutput
 {
     internal abstract class ToTypeInfo
     {
-        internal static TypeInfo TransformMicrosoft(TypeDefinition typeDefinition, string assemblyName)
-        {
-            var self = new ToMicrosoftTypeInfo(assemblyName);
-            return self.Transform(typeDefinition);
-        }
+        internal static ToTypeInfo CreateToOutputTypeInfo(string assemblyName, CompilerGenerated compilerGenerated, TokenMaps tokenMaps)
+            => new ToOutputTypeInfo(assemblyName, compilerGenerated, tokenMaps);
 
-        internal static MethodMember TransformMicrosoft(MethodDefinition methodDefinition, string assemblyName)
-        {
-            var self = new ToMicrosoftTypeInfo(assemblyName);
-            return self.GetMethod(methodDefinition);
-        }
-
-        internal static ToTypeInfo IsUserDefined(string assemblyName, CompilerGenerated compilerGenerated) => new ToOutputTypeInfo(assemblyName, compilerGenerated);
+        internal static ToTypeInfo CreateToMicrosoftTypeInfo(string assemblyName, TokenMaps tokenMaps)
+            => new ToMicrosoftTypeInfo(assemblyName, tokenMaps);
 
         private class ToMicrosoftTypeInfo : ToTypeInfo
         {
-            internal ToMicrosoftTypeInfo(string assemblyName) : base(assemblyName) { }
+            internal ToMicrosoftTypeInfo(string assemblyName, TokenMaps tokenMaps) : base(assemblyName, tokenMaps) { }
 
             protected override Members GetMembers(TypeDefinition typeDefinition) => new Members(null, null, null, null, null);
         }
@@ -36,7 +28,7 @@ namespace Core.CecilToOutput
         {
             readonly CompilerGenerated _compilerGenerated;
 
-            internal ToOutputTypeInfo(string assemblyName, CompilerGenerated compilerGenerated) : base(assemblyName)
+            internal ToOutputTypeInfo(string assemblyName, CompilerGenerated compilerGenerated, TokenMaps tokenMaps) : base(assemblyName, tokenMaps)
             {
                 _compilerGenerated = compilerGenerated;
             }
@@ -61,10 +53,10 @@ namespace Core.CecilToOutput
         readonly string _assemblyName;
         readonly ToTypeId _toTypeId;
 
-        protected ToTypeInfo(string assemblyName)
+        protected ToTypeInfo(string assemblyName, TokenMaps tokenMaps)
         {
             _assemblyName = assemblyName;
-            _toTypeId = new ToTypeId(assemblyName);
+            _toTypeId = new ToTypeId(assemblyName, tokenMaps);
         }
 
         protected abstract Members GetMembers(TypeDefinition typeDefinition);
@@ -176,7 +168,7 @@ namespace Core.CecilToOutput
             return new PropertyMember(memberInfo.Name, GetTypeId(propertyType), access, isStatic, parameters, GetAttributes(memberInfo.CustomAttributes), memberInfo.MetadataToken.ToInt32());
         }
 
-        MethodMember GetMethod(MethodDefinition memberInfo)
+        internal MethodMember GetMethod(MethodDefinition memberInfo)
         {
             var access = GetAccess(memberInfo.IsPublic, memberInfo.IsPrivate, memberInfo.IsAssembly, memberInfo.IsFamily, memberInfo.IsFamilyAndAssembly, memberInfo.IsFamilyOrAssembly);
             var parameters = GetParameters(memberInfo.Parameters);

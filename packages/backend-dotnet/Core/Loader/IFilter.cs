@@ -1,4 +1,4 @@
-﻿namespace Core.Filter
+﻿namespace Core.Loader
 {
     internal interface IFilter
     {

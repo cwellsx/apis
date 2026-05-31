@@ -9,108 +9,153 @@ using System.Linq;
 
 namespace Core.FullNames
 {
-    internal class AllNamesFetched : AllNames
+    internal class AllNamesFetched : IFetch
     {
-        internal static IEnumerable<TypeDefinition> AllTypeDefinitions(AssemblyData assemblyData) => assemblyData.GetTypeDefinitions(typeDefinition => true);
+        internal record TokenDefinitions(TokenMap<TypeDefinition> Types, TokenMap<MethodDefinition> Methods);
 
-        internal static All Iterate(All all, IEnumerable<AssemblyData> microsoft)
+        internal record TokenInfos(TokenMap<TypeInfo> Types, TokenMap<MethodPair> Methods)
         {
-            // TValue: TypeInfo, TCecil: TypeDefinition
-            var fetchTypeInfos = new TwoDictionariesFetched<TypeInfo, TypeDefinition>(
-                all,
-                // Func<TypeInfo[], Dictionary<int, TValue>>
-                s_typeInfoConverter,
-                microsoft,
-                // Func<AssemblyData, Dictionary<int, TCecil>>
-                assemblyDataConverter: assemblyData => AllTypeDefinitions(assemblyData)
-                    .ToDictionary(typeDefinition => typeDefinition.MetadataToken.ToInt32()),
-                // Func<TCecil, string, TValue>
-                (typeDefinition, assemblyName) => ToTypeInfo.TransformMicrosoft(typeDefinition, assemblyName)
-            );
-
-            // TValue: MethodPair, TCecil: MethodDefinition
-            var fetchMethodPairs = new TwoDictionariesFetched<MethodPair, MethodDefinition>(
-                all,
-                s_methodPairConverter,
-                microsoft,
-                // Func<AssemblyData, Dictionary<int, TCecil>>
-                assemblyDataConverter: assemblyData => AllTypeDefinitions(assemblyData)
-                    .SelectMany(typeDefinition => typeDefinition.Methods)
-                    .ToDictionary(methodDefinition => methodDefinition.MetadataToken.ToInt32()),
-                // Func<TCecil, string, TValue>
-                (methodDefinition, assemblyName) =>
-                {
-                    var typeMetadataToken = methodDefinition.DeclaringType.MetadataToken.ToInt32();
-                    var typeInfo = fetchTypeInfos.Get(assemblyName, typeMetadataToken); // ensure the declaring type is fetched
-                    var methodMember = ToTypeInfo.TransformMicrosoft(methodDefinition, assemblyName);
-                    return new MethodPair(DeclaringType: typeInfo, MethodMember: methodMember);
-                }
-            );
-
-            var self = new AllNamesFetched(fetchTypeInfos, fetchMethodPairs);
-
-            all.ToYaml(self, false);
-
-            while (fetchTypeInfos.Fetched.Count > 0 || fetchMethodPairs.Fetched.Count > 0)
-            {
-                var addedTypeInfos = new AssemblyMap<List<TypeInfo>>(fetchTypeInfos.Fetched);
-                fetchTypeInfos.Fetched.Clear();
-                // visit every element of these too
-                addedTypeInfos.ToYaml(self, false);
-
-                var addedMethodPairs = new AssemblyMap<List<MethodPair>>(fetchMethodPairs.Fetched);
-                fetchMethodPairs.Fetched.Clear();
-                // visit every element of these too
-                addedMethodPairs.ToYaml(self, false);
-            }
-
-            var fetchedTypeInfos = fetchTypeInfos.GetMicrosoftValues();
-            var fetchedMethodPairs = fetchMethodPairs.GetMicrosoftValues();
-
-            Assert(fetchedTypeInfos.Values.All(typeInfos => typeInfos.All(typeInfo => typeInfo.MethodMembers == null)));
-
-            var fetchedMethodMembers = fetchedMethodPairs.ToDictionary(
-                kvp => kvp.Key,
-                kvp => kvp.Value
-                .GroupBy(methodPair => methodPair.DeclaringType.Id.LeafId.MetadataToken)
-                .ToDictionary(
-                    methodPairGroup => methodPairGroup.Key,
-                    methodPairGroup => methodPairGroup.Select(methodPair => methodPair.MethodMember).ToArray()
-                    )
-                );
-
-            Func<string, int, MethodMember[]?> getMethodMembers = (assemblyName, id) =>
-            {
-                if (fetchedMethodMembers.TryGetValue(assemblyName, out var assemblyMethodMembers) && assemblyMethodMembers.TryGetValue(id, out var methodMembers))
-                {
-                    return methodMembers;
-                }
-                return null;
-            };
-
-            var microsoftAssemblies = new AssemblyMap<AssemblyInfo>(fetchedTypeInfos.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new AssemblyInfo(
-                    ReferencedAssemblies: [], // could but need not return referenced assemblies
-                    TypeInfos: kvp.Value.Select(typeInfo =>
-                    {
-                        var methodMembers = getMethodMembers(kvp.Key, typeInfo.Id.LeafId.MetadataToken);
-                        return typeInfo with { MethodMembers = methodMembers };
-                    }).ToArray()
-                    )
-                ));
-
-            //var microsoftAssemblies = new AssemblyMap<AssemblyInfo>();
-
-            return all with { MicrosoftAssemblies = microsoftAssemblies };
+            static internal TokenInfos CreateNew() => new TokenInfos(new TokenMap<TypeInfo>(), new TokenMap<MethodPair>());
         }
 
-        AllNamesFetched(
-            TwoDictionariesFetched<TypeInfo, TypeDefinition> fetchTypeInfos,
-            TwoDictionariesFetched<MethodPair, MethodDefinition> fetchMethodPairs
-            )
-            : base(fetchTypeInfos, fetchMethodPairs)
+        private class CecilData {
+            TokenDefinitions _tokenDefinitions;
+            TokenMaps _tokenMaps;
+            ToTypeInfo _toTypeInfo;
+            TokenInfos _tokenInfos;
+
+            internal CecilData(string assemblyName, TypeDefinition[] typeDefinitions)
+            {
+                _tokenDefinitions = new TokenDefinitions(
+                    Types: new TokenMap<TypeDefinition>(typeDefinitions.ToDictionary(typeDefinition => typeDefinition.MetadataToken.ToInt32())),
+                    Methods: new TokenMap<MethodDefinition>(typeDefinitions.SelectMany(typeDefinition => typeDefinition.Methods)
+                        .ToDictionary(methodDefinition => methodDefinition.MetadataToken.ToInt32()))
+                    );
+                _tokenMaps = TokenMaps.CreateNew();
+                _toTypeInfo = ToTypeInfo.CreateToMicrosoftTypeInfo(assemblyName, _tokenMaps);
+                _tokenInfos = TokenInfos.CreateNew();
+            }
+
+            internal TypeInfo FetchTypeInfo(int metadataToken)
+            {
+                if (_tokenInfos.Types.TryGetValue(metadataToken, out var existingTypeInfo))
+                {
+                    // TokenInfo can be fetched via FetchTypeInfo and/or via FetchMethodPair
+                    return existingTypeInfo;
+                }
+                var typeDefinition = _tokenDefinitions.Types[metadataToken];
+                var typeInfo = _toTypeInfo.Transform(typeDefinition);
+                _tokenInfos.Types.Add(metadataToken, typeInfo);
+                return typeInfo;
+            }
+
+            internal MethodPair FetchMethodPair(int metadataToken)
+            {
+                var methodDefinition = _tokenDefinitions.Methods[metadataToken];
+                var typeInfo = FetchTypeInfo(methodDefinition.DeclaringType.MetadataToken.ToInt32());
+                var methodMember = _toTypeInfo.GetMethod(methodDefinition);
+                var methodPair = new MethodPair(DeclaringType: typeInfo, MethodMember: methodMember);
+                _tokenInfos.Methods.Add(metadataToken, methodPair);
+                return methodPair;
+            }
+
+            internal AssemblyInfo ToAssemblyInfo()
+            {
+                var methodMembers = _tokenInfos.Methods.Values
+                    .GroupBy(methodPair => methodPair.DeclaringType.Id.LeafId.MetadataToken)
+                    .ToDictionary(
+                        methodPairGroup => methodPairGroup.Key,
+                        methodPairGroup => methodPairGroup.Select(methodPair => methodPair.MethodMember).ToArray()
+                        );
+                Func<int, MethodMember[]> getMethodMembers = (typeId) => methodMembers.TryGetValue(typeId, out var members) ? members : [];
+
+                return new AssemblyInfo(
+                    ReferencedAssemblies: [], // need not return referenced assemblies
+                    TypeInfos: _tokenInfos.Types.Select(kvp => kvp.Value with { MethodMembers = getMethodMembers(kvp.Key) }).ToArray(),
+                    _tokenMaps.TypeSpecs,
+                    _tokenMaps.MethodSpecs
+                    );
+            }
+        }
+
+        AllNames _allNames;
+        Dictionary<string, AssemblyData> _microsoftAssemblyData;
+        Dictionary<string, CecilData> _microsoftCecilData = new Dictionary<string, CecilData>();
+
+        AssemblyMap<TokenInfos> _fetched = [];
+
+        AllNamesFetched(All all, IEnumerable<AssemblyData> microsoftAssemblyData)
         {
+            _allNames = new AllNames(all, this);
+            _microsoftAssemblyData = microsoftAssemblyData.ToDictionary(a => a.Name);
+        }
+
+        public TypeInfo FetchTypeInfo(string assemblyName, int metadataToken)
+        {
+            var cecilData = GetCecilData(assemblyName);
+            var typeInfo = cecilData.FetchTypeInfo(metadataToken);
+
+            GetTokenInfos(assemblyName).Types.Add(metadataToken, typeInfo);
+
+            return typeInfo;
+        }
+
+        public MethodPair FetchMethodPair(string assemblyName, int metadataToken)
+        {
+            var cecilData = GetCecilData(assemblyName);
+            var methodPair = cecilData.FetchMethodPair(metadataToken);
+
+            GetTokenInfos(assemblyName).Methods.Add(metadataToken, methodPair);
+
+            return methodPair;
+        }
+
+        private CecilData GetCecilData(string assemblyName)
+        {
+            if (!_microsoftCecilData.TryGetValue(assemblyName, out var fetching))
+            {
+                var assemblyData = _microsoftAssemblyData[assemblyName];
+                var typeDefinitions = assemblyData.GetTypeDefinitions(typeDefinition => true).ToArray();
+                var newTokenMaps = TokenMaps.CreateNew();
+                fetching = new CecilData(assemblyName, typeDefinitions);
+                _microsoftCecilData[assemblyName] = fetching;
+            }
+            return fetching;
+        }
+
+        private TokenInfos GetTokenInfos(string assemblyName)
+        {
+            if (!_fetched.TryGetValue(assemblyName, out var tokenInfos))
+            {
+                tokenInfos = TokenInfos.CreateNew();
+                _fetched.Add(assemblyName, tokenInfos);
+            }
+            return tokenInfos;
+        }
+
+        private void ToYaml<T>(T value) where T : notnull => value.ToYaml(_allNames, prettyPrint: true);
+
+        internal static All Iterate(All all, IEnumerable<AssemblyData> microsoftAssemblyData)
+        {
+            var self = new AllNamesFetched(all, microsoftAssemblyData);
+
+            // all.ToYaml(self, false);
+            self.ToYaml(all);
+
+            while (self._fetched.Count > 0)
+            {
+                var addedTokenInfos = new AssemblyMap<TokenInfos>(self._fetched);
+                self._fetched.Clear();
+                // visit every element of these too
+                self.ToYaml(addedTokenInfos);
+            }
+
+            var microsoftAssemblies = new AssemblyMap<AssemblyInfo>(self._microsoftCecilData.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.ToAssemblyInfo()
+                ));
+
+            return all with { MicrosoftAssemblies = microsoftAssemblies };
         }
     }
 }

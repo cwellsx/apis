@@ -1,20 +1,22 @@
-﻿using Core.Id.Types;
+﻿using Core.CecilToLifted;
+using Core.Id.Types;
 using Core.Output.Ids;
 using Mono.Cecil;
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using Core.CecilToLifted;
+using System.Linq;
 
 namespace Core.CecilToOutput
 {
     internal class ToTypeId
     {
-        string _assemblyName;
+        readonly string _assemblyName;
+        readonly TokenMaps _tokenMaps;
 
-        internal ToTypeId(string assemblyName)
+        internal ToTypeId(string assemblyName, TokenMaps tokenMaps)
         {
             _assemblyName = assemblyName;
+            _tokenMaps = tokenMaps;
         }
 
         internal TypeId Convert(TypeReference tr) => new TypeId(tr.FullName, GetShortName(tr));

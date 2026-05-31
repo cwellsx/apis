@@ -1,6 +1,4 @@
-﻿using Core.Cecil;
-using Mono.Cecil;
-using System;
+﻿using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
 using Core.CecilToLifted.Private;

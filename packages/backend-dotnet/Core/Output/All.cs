@@ -19,29 +19,6 @@ namespace Core.Output
         Private = 6,
     }
 
-    //[Flags]
-    //public enum Flag
-    //{
-    //    None = 0,
-    //    Generic = 1,
-    //    GenericDefinition = 2,
-    //    Nested = 4
-    //}
-
-    //public enum TypeKind
-    //{
-    //    None,
-    //    GenericParameter,
-    //    Array,
-    //    Pointer,
-    //    ByReference
-    //}
-
-    //public record AssemblyInfo(
-    //    string[] ReferencedAssemblies,
-    //    TypeInfo[] Types
-    //    );
-
     /// <summary>
     /// All properties which were previously in TypeId plus TypeInfo
     /// excluding (GenericTypeArguments, Kind, ElementType, Flag) which are TypeSpec only and not TypeDef
@@ -72,11 +49,12 @@ namespace Core.Output
     public record Parameter(string Name, TypeId Type);
     public record MethodMember(string Name, Access Access, bool? IsStatic, bool? IsConstructor, string[]? GenericParameters, Parameter[]? Parameters, TypeId ReturnType, string[]? Attributes, int MetadataToken);
 
-
     // a shorter version of MethodDetails
     public record MethodInfo(string AsText, MethodId[]? Called, MethodId[]? Argued, TypeId[]? Locals);
 
-    public record AssemblyInfo(string[] ReferencedAssemblies, TypeInfo[] TypeInfos);
+    // constructed signature specifications
+    public record TypeSpecData(IBaseTypeId Resolved, ITypeId[]? GenericTypeArguments, string? Suffix);
+    public record MethodSpecData(ITypeId? DeclaringType, IBaseMethodId Resolved, ITypeId[] GenericTypeArguments);
 
     // a dictionary whose key is the assembly name and implicit in the "local ID" of TypeIds of types within each assembly
     public class AssemblyMap<T> : Dictionary<string, T>
@@ -85,6 +63,14 @@ namespace Core.Output
         internal AssemblyMap(IDictionary<string, T> rhs) : base(rhs) { }
         internal AssemblyMap(IEnumerable<KeyValuePair<string, T>> rhs) : base(rhs) { }
     }
+    public class TokenMap<T> : Dictionary<int, T>
+    {
+        internal TokenMap() { }
+        internal TokenMap(IDictionary<int, T> rhs) : base(rhs) { }
+        internal TokenMap(IEnumerable<KeyValuePair<int, T>> rhs) : base(rhs) { }
+    }
+
+    public record AssemblyInfo(string[] ReferencedAssemblies, TypeInfo[] TypeInfos, TokenMap<TypeSpecData> TypeSpecs, TokenMap<MethodSpecData> MethodSpecs);
 
     public record All(
         AssemblyMap<AssemblyInfo> Assemblies,
