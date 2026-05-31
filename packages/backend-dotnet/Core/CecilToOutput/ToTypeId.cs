@@ -1,5 +1,6 @@
 ﻿using Core.CecilToLifted;
 using Core.Id.Types;
+using Core.Output;
 using Core.Output.Ids;
 using Mono.Cecil;
 using System;
@@ -49,8 +50,7 @@ namespace Core.CecilToOutput
                 return new FunctionType(fptr.FullName);
             }
 
-            var recurseResult = Recurse(tr);
-            return new SpecificationType(Resolved: recurseResult.Simple, GenericTypeArguments: recurseResult.GenericArgs, Suffix: recurseResult.Suffix);
+            return Recurse(tr);
         }
 
         static bool IsSimpleOrGenericParameter(TypeReference tr) =>
@@ -59,14 +59,19 @@ namespace Core.CecilToOutput
             tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
 
         // result of recursing a TypeReference
-        public sealed record RecurseResult(IBaseTypeId Simple, string? Suffix, ITypeId[]? GenericArgs);
-
-        RecurseResult Recurse(TypeReference tr)
+        ITypeId Recurse(TypeReference tr)
         {
+            SpecificationType Result(ITypeId Simple, string? Suffix, ITypeId[]? GenericArgs)
+            {
+                var typeSpecData = new TypeSpecData(Simple, GenericArgs, Suffix);
+                var typeSpecId = _tokenMaps.AddTypeSpec(typeSpecData);
+                return new SpecificationType(typeSpecId);
+            }
+
             // Base: simple types and generic parameters
             if (IsSimpleOrGenericParameter(tr))
             {
-                return new RecurseResult(GetBaseTypeId(tr), null, null);
+                return GetBaseTypeId(tr);
             }
 
             // Generic instance: resolve each generic argument recursively,
@@ -76,7 +81,7 @@ namespace Core.CecilToOutput
                 var genericArgs = ConvertGenericArguments(git.GenericArguments);
 
                 var simple = GetBaseTypeId(git.ElementType); // generic definition
-                return new RecurseResult(simple, null, genericArgs);
+                return Result(simple, null, genericArgs);
             }
 
             // Array
@@ -84,35 +89,35 @@ namespace Core.CecilToOutput
             {
                 var inner = Recurse(at.ElementType);
                 var thisSuffix = $"[{string.Join(",", at.Dimensions)}]";
-                return new RecurseResult(inner.Simple, inner.Suffix + thisSuffix, inner.GenericArgs);
+                return Result(inner, thisSuffix, null);
             }
 
             // Pointer
             if (tr is PointerType pt)
             {
                 var inner = Recurse(pt.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + "*", inner.GenericArgs);
+                return Result(inner, "*", null);
             }
 
             // ByRef
             if (tr is ByReferenceType br)
             {
                 var inner = Recurse(br.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + "&", inner.GenericArgs);
+                return Result(inner, "&", null);
             }
 
             // Optional modifier
             if (tr is OptionalModifierType opt)
             {
                 var inner = Recurse(opt.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + $" modopt({opt.ModifierType.FullName})", inner.GenericArgs);
+                return Result(inner, $" modopt({opt.ModifierType.FullName})", null);
             }
 
             // Required modifier
             if (tr is RequiredModifierType req)
             {
                 var inner = Recurse(req.ElementType);
-                return new RecurseResult(inner.Simple, inner.Suffix + $" modreq({req.ModifierType.FullName})", inner.GenericArgs);
+                return Result(inner, $" modreq({req.ModifierType.FullName})", null);
             }
 
             // Pinned or Sentinel

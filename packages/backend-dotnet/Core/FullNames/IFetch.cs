@@ -1,4 +1,5 @@
-﻿using Core.Output;
+﻿using Core.CecilToOutput;
+using Core.Output;
 
 namespace Core.FullNames
 {
@@ -6,5 +7,6 @@ namespace Core.FullNames
     {
         TypeInfo FetchTypeInfo(string assemblyName, int metadataToken);
         MethodPair FetchMethodPair(string assemblyName, int metadataToken);
+        TokenMaps FetchTokenMaps(string assemblyName);
     }
 }

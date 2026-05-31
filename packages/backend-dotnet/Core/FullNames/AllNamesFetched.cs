@@ -76,6 +76,8 @@ namespace Core.FullNames
                     _tokenMaps.MethodSpecs
                     );
             }
+
+            internal TokenMaps TokenMaps => _tokenMaps;
         }
 
         AllNames _allNames;
@@ -108,6 +110,12 @@ namespace Core.FullNames
             GetTokenInfos(assemblyName).Methods.Add(metadataToken, methodPair);
 
             return methodPair;
+        }
+
+        public TokenMaps FetchTokenMaps(string assemblyName)
+        {
+            var cecilData = GetCecilData(assemblyName);
+            return cecilData.TokenMaps;
         }
 
         private CecilData GetCecilData(string assemblyName)

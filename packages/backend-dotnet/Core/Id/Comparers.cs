@@ -87,9 +87,7 @@ namespace Core.Id.Comparers
                     a.ParameterName == b.ParameterName,
 
                 (SpecificationType a, SpecificationType b) =>
-                    Equals(a.Resolved, b.Resolved) &&
-                    SequenceEqualNullable(a.GenericTypeArguments, b.GenericTypeArguments) &&
-                    a.Suffix == b.Suffix,
+                    Equals(a.MetadataToken, b.MetadataToken),
 
                 (FunctionType a, FunctionType b) =>
                     a.FunctionName == b.FunctionName,
@@ -112,12 +110,7 @@ namespace Core.Id.Comparers
                     HashCode.Combine("gp", t.ParameterName),
 
                 SpecificationType t =>
-                    HashCode.Combine(
-                        "spec",
-                        GetHashCode(t.Resolved),
-                        HashArray(t.GenericTypeArguments),
-                        t.Suffix
-                    ),
+                    HashCode.Combine("spec", t.MetadataToken),
 
                 FunctionType t =>
                     HashCode.Combine("fn", t.FunctionName),

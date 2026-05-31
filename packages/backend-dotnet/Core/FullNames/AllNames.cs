@@ -1,4 +1,5 @@
-﻿using Core.Id;
+﻿using Core.CecilToOutput;
+using Core.Id;
 using Core.Id.Methods;
 using Core.Id.Types;
 using Core.Output;
@@ -18,6 +19,10 @@ namespace Core.FullNames
 
         readonly TwoDictionaries<TypeInfo> _allTypeInfos;
         readonly TwoDictionaries<MethodPair> _allMethodPairs;
+        readonly AssemblyMap<TokenMaps> _allTokenMaps;
+
+        internal delegate TokenMaps FetchTokenMapsDelegate(string assemblyName);
+        internal FetchTokenMapsDelegate FetchTokenMaps { get; set; } = (assemblyName) => throw new Exception($"assemblyName: {assemblyName}");
 
         #region ctors
 
@@ -25,11 +30,16 @@ namespace Core.FullNames
         {
             _allTypeInfos = new TwoDictionaries<TypeInfo>(all, s_typeInfoConverter);
             _allMethodPairs = new TwoDictionaries<MethodPair>(all, s_methodPairConverter);
+            _allTokenMaps = new AssemblyMap<TokenMaps>(all.Assemblies.Concat(all.MicrosoftAssemblies).ToDictionary(
+                kvp => kvp.Key,
+                kvp => new TokenMaps(kvp.Value.TypeSpecs, kvp.Value.MethodSpecs)
+                ));
 
             if (fetch != null)
             {
                 _allTypeInfos.Fetch = fetch.FetchTypeInfo;
                 _allMethodPairs.Fetch = fetch.FetchMethodPair;
+                FetchTokenMaps = fetch.FetchTokenMaps;
             }
         }
 
@@ -62,14 +72,16 @@ namespace Core.FullNames
 
             if (typeId is SpecificationType specificationType)
             {
-                if (specificationType.Resolved is GenericParameter genericParameter)
+                var tokenMaps = _allTokenMaps.ContainsKey(inAssemblyName) ? _allTokenMaps[inAssemblyName] : FetchTokenMaps(inAssemblyName);
+                var typeSpec = tokenMaps.GetTypeSpec(specificationType.MetadataToken);
+                if (typeSpec.Resolved is GenericParameter genericParameter)
                 {
-                    Assert(specificationType.GenericTypeArguments == null);
-                    Assert(specificationType.Suffix != null);
-                    return genericParameter.ParameterName + specificationType.Suffix;
+                    Assert(typeSpec.GenericTypeArguments == null);
+                    Assert(typeSpec.Suffix != null);
+                    return genericParameter.ParameterName + typeSpec.Suffix;
                 }
 
-                return GetTypeName(GetAssemblyTypeInfo(specificationType.Resolved, inAssemblyName), specificationType.GenericTypeArguments, specificationType.Suffix);
+                return GetTypeName(GetAssemblyTypeInfo(typeSpec.Resolved, inAssemblyName), typeSpec.GenericTypeArguments, typeSpec.Suffix);
             }
             else
             {

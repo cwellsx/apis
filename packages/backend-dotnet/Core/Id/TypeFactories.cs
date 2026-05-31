@@ -62,66 +62,20 @@ namespace Core.Id.TypeFactories
     {
         public override object ToShortName(SpecificationType item)
         {
-            var result = new List<object>
-                {
-                    item.Resolved
-                };
-            if (item.GenericTypeArguments != null)
-            {
-                result.AddRange(item.GenericTypeArguments);
-            }
-            if (!string.IsNullOrEmpty(item.Suffix))
-            {
-                if (!IsValidSuffix(item.Suffix))
-                {
-                    throw new NotSupportedException($"Invalid suffix: {item.Suffix}");
-                }
-                result.Add(item.Suffix);
-            }
-            return result.ToArray();
+            return new int[] { item.MetadataToken };
         }
 
         public override SpecificationType FromShortName(object shortName)
         {
             var arrayId = (Array)shortName;
-            if (arrayId.Length < 2)
-            {
-                throw new NotSupportedException($"Invalid arrayId: {arrayId}");
-            }
-            var items = arrayId.Cast<object>().ToArray();
-
-            // need to distinguish whether the last element is a suffix or part of the generic type arguments -- to do this, prepend the suffix with a space
-            var last = items.Last();
-            string? suffix = last is string s && IsValidSuffix(s) ? s : null;
-
-            var genericTypeItems = suffix != null
-                ? items.Skip(1).Take(items.Length - 2)
-                : items.Skip(1);
-
-            var genericTypeArguments = genericTypeItems.Select(item => TypeFactory.FromShortName(item)).ToArrayOrNull();
-
-            var resolved = (IBaseTypeId)TypeFactory.FromShortName(items[0]);
-
-            return new SpecificationType(resolved, genericTypeArguments, suffix);
+            Assert(arrayId.Length == 1);
+            var element = arrayId.GetValue(0);
+            Assert(element is int);
+            return new SpecificationType((int)element);
         }
 
         public override bool IsShortName(object shortName) => shortName is Array;
-        public override bool IsShortNameValid(object shortName) => ((Array)shortName).Length > 1;// && ((Array)shortName).Cast<object>().All(o => o is string || o is ITypeId);
-
-        private static bool IsValidSuffix(string s)
-        {
-            switch (s[0])
-            {
-                case ' ':
-                case '*':
-                case '&':
-                case '$':
-                case '[':
-                    return true;
-                default:
-                    return false;
-            }
-        }
+        public override bool IsShortNameValid(object shortName) => ((Array)shortName).Length == 1;// && ((Array)shortName).Cast<object>().All(o => o is string || o is ITypeId);
     }
 
     class FunctionFactory : FactoryBase<FunctionType>

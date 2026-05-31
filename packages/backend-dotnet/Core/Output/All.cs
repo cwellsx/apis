@@ -53,7 +53,7 @@ namespace Core.Output
     public record MethodInfo(string AsText, MethodId[]? Called, MethodId[]? Argued, TypeId[]? Locals);
 
     // constructed signature specifications
-    public record TypeSpecData(IBaseTypeId Resolved, ITypeId[]? GenericTypeArguments, string? Suffix);
+    public record TypeSpecData(ITypeId Resolved, ITypeId[]? GenericTypeArguments, string? Suffix);
     public record MethodSpecData(ITypeId? DeclaringType, IBaseMethodId Resolved, ITypeId[] GenericTypeArguments);
 
     // a dictionary whose key is the assembly name and implicit in the "local ID" of TypeIds of types within each assembly

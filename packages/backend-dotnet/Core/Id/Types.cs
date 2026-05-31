@@ -15,7 +15,7 @@ namespace Core.Id.Types
     // it correctly allows e.g. "T&" when the TypeSpec is for the type of a method parameter
     // but the BaseType of TypeInfo can also be a TypeSpec but cannot resolve to a GenericParameter
     // even so this is good enough -- this models (more than) the range of possible names, and any additional strictness is enforcd only by the compiler depending on the context of the TypeSpec.
-    internal sealed record SpecificationType(IBaseTypeId Resolved, ITypeId[]? GenericTypeArguments, string? Suffix) : ITypeId;
+    internal sealed record SpecificationType(int MetadataToken) : ITypeId;
 
     internal sealed record FunctionType(string FunctionName) : ITypeId;
 }
