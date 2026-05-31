@@ -9,5 +9,5 @@ namespace Core.Id.Methods
     internal sealed record RemoteMethod(string AssemblyName, int MetadataToken) : IBaseMethodId;
 
     // generic parameter -> enclosing method or type (in this assembly)
-    internal sealed record GenericMethod(IBaseMethodId Resolved, ITypeId[] GenericTypeArguments) : IMethodId;
+    internal sealed record GenericMethod(int MetadataToken) : IMethodId;
 }

@@ -54,7 +54,7 @@ namespace Core.Output
 
     // constructed signature specifications
     public record TypeSpecData(ITypeId Resolved, ITypeId[]? GenericTypeArguments, string? Suffix);
-    public record MethodSpecData(ITypeId? DeclaringType, IBaseMethodId Resolved, ITypeId[] GenericTypeArguments);
+    public record MethodSpecData(ITypeId? DeclaringType, IBaseMethodId Resolved, ITypeId[]? GenericMethodArguments);
 
     // a dictionary whose key is the assembly name and implicit in the "local ID" of TypeIds of types within each assembly
     public class AssemblyMap<T> : Dictionary<string, T>

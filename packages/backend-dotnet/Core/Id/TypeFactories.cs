@@ -75,7 +75,7 @@ namespace Core.Id.TypeFactories
         }
 
         public override bool IsShortName(object shortName) => shortName is Array;
-        public override bool IsShortNameValid(object shortName) => ((Array)shortName).Length == 1;// && ((Array)shortName).Cast<object>().All(o => o is string || o is ITypeId);
+        public override bool IsShortNameValid(object shortName) => ((Array)shortName).Length == 1;
     }
 
     class FunctionFactory : FactoryBase<FunctionType>

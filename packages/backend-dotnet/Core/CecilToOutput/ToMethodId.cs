@@ -3,8 +3,8 @@ using Core.Output.Ids;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Core.CecilToLifted;
+using Core.Output;
 
 namespace Core.CecilToOutput
 {
@@ -61,25 +61,19 @@ namespace Core.CecilToOutput
                  (typeReference as GenericInstanceType)?.GenericArguments
                 );
 
-            // all generic type arguments (and parameters) were inherited from their declaring types by the nested type of which the method is a member
-            // the declaring types of such a nest type are type definitions without futuer generic arguments
-            var enclosingType = typeReference.DeclaringType;
-            while (enclosingType != null)
+            if (genericMethodArguments == null && genericTypeArguments == null)
             {
-                if (enclosingType is GenericInstanceType)
-                {
-                    throw new Exception();
-                }
-                enclosingType = enclosingType.DeclaringType;
+                // non-generic method of non-generic type
+                return new MethodId(cecilFullName, methodId);
             }
 
-            // concaterate -- type generic arguments, then method generic arguments
-            var genericArguments = genericTypeArguments.Concat(genericMethodArguments).ToArrayOrNull();
-            IMethodId leafId = (genericArguments == null) ? methodId : new GenericMethod(methodId, genericArguments);
-            return new MethodId(cecilFullName, leafId);
+            ITypeId? declaringType = (genericTypeArguments == null) ? null : _toTypeId.Convert(typeReference).LeafId;
+
+            var methodSpecData = new MethodSpecData(declaringType, methodId, genericMethodArguments);
+            return new MethodId(cecilFullName, new GenericMethod(_tokenMaps.AddMethodSpec(methodSpecData)));
         }
 
-        ITypeId[] GetGenericTypeArguments(
+        ITypeId[]? GetGenericTypeArguments(
             IList<GenericParameter> genericParameters,
             IList<TypeReference>? genericArguments
             )
@@ -90,7 +84,7 @@ namespace Core.CecilToOutput
                 {
                     throw new Exception();
                 }
-                return [];
+                return null;
             }
             if (genericParameters.Count == 0)
             {
@@ -100,7 +94,7 @@ namespace Core.CecilToOutput
             {
                 throw new Exception();
             }
-            return _toTypeId.ConvertGenericArguments(genericArguments) ?? [];
+            return _toTypeId.ConvertGenericArguments(genericArguments) ?? null;
         }
     }
 }

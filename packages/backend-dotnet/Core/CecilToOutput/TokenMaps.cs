@@ -9,6 +9,7 @@ namespace Core.CecilToOutput
     internal record TokenMaps(TokenMap<TypeSpecData> TypeSpecs, TokenMap<MethodSpecData> MethodSpecs)
     {
         int _typeSpecMetadataToken = 0x1b000000;
+        int _methodSpecMetadataToken = 0x2b000000;
 
         static internal TokenMaps CreateNew() => new TokenMaps(new TokenMap<TypeSpecData>(), new TokenMap<MethodSpecData>());
 
@@ -32,6 +33,11 @@ namespace Core.CecilToOutput
             return new TypeSpec((IBaseTypeId)result.Resolved, result.GenericTypeArguments, result.Suffix);
         }
 
+        internal MethodSpecData GetMethodSpecData(int metadataToken)
+        {
+            return MethodSpecs[metadataToken];
+        }
+
         internal int AddTypeSpec(TypeSpecData typeSpecData)
         {
             var found = TypeSpecs.SingleOrDefault(kvp => Equals(kvp.Value, typeSpecData));
@@ -42,6 +48,18 @@ namespace Core.CecilToOutput
             var typeSpecId = ++_typeSpecMetadataToken;
             TypeSpecs.Add(typeSpecId, typeSpecData);
             return typeSpecId;
+        }
+
+        internal int AddMethodSpec(MethodSpecData methodSpecData)
+        {
+            var found = MethodSpecs.SingleOrDefault(kvp => Equals(kvp.Value, methodSpecData));
+            if (found.Key != 0)
+            {
+                return found.Key;
+            }
+            var methodSpecId = ++_methodSpecMetadataToken;
+            MethodSpecs.Add(methodSpecId, methodSpecData);
+            return methodSpecId;
         }
 
         private static bool Equals(TypeSpecData lhs, TypeSpecData rhs)
@@ -61,6 +79,24 @@ namespace Core.CecilToOutput
                 : lhs.GenericTypeArguments.SequenceEqual(rhs.GenericTypeArguments, s_TypeIdComparer);
         }
 
+        private static bool Equals(MethodSpecData lhs, MethodSpecData rhs)
+        {
+            if (!s_TypeIdComparer.Equals(lhs.DeclaringType, rhs.DeclaringType))
+            {
+                return false;
+            }
+            if (!s_MethodIdComparer.Equals(lhs.Resolved, rhs.Resolved))
+            {
+                return false;
+            }
+            return (lhs.GenericMethodArguments == null)
+                ? rhs.GenericMethodArguments == null
+                : (rhs.GenericMethodArguments == null)
+                ? false
+                : lhs.GenericMethodArguments.SequenceEqual(rhs.GenericMethodArguments, s_TypeIdComparer);
+        }
+
         private static readonly TypeIdComparer s_TypeIdComparer = new();
+        private static readonly MethodIdComparer s_MethodIdComparer = new();
     }
 }

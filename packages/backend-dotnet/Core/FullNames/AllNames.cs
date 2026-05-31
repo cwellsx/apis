@@ -141,11 +141,16 @@ namespace Core.FullNames
         {
             if (methodId is GenericMethod genericMethod)
             {
-                return GetMethodName(GetAssemblyMethodPair(genericMethod.Resolved, inAssemblyName), genericMethod.GenericTypeArguments);
+                var tokenMaps = _allTokenMaps.ContainsKey(inAssemblyName) ? _allTokenMaps[inAssemblyName] : FetchTokenMaps(inAssemblyName);
+                var methodSpecData = tokenMaps.GetMethodSpecData(genericMethod.MetadataToken);
+                ITypeId[]? genericTypeArguments = (methodSpecData.DeclaringType == null)
+                    ? null
+                    : tokenMaps.GetTypeSpec(((SpecificationType)methodSpecData.DeclaringType).MetadataToken).GenericTypeArguments;
+                return GetMethodName(GetAssemblyMethodPair(methodSpecData.Resolved, inAssemblyName), genericTypeArguments, methodSpecData.GenericMethodArguments);
             }
             else
             {
-                return GetMethodName(GetAssemblyMethodPair(methodId, inAssemblyName), null);
+                return GetMethodName(GetAssemblyMethodPair(methodId, inAssemblyName), null, null);
             }
         }
 
@@ -161,7 +166,7 @@ namespace Core.FullNames
             return new AssemblyMethodPair(assemblyName, methodPair.DeclaringType, methodPair.MethodMember, inAssemblyName);
         }
 
-        private (string, Dictionary<string, string>?) GetMethodName(AssemblyMethodPair assemblyMethodPair, ITypeId[]? genericTypeArguments)
+        private (string, Dictionary<string, string>?) GetMethodName(AssemblyMethodPair assemblyMethodPair, ITypeId[]? genericTypeArguments, ITypeId[]? genericMethodArguments)
         {
             var (assemblyName, declaringType, methodMember, inAssemblyName) = assemblyMethodPair;
 
@@ -169,21 +174,12 @@ namespace Core.FullNames
 
             Dictionary<string, string>? genericParameterIndex = null;
 
-            ITypeId[]? genericMethodArguments = null;
-            if (genericTypeArguments != null)
+            if (genericTypeArguments != null || genericMethodArguments != null)
             {
-                var countTotal = genericTypeArguments.Length;
-
-                var countTypeArguments = typeNameParts.GenericParameters?.Length ?? 0;
-                genericMethodArguments = genericTypeArguments.Skip(countTypeArguments).ToArrayOrNull();
-                genericTypeArguments = genericTypeArguments.Take(countTypeArguments).ToArrayOrNull();
-
                 genericParameterIndex = new Dictionary<string, string>(
                     GetGenericParameters(typeNameParts.GenericParameters, "!")
                     .Concat(GetGenericParameters(methodMember.GenericParameters, "!!"))
                     );
-
-                Assert((countTotal) == genericParameterIndex.Count);
             }
 
             string GetTypeIdName(TypeId typeId)

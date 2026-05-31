@@ -3,7 +3,6 @@ using Core.Id.Types;
 using Core.Output.Ids;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace Core.Id.Comparers
 {
@@ -38,8 +37,7 @@ namespace Core.Id.Comparers
                     a.MetadataToken == b.MetadataToken,
 
                 (GenericMethod a, GenericMethod b) =>
-                    Equals(a.Resolved, b.Resolved) &&
-                    a.GenericTypeArguments.SequenceEqual(b.GenericTypeArguments, s_TypeIdComparer),
+                    Equals(a.MetadataToken, b.MetadataToken),
 
                 _ => false
             };
@@ -50,21 +48,9 @@ namespace Core.Id.Comparers
             {
                 LocalMethod m => HashCode.Combine("local", m.MetadataToken),
                 RemoteMethod m => HashCode.Combine("remote", m.AssemblyName, m.MetadataToken),
-                GenericMethod m => HashCode.Combine(
-                    "generic",
-                    GetHashCode(m.Resolved),
-                    HashArray(m.GenericTypeArguments)
-                ),
+                GenericMethod m => HashCode.Combine("generic", m.MetadataToken),
                 _ => 0
             };
-
-        private static int HashArray(ITypeId[] arr)
-        {
-            var hash = new HashCode();
-            foreach (var t in arr)
-                hash.Add(t, s_TypeIdComparer);
-            return hash.ToHashCode();
-        }
     }
 
     public sealed class TypeIdComparer : IEqualityComparer<ITypeId>
@@ -117,30 +103,6 @@ namespace Core.Id.Comparers
 
                 _ => throw new InvalidOperationException($"Unknown ITypeId: {obj.GetType()}")
             };
-        }
-
-        private bool SequenceEqualNullable(ITypeId[]? a, ITypeId[]? b)
-        {
-            if (a is null && b is null) return true;
-            if (a is null || b is null) return false;
-            if (a.Length != b.Length) return false;
-
-            for (int i = 0; i < a.Length; i++)
-                if (!Equals(a[i], b[i]))
-                    return false;
-
-            return true;
-        }
-
-        private int HashArray(ITypeId[]? arr)
-        {
-            if (arr is null) return 0;
-
-            var hash = new HashCode();
-            foreach (var t in arr)
-                hash.Add(t, this);
-
-            return hash.ToHashCode();
         }
     }
 }

@@ -1,9 +1,6 @@
 ﻿using Core.Id.Factory;
 using Core.Id.Methods;
-using Core.Output.Ids;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace Core.Id.MethodFactories
 {
@@ -32,26 +29,19 @@ namespace Core.Id.MethodFactories
         // implementation of these methods is similar to TypeFactories.SpecificationFactory
         public override object ToShortName(GenericMethod item)
         {
-            var result = new List<object> { item.Resolved };
-            result.AddRange(item.GenericTypeArguments);
-            return result.ToArray();
+            return new int[] { item.MetadataToken };
         }
 
         public override GenericMethod FromShortName(object shortName)
         {
             var arrayId = (Array)shortName;
-            if (arrayId.Length < 2)
-            {
-                throw new NotSupportedException($"Invalid arrayId: {arrayId}");
-            }
-            var items = arrayId.Cast<object>().ToArray();
-            var resolved = (IBaseMethodId)MethodFactory.FromShortName(items[0]);
-            var genericTypeItems = items.Skip(1);
-            var genericTypeArguments = genericTypeItems.Select(item => TypeFactory.FromShortName(item)).ToArray();
-            return new GenericMethod(resolved, genericTypeArguments);
+            Assert(arrayId.Length == 1);
+            var element = arrayId.GetValue(0);
+            Assert(element is int);
+            return new GenericMethod((int)element);
         }
 
         public override bool IsShortName(object shortName) => shortName is Array;
-        public override bool IsShortNameValid(object shortName) => ((Array)shortName).Length > 1;// && ((Array)shortName).Cast<object>().All(o => o is string || o is ITypeId);
+        public override bool IsShortNameValid(object shortName) => ((Array)shortName).Length == 1;
     }
 }
