@@ -70,7 +70,8 @@ namespace Core.Id.Comparers
                     a.MetadataToken == b.MetadataToken,
 
                 (GenericParameter a, GenericParameter b) =>
-                    a.ParameterName == b.ParameterName,
+                    a.ParameterName == b.ParameterName &&
+                    a.MetadataToken == b.MetadataToken,
 
                 (SpecificationType a, SpecificationType b) =>
                     Equals(a.MetadataToken, b.MetadataToken),
@@ -93,7 +94,7 @@ namespace Core.Id.Comparers
                     HashCode.Combine("remote", t.AssemblyName, t.MetadataToken),
 
                 GenericParameter t =>
-                    HashCode.Combine("gp", t.ParameterName),
+                    HashCode.Combine("gp", t.ParameterName, t.MetadataToken),
 
                 SpecificationType t =>
                     HashCode.Combine("spec", t.MetadataToken),

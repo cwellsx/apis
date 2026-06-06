@@ -12,11 +12,11 @@ namespace Core.CecilToLifted
         internal static CompilerGenerated FromOwned(string assemblyName, OwnedMethods ownedMethods, OwnedMethodMaps ownedMethodMaps, Action<MetadataToken, string> logFound)
         {
             var (ownedCompilerTypes, ownedLambdaMethods, ownedLocalFunctions) = ownedMethods;
-            var (mapTypes, mapMethods) = ownedMethodMaps;
+            var (mapCompilerTypes, mapLambdaMethods, mapGenericTypes) = ownedMethodMaps;
 
             MethodData GetTypeOwner(TypeDefinition typeDefinition)
             {
-                if (mapTypes.TryGetValue(typeDefinition.MetadataToken, out var ownerMetadata))
+                if (mapCompilerTypes.TryGetValue(typeDefinition.MetadataToken, out var ownerMetadata))
                 {
                     return ownerMetadata;
                 }
@@ -32,7 +32,7 @@ namespace Core.CecilToLifted
                 }
                 if (methodData.IsLambdaOrLocalFunction())
                 {
-                    if (mapMethods.TryGetValue(methodData.MetadataToken, out var ownerMethodData))
+                    if (mapLambdaMethods.TryGetValue(methodData.MetadataToken, out var ownerMethodData))
                     {
                         if (ownerMethodData.IsLambdaOrLocalFunction())
                         {
@@ -114,7 +114,9 @@ namespace Core.CecilToLifted
             return new CompilerGenerated(
                 assemblyName,
                 ownedCompilerTypes.Select(pair => pair.typeDefinition.MetadataToken.ToInt32()).ToHashSet(),
-                result);
+                result,
+                mapGenericTypes
+                );
         }
     }
 }

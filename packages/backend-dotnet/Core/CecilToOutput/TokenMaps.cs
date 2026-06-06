@@ -2,6 +2,7 @@
 using Core.Id.Types;
 using Core.Output;
 using Core.Output.Ids;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Core.CecilToOutput
@@ -14,14 +15,14 @@ namespace Core.CecilToOutput
         static internal TokenMaps CreateNew() => new TokenMaps(new TokenMap<TypeSpecData>(), new TokenMap<MethodSpecData>());
 
         // similar to TypeSpecData but with the Resolved as a BaseTypeId instead of a TypeId
-        internal record TypeSpec(IBaseTypeId Resolved, ITypeId[]? GenericTypeArguments, string? Suffix);
+        internal record TypeSpec(Id<IBaseTypeId> Resolved, TypeId[]? GenericTypeArguments, string? Suffix);
 
         internal TypeSpec GetTypeSpec(int metadataToken)
         {
             var result = TypeSpecs[metadataToken];
-            while (result.Resolved is not IBaseTypeId)
+            while (result.Resolved.LeafId is not IBaseTypeId)
             {
-                var specificationType = (SpecificationType)result.Resolved;
+                var specificationType = (SpecificationType)result.Resolved.LeafId;
                 var baseResult = TypeSpecs[specificationType.MetadataToken];
                 Assert(result.GenericTypeArguments == null || baseResult.GenericTypeArguments == null);
                 result = new TypeSpecData(
@@ -30,7 +31,10 @@ namespace Core.CecilToOutput
                     baseResult.Suffix + result.Suffix
                     );
             }
-            return new TypeSpec((IBaseTypeId)result.Resolved, result.GenericTypeArguments, result.Suffix);
+            return new TypeSpec(
+                new Id<IBaseTypeId>(result.Resolved.FullName, (IBaseTypeId)result.Resolved.LeafId),
+                result.GenericTypeArguments,
+                result.Suffix);
         }
 
         internal MethodSpecData GetMethodSpecData(int metadataToken)
@@ -64,7 +68,7 @@ namespace Core.CecilToOutput
 
         private static bool Equals(TypeSpecData lhs, TypeSpecData rhs)
         {
-            if (!s_TypeIdComparer.Equals(lhs.Resolved, rhs.Resolved))
+            if (!s_FullTypeIdComparer.Equals(lhs.Resolved, rhs.Resolved))
             {
                 return false;
             }
@@ -76,16 +80,16 @@ namespace Core.CecilToOutput
                 ? rhs.GenericTypeArguments == null
                 : (rhs.GenericTypeArguments == null)
                 ? false
-                : lhs.GenericTypeArguments.SequenceEqual(rhs.GenericTypeArguments, s_TypeIdComparer);
+                : lhs.GenericTypeArguments.SequenceEqual(rhs.GenericTypeArguments, s_FullTypeIdComparer);
         }
 
         private static bool Equals(MethodSpecData lhs, MethodSpecData rhs)
         {
-            if (!s_TypeIdComparer.Equals(lhs.DeclaringType, rhs.DeclaringType))
+            if (!s_FullTypeIdComparer.Equals(lhs.DeclaringType, rhs.DeclaringType))
             {
                 return false;
             }
-            if (!s_MethodIdComparer.Equals(lhs.Resolved, rhs.Resolved))
+            if (!s_FullMethodIdComparer.Equals(lhs.Resolved, rhs.Resolved))
             {
                 return false;
             }
@@ -93,10 +97,35 @@ namespace Core.CecilToOutput
                 ? rhs.GenericMethodArguments == null
                 : (rhs.GenericMethodArguments == null)
                 ? false
-                : lhs.GenericMethodArguments.SequenceEqual(rhs.GenericMethodArguments, s_TypeIdComparer);
+                : lhs.GenericMethodArguments.SequenceEqual(rhs.GenericMethodArguments, s_FullTypeIdComparer);
+        }
+
+        class FullTypeIdComparer : IEqualityComparer<TypeId>
+        {
+             public bool Equals(TypeId? x, TypeId? y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null || y is null) return false;
+                return s_TypeIdComparer.Equals(x.LeafId, y.LeafId);
+            }
+            public int GetHashCode(TypeId obj) => s_TypeIdComparer.GetHashCode(obj.LeafId);
+        }
+
+        class FullMethodIdComparer : IEqualityComparer<BaseMethodId>
+        {
+            public bool Equals(BaseMethodId? x, BaseMethodId? y)
+            {
+                if (ReferenceEquals(x, y)) return true;
+                if (x is null || y is null) return false;
+                return s_MethodIdComparer.Equals(x.LeafId, y.LeafId);
+            }
+            public int GetHashCode(BaseMethodId obj) => s_MethodIdComparer.GetHashCode(obj.LeafId);
         }
 
         private static readonly TypeIdComparer s_TypeIdComparer = new();
         private static readonly MethodIdComparer s_MethodIdComparer = new();
+
+        private static readonly FullTypeIdComparer s_FullTypeIdComparer = new();
+        private static readonly FullMethodIdComparer s_FullMethodIdComparer = new();
     }
 }

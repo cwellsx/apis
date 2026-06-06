@@ -64,6 +64,9 @@ namespace Core.Serializer.JsonConverters
 
     public class TypeIdConverter : IdConverter<TypeId, ITypeId> { }
     public class LocalTypeIdConverter : IdConverter<LocalTypeId, ILocalTypeId> { }
+    public class GenericParameterIdConverter : IdConverter<GenericParameterId, IGenericParameterId> { }
+
     public class MethodIdConverter : IdConverter<MethodId, IMethodId> { }
     public class LocalMethodIdConverter : IdConverter<LocalMethodId, ILocalMethodId> { }
+    public class BaseMethodIdConverter : IdConverter<BaseMethodId, IBaseMethodId> { }
 }

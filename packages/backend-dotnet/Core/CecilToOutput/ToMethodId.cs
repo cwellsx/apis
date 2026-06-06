@@ -1,10 +1,12 @@
-﻿using Core.Id.Methods;
+﻿using Core.CecilToLifted;
+using Core.CecilToLifted.Private;
+using Core.Id;
+using Core.Id.Methods;
+using Core.Output;
 using Core.Output.Ids;
 using Mono.Cecil;
 using System;
 using System.Collections.Generic;
-using Core.CecilToLifted;
-using Core.Output;
 
 namespace Core.CecilToOutput
 {
@@ -14,11 +16,11 @@ namespace Core.CecilToOutput
         readonly TokenMaps _tokenMaps;
         readonly ToTypeId _toTypeId;
 
-        internal ToMethodId(string assemblyName, TokenMaps tokenMaps)
+        internal ToMethodId(string assemblyName, TokenMaps tokenMaps, LiftGenericParameter liftGenericParameter)
         {
             _assemblyName = assemblyName;
             _tokenMaps = tokenMaps;
-            _toTypeId = new ToTypeId(assemblyName, tokenMaps);
+            _toTypeId = new ToTypeId(assemblyName, tokenMaps, liftGenericParameter);
         }
 
         internal MethodId Convert(MethodReference mr)
@@ -49,6 +51,8 @@ namespace Core.CecilToOutput
                 cecilFullName = cecilFullName.Replace(getTypeName(mr.DeclaringType), getTypeName(md.DeclaringType));
             }
 
+            Assert(!md.DeclaringType.IsCompilerGenerated());
+
             var methodId = new RemoteMethod(md.DeclaringType.AssemblyName(), md.MetadataToken.ToInt32());
             var genericMethodArguments = GetGenericTypeArguments(
                 md.GenericParameters,
@@ -67,13 +71,14 @@ namespace Core.CecilToOutput
                 return new MethodId(cecilFullName, methodId);
             }
 
-            ITypeId? declaringType = (genericTypeArguments == null) ? null : _toTypeId.Convert(typeReference).LeafId;
+            TypeId? declaringType = (genericTypeArguments == null) ? null : new TypeId(typeReference.FullName, _toTypeId.Convert(typeReference).LeafId);
 
-            var methodSpecData = new MethodSpecData(declaringType, methodId, genericMethodArguments);
+            var baseMethodId = new BaseMethodId(Flatten.IgnoreSyntheticFullName, methodId);
+            var methodSpecData = new MethodSpecData(declaringType, baseMethodId, genericMethodArguments);
             return new MethodId(cecilFullName, new GenericMethod(_tokenMaps.AddMethodSpec(methodSpecData)));
         }
 
-        ITypeId[]? GetGenericTypeArguments(
+        TypeId[]? GetGenericTypeArguments(
             IList<GenericParameter> genericParameters,
             IList<TypeReference>? genericArguments
             )

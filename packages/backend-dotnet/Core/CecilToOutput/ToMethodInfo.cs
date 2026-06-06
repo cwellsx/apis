@@ -15,10 +15,11 @@ namespace Core.CecilToOutput
             string assemblyName,
             MethodSummary[] methodSummaries,
             Func<int, string> decompile,
-            TokenMaps tokenMaps
+            TokenMaps tokenMaps,
+            LiftGenericParameter liftGenericParameter
             )
         {
-            var toMethodInfo = new ToMethodInfo(assemblyName, tokenMaps);
+            var toMethodInfo = new ToMethodInfo(assemblyName, tokenMaps, liftGenericParameter);
             return methodSummaries.ToDictionary(
                 methodSummary => new LocalMethodId(methodSummary.FullName, new LocalMethod(methodSummary.MetadataToken.ToInt32())),
                 methodSummary => toMethodInfo.Convert(methodSummary, decompile(methodSummary.MetadataToken.ToInt32()))
@@ -30,10 +31,10 @@ namespace Core.CecilToOutput
         ToTypeId _toTypeId;
         ToMethodId _toMethodId;
 
-        internal ToMethodInfo(string assemblyName, TokenMaps tokenMaps)
+        internal ToMethodInfo(string assemblyName, TokenMaps tokenMaps, LiftGenericParameter liftGenericParameter)
         {
-            _toTypeId = new ToTypeId(assemblyName, tokenMaps);
-            _toMethodId = new ToMethodId(assemblyName, tokenMaps);
+            _toTypeId = new ToTypeId(assemblyName, tokenMaps, liftGenericParameter);
+            _toMethodId = new ToMethodId(assemblyName, tokenMaps, liftGenericParameter);
         }
 
         internal MethodInfo Convert(MethodSummary methodSummary, string asText)

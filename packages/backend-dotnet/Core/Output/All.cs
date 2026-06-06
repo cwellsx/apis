@@ -32,7 +32,7 @@ namespace Core.Output
         string[]? Attributes,
         TypeId? BaseType,
         TypeId[]? Interfaces,
-        string[]? GenericParameters,
+        GenericParameterId[]? GenericParameters,
         Access Access,
         // Members
         FieldMember[]? FieldMembers,
@@ -47,14 +47,14 @@ namespace Core.Output
     public record EventMember(string Name, TypeId EventHandlerType, Access Access, bool? IsStatic, string[]? Attributes, int MetadataToken);
     public record PropertyMember(string Name, TypeId PropertyType, Access Access, bool? IsStatic, Parameter[]? Parameters, string[]? Attributes, int MetadataToken);
     public record Parameter(string Name, TypeId Type);
-    public record MethodMember(string Name, Access Access, bool? IsStatic, bool? IsConstructor, string[]? GenericParameters, Parameter[]? Parameters, TypeId ReturnType, string[]? Attributes, int MetadataToken);
+    public record MethodMember(string Name, Access Access, bool? IsStatic, bool? IsConstructor, GenericParameterId[]? GenericParameters, Parameter[]? Parameters, TypeId ReturnType, string[]? Attributes, int MetadataToken);
 
     // a shorter version of MethodDetails
     public record MethodInfo(string AsText, MethodId[]? Called, MethodId[]? Argued, TypeId[]? Locals);
 
     // constructed signature specifications
-    public record TypeSpecData(ITypeId Resolved, ITypeId[]? GenericTypeArguments, string? Suffix);
-    public record MethodSpecData(ITypeId? DeclaringType, IBaseMethodId Resolved, ITypeId[]? GenericMethodArguments);
+    public record TypeSpecData(TypeId Resolved, TypeId[]? GenericTypeArguments, string? Suffix);
+    public record MethodSpecData(TypeId? DeclaringType, BaseMethodId Resolved, TypeId[]? GenericMethodArguments);
 
     // a dictionary whose key is the assembly name and implicit in the "local ID" of TypeIds of types within each assembly
     public class AssemblyMap<T> : Dictionary<string, T>

@@ -1,12 +1,61 @@
-﻿using Mono.Cecil;
+﻿using Core.Cecil;
+using Core.CecilToLifted.Private;
+using Mono.Cecil;
 using System.Collections.Generic;
 using System.Linq;
-using Core.CecilToLifted.Private;
 
 namespace Core.CecilToLifted
 {
-    internal record CompilerGenerated(string AssemblyName, HashSet<int> Types, Dictionary<int, int> Methods)
+    internal record CompilerGenerated(string AssemblyName, HashSet<int> Types, Dictionary<int, int> Methods, Dictionary<MetadataToken, MethodData> MapGenericTypes)
     {
+        internal static bool IsCompilerGenerated(GenericParameter gp)
+        {
+            var owner = gp.Owner;
+            if (owner is MethodDefinition md)
+            {
+                Assert(!md.DeclaringType.IsCompilerGenerated());
+                return false;
+            }
+
+            var declaringType = (TypeDefinition)gp.Owner;
+            return declaringType.IsCompilerGenerated();
+        }
+
+        private GenericParameter LiftCompilerGenerated(GenericParameter gp)
+        {
+            var declaringType = (TypeDefinition)gp.Owner;
+
+            if (MapGenericTypes.TryGetValue(declaringType.MetadataToken, out var methodData))
+            {
+                // type is a generic lambda which may have captured its generic prameters from the enclosing method
+                var foundMethodParameter = methodData.MethodDefinition.GenericParameters.SingleOrDefault(value => value.Name == gp.Name);
+                if (foundMethodParameter != null)
+                {
+                    return foundMethodParameter;
+                }
+                var methodDeclaringType = methodData.MethodDefinition.DeclaringType;
+                foundMethodParameter = methodDeclaringType.GenericParameters.Single(value => value.Name == gp.Name);
+                return foundMethodParameter;
+            }
+
+            while (declaringType.IsCompilerGenerated())
+            {
+                declaringType = declaringType.DeclaringType;
+            }
+
+            var foundTypeParameter = declaringType.GenericParameters.Single(value => value.Name == gp.Name);
+            return foundTypeParameter;
+        }
+
+        internal GenericParameter LiftGenericParameter(GenericParameter gp)
+        {
+            while (IsCompilerGenerated(gp))
+            {
+                gp = LiftCompilerGenerated(gp);
+            }
+            return gp;
+        }
+
         // used to remove compiler-generated type definitions from the output
         internal bool IsUserDefined(TypeDefinition typeDefinition)
         {

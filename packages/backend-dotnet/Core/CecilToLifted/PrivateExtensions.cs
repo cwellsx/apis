@@ -23,6 +23,15 @@ namespace Core.CecilToLifted.Private
         private static readonly Regex LambdaCachePattern = new(@"^<>c(__\d+)?(`\d+)?$", RegexOptions.Compiled);
         internal static bool IsLambdaCache(this TypeReference typeReference) => LambdaCachePattern.IsMatch(typeReference.Name);
 
+        private static readonly Regex GenericLambdaCachePattern = new(@"^<>c(__\d+)?`\d+$", RegexOptions.Compiled);
+        internal static bool IsGenericLambdaCache(this TypeDefinition typeDefinition) => GenericLambdaCachePattern.IsMatch(typeDefinition.Name);
+
+        private static readonly Regex GenericDisplayClassPattern = new(@"^<>c__DisplayClass\d+(_\d+)?`\d+$", RegexOptions.Compiled); // e.g. <>c__DisplayClass2_0`2
+        internal static bool IsGenericDisplayClass(this TypeDefinition typeDefinition) => GenericDisplayClassPattern.IsMatch(typeDefinition.Name);
+
+        private static readonly Regex GenericIteratorStatePattern = new(@"^<.*>d__\d+`\d+$", RegexOptions.Compiled); // e.g. <ZipLongest>d__3`2
+        internal static bool IsGenericIteratorState(this TypeDefinition typeDefinition) => GenericIteratorStatePattern.IsMatch(typeDefinition.Name);
+
         // this is strange because it's a compiler-defined method added to a user-defined type
         private static readonly Regex LocalFunctionPattern = new(@"^<[^>]+>g__.*\d+_\d+$", RegexOptions.Compiled);
         internal static bool IsLocalFunction(this MethodDefinition methodDefinition) =>

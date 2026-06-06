@@ -157,8 +157,6 @@ namespace Core.Serializer
             emitter.Emit(new SequenceEnd());
         }
 
-        private const string IgnoreSyntheticFullName = "$";
-
         private void WriteId(
             IEmitter emitter,
             IId id,
@@ -198,7 +196,7 @@ namespace Core.Serializer
 
         private static void AssertFullName(string calculatedFullName, string cecilFullName, Dictionary<string, string>? genericParameterIndex)
         {
-            if (cecilFullName == IgnoreSyntheticFullName)
+            if (cecilFullName == Flatten.IgnoreSyntheticFullName)
             {
                 return;
             }
@@ -207,6 +205,7 @@ namespace Core.Serializer
                 cecilFullName = ReplaceGenericParameters(cecilFullName, genericParameterIndex);
             }
             Assert(calculatedFullName == cecilFullName, $"Full name mismatch: expected {cecilFullName}, got {calculatedFullName}");
+            if (calculatedFullName != cecilFullName) Logger.Log($"Full name mismatch: expected {cecilFullName}, got {calculatedFullName}");
         }
 
         static string ReplaceGenericParameters(string fullName, Dictionary<string, string> genericParameterIndex)
@@ -262,12 +261,12 @@ namespace Core.Serializer
                     switch (element)
                     {
                         case ITypeId typeId:
-                            IId decoratedTypeId = new Id<ITypeId>(IgnoreSyntheticFullName, typeId);
+                            IId decoratedTypeId = new Id<ITypeId>(Flatten.IgnoreSyntheticFullName, typeId);
                             serializer(new WrappedValue(childState, decoratedTypeId));
                             break;
 
                         case IMethodId methodId:
-                            IId decoratedMethodId = new Id<IMethodId>(IgnoreSyntheticFullName, methodId);
+                            IId decoratedMethodId = new Id<IMethodId>(Flatten.IgnoreSyntheticFullName, methodId);
                             serializer(new WrappedValue(childState, decoratedMethodId));
                             break;
 

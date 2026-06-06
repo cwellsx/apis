@@ -19,7 +19,7 @@ namespace Core.CecilToOutput
 
         private class ToMicrosoftTypeInfo : ToTypeInfo
         {
-            internal ToMicrosoftTypeInfo(string assemblyName, TokenMaps tokenMaps) : base(assemblyName, tokenMaps) { }
+            internal ToMicrosoftTypeInfo(string assemblyName, TokenMaps tokenMaps) : base(assemblyName, tokenMaps, null) { }
 
             protected override Members GetMembers(TypeDefinition typeDefinition) => new Members(null, null, null, null, null);
         }
@@ -28,7 +28,7 @@ namespace Core.CecilToOutput
         {
             readonly CompilerGenerated _compilerGenerated;
 
-            internal ToOutputTypeInfo(string assemblyName, CompilerGenerated compilerGenerated, TokenMaps tokenMaps) : base(assemblyName, tokenMaps)
+            internal ToOutputTypeInfo(string assemblyName, CompilerGenerated compilerGenerated, TokenMaps tokenMaps) : base(assemblyName, tokenMaps, compilerGenerated.LiftGenericParameter)
             {
                 _compilerGenerated = compilerGenerated;
             }
@@ -53,10 +53,10 @@ namespace Core.CecilToOutput
         readonly string _assemblyName;
         readonly ToTypeId _toTypeId;
 
-        protected ToTypeInfo(string assemblyName, TokenMaps tokenMaps)
+        protected ToTypeInfo(string assemblyName, TokenMaps tokenMaps, LiftGenericParameter? liftGenericParameter)
         {
             _assemblyName = assemblyName;
-            _toTypeId = new ToTypeId(assemblyName, tokenMaps);
+            _toTypeId = new ToTypeId(assemblyName, tokenMaps, liftGenericParameter);
         }
 
         protected abstract Members GetMembers(TypeDefinition typeDefinition);
@@ -105,9 +105,12 @@ namespace Core.CecilToOutput
             }).ToArray();
         }
 
-        static string[]? GetGenericParameters(IList<Mono.Cecil.GenericParameter> genericParameters)
+        GenericParameterId[]? GetGenericParameters(IList<Mono.Cecil.GenericParameter> genericParameters)
         {
-            return (genericParameters.Count == 0) ? null : genericParameters.Select(genericParameter => genericParameter.Name).ToArray();
+            return (genericParameters.Count == 0) ? null : genericParameters.Select(genericParameter => new GenericParameterId(
+                genericParameter.Name,
+                _toTypeId.NewGenericParameter(genericParameter)
+                )).ToArray();
         }
 
         static Access GetAccess(TypeDefinition typeDefinition)

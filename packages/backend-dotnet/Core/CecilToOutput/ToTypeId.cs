@@ -1,4 +1,5 @@
 ﻿using Core.CecilToLifted;
+using Core.CecilToLifted.Private;
 using Core.Id.Types;
 using Core.Output;
 using Core.Output.Ids;
@@ -13,17 +14,19 @@ namespace Core.CecilToOutput
     {
         readonly string _assemblyName;
         readonly TokenMaps _tokenMaps;
+        readonly LiftGenericParameter? _liftGenericParameter;
 
-        internal ToTypeId(string assemblyName, TokenMaps tokenMaps)
+        internal ToTypeId(string assemblyName, TokenMaps tokenMaps, LiftGenericParameter? liftGenericParameter)
         {
             _assemblyName = assemblyName;
             _tokenMaps = tokenMaps;
+            _liftGenericParameter = liftGenericParameter;
         }
 
         internal TypeId Convert(TypeReference tr) => new TypeId(tr.FullName, GetShortName(tr));
 
-        internal ITypeId[]? ConvertGenericArguments(IList<TypeReference> genericArguments) => genericArguments
-            .Select(tr => Convert(tr).LeafId)
+        internal TypeId[]? ConvertGenericArguments(IList<TypeReference> genericArguments) => genericArguments
+            .Select(tr => new TypeId(tr.FullName, Convert(tr).LeafId))
             .ToArrayOrNull();
 
         private ITypeId GetShortName(TypeReference tr)
@@ -58,10 +61,12 @@ namespace Core.CecilToOutput
             tr is Mono.Cecil.GenericParameter ||
             tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
 
+        static TypeId FullTypeId(string fullName, ITypeId leafId) => new TypeId(fullName, leafId);
+
         // result of recursing a TypeReference
         ITypeId Recurse(TypeReference tr)
         {
-            SpecificationType Result(ITypeId Simple, string? Suffix, ITypeId[]? GenericArgs)
+            SpecificationType Result(TypeId Simple, string? Suffix, TypeId[]? GenericArgs)
             {
                 var typeSpecData = new TypeSpecData(Simple, GenericArgs, Suffix);
                 var typeSpecId = _tokenMaps.AddTypeSpec(typeSpecData);
@@ -74,50 +79,59 @@ namespace Core.CecilToOutput
                 return GetBaseTypeId(tr);
             }
 
+            Func<TypeReference, TypeId> recurseInner = (elementType) => {
+                if (elementType is Mono.Cecil.GenericParameter gp)
+                {
+                    // Generic parameters can be shared between different generic instances, so we need to lift them to the declaring type/method
+                    gp = LiftGenericParameter(gp);
+                }
+                else
+                {
+                    Assert(!elementType.Resolve()?.IsCompilerGenerated() ?? true);
+                }
+                var fullName = elementType.FullName;
+                var typeId = Recurse(elementType);
+                return new TypeId(fullName, typeId);
+            };
+
             // Generic instance: resolve each generic argument recursively,
             // then treat the element type (generic definition) as the simple part.
             if (tr is GenericInstanceType git)
             {
                 var genericArgs = ConvertGenericArguments(git.GenericArguments);
-
-                var simple = GetBaseTypeId(git.ElementType); // generic definition
-                return Result(simple, null, genericArgs);
+                Assert(IsSimpleOrGenericParameter(git.ElementType));
+                return Result(recurseInner(git.ElementType), null, genericArgs);
             }
 
             // Array
             if (tr is ArrayType at)
             {
-                var inner = Recurse(at.ElementType);
                 var thisSuffix = $"[{string.Join(",", at.Dimensions)}]";
-                return Result(inner, thisSuffix, null);
+                return Result(recurseInner(at.ElementType), thisSuffix, null);
             }
 
             // Pointer
             if (tr is PointerType pt)
             {
-                var inner = Recurse(pt.ElementType);
-                return Result(inner, "*", null);
+                return Result(recurseInner(pt.ElementType), "*", null);
             }
 
             // ByRef
             if (tr is ByReferenceType br)
             {
-                var inner = Recurse(br.ElementType);
-                return Result(inner, "&", null);
+                return Result(recurseInner(br.ElementType), "&", null);
             }
 
             // Optional modifier
             if (tr is OptionalModifierType opt)
             {
-                var inner = Recurse(opt.ElementType);
-                return Result(inner, $" modopt({opt.ModifierType.FullName})", null);
+                return Result(recurseInner(opt.ElementType), $" modopt({opt.ModifierType.FullName})", null);
             }
 
             // Required modifier
             if (tr is RequiredModifierType req)
             {
-                var inner = Recurse(req.ElementType);
-                return Result(inner, $" modreq({req.ModifierType.FullName})", null);
+                return Result(recurseInner(req.ElementType), $" modreq({req.ModifierType.FullName})", null);
             }
 
             // Pinned or Sentinel
@@ -150,22 +164,7 @@ namespace Core.CecilToOutput
             // 3. Generic parameter (type-level or method-level)
             if (tr is Mono.Cecil.GenericParameter gp)
             {
-                var owner = gp.Owner;
-
-                bool ownerIsMethod = owner is MethodDefinition md;
-                int ownerToken = ownerIsMethod
-                    ? ((MethodDefinition)owner).MetadataToken.ToInt32()
-                    : ((TypeDefinition)owner).MetadataToken.ToInt32();
-
-                //string ownerAssembly = gp.ReferencedAssemblyName();
-
-                return new Core.Id.Types.GenericParameter(
-                    //ownerAssembly: ownerAssembly,
-                    //ownerToken: ownerToken,
-                    //ownerIsMethod: ownerIsMethod,
-                    //position: gp.Position,
-                    ParameterName: gp.Name
-                );
+                return NewGenericParameter(gp);
             }
 
             // 4. Remote type definition (resolved TypeRef)
@@ -181,6 +180,32 @@ namespace Core.CecilToOutput
 
                 return new RemoteType(resolved.AssemblyName(), resolved.MetadataToken.ToInt32());
             }
+        }
+
+        private Mono.Cecil.GenericParameter LiftGenericParameter(Mono.Cecil.GenericParameter gp)
+        {
+            if (_liftGenericParameter != null)
+            {
+                gp = _liftGenericParameter(gp);
+            }
+            else
+            {
+                Assert(!CompilerGenerated.IsCompilerGenerated(gp));
+            }
+            return gp;
+        }
+
+        internal Id.Types.GenericParameter NewGenericParameter(Mono.Cecil.GenericParameter gp)
+        {
+            gp = LiftGenericParameter(gp);
+
+            var declaringType = gp.Owner is MethodDefinition ? ((MethodDefinition)gp.Owner).DeclaringType : (TypeDefinition)gp.Owner;
+            Assert(!declaringType.IsCompilerGenerated());
+
+            return new Id.Types.GenericParameter(
+                ParameterName: gp.Name,
+                MetadataToken: gp.MetadataToken.ToInt32()
+            );
         }
     }
 }

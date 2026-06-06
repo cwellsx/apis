@@ -25,5 +25,9 @@ namespace Core.Id
             IMethodId methodId => MethodFactory.ToShortName(methodId),
             _ => throw new NotSupportedException($"Unsupported leafId type: {value.LeafObject.GetType()}"),
         });
+
+        // Cecil FullName can be difficult to emulate
+        // implemented it successfully for most cases but not these
+        internal const string IgnoreSyntheticFullName = "$";
     }
 }

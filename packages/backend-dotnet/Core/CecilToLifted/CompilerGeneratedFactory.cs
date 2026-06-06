@@ -8,7 +8,7 @@ namespace Core.CecilToLifted
         internal static CompilerGenerated Create(AssemblyData assemblyData)
         {
             // can use this to debug-trace a compiler method that's escaping into the Output
-            var watch = ("XX Newtonsoft.Json", 100664323);
+            var watch = ("X Newtonsoft.Json", 33554802);
             var logFound = (MetadataToken token, string message) =>
             {
                 if (watch.Item1 == assemblyData.Name && token.ToInt32() == watch.Item2)

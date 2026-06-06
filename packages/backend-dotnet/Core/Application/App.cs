@@ -77,7 +77,7 @@ namespace Core.Application
 
                     var decompiler = new Decompiler.AssemblyDecompiler(assemblyName, ilspyAssemblyResolver);
 
-                    var methodInfos = ToMethodInfo.Convert(assemblyName, methodSummaries, decompiler.DecompileMethod, tokenMaps);
+                    var methodInfos = ToMethodInfo.Convert(assemblyName, methodSummaries, decompiler.DecompileMethod, tokenMaps, compilerGenerated.LiftGenericParameter);
 
                     assemblyMethods.Add(assemblyName, methodInfos);
                 }

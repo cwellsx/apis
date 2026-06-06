@@ -9,7 +9,7 @@ namespace Core.Id.Types
     internal sealed record RemoteType(string AssemblyName, int MetadataToken) : IBaseTypeId;
 
     // generic parameter -> enclosing method or type (in this assembly)
-    internal sealed record GenericParameter(string ParameterName) : IBaseTypeId;
+    internal sealed record GenericParameter(string ParameterName, int MetadataToken) : IGenericParameterId;
 
     // saying that IBaseTypeId is the type of Resolved isn't perfect --
     // it correctly allows e.g. "T&" when the TypeSpec is for the type of a method parameter

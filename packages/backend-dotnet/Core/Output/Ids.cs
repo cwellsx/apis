@@ -26,6 +26,10 @@
 
     public interface ITypeId;
     public interface IBaseTypeId : ITypeId; // superclass for LocalType, RemoteType, and GenericParameter -- but not SpecificationType nor FunctionType
+    public interface IGenericParameterId : IBaseTypeId
+    {
+        string ParameterName { get; }
+    }
     public interface ILocalTypeId : IBaseTypeId
     {
         int MetadataToken { get; }
@@ -33,6 +37,7 @@
 
     public record TypeId(string FullName, ITypeId LeafId) : Id<ITypeId>(FullName, LeafId);
     public record LocalTypeId(string FullName, ILocalTypeId LeafId) : Id<ILocalTypeId>(FullName, LeafId);
+    public record GenericParameterId(string FullName, IGenericParameterId LeafId) : Id<IGenericParameterId>(FullName, LeafId);
 
     /*
      * Methods
@@ -44,4 +49,5 @@
 
     public record MethodId(string FullName, IMethodId LeafId) : Id<IMethodId>(FullName, LeafId);
     public record LocalMethodId(string FullName, ILocalMethodId LeafId) : Id<ILocalMethodId>(FullName, LeafId);
+    public record BaseMethodId(string FullName, IBaseMethodId LeafId) : Id<IBaseMethodId>(FullName, LeafId);
 }

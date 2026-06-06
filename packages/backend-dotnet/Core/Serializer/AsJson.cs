@@ -19,11 +19,15 @@ namespace Core.Serializer
                 Encoder = prettyPrint ? JavaScriptEncoder.UnsafeRelaxedJsonEscaping : JavaScriptEncoder.Default,
                 Converters =
                 {
+                    new AssemblyMapConverterFactory(),
+
                     new TypeIdConverter(),
                     new LocalTypeIdConverter(),
+                    new GenericParameterIdConverter(),
+
                     new MethodIdConverter(),
                     new LocalMethodIdConverter(),
-                    new AssemblyMapConverterFactory(),
+                    new BaseMethodIdConverter(),
                 }
             });
             return json;

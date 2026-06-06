@@ -12,7 +12,7 @@ namespace Core.CecilToLifted
     {
         internal static MethodSummary[] Transform(MethodData[] assemblyMethodData, string assemblyName, CompilerGenerated compilerGenerated)
         {
-            var (_, compilerTypes, compilerMethods) = compilerGenerated;
+            var (_, compilerTypes, compilerMethods, _) = compilerGenerated;
 
             var map = assemblyMethodData
                 .Where(value => !value.IsInsignificantCompilerGenerated())
