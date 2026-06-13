@@ -42,7 +42,7 @@ const mapArrays = <TKey, TValue, T extends { ownerId: TKey; seqno: number }>(
   return result;
 };
 
-export const fullNames = (tables: Tables): FullName[] => {
+export const getFullNames = (tables: Tables): FullName[] => {
   const assemblies = tables.assemblies.map((value) => ({ id: value.id, fullName: value.name }));
   const namespaces = tables.namespaces.map((value) => ({ id: value.id, fullName: value.name }));
 

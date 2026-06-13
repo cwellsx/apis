@@ -2,7 +2,7 @@ const maxLevels = 2;
 
 export const getGroupNames = (names: string[]): string[] => {
   // this create synthetic group nodes which act as parent nodes to real assembly and/or namespace names
-  // the purpose of this filter is to ensure that groups contain nodes but not vice versay
+  // the purpose of this filter is to ensure that groups contain nodes but not vice versa
   // e.g. with nodes "foo.bar" and "foo.bar.baz.bat" there should not be synthetic group for "foo.bar.baz"
   const splitNames = [...new Set<string>(names)].map((name) => name.split("."));
 
