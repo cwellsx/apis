@@ -1,2 +1,2 @@
 export { createSqlDatabase, SqlDatabase } from "./sqlDatabase";
-export { SqlTable } from "./sqlTable";
+export { SqlOptions, SqlTable } from "./sqlTable";

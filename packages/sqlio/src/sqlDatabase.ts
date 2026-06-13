@@ -1,6 +1,6 @@
 import sqlite, { Database } from "better-sqlite3";
 import fs from "fs";
-import { SqlTable } from "./sqlTable";
+import { SqlOptions, SqlTable } from "./sqlTable";
 
 // https://github.com/electron-userland/electron-forge/issues/1224#issuecomment-606649565
 // https://www.npmjs.com/package/better-sqlite3
@@ -12,10 +12,10 @@ export class SqlDatabase {
     this.newSqlTable = <T extends object>(
       tableName: string,
       primaryKey: keyof T | (keyof T)[],
-      isNullable: (keyof T)[],
-      t: T
+      t: T,
+      options?: SqlOptions<T>
     ): SqlTable<T> => {
-      return new SqlTable(this.db, tableName, primaryKey, isNullable, t);
+      return new SqlTable(this.db, tableName, primaryKey, t, options);
     };
 
     this.dropTable = (tableName: string) => {
@@ -34,8 +34,8 @@ export class SqlDatabase {
   newSqlTable: <T extends object>(
     tableName: string,
     primaryKey: keyof T | (keyof T)[],
-    isNullable: (keyof T)[],
-    t: T
+    t: T,
+    options?: SqlOptions<T>
   ) => SqlTable<T>;
 
   dropTable: (tableName: string) => void;

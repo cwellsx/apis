@@ -154,29 +154,29 @@ const row: TableRowMap = {
 // );
 
 export const createTables = (db: SqlDatabase): Tables => {
-  const assemblies = db.newSqlTable("assemblies", "id", [], row.assemblies);
-  const namespaces = db.newSqlTable("namespaces", "id", [], row.namespaces);
-  const typeNames = db.newSqlTable("typeNames", "id", ["namespaceId", "declaringTypeId"], row.typeNames);
-  const members = db.newSqlTable("members", "id", [], row.members);
+  const assemblies = db.newSqlTable("assemblies", "id", row.assemblies);
+  const namespaces = db.newSqlTable("namespaces", "id", row.namespaces);
+  const typeNames = db.newSqlTable("typeNames", "id", row.typeNames, { nullable: ["namespaceId", "declaringTypeId"] });
+  const members = db.newSqlTable("members", "id", row.members);
 
-  const references = db.newSqlTable("references", ["fromId", "toId"], [], row.references);
+  const references = db.newSqlTable("references", ["fromId", "toId"], row.references);
 
-  const methodNames = db.newSqlTable("methodNames", "id", [], row.methodNames);
+  const methodNames = db.newSqlTable("methodNames", "id", row.methodNames);
 
-  const typeSpecs = db.newSqlTable("typeSpecs", "id", ["suffix"], row.typeSpecs);
-  const methodSpecs = db.newSqlTable("methodSpecs", "id", ["declaringTypeSpecId"], row.methodSpecs);
-  const signatureTypes = db.newSqlTable("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
-  const genericParams = db.newSqlTable("genericParams", ["id", "seqno"], [], row.genericParams);
+  const typeSpecs = db.newSqlTable("typeSpecs", "id", row.typeSpecs, { nullable: ["suffix"] });
+  const methodSpecs = db.newSqlTable("methodSpecs", "id", row.methodSpecs, { nullable: ["declaringTypeSpecId"] });
+  const signatureTypes = db.newSqlTable("signatureTypes", ["ownerId", "seqno"], row.signatureTypes);
+  const genericParams = db.newSqlTable("genericParams", ["id", "seqno"], row.genericParams);
 
-  const decompiled = db.newSqlTable("decompiled", "id", [], row.decompiled);
-  const calls = db.newSqlTable("calls", ["fromId", "toId"], [], row.calls);
+  const decompiled = db.newSqlTable("decompiled", "id", row.decompiled);
+  const calls = db.newSqlTable("calls", ["fromId", "toId"], row.calls, { index: ["fromId"] });
 
-  const fullNames = db.newSqlTable("fullNames", "id", [], row.fullNames);
-  const views = db.newSqlTable("views", "id", [], row.views);
-  const viewStates = db.newSqlTable("viewStates", "id", [], row.viewStates);
+  const fullNames = db.newSqlTable("fullNames", "id", row.fullNames);
+  const views = db.newSqlTable("views", "id", row.views);
+  const viewStates = db.newSqlTable("viewStates", "id", row.viewStates);
 
-  const assemblyGroups = db.newSqlTable("assemblyGroups", "id", [], row.assemblyGroups);
-  const namespaceGroups = db.newSqlTable("namespaceGroups", "id", [], row.namespaceGroups);
+  const assemblyGroups = db.newSqlTable("assemblyGroups", "id", row.assemblyGroups);
+  const namespaceGroups = db.newSqlTable("namespaceGroups", "id", row.namespaceGroups);
 
   const close = () => {
     db.done();

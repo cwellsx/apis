@@ -18,23 +18,23 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
     db.dropTable("filter");
   }
 
-  const assembly = db.newSqlTable<Columns.AssemblyColumns>("assembly", "assemblyName", [], {
+  const assembly = db.newSqlTable<Columns.AssemblyColumns>("assembly", "assemblyName", {
     assemblyName: "foo",
     references: ["bar"],
   });
-  const type = db.newSqlTable<Columns.TypeColumns>("type", ["assemblyName", "metadataToken"], [], {
+  const type = db.newSqlTable<Columns.TypeColumns>("type", ["assemblyName", "metadataToken"], {
     assemblyName: "foo",
     metadataToken: 1,
     typeInfo: {} as SavedTypeInfo,
   });
-  const member = db.newSqlTable<Columns.MemberColumns>("member", ["assemblyName", "metadataToken"], [], {
+  const member = db.newSqlTable<Columns.MemberColumns>("member", ["assemblyName", "metadataToken"], {
     assemblyName: "foo",
     metadataToken: 1,
     typeMetadataToken: 1,
     memberType: "methodMembers",
     memberInfo: "bat",
   });
-  const method = db.newSqlTable<Columns.MethodColumns>("method", ["assemblyName", "metadataToken"], [], {
+  const method = db.newSqlTable<Columns.MethodColumns>("method", ["assemblyName", "metadataToken"], {
     assemblyName: "foo",
     metadataToken: 1,
     methodInfo: {} as MethodInfo,
@@ -42,7 +42,7 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
   const call = db.newSqlTable<Columns.CallColumns>(
     "call",
     ["fromAssemblyName", "fromMethodId", "toAssemblyName", "toMethodId"],
-    [],
+
     {
       fromAssemblyName: "foo",
       fromNamespace: "bar",
@@ -57,30 +57,28 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
   const typeName = db.newSqlTable<Columns.TypeNameColumns>(
     "typeName",
     ["assemblyName", "metadataToken"],
-    ["namespace"],
-    { assemblyName: "foo", metadataToken: 0, namespace: "bar", decoratedName: "baz", isCompilerType: 0 }
+    { assemblyName: "foo", metadataToken: 0, namespace: "bar", decoratedName: "baz", isCompilerType: 0 },
+    { nullable: ["namespace"] }
   );
-  const methodName = db.newSqlTable<Columns.MethodNameColumns>("methodName", ["assemblyName", "metadataToken"], [], {
+  const methodName = db.newSqlTable<Columns.MethodNameColumns>("methodName", ["assemblyName", "metadataToken"], {
     assemblyName: "foo",
     metadataToken: 0,
     name: "bar",
     isCompilerMethod: 0,
   });
-  const graphFilter = db.newSqlTable<Columns.GraphFilterColumns>("graphFilter", ["viewType", "clusterBy"], [], {
+  const graphFilter = db.newSqlTable<Columns.GraphFilterColumns>("graphFilter", ["viewType", "clusterBy"], {
     viewType: "references",
     clusterBy: "assembly",
     nodeIds: [],
   });
-  const declaringType = db.newSqlTable<Columns.DeclaringTypeColumns>(
-    "declaringType",
-    ["assemblyName", "nestedType"],
-    [],
-    { assemblyName: "references", nestedType: 0, declaringType: 0 }
-  );
+  const declaringType = db.newSqlTable<Columns.DeclaringTypeColumns>("declaringType", ["assemblyName", "nestedType"], {
+    assemblyName: "references",
+    nestedType: 0,
+    declaringType: 0,
+  });
   const compilerMethod = db.newSqlTable<Columns.CompilerMethodColumns>(
     "compilerMethod",
     ["assemblyName", "compilerMethod"],
-    ["ownerNamespace"],
     {
       assemblyName: "references",
       compilerType: 0,
@@ -88,15 +86,16 @@ export const newTables = (db: SqlDatabase, isSchemaChanged: boolean): Tables => 
       ownerType: 0,
       ownerNamespace: "foo",
       ownerMethod: 0,
-    }
+    },
+    { nullable: ["ownerNamespace"] }
   );
   const localsType = db.newSqlTable<Columns.LocalsTypeColumns>(
     "localsType",
     ["assemblyName", "ownerMethod", "compilerType"],
-    [],
+
     { assemblyName: "references", ownerType: 0, ownerNamespace: "foo", ownerMethod: 0, compilerType: 0 }
   );
-  const filter = db.newSqlTable<Columns.FilterColumns>("filter", ["assemblyName", "metadataToken"], [], {
+  const filter = db.newSqlTable<Columns.FilterColumns>("filter", ["assemblyName", "metadataToken"], {
     assemblyName: "references",
     metadataToken: 0,
     leafHidden: 0,

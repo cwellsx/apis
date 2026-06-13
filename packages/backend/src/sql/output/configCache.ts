@@ -7,7 +7,7 @@ class SqlConfigTable {
   setConfig: (config: ConfigColumns) => void;
 
   constructor(db: SqlDatabase) {
-    const configTable = db.newSqlTable<ConfigColumns>("config", "name", [], { name: "dataSource", value: "bar" });
+    const configTable = db.newSqlTable<ConfigColumns>("config", "name", { name: "dataSource", value: "bar" });
 
     this.getConfig = () => configTable.selectAll();
     this.setConfig = (config: ConfigColumns) => configTable.upsert(config);

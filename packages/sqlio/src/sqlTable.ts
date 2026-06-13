@@ -1,29 +1,5 @@
 import { Database, Statement } from "better-sqlite3";
 
-// this is an application-independent wrapper which encapsulate the better-sqlite3 API
-
-// TODO
-//
-// - add https://www.sqlite.org/withoutrowid.html for compound keys
-
-// if (options?.uniquePairs) {
-//   for (const pair of options.uniquePairs) {
-//     const indexName = `${tableName}_${pair.join("_")}_unique`;
-//     const sql = `CREATE UNIQUE INDEX IF NOT EXISTS "${indexName}"
-//                  ON "${tableName}" (${pair.map(k => `"${k}"`).join(", ")})`;
-//     db.prepare(sql).run();
-//   }
-// }
-
-// if (options?.indexes) {
-//   for (const key of options.indexes) {
-//     const indexName = `${tableName}_${key}_idx`;
-//     const sql = `CREATE INDEX IF NOT EXISTS "${indexName}"
-//                  ON "${tableName}" ("${key}")`;
-//     db.prepare(sql).run();
-//   }
-// }
-
 type columnType = "TEXT" | "INTEGER" | "REAL";
 
 function getColumnType(value: unknown): columnType {
@@ -119,17 +95,20 @@ const needSafeIntegers = (t: object): boolean => {
   }
 };
 
+export type SqlOptions<T extends object> = { index?: (keyof T)[]; unique?: (keyof T)[]; nullable?: (keyof T)[] };
+
 export class SqlTable<T extends object> {
   // we need to list of keys in T to create corresponding SQL columns
   // but type info is only available at compile-time, it doesn't exist at run-time
   // so instead this API expects a sample run-time instance of T
-  constructor(db: Database, tableName: string, primaryKey: keyof T | (keyof T)[], isNullable: (keyof T)[], t: T) {
+  constructor(db: Database, tableName: string, primaryKey: keyof T | (keyof T)[], t: T, options?: SqlOptions<T>) {
     // do everything using arrow functions in the constructor, avoid using this anywhere
     // https://github.com/WiseLibs/better-sqlite3/issues/589#issuecomment-1336812715
     if (typeof primaryKey !== "string" && !Array.isArray(primaryKey)) throw new Error("primaryKey must be a string");
     const primaryKeys = Array.isArray(primaryKey) ? primaryKey.map((key) => String(key)) : [String(primaryKey)];
     if (!primaryKeys.length) throw new Error("must have at least one primaryKey");
 
+    const isNullable: (keyof T)[] = options?.nullable ?? [];
     function isKeyNullable(key: string): boolean {
       return isNullable.includes(key as keyof T);
     }
@@ -143,8 +122,19 @@ export class SqlTable<T extends object> {
       return getColumnDefinition(entry, constraint);
     });
     const primaryKeyConstraint = `PRIMARY KEY (${primaryKeys.join(", ")})`;
-    const createTable = `CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefs.join(", ")}, ${primaryKeyConstraint})`;
+    const withoutRowId = primaryKeys.length > 1 ? " WITHOUT ROWID" : "";
+    const createTable = `CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefs.join(", ")}, ${primaryKeyConstraint})${withoutRowId}`;
     db.prepare(createTable).run();
+
+    const createIndex = (isUnique: boolean, keyNames: (keyof T)[]): void => {
+      const indexName = `${tableName}_${keyNames.join("_")}_idx`;
+      const create = isUnique ? "CREATE UNIQUE " : "CREATE";
+      const createIndex = `${create} INDEX IF NOT EXISTS ${indexName} ON "${tableName}" (${keyNames.join(", ")})`;
+      db.prepare(createIndex).run();
+    };
+
+    if (options?.index) createIndex(false, options.index);
+    if (options?.unique) createIndex(true, options.unique);
 
     const keys = Object.keys(t);
     const values = keys.map((key) => `@${key}`);
