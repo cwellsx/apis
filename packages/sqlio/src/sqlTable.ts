@@ -1,7 +1,28 @@
 import { Database, Statement } from "better-sqlite3";
 
 // this is an application-independent wrapper which encapsulate the better-sqlite3 API
-// could support https://www.sqlite.org/withoutrowid.html but records for this application include JSON so they're large
+
+// TODO
+//
+// - add https://www.sqlite.org/withoutrowid.html for compound keys
+
+// if (options?.uniquePairs) {
+//   for (const pair of options.uniquePairs) {
+//     const indexName = `${tableName}_${pair.join("_")}_unique`;
+//     const sql = `CREATE UNIQUE INDEX IF NOT EXISTS "${indexName}"
+//                  ON "${tableName}" (${pair.map(k => `"${k}"`).join(", ")})`;
+//     db.prepare(sql).run();
+//   }
+// }
+
+// if (options?.indexes) {
+//   for (const key of options.indexes) {
+//     const indexName = `${tableName}_${key}_idx`;
+//     const sql = `CREATE INDEX IF NOT EXISTS "${indexName}"
+//                  ON "${tableName}" ("${key}")`;
+//     db.prepare(sql).run();
+//   }
+// }
 
 type columnType = "TEXT" | "INTEGER" | "REAL";
 
@@ -41,28 +62,34 @@ export const dropTable = (db: Database, tableName: string): void => {
 };
 
 // this lets you define columns of type [] and {} which during I/O are automatically converted to/from string using JSON
-const sqlJson = <T extends object>(t: T): { toSql: (t: T) => object; fromSql: (t: unknown) => T } => {
+const sqlJson = <T extends object>(
+  t: T,
+  useSafeIntegers: boolean
+): { toSql: (t: T) => object; fromSql: (t: unknown) => T } => {
   type Stringified = { [key: string]: unknown };
 
-  const keys: string[] = [];
+  const objectKeys: string[] = [];
+  const numberKeys: string[] = [];
   Object.entries(t).forEach(([key, value]) => {
-    if (typeof value === "object") keys.push(key);
+    if (typeof value === "object") objectKeys.push(key);
+    if (useSafeIntegers && typeof value === "number") numberKeys.push(key);
   });
 
-  if (!keys.length) {
+  if (!objectKeys.length && !numberKeys.length) {
     const toSql = (t: T) => t;
     const fromSql = (t: unknown) => t as T;
     return { toSql, fromSql };
   } else {
     const toSql = (t: T) => {
       const result = { ...t } as Stringified;
-      keys.forEach((key) => (result[key] = JSON.stringify(result[key])));
+      objectKeys.forEach((key) => (result[key] = JSON.stringify(result[key])));
       return result;
     };
     const fromSql = (t: unknown) => {
       const result = { ...(t as object) } as Stringified;
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return
-      keys.forEach((key) => (result[key] = JSON.parse(result[key] as string)));
+      objectKeys.forEach((key) => (result[key] = JSON.parse(result[key] as string)));
+      numberKeys.forEach((key) => (result[key] = Number(result[key])));
       return result as T;
     };
     return { toSql, fromSql };
@@ -149,7 +176,7 @@ export class SqlTable<T extends object> {
 
     const deleteAllStmt = db.prepare(`DELETE FROM "${tableName}"`);
 
-    const { fromSql, toSql } = sqlJson(t);
+    const { fromSql, toSql } = sqlJson(t, useSafeIntegers);
 
     this.insert = db.transaction((t: T) => {
       const u = toSql(t);
@@ -158,7 +185,7 @@ export class SqlTable<T extends object> {
       verbose(`inserted row #${info.lastInsertRowid}`);
     });
     this.insertAuto = db.transaction((t: Partial<T>) => {
-      const { toSql } = sqlJson(t);
+      const { toSql } = sqlJson(t, useSafeIntegers);
       const u = toSql(t);
       if (!insertAutoStmt) throw new Error("insertAuto undefined");
       const info = insertAutoStmt.run(u);
