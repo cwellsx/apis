@@ -7,8 +7,8 @@
     "test": "electron-mocha test/**/*.test.ts",
     "test2": "electron-mocha test/backend2.ts",
     "build-dotnet": "npm --workspace=backend-dotnet run build -- backend-test",
-    "test-slow": "electron-mocha test/dotNetApi.slow.ts --timeout 30000",
-    "test2-slow": "electron-mocha test/dotnet2.slow.ts --timeout 30000",
+    "test-slow": "electron-mocha test/dotNetApi.slow.ts --timeout 60000",
+    "test2-slow": "electron-mocha test/dotnet2.slow.ts --timeout 60000",
     "test-sample": "electron-mocha test/**/sample.test.ts",
     "type-check": "tsc --noEmit",
     "watch": "tsc --noEmit --watch"

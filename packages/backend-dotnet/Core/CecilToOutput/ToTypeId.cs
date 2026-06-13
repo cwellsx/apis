@@ -61,8 +61,6 @@ namespace Core.CecilToOutput
             tr is Mono.Cecil.GenericParameter ||
             tr is not TypeSpecification; // TypeSpecification includes arrays, pointers, byrefs, and generics
 
-        static TypeId FullTypeId(string fullName, ITypeId leafId) => new TypeId(fullName, leafId);
-
         // result of recursing a TypeReference
         ITypeId Recurse(TypeReference tr)
         {
@@ -106,8 +104,7 @@ namespace Core.CecilToOutput
             // Array
             if (tr is ArrayType at)
             {
-                var thisSuffix = $"[{string.Join(",", at.Dimensions)}]";
-                return Result(recurseInner(at.ElementType), thisSuffix, null);
+                return Result(recurseInner(at.ElementType), $"[{string.Join(",", at.Dimensions)}]", null);
             }
 
             // Pointer

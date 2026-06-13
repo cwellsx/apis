@@ -1,5 +1,5 @@
 import { Access } from "./access";
-import { MetadataToken, TypeId } from "./id";
+import { GenericParam, MetadataToken, TypeId } from "./id";
 
 export type Parameter = { name: string; type: TypeId };
 
@@ -36,7 +36,7 @@ export type MethodMember = {
   access: Access;
   isStatic?: boolean;
   isConstruct?: boolean;
-  genericParameters?: string[];
+  genericParameters?: GenericParam[];
   parameters?: Parameter[];
   returnType: TypeId;
   attributes?: string[];

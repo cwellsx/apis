@@ -9,11 +9,11 @@ export const castViewId = (id: number): Id.ViewId => id as Id.ViewId;
 export const castCustomId = (id: number): Id.CustomId => id as Id.CustomId;
 
 export const castTypeDefId = (id: bigint): Id.TypeDefId => id as Id.TypeDefId;
-export const castTypeRefId = (id: bigint): Id.TypeRefId => id as Id.TypeRefId;
+export const castTypeSpecId = (id: bigint): Id.TypeSpecId => id as Id.TypeSpecId;
 export const castGenericParamId = (id: bigint): Id.GenericParamId => id as Id.GenericParamId;
 
 export const castMethodDefId = (id: bigint): Id.MethodDefId => id as Id.MethodDefId;
-export const castMethodRefId = (id: bigint): Id.MethodRefId => id as Id.MethodRefId;
+export const castMethodSpecId = (id: bigint): Id.MethodSpecId => id as Id.MethodSpecId;
 export const castMemberId = (id: bigint): Id.MemberId => id as Id.MemberId;
 
 export const castAnyId = (id: bigint): Id.AnyId => id as Id.TypeDefId;

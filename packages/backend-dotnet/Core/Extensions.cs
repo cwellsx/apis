@@ -21,18 +21,5 @@ namespace Core
             var result = enumerable.ToArray();
             return result.Length == 0 ? null : result;
         }
-
-        //internal static string? NameSuffix(this TypeKind? kind)
-        //{
-        //    switch (kind)
-        //    {
-        //        default:
-        //        case null:
-        //        case TypeKind.GenericParameter: return null;
-        //        case TypeKind.Array: return "[]";
-        //        case TypeKind.Pointer: return "*";
-        //        case TypeKind.ByReference: return "&";
-        //    }
-        //}
     }
 }

@@ -6,11 +6,11 @@ import {
   FullName,
   GenericParam,
   MethodName,
-  MethodReference,
+  MethodSpec,
   Namespace,
   SignatureType,
   TypeName,
-  TypeReference,
+  TypeSpec,
 } from "./schema";
 
 type Tables = {
@@ -19,9 +19,9 @@ type Tables = {
   genericParams: GenericParam[];
   signatureTypes: SignatureType[];
   typeNames: TypeName[];
-  typeReferences: TypeReference[];
+  typeSpecs: TypeSpec[];
   methodNames: MethodName[];
-  methodReferences: MethodReference[];
+  methodSpecs: MethodSpec[];
 };
 
 const mapArrays = <TKey, TValue, T extends { ownerId: TKey; seqno: number }>(
@@ -107,7 +107,7 @@ export const fullNames = (tables: Tables): FullName[] => {
           : value.name) + ownedGenericParamArray(value.id)
   );
 
-  const makeGetTypeIdName = (resolve: (id: Id.TypeRefId) => string) => {
+  const makeGetTypeIdName = (resolve: (id: Id.TypeSpecId) => string) => {
     const getTypeIdName = (id: Id.TypeId): string =>
       isTypeDefId(id)
         ? getOrThrow(mapTypeDefFullNames, id)
@@ -118,7 +118,7 @@ export const fullNames = (tables: Tables): FullName[] => {
   };
 
   const mapTypeRefFullNames = makeNameResolver(
-    tables.typeReferences,
+    tables.typeSpecs,
     (value) => value.id,
     (value, resolve) => {
       const getTypeIdName = makeGetTypeIdName(resolve);
@@ -133,7 +133,7 @@ export const fullNames = (tables: Tables): FullName[] => {
     tables.methodNames,
     (value) => value.id,
     (value) => {
-      const getTypeRefId = (id: Id.TypeRefId): string => getOrThrow(mapTypeRefFullNames, id);
+      const getTypeRefId = (id: Id.TypeSpecId): string => getOrThrow(mapTypeRefFullNames, id);
       const getTypeIdName = makeGetTypeIdName(getTypeRefId);
       const returnType = getTypeIdName(value.returnTypeId);
       const genericParameters = ownedGenericParamArray(value.id);
@@ -145,10 +145,10 @@ export const fullNames = (tables: Tables): FullName[] => {
   const mapMethodNames = new Map<Id.MethodDefId, MethodName>(tables.methodNames.map((value) => [value.id, value]));
 
   const mapMethodRefFullNames = makeNameResolver(
-    tables.methodReferences,
+    tables.methodSpecs,
     (value) => value.id,
     (methodRef) => {
-      const getTypeRefId = (id: Id.TypeRefId): string => getOrThrow(mapTypeRefFullNames, id);
+      const getTypeRefId = (id: Id.TypeSpecId): string => getOrThrow(mapTypeRefFullNames, id);
       const getTypeIdName = makeGetTypeIdName(getTypeRefId);
       const value = getOrThrow(mapMethodNames, methodRef.resolvedId);
       const returnType = getTypeIdName(value.returnTypeId);

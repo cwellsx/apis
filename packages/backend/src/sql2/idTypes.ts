@@ -11,19 +11,20 @@ export type CustomId = number & { __brand: "CustomId" };
 // bigint
 
 export type TypeDefId = bigint & { __brand: "TypeDefId" };
-export type TypeRefId = bigint & { __brand: "TypeRefId" };
+export type TypeSpecId = bigint & { __brand: "TypeSpecId" };
 export type GenericParamId = bigint & { __brand: "GenericParam" };
 
 export type MethodDefId = bigint & { __brand: "MethodDefId" };
-export type MethodRefId = bigint & { __brand: "MethodRefId" };
+export type MethodSpecId = bigint & { __brand: "MethodSpecId" };
 export type MemberId = bigint & { __brand: "MemberId" };
 
-export type BaseTypeId = TypeDefId | GenericParamId; // resolvedId of a TypeReference
-export type TypeId = BaseTypeId | TypeRefId;
-export type MethodId = MethodDefId | MethodRefId;
+export type BaseTypeId = TypeDefId | GenericParamId; // resolvedId of a TypeSpec
+export type TypeId = BaseTypeId | TypeSpecId;
+export type MethodId = MethodDefId | MethodSpecId;
 
 export type AnyDefId = TypeDefId | MethodDefId; // ownerId of a GenericParam
-export type AnyOwnerId = TypeRefId | MethodRefId | MethodDefId; // ownerId of a SignatureType
+export type AnyOwnerId = TypeSpecId | MethodSpecId | MethodDefId; // ownerId of a SignatureType
+//export type AnyOwnerId = bigint & { __brand: "TypeSpecId" | "MethodSpecId" | "MethodDefId" };
 
 export type AnyRootId = AssemblyId | NamespaceId;
 export type AnyGroupId = AssemblyGroupId | NamespaceGroupId;

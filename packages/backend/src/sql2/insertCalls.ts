@@ -1,5 +1,5 @@
 import { assert, getOrSet, log } from "../utils";
-import { isMethodDefId, isMethodRefId, isTableId, isTypeRefId, strip, TableId } from "./idTest";
+import { isMethodDefId, isMethodSpecId, isOwnerTypeSpecId, isTableId, strip, TableId } from "./idTest";
 import { Call, Tables } from "./schema";
 
 const assertDistinct = (calls: Call[]) => {
@@ -59,8 +59,8 @@ const insertToTypes = (tables: Tables) => {
 
   // called method references have a resolved method definition which is contained in a type definition
   const callsToMethodReferences = tables.calls
-    .join(tables.methodReferences, "id", "toId")
-    .join(tables.methodNames, "id", tables.methodReferences, "resolvedId")
+    .join(tables.methodSpecs, "id", "toId")
+    .join(tables.methodNames, "id", tables.methodSpecs, "resolvedId")
     .distinct()
     .selectAll<Call>({ fromId: "calls.fromId", toId: "methodNames.typeId" });
 
@@ -69,8 +69,8 @@ const insertToTypes = (tables: Tables) => {
 
   // called method references have generic type arguments in the signatures table
   let joinQuery = tables.calls
-    .join(tables.methodReferences, "id", "toId")
-    .join(tables.signatureTypes, "ownerId", tables.methodReferences, "id")
+    .join(tables.methodSpecs, "id", "toId")
+    .join(tables.signatureTypes, "ownerId", tables.methodSpecs, "id")
     .distinct();
 
   // these are all the argumentId which join to typeNames and are therefore type definitions and not nested type references
@@ -110,8 +110,8 @@ export const insertCalls = (tables: Tables): void => {
   const signatureTypes = tables.signatureTypes.selectAll().map((value) => value.ownerId);
   logCount("allSignatureTypes", signatureTypes.length);
   logCount("methodDefs", signatureTypes.filter(isMethodDefId).length);
-  logCount("methodRefs", signatureTypes.filter(isMethodRefId).length);
-  logCount("typeRefs", signatureTypes.filter(isTypeRefId).length);
+  logCount("methodRefs", signatureTypes.filter(isMethodSpecId).length);
+  logCount("typeRefs", signatureTypes.filter(isOwnerTypeSpecId).length);
 
   insertToTypes(tables);
 };

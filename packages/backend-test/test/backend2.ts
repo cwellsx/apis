@@ -2,7 +2,7 @@ import { assert } from "backend-api";
 import { DataSource } from "backend-app";
 import { Id, Sql } from "sut/sql2";
 import { createSqlCore } from "sut/sql2/createSqlCore";
-import { isTypeRefId } from "sut/sql2/idTest";
+import { isOwnerTypeSpecId } from "sut/sql2/idTest";
 import { printCalls } from "sut/sql2/printCalls";
 import type { ViewType } from "sut/viewState";
 import { createViewState } from "sut/viewState";
@@ -37,7 +37,7 @@ const printTypeRefs = (tables: Sql.Tables): void => {
   const namedOwners = tables.signatureTypes
     .join(tables.fullNames, "id", "ownerId")
     .selectAll<NamedOwner>({ ownerId: "signatureTypes.ownerId", fullName: "fullNames.fullName" })
-    .filter((value) => isTypeRefId(value.ownerId));
+    .filter((value) => isOwnerTypeSpecId(value.ownerId));
   const fullNames = namedOwners.map((value) => value.fullName);
   printLines("typeRefs.txt", fullNames.sort());
   const isNested = (fullName: string): boolean => {

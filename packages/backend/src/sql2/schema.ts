@@ -21,8 +21,8 @@ export type Reference = { fromId: Id.AssemblyId; toId: Id.AssemblyId };
 
 export type MethodName = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnTypeId: Id.TypeId };
 
-export type TypeReference = { id: Id.TypeRefId; resolvedId: Id.BaseTypeId; suffix?: string };
-export type MethodReference = { id: Id.MethodRefId; resolvedId: Id.MethodDefId };
+export type TypeSpec = { id: Id.TypeSpecId; resolvedId: Id.BaseTypeId; suffix?: string };
+export type MethodSpec = { id: Id.MethodSpecId; resolvedId: Id.MethodDefId; declaringTypeSpecId?: Id.TypeSpecId };
 
 // SignatureTypes is used for generic type arguments, for method parameters, and for generic method arguments
 export type SignatureType = { ownerId: Id.AnyOwnerId; seqno: number; argumentId: Id.TypeId };
@@ -49,8 +49,8 @@ export const tableNames = [
 
   "methodNames",
 
-  "typeReferences",
-  "methodReferences",
+  "typeSpecs",
+  "methodSpecs",
 
   "signatureTypes",
   "genericParams",
@@ -76,8 +76,8 @@ type TableRowMap = {
   members: Member;
   references: Reference;
   methodNames: MethodName;
-  typeReferences: TypeReference;
-  methodReferences: MethodReference;
+  typeSpecs: TypeSpec;
+  methodSpecs: MethodSpec;
   signatureTypes: SignatureType;
   genericParams: GenericParam;
   decompiled: Decompiled;
@@ -104,12 +104,12 @@ const zero = {
   viewId: IdCast.castViewId(0),
   // bigint
   typeDefId: IdCast.castTypeDefId(0n),
-  typeRefId: IdCast.castTypeRefId(0n),
+  typeSpecId: IdCast.castTypeSpecId(0n),
   genericParamId: IdCast.castGenericParamId(0n),
 
-  typeId: IdCast.castTypeRefId(0n),
+  typeId: IdCast.castTypeSpecId(0n),
   methodDefId: IdCast.castMethodDefId(0n),
-  methodRefId: IdCast.castMethodRefId(0n),
+  methodSpecId: IdCast.castMethodSpecId(0n),
   methodId: IdCast.castMethodDefId(0n),
   memberId: IdCast.castMemberId(0n),
   anyId: IdCast.castAnyId(0n),
@@ -131,9 +131,9 @@ const row: TableRowMap = {
 
   methodNames: { id: zero.methodDefId, typeId: zero.typeDefId, name: "foo", returnTypeId: zero.typeId },
 
-  typeReferences: { id: zero.typeRefId, resolvedId: zero.typeDefId, suffix: "foo" },
-  methodReferences: { id: zero.methodRefId, resolvedId: zero.methodDefId },
-  signatureTypes: { ownerId: zero.typeRefId, seqno: 0, argumentId: zero.typeId },
+  typeSpecs: { id: zero.typeSpecId, resolvedId: zero.typeDefId, suffix: "foo" },
+  methodSpecs: { id: zero.methodSpecId, resolvedId: zero.methodDefId, declaringTypeSpecId: zero.typeSpecId },
+  signatureTypes: { ownerId: zero.typeSpecId, seqno: 0, argumentId: zero.typeId },
   genericParams: { id: zero.genericParamId, ownerId: zero.typeDefId, seqno: 0, name: "foo" },
 
   decompiled: { id: zero.methodDefId, asText: "foo" },
@@ -163,8 +163,8 @@ export const createTables = (db: SqlDatabase): Tables => {
 
   const methodNames = db.newSqlTable("methodNames", "id", [], row.methodNames);
 
-  const typeReferences = db.newSqlTable("typeReferences", "id", ["suffix"], row.typeReferences);
-  const methodReferences = db.newSqlTable("methodReferences", "id", [], row.methodReferences);
+  const typeSpecs = db.newSqlTable("typeSpecs", "id", ["suffix"], row.typeSpecs);
+  const methodSpecs = db.newSqlTable("methodSpecs", "id", ["declaringTypeSpecId"], row.methodSpecs);
   const signatureTypes = db.newSqlTable("signatureTypes", ["ownerId", "seqno"], [], row.signatureTypes);
   const genericParams = db.newSqlTable("genericParams", ["id", "seqno"], [], row.genericParams);
 
@@ -190,8 +190,8 @@ export const createTables = (db: SqlDatabase): Tables => {
     members,
     references,
     methodNames,
-    typeReferences,
-    methodReferences,
+    typeSpecs,
+    methodSpecs,
     signatureTypes,
     genericParams,
     decompiled,

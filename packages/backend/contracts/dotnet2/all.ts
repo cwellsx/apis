@@ -1,8 +1,12 @@
 import { Access } from "./access";
-import { LocalTypeId, MethodId, TypeId } from "./id";
+import { BaseMethodId, GenericParam, LocalTypeId, MethodId, TypeId } from "./id";
 import { EventMember, FieldMember, MethodMember, PropertyMember } from "./members";
 
 export type AssemblyMap<T> = { [assemblyName: string]: T };
+export type TokenMap<T> = { [metadataToken: number]: T };
+
+export type TypeSpecData = { resolved: TypeId; genericTypeArguments?: TypeId[]; suffix?: string };
+export type MethodSpecData = { declaringType?: TypeId; resolved: BaseMethodId; genericMethodArguments?: TypeId[] };
 
 export type TypeInfo = {
   id: LocalTypeId;
@@ -12,7 +16,7 @@ export type TypeInfo = {
   attributes?: string[];
   baseType?: TypeId;
   interfaces?: TypeId[];
-  genericParameters?: string[];
+  genericParameters?: GenericParam[];
   access: Access;
   // members
   fieldMembers?: FieldMember[];
@@ -22,7 +26,12 @@ export type TypeInfo = {
   methodMembers?: MethodMember[];
 };
 
-type AssemblyInfo = { referencedAssemblies: string[]; typeInfos: TypeInfo[] };
+type AssemblyInfo = {
+  referencedAssemblies: string[];
+  typeInfos: TypeInfo[];
+  typeSpecs: TokenMap<TypeSpecData>;
+  methodSpecs: TokenMap<MethodSpecData>;
+};
 
 export type MethodInfo = { asText: string; called?: MethodId[]; argued?: MethodId[]; locals?: TypeId[] };
 
