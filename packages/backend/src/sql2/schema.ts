@@ -1,6 +1,6 @@
 import { SqlDatabase, SqlTable } from "sqlio";
-import { zero } from "./idMake";
-import * as Id from "./idTypes";
+import * as Id from "../id2";
+import { zero } from "../id2";
 import { MembersJson } from "./schemaMemberJson";
 
 export type Boolean = 0 | 1;

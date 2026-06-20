@@ -1,8 +1,8 @@
 import { assert } from "backend-api";
 import { DataSource } from "backend-app";
-import { Id, Sql } from "sut/sql2";
+import * as Id from "sut/id2";
+import { Sql } from "sut/sql2";
 import { createSqlCore } from "sut/sql2/createSqlCore";
-import { isOwnerMethodDefId, isOwnerMethodSpecId, isOwnerTypeSpecId } from "sut/sql2/idTest";
 import { printCallFromMethods, printCallFromTypes } from "sut/sql2/printCalls";
 import type { ViewType } from "sut/viewState";
 import { createViewState } from "sut/viewState";
@@ -47,9 +47,9 @@ const printTypeRefs = (tables: Sql.Tables): void => {
         .sort()
     );
 
-  printNamedOwners("typeSpec", isOwnerTypeSpecId);
-  printNamedOwners("methodSpec", isOwnerMethodSpecId);
-  printNamedOwners("methodDef", isOwnerMethodDefId);
+  printNamedOwners("typeSpec", Id.isOwnerTypeSpecId);
+  printNamedOwners("methodSpec", Id.isOwnerMethodSpecId);
+  printNamedOwners("methodDef", Id.isOwnerMethodDefId);
 };
 
 describe("backend2", () => {

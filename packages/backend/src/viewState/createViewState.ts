@@ -1,12 +1,12 @@
 import type { AnyNodeType, Node, NodeId } from "../contracts-ui";
 import { NodeType, textToNodeId } from "../contracts-ui";
+import { toAnyId } from "../id2";
 import { Sql } from "../sql2";
 import type { Item, Numeric, ViewType } from "./createDatabase";
 import { createDatabase } from "./createDatabase";
 import type { Forest } from "./forest";
 import { addLeafs, cloneTrunk, getTrunk } from "./forest";
 import { NodeState } from "./nodeState";
-import { toAnyId } from "./toAnyId";
 
 /*
 To work with the existing front end we need to call this method

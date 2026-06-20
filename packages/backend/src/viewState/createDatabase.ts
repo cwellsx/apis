@@ -1,6 +1,7 @@
 import type { RootNodeType } from "../contracts-ui";
 import { NodeType } from "../contracts-ui";
-import type { Id, Sql } from "../sql2";
+import type * as Id from "../id2";
+import type { Sql } from "../sql2";
 import { assert } from "../utils";
 import type { NodeState } from "./nodeState";
 

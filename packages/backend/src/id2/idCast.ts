@@ -17,3 +17,23 @@ export const castMethodSpecId = (id: bigint): Id.MethodSpecId => id as Id.Method
 export const castMemberId = (id: bigint): Id.MemberId => id as Id.MemberId;
 
 export const castAnyId = (id: bigint): Id.AnyId => id as Id.TypeDefId;
+
+export const zero = {
+  // number
+  assemblyId: castAssemblyId(0),
+  namespaceId: castNamespaceId(0),
+  assemblyGroupId: castAssemblyGroupId(0),
+  namespaceGroupId: castNamespaceGroupId(0),
+  viewId: castViewId(0),
+  // bigint
+  typeDefId: castTypeDefId(0n),
+  typeSpecId: castTypeSpecId(0n),
+  genericParamId: castGenericParamId(0n),
+
+  typeId: castTypeSpecId(0n),
+  methodDefId: castMethodDefId(0n),
+  methodSpecId: castMethodSpecId(0n),
+  methodId: castMethodDefId(0n),
+  memberId: castMemberId(0n),
+  anyId: castAnyId(0n),
+};

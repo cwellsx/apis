@@ -1,5 +1,5 @@
+import * as Id from "../id2";
 import { assert, getOrSet, log } from "../utils";
-import { isMethodDefId, isMethodSpecId, isOwnerTypeSpecId, isTypeDefId } from "./idTest";
 import { Call, Tables } from "./schema";
 
 const assertDistinct = (calls: Call[]) => {
@@ -55,7 +55,7 @@ const insertToTypes = (tables: Tables) => {
     .selectAll<Call>({ fromId: "calls.fromId", toId: "methodNames.typeId" });
 
   logCount("callsToMethodNames", callsToMethodNames.length);
-  assert(callsToMethodNames.map((value) => value.toId).every((id) => isTypeDefId(id)));
+  assert(callsToMethodNames.map((value) => value.toId).every((id) => Id.isTypeDefId(id)));
 
   // called method references have a resolved method definition which is contained in a type definition
   const callsToMethodReferences = tables.calls
@@ -65,7 +65,7 @@ const insertToTypes = (tables: Tables) => {
     .selectAll<Call>({ fromId: "calls.fromId", toId: "methodNames.typeId" });
 
   logCount("callsToMethodReferences", callsToMethodReferences.length);
-  assert(callsToMethodReferences.map((value) => value.toId).every((id) => isTypeDefId(id)));
+  assert(callsToMethodReferences.map((value) => value.toId).every((id) => Id.isTypeDefId(id)));
 
   // called method references have generic type arguments in the signatures table
   let joinQuery = tables.calls
@@ -79,7 +79,7 @@ const insertToTypes = (tables: Tables) => {
     .selectAll<Call>({ fromId: "calls.fromId", toId: "typeNames.id" });
 
   logCount("callsToGenericSignatures", callsToGenericSignatures.length);
-  assert(callsToGenericSignatures.map((value) => value.toId).every((id) => isTypeDefId(id)));
+  assert(callsToGenericSignatures.map((value) => value.toId).every((id) => Id.isTypeDefId(id)));
 
   for (let i = 0; ; ++i) {
     const leftAlias = i == 0 ? undefined : `SIG_${i - 1}`;
@@ -96,7 +96,7 @@ const insertToTypes = (tables: Tables) => {
     if (!moreCalls.length) break;
 
     logCount(rightAlias, moreCalls.length);
-    assert(moreCalls.map((value) => value.toId).every((id) => isTypeDefId(id)));
+    assert(moreCalls.map((value) => value.toId).every((id) => Id.isTypeDefId(id)));
 
     callsToGenericSignatures.push(...moreCalls);
   }
@@ -120,9 +120,9 @@ export const insertCalls = (tables: Tables): void => {
 
   const signatureTypes = tables.signatureTypes.selectAll().map((value) => value.ownerId);
   logCount("allSignatureTypes", signatureTypes.length);
-  logCount("methodDefs", signatureTypes.filter(isMethodDefId).length);
-  logCount("methodRefs", signatureTypes.filter(isMethodSpecId).length);
-  logCount("typeRefs", signatureTypes.filter(isOwnerTypeSpecId).length);
+  logCount("methodDefs", signatureTypes.filter(Id.isMethodDefId).length);
+  logCount("methodRefs", signatureTypes.filter(Id.isMethodSpecId).length);
+  logCount("typeRefs", signatureTypes.filter(Id.isOwnerTypeSpecId).length);
 
   insertToTypes(tables);
   insertToAssembly(tables);

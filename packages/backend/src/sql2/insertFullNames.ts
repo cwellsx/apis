@@ -1,6 +1,5 @@
+import * as Id from "../id2";
 import { assert, getOrThrow } from "../utils";
-import { isGenericParamId, isMethodDefId, isTypeDefId } from "./idTest";
-import type * as Id from "./idTypes";
 import {
   Assembly,
   FullName,
@@ -93,7 +92,7 @@ export const getFullNames = (tables: Tables): FullName[] => {
     const signatureTypes = ownedSignatureTypeArrays.get(id);
     if (!signatureTypes) return "";
     const joined = signatureTypes.map((value) => getTypeIdName(value)).join(",");
-    return isMethodDefId(id) ? `(${joined})` : `<${joined}>`;
+    return Id.isMethodDefId(id) ? `(${joined})` : `<${joined}>`;
   };
 
   const mapTypeDefFullNames = makeNameResolver(
@@ -109,9 +108,9 @@ export const getFullNames = (tables: Tables): FullName[] => {
 
   const makeGetTypeIdName = (resolve: (id: Id.TypeSpecId) => string) => {
     const getTypeIdName = (id: Id.TypeId): string =>
-      isTypeDefId(id)
+      Id.isTypeDefId(id)
         ? getOrThrow(mapTypeDefFullNames, id)
-        : isGenericParamId(id)
+        : Id.isGenericParamId(id)
           ? getOrThrow(allGenericParameters, id)
           : resolve(id);
     return getTypeIdName;
