@@ -2,8 +2,8 @@ import { assert } from "backend-api";
 import { DataSource } from "backend-app";
 import { Id, Sql } from "sut/sql2";
 import { createSqlCore } from "sut/sql2/createSqlCore";
-import { isOwnerTypeSpecId } from "sut/sql2/idTest";
-import { printCalls } from "sut/sql2/printCalls";
+import { isOwnerMethodDefId, isOwnerMethodSpecId, isOwnerTypeSpecId } from "sut/sql2/idTest";
+import { printCallFromMethods, printCallFromTypes } from "sut/sql2/printCalls";
 import type { ViewType } from "sut/viewState";
 import { createViewState } from "sut/viewState";
 import { Forest, printForest } from "sut/viewState/forest";
@@ -36,26 +36,20 @@ const printTypeRefs = (tables: Sql.Tables): void => {
   type NamedOwner = { ownerId: Id.AnyOwnerId; fullName: string };
   const namedOwners = tables.signatureTypes
     .join(tables.fullNames, "id", "ownerId")
-    .selectAll<NamedOwner>({ ownerId: "signatureTypes.ownerId", fullName: "fullNames.fullName" })
-    .filter((value) => isOwnerTypeSpecId(value.ownerId));
-  const fullNames = namedOwners.map((value) => value.fullName);
-  printLines("typeRefs.txt", fullNames.sort());
-  const isNested = (fullName: string): boolean => {
-    let result = false;
-    let state = 0;
-    for (const char of fullName) {
-      switch (char) {
-        case "<":
-          if (++state > 1) result = true;
-          break;
-        case ">":
-          --state;
-          break;
-      }
-    }
-    return result;
-  };
-  printLines("typeRefsNested.txt", fullNames.filter(isNested).sort());
+    .selectAll<NamedOwner>({ ownerId: "signatureTypes.ownerId", fullName: "fullNames.fullName" });
+
+  const printNamedOwners = (name: string, predicate: (id: Id.AnyOwnerId) => boolean) =>
+    printLines(
+      `fullnames.${name}.txt`,
+      namedOwners
+        .filter((value) => predicate(value.ownerId))
+        .map((value) => value.fullName)
+        .sort()
+    );
+
+  printNamedOwners("typeSpec", isOwnerTypeSpecId);
+  printNamedOwners("methodSpec", isOwnerMethodSpecId);
+  printNamedOwners("methodDef", isOwnerMethodDefId);
 };
 
 describe("backend2", () => {
@@ -63,7 +57,8 @@ describe("backend2", () => {
     const dataSource: DataSource = { path: fileCoreJson, type: "coreJson" };
     const { tables } = await createSqlCore(dataSource);
 
-    printLines("calls.md", printCalls(tables, "Core"));
+    printLines("callsFromMethods.md", printCallFromMethods(tables, "Core"));
+    printLines("callsFromTypes.md", printCallFromTypes(tables, "Core"));
 
     testViewState("assemblies", tables);
     testViewState("namespaces", tables);

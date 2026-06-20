@@ -1,5 +1,5 @@
 import { assert, getOrSet, log } from "../utils";
-import { isMethodDefId, isMethodSpecId, isOwnerTypeSpecId, isTableId, strip, TableId } from "./idTest";
+import { isMethodDefId, isMethodSpecId, isOwnerTypeSpecId, isTypeDefId } from "./idTest";
 import { Call, Tables } from "./schema";
 
 const assertDistinct = (calls: Call[]) => {
@@ -55,7 +55,7 @@ const insertToTypes = (tables: Tables) => {
     .selectAll<Call>({ fromId: "calls.fromId", toId: "methodNames.typeId" });
 
   logCount("callsToMethodNames", callsToMethodNames.length);
-  assert(callsToMethodNames.map((value) => value.toId).every((id) => isTableId(strip(id), TableId.TypeDef)));
+  assert(callsToMethodNames.map((value) => value.toId).every((id) => isTypeDefId(id)));
 
   // called method references have a resolved method definition which is contained in a type definition
   const callsToMethodReferences = tables.calls
@@ -65,7 +65,7 @@ const insertToTypes = (tables: Tables) => {
     .selectAll<Call>({ fromId: "calls.fromId", toId: "methodNames.typeId" });
 
   logCount("callsToMethodReferences", callsToMethodReferences.length);
-  assert(callsToMethodReferences.map((value) => value.toId).every((id) => isTableId(strip(id), TableId.TypeDef)));
+  assert(callsToMethodReferences.map((value) => value.toId).every((id) => isTypeDefId(id)));
 
   // called method references have generic type arguments in the signatures table
   let joinQuery = tables.calls
@@ -79,7 +79,7 @@ const insertToTypes = (tables: Tables) => {
     .selectAll<Call>({ fromId: "calls.fromId", toId: "typeNames.id" });
 
   logCount("callsToGenericSignatures", callsToGenericSignatures.length);
-  assert(callsToGenericSignatures.map((value) => value.toId).every((id) => isTableId(strip(id), TableId.TypeDef)));
+  assert(callsToGenericSignatures.map((value) => value.toId).every((id) => isTypeDefId(id)));
 
   for (let i = 0; ; ++i) {
     const leftAlias = i == 0 ? undefined : `SIG_${i - 1}`;
@@ -96,10 +96,21 @@ const insertToTypes = (tables: Tables) => {
     if (!moreCalls.length) break;
 
     logCount(rightAlias, moreCalls.length);
-    assert(moreCalls.map((value) => value.toId).every((id) => isTableId(strip(id), TableId.TypeDef)));
+    assert(moreCalls.map((value) => value.toId).every((id) => isTypeDefId(id)));
 
     callsToGenericSignatures.push(...moreCalls);
   }
+
+  const callsTo: Call[] = callsToMethodNames.concat(callsToMethodReferences).concat(callsToGenericSignatures);
+};
+
+const insertToAssembly = (tables: Tables) => {
+  const callsFrom = tables.calls
+    .join(tables.typeNames, "id", "toId")
+    .distinct()
+    .selectAll<Call>({ fromId: "calls.toId", toId: "typeNames.assemblyId" });
+  logCount("insertToAssembly", callsFrom.length);
+  tables.calls.insertMany(callsFrom);
 };
 
 export const insertCalls = (tables: Tables): void => {
@@ -114,4 +125,5 @@ export const insertCalls = (tables: Tables): void => {
   logCount("typeRefs", signatureTypes.filter(isOwnerTypeSpecId).length);
 
   insertToTypes(tables);
+  insertToAssembly(tables);
 };

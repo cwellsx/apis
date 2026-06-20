@@ -124,7 +124,8 @@ export const getFullNames = (tables: Tables): FullName[] => {
       const getTypeIdName = makeGetTypeIdName(resolve);
       const resolvedName = getTypeIdName(value.resolvedId);
       const typeArguments = ownedSignatureTypeArray(value.id, getTypeIdName);
-      const suffix = value.suffix ?? "";
+      let suffix = value.suffix ?? "";
+      if (suffix.startsWith(" modopt(") || suffix.startsWith(" modreq(")) suffix = "";
       return `${resolvedName}${typeArguments}${suffix}`;
     }
   );
@@ -138,7 +139,8 @@ export const getFullNames = (tables: Tables): FullName[] => {
       const returnType = getTypeIdName(value.returnTypeId);
       const genericParameters = ownedGenericParamArray(value.id);
       const parameters = ownedSignatureTypeArray(value.id, getTypeIdName);
-      return `${returnType} ${value.name}${genericParameters}${parameters}`;
+      const typeName = getOrThrow(mapTypeDefFullNames, value.typeId);
+      return `${returnType} ${typeName}::${value.name}${genericParameters}${parameters}`;
     }
   );
 
@@ -147,14 +149,17 @@ export const getFullNames = (tables: Tables): FullName[] => {
   const mapMethodRefFullNames = makeNameResolver(
     tables.methodSpecs,
     (value) => value.id,
-    (methodRef) => {
+    (methodSpec) => {
       const getTypeRefId = (id: Id.TypeSpecId): string => getOrThrow(mapTypeRefFullNames, id);
       const getTypeIdName = makeGetTypeIdName(getTypeRefId);
-      const value = getOrThrow(mapMethodNames, methodRef.resolvedId);
+      const value = getOrThrow(mapMethodNames, methodSpec.resolvedId);
       const returnType = getTypeIdName(value.returnTypeId);
-      const genericArguments = ownedSignatureTypeArray(methodRef.id, getTypeIdName);
+      const genericArguments = ownedSignatureTypeArray(methodSpec.id, getTypeIdName);
       const parameters = ownedSignatureTypeArray(value.id, getTypeIdName);
-      return `${returnType} ${value.name}${genericArguments}${parameters}`;
+      const typeName = methodSpec.declaringTypeSpecId
+        ? getOrThrow(mapTypeRefFullNames, methodSpec.declaringTypeSpecId)
+        : getOrThrow(mapTypeDefFullNames, value.typeId);
+      return `${returnType} ${typeName}::${value.name}${genericArguments}${parameters}`;
     }
   );
 

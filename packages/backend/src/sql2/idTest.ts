@@ -1,4 +1,13 @@
-import { AnyOwnerId, BaseTypeId, GenericParamId, MethodDefId, TypeDefId, TypeId, TypeSpecId } from "./idTypes";
+import {
+  AnyBigId,
+  AnyOwnerId,
+  BaseTypeId,
+  GenericParamId,
+  MethodDefId,
+  TypeDefId,
+  TypeId,
+  TypeSpecId,
+} from "./idTypes";
 
 export const enum TableId {
   // TypeRef = 0x01,
@@ -15,9 +24,9 @@ export const enum TableId {
 
 export const isTableId = (id: number, tableId: TableId): boolean => (id & 0xff000000) == (tableId as number) << 24;
 
-export const strip = (id: bigint): number => Number(id & 0xffffffffn);
+const strip = (id: bigint): number => Number(id & 0xffffffffn);
 
-export const isTypeDefId = (id: TypeId): id is TypeDefId => isTableId(strip(id), TableId.TypeDef);
+export const isTypeDefId = (id: AnyBigId): id is TypeDefId => isTableId(strip(id), TableId.TypeDef);
 export const isGenericParamId = (id: TypeId): id is GenericParamId => isTableId(strip(id), TableId.GenericParam);
 
 export const isMethodDefId = (id: AnyOwnerId): id is MethodDefId => isTableId(strip(id), TableId.MethodDef);
@@ -25,7 +34,10 @@ export const isMethodSpecId = (id: AnyOwnerId): id is MethodDefId => isTableId(s
 
 export const isBaseTypeId = (id: TypeId): id is BaseTypeId => isTypeDefId(id) || isGenericParamId(id);
 export const isTypeSpecId = (id: TypeId): id is TypeSpecId => isTableId(strip(id), TableId.TypeSpec);
+
 export const isOwnerTypeSpecId = (id: AnyOwnerId): id is TypeSpecId => isTableId(strip(id), TableId.TypeSpec);
+export const isOwnerMethodSpecId = (id: AnyOwnerId): id is TypeSpecId => isTableId(strip(id), TableId.MethodSpec);
+export const isOwnerMethodDefId = (id: AnyOwnerId): id is TypeSpecId => isTableId(strip(id), TableId.MethodDef);
 
 export const enum BoxedId {
   Assembly = 0x40,

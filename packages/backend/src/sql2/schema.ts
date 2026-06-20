@@ -1,5 +1,5 @@
 import { SqlDatabase, SqlTable } from "sqlio";
-import * as IdCast from "./idCast";
+import { zero } from "./idMake";
 import * as Id from "./idTypes";
 import { MembersJson } from "./schemaMemberJson";
 
@@ -29,7 +29,7 @@ export type SignatureType = { ownerId: Id.AnyOwnerId; seqno: number; argumentId:
 export type GenericParam = { id: Id.GenericParamId; ownerId: Id.AnyDefId; seqno: number; name: string };
 
 export type Decompiled = { id: Id.MethodDefId; asText: string };
-export type Call = { fromId: Id.MethodDefId; toId: Id.MethodId };
+export type Call = { fromId: Id.CallFromId; toId: Id.CallToId };
 
 export type FullName = { id: Id.AnyId; fullName: string };
 
@@ -94,26 +94,6 @@ type TableRow<K extends TableName> = TableRowMap[K];
 export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { close: () => void };
 
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
-
-const zero = {
-  // number
-  assemblyId: IdCast.castAssemblyId(0),
-  namespaceId: IdCast.castNamespaceId(0),
-  assemblyGroupId: IdCast.castAssemblyGroupId(0),
-  namespaceGroupId: IdCast.castNamespaceGroupId(0),
-  viewId: IdCast.castViewId(0),
-  // bigint
-  typeDefId: IdCast.castTypeDefId(0n),
-  typeSpecId: IdCast.castTypeSpecId(0n),
-  genericParamId: IdCast.castGenericParamId(0n),
-
-  typeId: IdCast.castTypeSpecId(0n),
-  methodDefId: IdCast.castMethodDefId(0n),
-  methodSpecId: IdCast.castMethodSpecId(0n),
-  methodId: IdCast.castMethodDefId(0n),
-  memberId: IdCast.castMemberId(0n),
-  anyId: IdCast.castAnyId(0n),
-};
 
 const row: TableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
