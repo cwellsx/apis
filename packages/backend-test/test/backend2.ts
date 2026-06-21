@@ -1,9 +1,15 @@
-import { assert } from "backend-api";
+import { assert, log } from "backend-api";
 import { DataSource } from "backend-app";
 import * as Id from "sut/id2";
 import { Sql } from "sut/sql2";
 import { createSqlCore } from "sut/sql2/createSqlCore";
-import { printCallFromMethods, printCallFromTypes } from "sut/sql2/printCalls";
+import {
+  listCallSizes,
+  printCallFromAssemblies,
+  printCallFromMethods,
+  printCallFromNamespaces,
+  printCallFromTypes,
+} from "sut/sql2/printCalls";
 import type { ViewType } from "sut/viewState";
 import { createViewState } from "sut/viewState";
 import { Forest, printForest } from "sut/viewState/forest";
@@ -59,6 +65,31 @@ describe("backend2", () => {
 
     printLines("callsFromMethods.md", printCallFromMethods(tables, "Core"));
     printLines("callsFromTypes.md", printCallFromTypes(tables, "Core"));
+    printLines("callsFromNamespaces.md", printCallFromNamespaces(tables, "Core"));
+    printLines("callsFromAssemblies.md", printCallFromAssemblies(tables, "Core"));
+
+    const result = listCallSizes(tables, "Core");
+
+    const logCount = (methodName: string, lines: string[]) => log(`${methodName}: ${lines.length} records`);
+    logCount("methods", result.methods);
+    logCount("type", result.types);
+    logCount("namespaces", result.namespaces);
+    logCount("assemblies", result.assemblies);
+
+    printLines("listFromMethods.md", result.methods);
+    printLines("listFromTypes.md", result.types);
+    printLines("listFromNamespaces.md", result.namespaces);
+    printLines("listFromAssemblies.md", result.assemblies);
+
+    const difference = (bigger: Set<string>, smaller: Set<string>): string[] =>
+      [...bigger].filter((value) => !smaller.has(value));
+
+    printLines("diffFromAssemblies.md", difference(result.setAssemblies, result.setTypes));
+    printLines("diffFromNamespaces.md", difference(result.setNamespaces, result.setTypes));
+
+    assert(
+      result.setTypes.size == result.setMethods.size && difference(result.setMethods, result.setTypes).length == 0
+    );
 
     testViewState("assemblies", tables);
     testViewState("namespaces", tables);

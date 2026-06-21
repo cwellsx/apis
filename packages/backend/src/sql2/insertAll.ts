@@ -89,6 +89,17 @@ const getTypeNames = (
       : undefined,
   }));
 
+const getNestedNamespaces = (typeNames: Schema.TypeName[]): void => {
+  const map = new Map<Id.TypeDefId, Schema.TypeName>(typeNames.map((value) => [value.id, value]));
+  const getNamespace = (id: Id.TypeDefId): Id.NamespaceId | undefined => {
+    const value = getOrThrow(map, id);
+    return value.declaringTypeId ? getNamespace(value.declaringTypeId) : value.namespaceId;
+  };
+  typeNames.forEach((value) => {
+    if (value.declaringTypeId) value.namespaceId = getNamespace(value.declaringTypeId);
+  });
+};
+
 const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: MapAssemblyIds): Schema.Member[] =>
   allTypeInfos.flatMap((value) => {
     const assemblyId = getOrThrow(assemblyIds, value.assemblyName);
@@ -297,6 +308,7 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
 
   // type names
   const typeNames = getTypeNames(allTypeInfos, assemblyIds, namespaceIds);
+  getNestedNamespaces(typeNames);
   tables.typeNames.insertMany(typeNames);
 
   // member json

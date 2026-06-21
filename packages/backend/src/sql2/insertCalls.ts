@@ -13,13 +13,14 @@ const assertDistinct = (calls: Call[]) => {
 
 const logCount = (methodName: string, count: number) => log(`${methodName}: ${count} records`);
 
-const insertFromAssembly = (tables: Tables) => {
+const insertFromTypes = (tables: Tables) => {
   const callsFrom = tables.calls
     .join(tables.methodNames, "id", "fromId")
-    .join(tables.typeNames, "id", tables.methodNames, "typeId")
     .distinct()
-    .selectAll<Call>({ fromId: "typeNames.assemblyId", toId: "calls.toId" });
-  logCount("insertFromAssembly", callsFrom.length);
+    .selectAll<Call>({ fromId: "methodNames.typeId", toId: "calls.toId" });
+  // if safeIntegers isn't enabled in the JoinQuery then precision is lost so IDs are duplicated
+  assertDistinct(callsFrom);
+  logCount("insertFromTypes", callsFrom.length);
   tables.calls.insertMany(callsFrom);
 };
 
@@ -34,16 +35,13 @@ const insertFromNamespace = (tables: Tables) => {
   tables.calls.insertMany(callsFrom);
 };
 
-const insertFromTypes = (tables: Tables) => {
+const insertFromAssembly = (tables: Tables) => {
   const callsFrom = tables.calls
     .join(tables.methodNames, "id", "fromId")
+    .join(tables.typeNames, "id", tables.methodNames, "typeId")
     .distinct()
-    .selectAll<Call>({ fromId: "methodNames.typeId", toId: "calls.toId" });
-
-  // if safeIntegers isn't enabled in the JoinQuery then precision is lost so IDs are duplicated
-  assertDistinct(callsFrom);
-
-  logCount("insertFromTypes", callsFrom.length);
+    .selectAll<Call>({ fromId: "typeNames.assemblyId", toId: "calls.toId" });
+  logCount("insertFromAssembly", callsFrom.length);
   tables.calls.insertMany(callsFrom);
 };
 
