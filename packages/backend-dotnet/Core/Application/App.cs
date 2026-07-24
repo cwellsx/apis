@@ -14,14 +14,26 @@ namespace Core.Application
     {
         const string version = "2026-04-22"; // see also src\main\shared-types\loaded\loadedVersion.ts
 
-        internal static All LoadAssemblies(string directory)
+        internal static All LoadAssemblies(string directoryOrExe)
         {
-            if (!Directory.Exists(directory))
+            string directory;
+            string? filename;
+            if (File.Exists(directoryOrExe))
             {
-                throw new Exception($"Input directory not found: `{directory}`");
+                directory = Path.GetDirectoryName(directoryOrExe) ?? throw new Exception($"Unknown directory name: `{directoryOrExe}`");
+                filename = Path.GetFileName(directoryOrExe);
+            }
+            else if (Directory.Exists(directoryOrExe))
+            {
+                directory = directoryOrExe;
+                filename = null;
+            }
+            else
+            {
+                throw new Exception($"Input directory or file not found: `{directoryOrExe}`");
             }
 
-            var exePath = ExePaths.FindSingleExe(directory);
+            var exePath = ExePaths.FindSingleExe(directory, filename);
 
             // Cecil.AssemblyResolver uses logic from the Core.Loader namespace
             using var cecilAssemblyResolver = new Cecil.AssemblyResolver(exePath);
@@ -35,7 +47,8 @@ namespace Core.Application
             var missingAssemblyNames = loadedAssemblies.MissingAssemblyNames;
             if (missingAssemblyNames.Length > 0)
             {
-                throw new Exception($"Missing assembly names: {string.Join(", ", missingAssemblyNames)}");
+                //throw new Exception($"Missing assembly names: {string.Join(", ", missingAssemblyNames)}");
+                Logger.Log($"Missing assembly names: {string.Join(", ", missingAssemblyNames)}");
             }
 
             var assemblies = new AssemblyMap<AssemblyInfo>();

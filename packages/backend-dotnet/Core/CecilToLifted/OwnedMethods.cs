@@ -30,6 +30,7 @@ namespace Core.CecilToLifted
             // assert that resolvedTypes includes all compiler-generated types except the <>c class
             var ownCompilerTypeIds = new HashSet<MetadataToken>(ownedCompilerTypes.Select(t => t.typeDefinition.MetadataToken));
             var allCompilerTypes = assemblyData.GetTypeDefinitions(typeDefinition => typeDefinition.IsSignificantCompilerGenerated()).ToArray();
+            var unresolved = allCompilerTypes.Where(typeDefinition => !ownCompilerTypeIds.Contains(typeDefinition.MetadataToken) && !typeDefinition.IsLambdaCache()).ToArray();
             if (allCompilerTypes.Any(typeDefinition => !ownCompilerTypeIds.Contains(typeDefinition.MetadataToken) && !typeDefinition.IsLambdaCache()))
             {
                 throw new Exception("Some compiler-generated types were not resolved");

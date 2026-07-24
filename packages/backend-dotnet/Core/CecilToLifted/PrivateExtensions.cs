@@ -108,6 +108,7 @@ namespace Core.CecilToLifted.Private
             typeDefinition.BaseType.FullName != "System.Attribute" &&
             !typeDefinition.FullName.StartsWith("<PrivateImplementationDetails>") &&
             !typeDefinition.FullName.StartsWith("<>f__AnonymousType") &&
+            typeDefinition.Name != "Resources" &&
             !typeDefinition.IsFixedBuffer();
 
         internal static bool IsLambdaCacheStaticCtor(this MethodDefinition methodDefinition) => methodDefinition.Name == ".cctor" && methodDefinition.DeclaringType.IsLambdaCache();

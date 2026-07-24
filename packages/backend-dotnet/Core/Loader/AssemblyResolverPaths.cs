@@ -38,20 +38,20 @@ namespace Core.Loader
             return false;
         }
 
-        internal static string? GetMicrosoftDirectory(string assemblyPath, FrameworkName frameworkName) => frameworkName.IsCore()
+        internal static string[] GetMicrosoftDirectories(string assemblyPath, FrameworkName frameworkName) => frameworkName.IsCore()
                 ? GetCoreDirectory(assemblyPath, frameworkName)
                 : frameworkName.IsFramework()
-                ? GetFrameworkDirectory(frameworkName.Version)
+                ? GetFrameworkDirectories(frameworkName.Version)
                 : throw new Exception($"Unexpected FrameworkName {frameworkName.FullName}");
 
-        static string? GetCoreDirectory(string assemblyPath, FrameworkName frameworkName)
+        static string[] GetCoreDirectory(string assemblyPath, FrameworkName frameworkName)
         {
             var runtimeTarget = GetRuntimeTarget(assemblyPath, frameworkName);
             if (runtimeTarget == null)
             {
-                return null;
+                return [];
             }
-            return GetCoreDirectory(runtimeTarget);
+            return [GetCoreDirectory(runtimeTarget)];
         }
 
         private static FrameworkName? GetRuntimeTarget(string assemblyPath, FrameworkName frameworkName)
@@ -97,7 +97,7 @@ namespace Core.Loader
                 throw new Exception($"Shared framework not found: {frameworkName.Identifier}");
             }
 
-            var versions = GetVersionsFromSubdirectories(frameworkRoot);
+            var versions = GetVersionsFromSubdirectories(frameworkRoot, true);
             var matching = versions.Where(v => v.Major == frameworkName.Version.Major && v.Minor == frameworkName.Version.Minor).ToArray();
 
             if (matching.Length == 0)
@@ -109,10 +109,10 @@ namespace Core.Loader
             return GetSubdirectoryFromVersion(frameworkRoot, highest!);
         }
 
-        static string GetFrameworkDirectory(Version frameworkVersion)
+        static string[] GetFrameworkDirectories(Version frameworkVersion)
         {
             var frameworkRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Windows), "Microsoft.NET", "Framework");
-            var versions = GetVersionsFromSubdirectories(frameworkRoot);
+            var versions = GetVersionsFromSubdirectories(frameworkRoot, false);
             var matching = versions.SingleOrDefault(v => v.Major == frameworkVersion.Major);
             if (matching == null)
             {
@@ -132,12 +132,21 @@ namespace Core.Loader
                 throw new Exception($".NET Framework version {frameworkVersion} required, but only version {supportedVersion} is installed");
             }
 #pragma warning restore CA1416 // Validate platform compatibility
-            return GetSubdirectoryFromVersion(frameworkRoot, matching);
+            var result = GetSubdirectoryFromVersion(frameworkRoot, matching);
+            var wpfSubdirectory = Path.Combine(result, "WPF");
+            return Directory.Exists(wpfSubdirectory) ? new[] { result, wpfSubdirectory } : new[] { result };
         }
 
-        private static Version[] GetVersionsFromSubdirectories(string directory) => Directory.GetDirectories(directory)
-            .Select(dir => Path.GetFileName(dir))
+        private static Version[] GetVersionsFromSubdirectories(string directory, bool isCore) => Directory.GetDirectories(directory)
+            .Select(dir => isCore ? Path.GetFileName(dir) : GetVersionString(dir))
             .Select(name => Version.Parse(name)).ToArray();
+
+        private static string GetVersionString(string directory)
+        {
+            var name = Path.GetFileName(directory);
+            Assert(name[0] == 'v');
+            return name.Substring(1);
+        }
 
         private static string GetSubdirectoryFromVersion(string root, Version version)
         {

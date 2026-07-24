@@ -73,9 +73,9 @@ namespace Core.Loader
             // 1. the directory which contains the exe (i.e. the "app directory")
             // 2. the shared .NET directory (i.e. a subdirectory of C:\Program Files\dotnet\shared or C:\Windows\Microsoft.NET\Framework)
             var appDirectory = GetDirectoryName(assemblyPath);
-            var microsoftDirectory = GetMicrosoftDirectory(assemblyPath, frameworkName);
+            var microsoftDirectories = GetMicrosoftDirectories(assemblyPath, frameworkName);
 
-            _cache = LoadAllAssemblies(assemblyPath, loader, reader, appDirectory, microsoftDirectory);
+            _cache = LoadAllAssemblies(assemblyPath, loader, reader, appDirectory, microsoftDirectories);
         }
 
         internal IFilter Filter => new FilterImpl(this);
@@ -138,7 +138,7 @@ namespace Core.Loader
             ILoader<T> loader,
             IReader<T> reader,
             string appDirectory,
-            string? microsoftDirectory
+            string[] microsoftDirectories
             )
         {
             var results = new Dictionary<string, Found?>();
@@ -180,7 +180,7 @@ namespace Core.Loader
                         continue;
                     }
                     if (!LoadFromDirectory(name, appDirectory, false) &&
-                        !LoadFromDirectory(name, microsoftDirectory, true))
+                        !microsoftDirectories.Any(microsoftDirectory => LoadFromDirectory(name, microsoftDirectory, true)))
                     {
                         results.Add(name, null);
                     }

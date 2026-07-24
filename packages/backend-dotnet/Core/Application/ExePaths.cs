@@ -8,9 +8,13 @@ namespace Core.Application
 {
     internal static class ExePaths
     {
-        internal static string FindSingleExe(string directory)
+        internal static string FindSingleExe(string directory, string? filename)
         {
             var exePaths = GetExesFromDirectory(directory).ToArray();
+            if (filename != null)
+            {
+                return exePaths.Single(path => Path.GetFileName(path).Equals(filename, StringComparison.OrdinalIgnoreCase));
+            }
             if (exePaths.Length != 1)
             {
                 throw new ArgumentException($"Expect to find one managed EXE in directory, actually found {exePaths.Length}");
