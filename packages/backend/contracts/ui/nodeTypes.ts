@@ -8,4 +8,5 @@ type Method = typeof NodeType.Method;
 type Custom = typeof NodeType.Custom;
 
 export type RootNodeType = Assembly | Namespace;
+export type MethodNodeType = Method;
 export type AnyNodeType = Group | Assembly | Namespace | Type | Method | Custom;

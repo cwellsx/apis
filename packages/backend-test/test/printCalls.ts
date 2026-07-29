@@ -1,5 +1,5 @@
-import { assert } from "../utils";
-import { Tables } from "./schema";
+import { Tables } from "sut/sql2/schema";
+import { assert } from "sut/utils";
 
 type MappedKeys = Map<string, MappedKeys | string[]>;
 const isArray = (value: MappedKeys | string[]): value is string[] => Array.isArray(value);

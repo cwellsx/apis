@@ -3,18 +3,18 @@ import { DataSource } from "backend-app";
 import * as Id from "sut/id2";
 import { Sql } from "sut/sql2";
 import { createSqlCore } from "sut/sql2/createSqlCore";
+import type { ViewType } from "sut/viewState";
+import { createViewState } from "sut/viewState";
+import { Forest, printForest } from "sut/viewState/forest";
+import { fileWrite } from "./file";
+import { fileCoreJson, fileViewState } from "./paths2";
 import {
   listCallSizes,
   printCallFromAssemblies,
   printCallFromMethods,
   printCallFromNamespaces,
   printCallFromTypes,
-} from "sut/sql2/printCalls";
-import type { ViewType } from "sut/viewState";
-import { createViewState } from "sut/viewState";
-import { Forest, printForest } from "sut/viewState/forest";
-import { fileWrite } from "./file";
-import { fileCoreJson, fileViewState } from "./paths2";
+} from "./printCalls";
 
 const printLines = (filename: string, printed: string[]) => fileWrite(fileViewState(filename), printed.join("\r\n"));
 
