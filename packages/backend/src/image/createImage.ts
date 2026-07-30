@@ -1,11 +1,11 @@
 import os from "os";
-import { ConvertPathToUrl } from "../../contracts-app";
-import type { Image, ViewGraph } from "../../contracts-ui";
-import { textIsEdgeId } from "../../contracts-ui";
-import { getAppFilename, log, options, readFileSync, writeFileSync } from "../../utils";
-import type { CreateViewGraph, GraphData, ImageData, ImageNode, Shape } from "../imageDataTypes";
+import { ConvertPathToUrl } from "../contracts-app";
+import type { Image, ViewGraph } from "../contracts-ui";
+import { textIsEdgeId } from "../contracts-ui";
+import { getAppFilename, log, options, readFileSync, writeFileSync } from "../utils";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { runDotExe } from "./graphviz";
+import type { CreateViewGraph, GraphData, ImageData, ImageNode, Shape } from "./imageDataTypes";
 import { runVizJs } from "./viz-js";
 
 /*

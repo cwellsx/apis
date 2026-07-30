@@ -1,8 +1,8 @@
 import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Node, NodeId } from "../../contracts-ui";
 import { isParent, nodeIdToText } from "../../contracts-ui";
+import type { ImageAttribute, ImageData, ImageNode, ImageText } from "../../image";
 import { createLookupNodeId, edgeIdToText, Edges, NodeIdMap, NodeIdSet } from "../../nodeIds";
 import { log, options, uniqueStrings, viewFeatures } from "../../utils";
-import type { ImageAttribute, ImageData, ImageNode, ImageText } from "../imageDataTypes";
 
 const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] =>
   viewOptions["showEdgeLabels"] ?? { groups: false, leafs: false };

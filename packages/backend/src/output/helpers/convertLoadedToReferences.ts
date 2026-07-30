@@ -1,8 +1,8 @@
 import type { AssemblyReferences } from "../../contracts-dotnet";
 import type { GraphFilter, ReferenceViewOptions } from "../../contracts-ui";
+import { GraphData, ImageAttribute } from "../../image/imageDataTypes";
 import { Edges, NodeIdMap, toNameNodeId } from "../../nodeIds";
 import { log } from "../../utils";
-import { GraphData, ImageAttribute } from "../imageDataTypes";
 import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 

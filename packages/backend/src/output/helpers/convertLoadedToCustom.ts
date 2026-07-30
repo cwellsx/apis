@@ -1,9 +1,9 @@
 import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
 import { isCustomManual, isParent, NodeType } from "../../contracts-ui";
 import { CustomNode } from "../../customJson";
+import type { GraphData, ImageAttribute, Shape } from "../../image/imageDataTypes";
 import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "../../nodeIds";
 import { getOrThrow, last, log, options } from "../../utils";
-import type { GraphData, ImageAttribute, Shape } from "../imageDataTypes";
 import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
 

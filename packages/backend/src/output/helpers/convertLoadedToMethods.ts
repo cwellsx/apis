@@ -8,10 +8,10 @@ import type {
   Parent,
 } from "../../contracts-ui";
 import { NodeType } from "../../contracts-ui";
+import type { GraphData, ImageAttribute } from "../../image";
 import { Edges, methodNodeId, NodeIdMap, toMethodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../../nodeIds";
 import type { Call, CallstackIterator, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../../sql";
 import { getOrSet, log } from "../../utils";
-import type { GraphData, ImageAttribute } from "../imageDataTypes";
 import { convertToImage } from "./convertToImage";
 
 /*
