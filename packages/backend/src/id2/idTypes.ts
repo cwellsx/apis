@@ -20,6 +20,9 @@ export type MemberId = bigint & { __brand: "MemberId" };
 
 export type BigAssemblyId = bigint & { __brand: "BigAssemblyId" };
 export type BigNamespaceId = bigint & { __brand: "BigNamespaceId" };
+export type BigAssemblyGroupId = bigint & { __brand: "BigAssemblyGroupId" };
+export type BigNamespaceGroupId = bigint & { __brand: "BigNamespaceGroupId" };
+export type BigCustomId = bigint & { __brand: "BigCustomId" };
 
 export type CallFromId = MethodDefId | TypeDefId | BigAssemblyId | BigNamespaceId;
 export type CallToId = CallFromId | MethodSpecId | TypeSpecId;
@@ -36,4 +39,11 @@ export type AnyRootId = AssemblyId | NamespaceId;
 export type AnyGroupId = AssemblyGroupId | NamespaceGroupId;
 export type AnyId = TypeId | MethodId | AnyRootId | AnyGroupId | CustomId;
 
-export type AnyBigId = TypeId | MethodId | BigAssemblyId | BigNamespaceId;
+export type AnyBigId =
+  | TypeId
+  | MethodId
+  | BigAssemblyId
+  | BigNamespaceId
+  | BigAssemblyGroupId
+  | BigNamespaceGroupId
+  | BigCustomId;

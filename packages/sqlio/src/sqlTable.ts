@@ -236,21 +236,26 @@ export class SqlTable<T extends object> {
       let statement = prepared[source];
       if (!statement) {
         statement = db.prepare(source);
+        if (useSafeIntegers) statement.safeIntegers(true);
         prepared[source] = statement;
       }
       return statement;
     };
 
-    this.selectWhereIn = <K extends keyof T>(key: K, values: readonly NonNullable<T[K]>[]): T[] => {
+    this.selectWhereIn = <K extends keyof T>(key: K | K[], values: readonly NonNullable<T[K]>[]): T[] => {
       if (values.length === 0) return [];
 
       const placeholders = values.map(() => "?").join(",");
-      const sql = `SELECT * FROM "${tableName}" WHERE "${String(key)}" IN (${placeholders})`;
+      const keys: K[] = Array.isArray(key) ? key : [key];
+      const where = keys.map((k) => `"${String(k)}" IN (${placeholders})`).join(" AND ");
+      const sql = `SELECT * FROM "${tableName}" WHERE ${where}`;
+      const parameters = keys.flatMap((_) => values);
 
-      return db
-        .prepare(sql)
-        .all(...values)
-        .map(fromSql);
+      const prepared = db.prepare(sql);
+      if (useSafeIntegers) prepared.safeIntegers(true);
+
+      const rows = prepared.all(...parameters);
+      return rows.map(fromSql);
     };
 
     this.join = <U extends object>(
@@ -290,9 +295,10 @@ export class SqlTable<T extends object> {
   deleteAll: () => void;
   selectWhere: (where: Partial<T>) => T[];
   selectOne: (where: Partial<T>) => T | undefined;
+  selectWhereIn: <K extends keyof T>(key: K | K[], values: readonly NonNullable<T[K]>[]) => T[];
+  // don't use selectCustom with big numbers
   selectCustom: (distinct: boolean, custom: string, where?: object) => T[];
   selectCustomSpecific: (u: Partial<T>, distinct: boolean, custom: string, where?: object) => Partial<T>[];
-  selectWhereIn: <K extends keyof T>(key: K, values: readonly NonNullable<T[K]>[]) => T[];
 
   join: <U extends object>(
     other: SqlTable<U>,

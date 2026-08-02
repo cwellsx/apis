@@ -16,7 +16,21 @@ export const castMethodDefId = (id: bigint): Id.MethodDefId => id as Id.MethodDe
 export const castMethodSpecId = (id: bigint): Id.MethodSpecId => id as Id.MethodSpecId;
 export const castMemberId = (id: bigint): Id.MemberId => id as Id.MemberId;
 
-export const castAnyId = (id: bigint): Id.AnyId => id as Id.TypeDefId;
+export const castAnyBigId = (id: bigint): Id.AnyBigId => id as Id.TypeDefId;
+
+export const toBigAssemblyId = (id: Id.AssemblyId): Id.BigAssemblyId => BigInt(id) as Id.BigAssemblyId;
+export const toBigNamespaceId = (id: Id.NamespaceId): Id.BigNamespaceId => BigInt(id) as Id.BigNamespaceId;
+export const toBigAssemblyGroupId = (id: Id.AssemblyGroupId): Id.BigAssemblyGroupId =>
+  BigInt(id) as Id.BigAssemblyGroupId;
+export const toBigNamespaceGroupId = (id: Id.NamespaceGroupId): Id.BigNamespaceGroupId =>
+  BigInt(id) as Id.BigNamespaceGroupId;
+
+export const castBigAssemblyId = (id: bigint): Id.BigAssemblyId => id as Id.BigAssemblyId;
+export const castBigNamespaceId = (id: bigint): Id.BigNamespaceId => id as Id.BigNamespaceId;
+export const castBigAssemblyGroupId = (id: bigint): Id.BigAssemblyGroupId => id as Id.BigAssemblyGroupId;
+export const castBigNamespaceGroupId = (id: bigint): Id.BigNamespaceGroupId => id as Id.BigNamespaceGroupId;
+
+export const castBigCustomId = (id: bigint): Id.BigCustomId => id as Id.BigCustomId;
 
 export const zero = {
   // number
@@ -35,5 +49,5 @@ export const zero = {
   methodSpecId: castMethodSpecId(0n),
   methodId: castMethodDefId(0n),
   memberId: castMemberId(0n),
-  anyId: castAnyId(0n),
+  anyBigId: castAnyBigId(0n),
 };

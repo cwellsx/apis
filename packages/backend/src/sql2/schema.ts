@@ -6,6 +6,8 @@ import { MembersJson } from "./schemaMemberJson";
 export type Boolean = 0 | 1;
 export type ViewType = "assemblies" | "namespaces" | "references";
 
+// Caution -- don't use AnyId which is a mixture of bigint and number types
+
 export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: Boolean };
 export type Namespace = { id: Id.NamespaceId; name: string };
 export type TypeName = {
@@ -31,10 +33,10 @@ export type GenericParam = { id: Id.GenericParamId; ownerId: Id.AnyDefId; seqno:
 export type Decompiled = { id: Id.MethodDefId; asText: string };
 export type Call = { fromId: Id.CallFromId; toId: Id.CallToId };
 
-export type FullName = { id: Id.AnyId; fullName: string };
+export type FullName = { id: Id.AnyBigId; fullName: string };
 
 export type View = { id: Id.ViewId; viewType: ViewType }; // in future could add `name: string` column to support multiple view instance
-export type ViewState = { viewId: Id.ViewId; id: Id.AnyId; isHidden: Boolean; isExpanded: Boolean };
+export type ViewState = { viewId: Id.ViewId; id: Id.AnyBigId; isHidden: Boolean; isExpanded: Boolean };
 
 export type AssemblyGroup = { id: Id.AssemblyGroupId; name: string };
 export type NamespaceGroup = { id: Id.NamespaceGroupId; name: string };
@@ -119,9 +121,9 @@ const row: TableRowMap = {
   decompiled: { id: zero.methodDefId, asText: "foo" },
   calls: { fromId: zero.methodDefId, toId: zero.methodId },
 
-  fullNames: { id: zero.anyId, fullName: "foo" },
+  fullNames: { id: zero.anyBigId, fullName: "foo" },
   views: { id: zero.viewId, viewType: "assemblies" as ViewType },
-  viewStates: { id: zero.anyId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
+  viewStates: { id: zero.anyBigId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
 
   assemblyGroups: { id: zero.assemblyGroupId, name: "foo" },
   namespaceGroups: { id: zero.namespaceGroupId, name: "foo" },

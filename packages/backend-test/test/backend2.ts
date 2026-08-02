@@ -1,5 +1,6 @@
 import { assert, log } from "backend-api";
 import { DataSource } from "backend-app";
+import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import * as Id from "sut/id2";
 import { Sql } from "sut/sql2";
 import { createSqlCore } from "sut/sql2/createSqlCore";
@@ -18,12 +19,25 @@ import {
 
 const printLines = (filename: string, printed: string[]) => fileWrite(fileViewState(filename), printed.join("\r\n"));
 
+const getRootNodeType = (viewType: ViewType): RootNodeType => {
+  switch (viewType) {
+    case "assemblies":
+    case "references":
+      return NodeType.Assembly;
+    case "namespaces":
+      return NodeType.Namespace;
+  }
+};
+
+const getForestNode = (forest: Forest, name: string, rootNodeType: AnyNodeType): Node | undefined =>
+  forest.allNodes.find((value) => value.type == rootNodeType && value.label == name);
+
 const testViewState = (viewType: ViewType, tables: Sql.Tables): void => {
   const viewState = createViewState(tables, viewType);
   let suffix = 0;
 
   const printViewState = (): Forest => {
-    const forest = viewState.getNewForest();
+    const forest = viewState.getForest();
     const printed = printForest(forest);
     printLines(`${viewType}-${suffix++}.txt`, printed);
     return forest;
@@ -31,11 +45,28 @@ const testViewState = (viewType: ViewType, tables: Sql.Tables): void => {
 
   let forest = printViewState();
 
-  const node = viewState.getRootNode(forest, "Core");
+  let node = getForestNode(forest, "Core", getRootNodeType(viewType));
   assert(!!node);
   viewState.setNodeState(node.nodeId, node.type, { isExpanded: true });
-
   forest = printViewState();
+
+  node = getForestNode(forest, "Microsoft", NodeType.Group);
+  assert(!!node);
+  viewState.setNodeState(node.nodeId, node.type, { isExpanded: false });
+  forest = printViewState();
+
+  node = getForestNode(forest, "System.Collections", NodeType.Group);
+  assert(!!node);
+  viewState.setNodeState(node.nodeId, node.type, { isHidden: true });
+  forest = printViewState();
+
+  // choose a type which exists in the Core assembly and in the Core namespace
+  node = getForestNode(forest, "Program", NodeType.Type);
+  assert(!!node);
+  viewState.setNodeState(node.nodeId, node.type, { isExpanded: true });
+  forest = printViewState();
+
+  const graphData = viewState.getGraphData();
 };
 
 const printTypeRefs = (tables: Sql.Tables): void => {

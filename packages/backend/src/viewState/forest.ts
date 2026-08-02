@@ -1,9 +1,11 @@
 import type { Node, Parent } from "../contracts-ui";
 import { isParent, nodeIdToText } from "../contracts-ui";
+import { toAnyBigId } from "../id2";
 import { compareOrdinal, getOrThrow } from "../utils";
+import { ViewType } from "./createDatabase";
+import { NodeStates } from "./nodeStates";
 
 export type Forest = { roots: Node[]; allNodes: Node[] };
-export type GetForest = () => Forest;
 export type Top = { groups: Node[]; roots: Node[] };
 export type Leafs = { typeNames: Node[]; methodNames: Node[]; parents: Map<string, string> };
 
@@ -100,34 +102,30 @@ export const addLeafs = (trunk: Forest, leafs: Leafs): void => {
   addToParents(leafs.methodNames);
 };
 
-export const cloneTrunk = (forest: Forest): GetForest => {
-  const cloneForest = (): Forest => {
-    const newForest: Forest = { roots: [], allNodes: [] };
+export const cloneForest = (forest: Forest, nodeStates: NodeStates, viewType: ViewType): Forest => {
+  const newForest: Forest = { roots: [], allNodes: [] };
 
-    const cloneNode = (node: Node, parent: Parent | null) => {
-      const copy: Node = {
-        nodeId: node.nodeId,
-        label: node.label,
-        type: node.type,
+  const cloneNode = (node: Node, parent: Parent | null) => {
+    const copy: Node = {
+      nodeId: node.nodeId,
+      label: node.label,
+      type: node.type,
 
-        parent,
-        children: undefined,
-      };
-
-      if (isParent(node)) {
-        const copyParent = copy as Parent;
-        copyParent.children = node.children.map((child) => cloneNode(child, copyParent));
-      }
-
-      newForest.allNodes.push(copy);
-      return copy;
+      parent,
+      children: undefined,
     };
 
-    forest.roots.forEach((root) => newForest.roots.push(cloneNode(root, null)));
-    return newForest;
+    if (isParent(node) && nodeStates.showsChildren(toAnyBigId(node.nodeId, node.type, viewType), true)) {
+      const copyParent = copy as Parent;
+      copyParent.children = node.children.map((child) => cloneNode(child, copyParent));
+    }
+
+    newForest.allNodes.push(copy);
+    return copy;
   };
-  const getForest = () => cloneForest();
-  return getForest;
+
+  forest.roots.forEach((root) => newForest.roots.push(cloneNode(root, null)));
+  return newForest;
 };
 
 export const printForest = (forest: Forest): string[] => {

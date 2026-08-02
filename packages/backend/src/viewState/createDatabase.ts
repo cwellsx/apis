@@ -1,14 +1,12 @@
 import type { RootNodeType } from "../contracts-ui";
 import { NodeType } from "../contracts-ui";
-import type * as Id from "../id2";
+import * as Id from "../id2";
 import type { Sql } from "../sql2";
 import { assert } from "../utils";
-import type { NodeState } from "./nodeState";
+import type { NodeState } from "./nodeStates";
+import { fromBoolean, NodeStates } from "./nodeStates";
 
 export type ViewType = Sql.ViewType;
-
-export type Numeric = number | bigint;
-export type Item<TId extends Numeric> = { id: TId; name: string };
 
 // not exported
 // - similar to Top and Leafs exported from forest.ts
@@ -16,27 +14,29 @@ export type Item<TId extends Numeric> = { id: TId; name: string };
 type Top = { groups: Item<number>[]; roots: Item<number>[] };
 type Leafs = { typeNames: Item<bigint>[]; methodNames: Item<bigint>[]; parents: Map<Id.AnyId, Id.AnyId> };
 
+export type Numeric = number | bigint;
+export type Item<TId extends Numeric> = { id: TId; name: string };
+
 export type Database = {
   rootNodeType: RootNodeType;
   top: Top;
-  getNodeStates: () => Map<Id.AnyId, NodeState>;
-  getLeafs: (nodeStates: Map<Id.AnyId, NodeState>) => Leafs;
-  setAnyNodeState: (id: Id.AnyId, nodeState: NodeState) => void;
+  getNodeStates: () => NodeStates;
+  getLeafs: (nodeStates: NodeStates) => Leafs;
+  setAnyNodeState: (id: Id.AnyBigId, nodeState: NodeState) => void;
 };
 
 export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Database => {
-  type IsExpanded = (id: Id.AnyId) => boolean;
   type TypeNames = { typeNames: Sql.TypeName[]; typeParents: [Id.AnyId, Id.AnyId][] };
-  type ViewOf = { top: Top; rootNodeType: RootNodeType; getTypeNames: (isExpanded: IsExpanded) => TypeNames };
+  type ViewOf = { top: Top; rootNodeType: RootNodeType; getTypeNames: (nodeStates: NodeStates) => TypeNames };
 
   const viewOfAssemblies = (): ViewOf => {
     const assemblies = sqlTables.assemblies.selectAll();
     const top: Top = { groups: sqlTables.assemblyGroups.selectAll(), roots: assemblies };
-    const getTypeNames = (isExpanded: IsExpanded): TypeNames => {
-      const typeNames = sqlTables.typeNames.selectWhereIn(
-        "assemblyId",
-        assemblies.map((value) => value.id).filter(isExpanded)
-      );
+    const getTypeNames = (nodeStates: NodeStates): TypeNames => {
+      const assemblyIds = assemblies
+        .map((value) => value.id)
+        .filter((id) => nodeStates.showsChildren(Id.toBigAssemblyId(id), false));
+      const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds);
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.assemblyId]);
       return { typeNames, typeParents };
     };
@@ -46,11 +46,11 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
   const viewOfNamespaces = (): ViewOf => {
     const namespaces = sqlTables.namespaces.selectAll();
     const top: Top = { groups: sqlTables.namespaceGroups.selectAll(), roots: namespaces };
-    const getTypeNames = (isExpanded: IsExpanded): TypeNames => {
-      const typeNames = sqlTables.typeNames.selectWhereIn(
-        "namespaceId",
-        namespaces.map((value) => value.id).filter(isExpanded)
-      );
+    const getTypeNames = (nodeStates: NodeStates): TypeNames => {
+      const namespaceIds = namespaces
+        .map((value) => value.id)
+        .filter((id) => nodeStates.showsChildren(Id.toBigNamespaceId(id), false));
+      const typeNames = sqlTables.typeNames.selectWhereIn("namespaceId", namespaceIds);
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.namespaceId!]);
       return { typeNames, typeParents };
     };
@@ -61,7 +61,7 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     const assemblies = sqlTables.assemblies.selectAll();
     const top: Top = { groups: sqlTables.assemblyGroups.selectAll(), roots: assemblies };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const getTypeNames = (isExpanded: IsExpanded): TypeNames => ({ typeNames: [], typeParents: [] });
+    const getTypeNames = (nodeStates: NodeStates): TypeNames => ({ typeNames: [], typeParents: [] });
     return { top, rootNodeType: NodeType.Assembly, getTypeNames };
   };
 
@@ -83,20 +83,12 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
   assert(!!found);
   const viewId: Id.ViewId = found.id;
 
-  const toBoolean = (b: Sql.Boolean): boolean => b == 1;
-  const fromBoolean = (b: boolean): Sql.Boolean => (b ? 1 : 0);
-
-  const getNodeStates = (): Map<Id.AnyId, NodeState> => {
+  const getNodeStates = (): NodeStates => {
     const viewStates: Sql.ViewState[] = sqlTables.viewStates.selectWhere({ viewId });
-    return new Map<Id.AnyId, NodeState>(
-      viewStates.map((viewState) => [
-        viewState.id,
-        { isHidden: toBoolean(viewState.isHidden), isExpanded: toBoolean(viewState.isExpanded) },
-      ])
-    );
+    return new NodeStates(viewStates);
   };
 
-  const setAnyNodeState = (id: Id.AnyId, nodeState: NodeState): void => {
+  const setAnyNodeState = (id: Id.AnyBigId, nodeState: NodeState): void => {
     if (!nodeState.isExpanded && !nodeState.isHidden) {
       // TODO -- implement DELETE
       // return;
@@ -146,11 +138,12 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
   
   */
 
-  const getLeafs = (nodeStates: Map<Id.AnyId, NodeState>): Leafs => {
-    const isExpanded = (id: Id.AnyId): boolean => nodeStates.get(id)?.isExpanded ?? false; // non-expanded by default
-    const { typeNames, typeParents } = getTypeNames(isExpanded);
+  const getLeafs = (nodeStates: NodeStates): Leafs => {
+    // get types
+    const { typeNames, typeParents } = getTypeNames(nodeStates);
 
-    const expandedTypeIds = typeNames.map((value) => value.id).filter(isExpanded);
+    // get methods
+    const expandedTypeIds = typeNames.map((value) => value.id).filter((id) => nodeStates.showsChildren(id, false));
     const methodNames = sqlTables.methodNames.selectWhereIn("typeId", expandedTypeIds);
     const methodParents = methodNames.map((methodName): [Id.AnyId, Id.AnyId] => [methodName.id, methodName.typeId]);
 

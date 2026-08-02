@@ -1,12 +1,13 @@
 import type { AnyNodeType, Node, NodeId } from "../contracts-ui";
-import { NodeType, textToNodeId } from "../contracts-ui";
-import { toAnyId } from "../id2";
+import { isParent, NodeType, textToNodeId } from "../contracts-ui";
+import type * as Id from "../id2";
+import { toAnyBigId } from "../id2";
 import { Sql } from "../sql2";
 import type { Item, Numeric, ViewType } from "./createDatabase";
 import { createDatabase } from "./createDatabase";
 import type { Forest } from "./forest";
-import { addLeafs, cloneTrunk, getTrunk } from "./forest";
-import { NodeState } from "./nodeState";
+import { addLeafs, cloneForest, getTrunk } from "./forest";
+import { NodeState, NodeStates } from "./nodeStates";
 
 /*
 To work with the existing front end we need to call this method
@@ -39,13 +40,6 @@ export type ViewGraphData = {
 - 
 */
 
-export type ViewState = {
-  getForest: () => Forest;
-  getNewForest: () => Forest;
-  getRootNode: (forest: Forest, name: string) => Node | undefined;
-  setNodeState: (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState) => void;
-};
-
 const toNodesFromItems = <TId extends Numeric>(items: Item<TId>[], type: AnyNodeType): Node[] =>
   items.map((item) => {
     const text = item.id.toString();
@@ -53,35 +47,82 @@ const toNodesFromItems = <TId extends Numeric>(items: Item<TId>[], type: AnyNode
     return { nodeId, label: item.name, parent: null, type };
   });
 
+export type GraphData = { forest: Forest; calls: Sql.Call[] };
+
+export type ViewState = {
+  getForest: () => Forest;
+  getGraphData: () => GraphData;
+  setNodeState: (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState) => void;
+};
+
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
   const { rootNodeType, top, getNodeStates, setAnyNodeState, getLeafs } = createDatabase(sqlTables, viewType);
+
+  const getCalls = (forest: Forest, nodeStates: NodeStates): Sql.Call[] => {
+    const leafIds = forest.allNodes
+      .filter((node) => !isParent(node))
+      .map((node) => toAnyBigId(node.nodeId, node.type, viewType))
+      .filter((nodeId) => nodeStates.isVisible(nodeId));
+    return sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
+  };
 
   const trunk: Forest = getTrunk({
     groups: toNodesFromItems<number>(top.groups, NodeType.Group),
     roots: toNodesFromItems<number>(top.roots, rootNodeType),
   });
 
-  const getForest = cloneTrunk(trunk);
-
-  const getNewForest = (): Forest => {
-    const trunk = getForest();
+  const getForest = (): Forest => {
     const nodeStates = getNodeStates();
+    const forest = cloneForest(trunk, nodeStates, viewType);
     const leafs = getLeafs(nodeStates);
-    addLeafs(trunk, {
+    addLeafs(forest, {
       typeNames: toNodesFromItems<bigint>(leafs.typeNames, NodeType.Type),
       methodNames: toNodesFromItems<bigint>(leafs.methodNames, NodeType.Method),
       parents: new Map<string, string>(
         [...leafs.parents.entries()].map(([key, value]) => [key.toString(), value.toString()])
       ),
     });
-    return trunk;
+    return forest;
   };
 
-  const getRootNode = (forest: Forest, name: string): Node | undefined =>
-    forest.allNodes.find((value) => value.type == rootNodeType && value.label == name);
-
   const setNodeState = (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState): void =>
-    setAnyNodeState(toAnyId(id, nodeType, viewType), nodeState);
+    setAnyNodeState(toAnyBigId(id, nodeType, viewType), nodeState);
 
-  return { getForest, getNewForest, getRootNode, setNodeState };
+  const getGraphData = (): GraphData => {
+    const nodeStates = getNodeStates();
+    const forest = cloneForest(trunk, nodeStates, viewType);
+    const leafs = getLeafs(nodeStates);
+    addLeafs(forest, {
+      typeNames: toNodesFromItems<bigint>(leafs.typeNames, NodeType.Type),
+      methodNames: toNodesFromItems<bigint>(leafs.methodNames, NodeType.Method),
+      parents: new Map<string, string>(
+        [...leafs.parents.entries()].map(([key, value]) => [key.toString(), value.toString()])
+      ),
+    });
+    const calls = getCalls(forest, nodeStates);
+    return { forest, calls };
+  };
+
+  return { getForest, getGraphData, setNodeState };
 };
+
+// const stmtCache = new Map();
+
+// function getConnections(ids) {
+//   if (ids.length === 0) return [];
+
+//   let stmt = stmtCache.get(ids.length);
+
+//   if (!stmt) {
+//     const placeholders = ids.map(() => "?").join(", ");
+//     stmt = db.prepare(`
+//       SELECT * FROM connections
+//       WHERE fromId IN (${placeholders})
+//         AND toId IN (${placeholders})
+//     `);
+//     stmtCache.set(ids.length, stmt);
+//   }
+
+//   // Pass the single flat list of args to fulfill both sets of placeholders
+//   return stmt.all([...ids, ...ids]);
+// }

@@ -1,8 +1,11 @@
 import type { DisplayApi } from "../contracts-app";
+import { bindImage } from "../image";
 import { ViewState } from "../viewState";
 import { MethodNode, ShowView } from "./showView";
 
 export const createShowView = (display: DisplayApi, viewState: ViewState): ShowView => {
+  const createNewGraph = bindImage(display.convertPathToUrl);
+
   const showMethodDetails = (methodNodeId: MethodNode): Promise<void> => {
     throw new Error();
   };
