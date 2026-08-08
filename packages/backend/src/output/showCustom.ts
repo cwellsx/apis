@@ -1,5 +1,5 @@
 import { AppConfig, DisplayApi } from "../contracts-app";
-import { AppOptions, DetailedCustom, isCustomManual, NodeId, ViewCustomErrors } from "../contracts-ui";
+import { AppOptions, DetailedCustom, isCustomManual, NodeId, ViewCustomErrors, ViewGraph } from "../contracts-ui";
 import { bindImage } from "../image";
 import { anyNodeIdToText, isNameNodeId, toAnyNodeId } from "../nodeIds";
 import { SqlCustom } from "../sql";
@@ -13,7 +13,7 @@ export const showCustom = (
   appConfig: AppConfig,
   dataSourcePath: string
 ): Show<ShowCustom> => {
-  const createViewGraph = bindImage(display.convertPathToUrl);
+  const createImage = bindImage(display.convertPathToUrl);
 
   const showCustom = async (): Promise<void> => {
     const nodes = sqlCustom.readAll();
@@ -21,7 +21,13 @@ export const showCustom = (
     const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
     const graphFilter = sqlCustom.readGraphFilter(clusterBy);
     const graphData = convertLoadedToCustom(nodes, viewOptions, graphFilter);
-    const viewGraph = await createViewGraph(graphData);
+    const image = await createImage(graphData.imageData);
+    const viewGraph: ViewGraph = {
+      image,
+      groups: graphData.groups,
+      graphFilter: graphData.graphFilter,
+      graphViewOptions: graphData.graphViewOptions,
+    };
     display.showView(viewGraph);
   };
 

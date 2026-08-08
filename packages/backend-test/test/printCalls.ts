@@ -1,8 +1,14 @@
+import * as Id from "sut/id2";
 import { Tables } from "sut/sql2/schema";
 import { assert } from "sut/utils";
 
-type MappedKeys = Map<string, MappedKeys | string[]>;
-const isArray = (value: MappedKeys | string[]): value is string[] => Array.isArray(value);
+type CallsTo = { assemblies: string[]; namespaces: string[]; types: string[]; methods: string[] };
+type MappedKeys = Map<string, MappedKeys | CallsTo>;
+const newMappedKeys = () => new Map<string, MappedKeys | CallsTo>();
+const newCallsTo = () => ({ assemblies: [], namespaces: [], types: [], methods: [] });
+const isMap = (value: unknown): value is MappedKeys => value instanceof Map;
+const isCallsTo = (value: unknown): value is CallsTo =>
+  typeof value === "object" && Array.isArray((value as CallsTo).assemblies);
 
 const splitFullname = (value: string) => {
   const space = value.split(" ");
@@ -14,8 +20,8 @@ const splitFullname = (value: string) => {
 
 const isDistinct = true;
 
-const groupByKeys = <T>(rows: T[], keyFns: Array<(row: T) => string>): MappedKeys => {
-  const root = new Map<string, MappedKeys | string[]>();
+const groupByKeys = <T>(rows: T[], keyFns: Array<(row: T) => string>, idFn: (row: T) => Id.CallToId): MappedKeys => {
+  const root = newMappedKeys();
   const distinct = new Set<string>();
   for (const row of rows) {
     if (isDistinct) {
@@ -24,20 +30,34 @@ const groupByKeys = <T>(rows: T[], keyFns: Array<(row: T) => string>): MappedKey
       if (distinct.has(value)) continue;
       distinct.add(value);
     }
-    let level: MappedKeys | string[] = root;
+    let level: MappedKeys | CallsTo = root;
     keyFns.forEach((fn, index) => {
       const value = fn(row);
       if (index == keyFns.length - 1) {
-        // last one is array
-        assert(isArray(level));
-        level.push(value);
+        // last one is CallsTo
+        assert(isCallsTo(level));
+        const id = idFn(row);
+        switch (Id.isCallToId(id)) {
+          case "A":
+            level.assemblies.push(value);
+            break;
+          case "N":
+            level.namespaces.push(value);
+            break;
+          case "T":
+            level.types.push(value);
+            break;
+          case "M":
+            level.methods.push(value);
+            break;
+        }
       } else {
         // previous ones are maps
-        assert(!isArray(level));
+        assert(isMap(level));
         let next = level.get(value);
 
         if (!next) {
-          next = index == keyFns.length - 2 ? [] : new Map<string, MappedKeys | string[]>();
+          next = index == keyFns.length - 2 ? newCallsTo() : newMappedKeys();
           level.set(value, next);
         }
         level = next;
@@ -47,6 +67,17 @@ const groupByKeys = <T>(rows: T[], keyFns: Array<(row: T) => string>): MappedKey
   return root;
 };
 
+const emitMarkdownList = (title: "A" | "N" | "T" | "M", value: string[], out: string[]) => {
+  if (!value.length) return;
+  out.push(title);
+  out.push("");
+  value = title == "M" ? value.map(splitFullname).sort() : value.sort();
+  for (const item of value) {
+    out.push(`- ${item}`);
+  }
+  out.push("");
+};
+
 const emitMarkdownTree = (tree: MappedKeys, level: number, out: string[]): void => {
   for (const key of [...tree.keys()].sort()) {
     out.push(`${"#".repeat(level)} ${key}`);
@@ -54,19 +85,26 @@ const emitMarkdownTree = (tree: MappedKeys, level: number, out: string[]): void 
 
     const value = tree.get(key);
 
-    if (value instanceof Map) {
+    if (isMap(value)) {
       emitMarkdownTree(value, level + 1, out);
-    } else if (Array.isArray(value)) {
-      for (const item of value.map(splitFullname).sort()) {
-        out.push(`- ${item}`);
-      }
-      out.push("");
+    } else {
+      assert(isCallsTo(value));
+      emitMarkdownList("A", value.assemblies, out);
+      emitMarkdownList("N", value.namespaces, out);
+      emitMarkdownList("T", value.types, out);
+      emitMarkdownList("M", value.methods, out);
     }
   }
 };
 
 export const printCallFromMethods = (tables: Tables, assemblyName: string): string[] => {
-  type Joined = { namespaceName: string | null; typeName: string; methodName: string; called: string };
+  type Joined = {
+    namespaceName: string | null;
+    typeName: string;
+    methodName: string;
+    called: string;
+    toId: Id.CallToId;
+  };
 
   const allJoined = tables.calls
     .join(tables.methodNames, "id", "fromId")
@@ -80,15 +118,20 @@ export const printCallFromMethods = (tables: Tables, assemblyName: string): stri
       typeName: "typeNames.name",
       methodName: "methodNames.name",
       called: "fullnames.fullName",
+      toId: "calls.toId",
     });
   // const length = allJoined.length;
 
-  const grouped = groupByKeys(allJoined, [
-    (value) => value.namespaceName ?? "(empty)",
-    (value) => value.typeName,
-    (value) => value.methodName,
-    (value) => value.called,
-  ]);
+  const grouped = groupByKeys(
+    allJoined,
+    [
+      (value) => value.namespaceName ?? "(empty)",
+      (value) => value.typeName,
+      (value) => value.methodName,
+      (value) => value.called,
+    ],
+    (value) => value.toId
+  );
 
   const result: string[] = [];
 
@@ -97,7 +140,7 @@ export const printCallFromMethods = (tables: Tables, assemblyName: string): stri
 };
 
 export const printCallFromTypes = (tables: Tables, assemblyName: string): string[] => {
-  type Joined = { namespaceName: string | null; typeName: string; called: string };
+  type Joined = { namespaceName: string | null; typeName: string; called: string; toId: Id.CallToId };
 
   const allJoined = tables.calls
     .join(tables.typeNames, "id", "fromId")
@@ -105,15 +148,20 @@ export const printCallFromTypes = (tables: Tables, assemblyName: string): string
     .join(tables.assemblies, "id", tables.typeNames, "assemblyId")
     .join(tables.fullNames, "id", tables.calls, "toId")
     .where("assemblies.name = ?", assemblyName)
-    .selectAll<Joined>({ namespaceName: "namespaces.name", typeName: "typeNames.name", called: "fullnames.fullName" });
+    .selectAll<Joined>({
+      namespaceName: "namespaces.name",
+      typeName: "typeNames.name",
+      called: "fullnames.fullName",
+      toId: "calls.toId",
+    });
 
   // const length = allJoined.length;
 
-  const grouped = groupByKeys(allJoined, [
-    (value) => value.namespaceName ?? "(empty)",
-    (value) => value.typeName,
-    (value) => value.called,
-  ]);
+  const grouped = groupByKeys(
+    allJoined,
+    [(value) => value.namespaceName ?? "(empty)", (value) => value.typeName, (value) => value.called],
+    (value) => value.toId
+  );
 
   const result: string[] = [];
 
@@ -122,17 +170,21 @@ export const printCallFromTypes = (tables: Tables, assemblyName: string): string
 };
 
 export const printCallFromNamespaces = (tables: Tables, namespaceName: string): string[] => {
-  type Joined = { namespaceName: string | null; called: string };
+  type Joined = { namespaceName: string | null; called: string; toId: Id.CallToId };
 
   const allJoined = tables.calls
     .join(tables.namespaces, "id", "fromId")
     .join(tables.fullNames, "id", tables.calls, "toId")
     .where("namespaces.name LIKE ?", namespaceName + "%")
-    .selectAll<Joined>({ namespaceName: "namespaces.name", called: "fullnames.fullName" });
+    .selectAll<Joined>({ namespaceName: "namespaces.name", called: "fullnames.fullName", toId: "calls.toId" });
 
   // const length = allJoined.length;
 
-  const grouped = groupByKeys(allJoined, [(value) => value.namespaceName ?? "(empty)", (value) => value.called]);
+  const grouped = groupByKeys(
+    allJoined,
+    [(value) => value.namespaceName ?? "(empty)", (value) => value.called],
+    (value) => value.toId
+  );
 
   const result: string[] = [];
 
@@ -141,17 +193,21 @@ export const printCallFromNamespaces = (tables: Tables, namespaceName: string): 
 };
 
 export const printCallFromAssemblies = (tables: Tables, assemblyName: string): string[] => {
-  type Joined = { assemblyName: string; called: string };
+  type Joined = { assemblyName: string; called: string; toId: Id.CallToId };
 
   const allJoined = tables.calls
     .join(tables.assemblies, "id", "fromId")
     .join(tables.fullNames, "id", tables.calls, "toId")
     .where("assemblies.name = ?", assemblyName)
-    .selectAll<Joined>({ assemblyName: "assemblies.name", called: "fullnames.fullName" });
+    .selectAll<Joined>({ assemblyName: "assemblies.name", called: "fullnames.fullName", toId: "calls.toId" });
 
   // const length = allJoined.length;
 
-  const grouped = groupByKeys(allJoined, [(value) => value.assemblyName, (value) => value.called]);
+  const grouped = groupByKeys(
+    allJoined,
+    [(value) => value.assemblyName, (value) => value.called],
+    (value) => value.toId
+  );
 
   const result: string[] = [];
 

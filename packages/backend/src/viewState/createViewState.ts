@@ -1,4 +1,4 @@
-import type { AnyNodeType, Node, NodeId } from "../contracts-ui";
+import type { AnyNodeType, GraphViewType, Node, NodeId } from "../contracts-ui";
 import { isParent, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
@@ -40,30 +40,43 @@ export type ViewGraphData = {
 - 
 */
 
-const toNodesFromItems = <TId extends Numeric>(items: Item<TId>[], type: AnyNodeType): Node[] =>
-  items.map((item) => {
-    const text = item.id.toString();
-    const nodeId = textToNodeId(text);
-    return { nodeId, label: item.name, parent: null, type };
-  });
+const toGraphViewType = (viewType: ViewType): GraphViewType => {
+  switch (viewType) {
+    case "assemblies":
+      return "apis";
+    case "namespaces":
+      return "apis";
+    case "references":
+      return "references";
+  }
+};
 
-export type GraphData = { forest: Forest; calls: Sql.Call[] };
+const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
+  const text = id.toString();
+  return textToNodeId(text);
+};
+
+const toNodesFromItems = <TId extends Numeric>(items: Item<TId>[], type: AnyNodeType): Node[] =>
+  items.map((item) => ({ nodeId: toNodeId(item.id), label: item.name, parent: null, type }));
+
+export type Call = { fromId: NodeId; toId: NodeId };
+export type GraphNodes = { forest: Forest; calls: Call[]; graphViewType: GraphViewType };
 
 export type ViewState = {
-  getForest: () => Forest;
-  getGraphData: () => GraphData;
+  getGraphNodes: () => GraphNodes;
   setNodeState: (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState) => void;
 };
 
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
   const { rootNodeType, top, getNodeStates, setAnyNodeState, getLeafs } = createDatabase(sqlTables, viewType);
 
-  const getCalls = (forest: Forest, nodeStates: NodeStates): Sql.Call[] => {
+  const getCalls = (forest: Forest, nodeStates: NodeStates): Call[] => {
     const leafIds = forest.allNodes
       .filter((node) => !isParent(node))
       .map((node) => toAnyBigId(node.nodeId, node.type, viewType))
       .filter((nodeId) => nodeStates.isVisible(nodeId));
-    return sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
+    const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
+    return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
   };
 
   const trunk: Forest = getTrunk({
@@ -71,24 +84,10 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
     roots: toNodesFromItems<number>(top.roots, rootNodeType),
   });
 
-  const getForest = (): Forest => {
-    const nodeStates = getNodeStates();
-    const forest = cloneForest(trunk, nodeStates, viewType);
-    const leafs = getLeafs(nodeStates);
-    addLeafs(forest, {
-      typeNames: toNodesFromItems<bigint>(leafs.typeNames, NodeType.Type),
-      methodNames: toNodesFromItems<bigint>(leafs.methodNames, NodeType.Method),
-      parents: new Map<string, string>(
-        [...leafs.parents.entries()].map(([key, value]) => [key.toString(), value.toString()])
-      ),
-    });
-    return forest;
-  };
-
   const setNodeState = (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState): void =>
     setAnyNodeState(toAnyBigId(id, nodeType, viewType), nodeState);
 
-  const getGraphData = (): GraphData => {
+  const getGraphNodes = (): GraphNodes => {
     const nodeStates = getNodeStates();
     const forest = cloneForest(trunk, nodeStates, viewType);
     const leafs = getLeafs(nodeStates);
@@ -99,30 +98,11 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
         [...leafs.parents.entries()].map(([key, value]) => [key.toString(), value.toString()])
       ),
     });
+
     const calls = getCalls(forest, nodeStates);
-    return { forest, calls };
+
+    return { forest, calls, graphViewType: toGraphViewType(viewType) };
   };
 
-  return { getForest, getGraphData, setNodeState };
+  return { getGraphNodes, setNodeState };
 };
-
-// const stmtCache = new Map();
-
-// function getConnections(ids) {
-//   if (ids.length === 0) return [];
-
-//   let stmt = stmtCache.get(ids.length);
-
-//   if (!stmt) {
-//     const placeholders = ids.map(() => "?").join(", ");
-//     stmt = db.prepare(`
-//       SELECT * FROM connections
-//       WHERE fromId IN (${placeholders})
-//         AND toId IN (${placeholders})
-//     `);
-//     stmtCache.set(ids.length, stmt);
-//   }
-
-//   // Pass the single flat list of args to fulfill both sets of placeholders
-//   return stmt.all([...ids, ...ids]);
-// }

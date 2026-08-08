@@ -8,15 +8,8 @@ import type {
   GraphViewOptions,
   ViewOptions,
 } from "../contracts-ui";
-import {
-  isAssemblyNodeId,
-  isEdgeId,
-  isMethodNodeId,
-  MethodNodeId,
-  removeNodeId,
-  toAnyNodeId,
-  toggleNodeId,
-} from "../nodeIds";
+import { isEdgeId } from "../contracts-ui";
+import { isAssemblyNodeId, isMethodNodeId, MethodNodeId, removeNodeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowReflected } from "../output";
 import type { CommonGraphViewType, SqlLoaded } from "../sql";
 import { viewFeatures } from "../utils";

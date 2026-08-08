@@ -100,13 +100,26 @@ const insertToTypes = (tables: Tables) => {
   }
 
   const callsTo: Call[] = callsToMethodNames.concat(callsToMethodReferences).concat(callsToGenericSignatures);
+
+  // deduplicate
+  const seen = new Set<string>();
+  const found = callsTo.filter((item) => {
+    const key = `${item.fromId}-${item.toId}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+
+  tables.calls.insertMany(found);
 };
 
 const insertToAssembly = (tables: Tables) => {
   const callsFrom = tables.calls
     .join(tables.typeNames, "id", "toId")
     .distinct()
-    .selectAll<Call>({ fromId: "calls.toId", toId: "typeNames.assemblyId" });
+    .selectAll<Call>({ fromId: "calls.fromId", toId: "typeNames.assemblyId" });
   logCount("insertToAssembly", callsFrom.length);
   tables.calls.insertMany(callsFrom);
 };

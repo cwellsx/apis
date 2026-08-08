@@ -1,11 +1,11 @@
 import os from "os";
 import { ConvertPathToUrl } from "../contracts-app";
-import type { Image, ViewGraph } from "../contracts-ui";
+import type { Image } from "../contracts-ui";
 import { textIsEdgeId } from "../contracts-ui";
 import { getAppFilename, log, options, readFileSync, writeFileSync } from "../utils";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { runDotExe } from "./graphviz";
-import type { CreateViewGraph, GraphData, ImageData, ImageNode, Shape } from "./imageDataTypes";
+import type { CreateImage, ImageData, ImageNode, Shape } from "./imageDataTypes";
 import { runVizJs } from "./viz-js";
 
 /*
@@ -135,7 +135,7 @@ type UsingGraphViz = "usingJs" | "usingExe" | "usingBoth";
 const usingGraphViz = (): UsingGraphViz => "usingJs"; // "usingBoth";
 const logUsingJs = true;
 
-export const bindImage = (convertPathToUrl: ConvertPathToUrl): CreateViewGraph => {
+export const bindImage = (convertPathToUrl: ConvertPathToUrl): CreateImage => {
   const usingBoth = async (
     dotText: string,
     getAreaAttributes: (id: string) => ExtraAttributes
@@ -242,7 +242,9 @@ export const bindImage = (convertPathToUrl: ConvertPathToUrl): CreateViewGraph =
         return { className: imageData.edgeDetails ? "edge-details" : "edge-none", edgeLabelTooltip };
       } else {
         const node = nodes[id];
-        if (!node) throw new Error("Node not found");
+        if (!node) {
+          throw new Error("Node not found");
+        }
         return { className: node.className };
       }
     };
@@ -257,11 +259,5 @@ export const bindImage = (convertPathToUrl: ConvertPathToUrl): CreateViewGraph =
     }
   };
 
-  const createViewGraph = async (graphData: GraphData): Promise<ViewGraph> => {
-    const { imageData, groups, graphFilter, graphViewOptions } = graphData;
-    const image = await createImage(imageData);
-    return { image, groups, graphFilter, graphViewOptions };
-  };
-
-  return createViewGraph;
+  return createImage;
 };

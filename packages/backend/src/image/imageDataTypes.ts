@@ -1,4 +1,4 @@
-import type { AreaClass, ViewGraph, ViewGraphData } from "../contracts-ui";
+import type { AreaClass, Image } from "../contracts-ui";
 
 export type Shape = "folder" | "rect" | "none" | "component";
 
@@ -18,16 +18,8 @@ export type ImageText = ImageAttribute & { id: string; label: string; className:
 type Subgraph = ImageText & { type: "subgraph"; children: ImageNode[] };
 export type ImageNode = (ImageText & { type: "node" | "group" }) | Subgraph;
 
-export type ImageData = {
-  nodes: ImageNode[];
-  edges: { clientId: string; serverId: string; edgeId: string; labels: string[]; titles: string[] }[];
-  edgeDetails: boolean;
-  hasParentEdges: boolean;
-};
+export type ImageEdge = { clientId: string; serverId: string; edgeId: string; labels: string[]; titles: string[] };
 
-export type GraphData = ViewGraphData & {
-  // string is a message if there isn't an Image
-  imageData: ImageData;
-};
+export type ImageData = { nodes: ImageNode[]; edges: ImageEdge[]; edgeDetails: boolean; hasParentEdges: boolean };
 
-export type CreateViewGraph = (graphData: GraphData) => Promise<ViewGraph>;
+export type CreateImage = (imageData: ImageData) => Promise<Image | string>;

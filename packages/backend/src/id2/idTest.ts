@@ -1,7 +1,9 @@
+import { assert } from "../utils";
 import {
   AnyBigId,
   AnyOwnerId,
   BaseTypeId,
+  CallToId,
   GenericParamId,
   MethodDefId,
   TypeDefId,
@@ -22,7 +24,8 @@ export const enum TableId {
   MethodSpec = 0x2b,
 }
 
-export const isTableId = (id: number, tableId: TableId): boolean => (id & 0xff000000) == (tableId as number) << 24;
+export const isTableId = (id: number, tableId: TableId | BoxedId): boolean =>
+  (id & 0xff000000) == (tableId as number) << 24;
 
 const strip = (id: bigint): number => Number(id & 0xffffffffn);
 
@@ -38,6 +41,15 @@ export const isTypeSpecId = (id: TypeId): id is TypeSpecId => isTableId(strip(id
 export const isOwnerTypeSpecId = (id: AnyOwnerId): id is TypeSpecId => isTableId(strip(id), TableId.TypeSpec);
 export const isOwnerMethodSpecId = (id: AnyOwnerId): id is TypeSpecId => isTableId(strip(id), TableId.MethodSpec);
 export const isOwnerMethodDefId = (id: AnyOwnerId): id is TypeSpecId => isTableId(strip(id), TableId.MethodDef);
+
+export const isCallToId = (toId: CallToId): "A" | "N" | "T" | "M" => {
+  const id = strip(toId);
+  if (isTableId(id, BoxedId.Assembly)) return "A";
+  if (isTableId(id, BoxedId.Namespace)) return "N";
+  if (isTableId(id, TableId.TypeDef) || isTableId(id, TableId.TypeSpec)) return "T";
+  if (isTableId(id, TableId.MethodDef) || isTableId(id, TableId.MethodSpec)) return "M";
+  assert(false);
+};
 
 export const enum BoxedId {
   Assembly = 0x40,

@@ -1,5 +1,5 @@
 import type { AppConfig, DisplayApi } from "../contracts-app";
-import type { AppOptions, GraphFilter, MethodViewOptions, ViewDetails, ViewType } from "../contracts-ui";
+import type { AppOptions, GraphFilter, MethodViewOptions, ViewDetails, ViewGraph, ViewType } from "../contracts-ui";
 import { nodeIdToText } from "../contracts-ui";
 import { bindImage } from "../image";
 import { getClusterNames, isMethodNodeId, MethodNodeId, textToAnyNodeId, toNodeId } from "../nodeIds";
@@ -49,7 +49,7 @@ export const showReflected = (
   appConfig: AppConfig,
   dataSourcePath: string
 ): Show<ShowReflected> => {
-  const createViewGraph = bindImage(display.convertPathToUrl);
+  const createImage = bindImage(display.convertPathToUrl);
 
   // methods in Map<ViewType, ViewTypeData>
 
@@ -60,7 +60,13 @@ export const showReflected = (
       sqlLoaded.readGraphFilter("references", "assembly"),
       sqlLoaded.viewState.exes
     );
-    const viewGraph = await createViewGraph(graphData);
+    const image = await createImage(graphData.imageData);
+    const viewGraph: ViewGraph = {
+      image,
+      groups: graphData.groups,
+      graphFilter: graphData.graphFilter,
+      graphViewOptions: graphData.graphViewOptions,
+    };
     display.showView(viewGraph);
   };
 
@@ -75,7 +81,13 @@ export const showReflected = (
     display.showMessage(undefined, `${calls.length} records`);
     const elements = convertLoadedToCalls(calls);
     const graphData = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
-    const viewGraph = await createViewGraph(graphData);
+    const image = await createImage(graphData.imageData);
+    const viewGraph: ViewGraph = {
+      image,
+      groups: graphData.groups,
+      graphFilter: graphData.graphFilter,
+      graphViewOptions: graphData.graphViewOptions,
+    };
     display.showView(viewGraph);
   };
 
@@ -113,7 +125,7 @@ export const showMethods = (
   sqlLoaded: SqlLoaded,
   methodId: MethodNodeId
 ): ShowTitle<ShowReflected> => {
-  const createViewGraph = bindImage(display.convertPathToUrl);
+  const createImage = bindImage(display.convertPathToUrl);
 
   const showViewType = async (): Promise<void> => {
     const getMethodNodeId = (methodViewOptions: MethodViewOptions): MethodNodeId => {
@@ -145,7 +157,13 @@ export const showMethods = (
       sqlLoaded.viewState.methodViewOptions = methodViewOptions;
     }
 
-    const viewGraph = await createViewGraph(graphData);
+    const image = await createImage(graphData.imageData);
+    const viewGraph: ViewGraph = {
+      image,
+      groups: graphData.groups,
+      graphFilter: graphData.graphFilter,
+      graphViewOptions: graphData.graphViewOptions,
+    };
     display.showView(viewGraph);
   };
 

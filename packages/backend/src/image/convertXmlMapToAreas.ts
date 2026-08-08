@@ -1,6 +1,5 @@
 import { ElementCompact, xml2js } from "xml-js";
-import { Area, AreaClass, textIsEdgeId } from "../contracts-ui";
-import { makeUniqueEdgeId } from "../nodeIds";
+import { Area, AreaClass, makeUniqueEdgeId, textIsEdgeId } from "../contracts-ui";
 import { log } from "../utils";
 
 /*

@@ -1,10 +1,11 @@
 import type { AssemblyReferences } from "../../contracts-dotnet";
 import type { GraphFilter, ReferenceViewOptions } from "../../contracts-ui";
-import { GraphData, ImageAttribute } from "../../image/imageDataTypes";
+import { ImageAttribute } from "../../image";
 import { Edges, NodeIdMap, toNameNodeId } from "../../nodeIds";
 import { log } from "../../utils";
 import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
+import type { GraphData } from "./graphData";
 
 export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,

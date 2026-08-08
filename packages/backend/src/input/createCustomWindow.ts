@@ -1,7 +1,7 @@
 import type { AppConfig, MainApiAsync } from "../contracts-app";
 import type { AppOptions, CustomViewOptions, FilterEvent, GraphEvent, ViewOptions, ViewType } from "../contracts-ui";
-import { isCustomManual, isCustomViewOptions } from "../contracts-ui";
-import { edgeIdToNodeIds, isEdgeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
+import { edgeIdToNodeIds, isCustomManual, isCustomViewOptions, isEdgeId } from "../contracts-ui";
+import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
 import { SqlCustom } from "../sql";
 import { viewFeatures } from "../utils";
