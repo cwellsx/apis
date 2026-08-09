@@ -9,6 +9,7 @@ import {
   getSqlNodePath,
   jsonParse,
   log,
+  logJson,
   options,
   readJsonT,
   whenFile,
@@ -95,7 +96,8 @@ export const createSqlCustomFromJson = async (dataSource: DataSource): Promise<S
   if (options.alwaysReload || sqlCustom.shouldReload(when)) {
     const nodes = await readJsonT(dataSource.path, assertCustomJson);
     const errors = fixCustomJson(nodes);
-    sqlCustom.save(nodes, errors, when);
+    if (errors.length) logJson("Custom errors", errors);
+    sqlCustom.save(nodes, when);
   }
 
   opened = sqlCustom;

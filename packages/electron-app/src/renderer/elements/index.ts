@@ -4,4 +4,3 @@
 
 export { Message } from "./Message";
 export { MethodTitle } from "./MethodTitle";
-export { TextCustomErrors } from "./TextCustomErrors";

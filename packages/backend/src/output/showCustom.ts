@@ -1,5 +1,5 @@
 import { AppConfig, DisplayApi } from "../contracts-app";
-import { AppOptions, DetailedCustom, isCustomManual, NodeId, ViewCustomErrors, ViewGraph } from "../contracts-ui";
+import { AppOptions, DetailedCustom, isCustomManual, NodeId, ViewGraph } from "../contracts-ui";
 import { bindImage } from "../image";
 import { anyNodeIdToText, isNameNodeId, toAnyNodeId } from "../nodeIds";
 import { SqlCustom } from "../sql";
@@ -31,14 +31,6 @@ export const showCustom = (
     display.showView(viewGraph);
   };
 
-  const showErrors = (): Promise<void> => {
-    const customErrors = sqlCustom.readErrors();
-
-    const viewErrors: ViewCustomErrors = { customErrors, viewType: "customErrors" };
-    display.showView(viewErrors);
-    return Promise.resolve();
-  };
-
   const showCustomdDetails = (id: NodeId): Promise<void> => {
     const nodeId = toAnyNodeId(id);
     if (!isNameNodeId(nodeId)) throw new Error("Expected nameNodeId");
@@ -62,11 +54,6 @@ export const showCustom = (
       "custom",
       //
       { menuLabel: "Custom JSON", title: `${dataSourcePath}`, showViewType: showCustom },
-    ],
-    [
-      "customErrors",
-      //
-      { menuLabel: "Custom JSON syntax errors", title: `Errors — ${dataSourcePath}`, showViewType: showErrors },
     ],
   ];
 

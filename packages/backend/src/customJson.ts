@@ -1,7 +1,8 @@
 import { randomUUID } from "crypto";
 import os from "os";
-import { CustomError } from "./contracts-ui";
 import { assert, remove } from "./utils";
+
+type CustomError = { messages: string[]; elementJson: string };
 
 type CustomDependency = { id: string; label: string } & { [key: string]: boolean };
 

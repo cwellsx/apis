@@ -1,4 +1,3 @@
-import { CustomError } from "./customError";
 import { GraphFilter } from "./graphFilter";
 import { Image } from "./image";
 import { Node } from "./node";
@@ -25,9 +24,7 @@ export type ViewGraph = ViewGraphData & {
 
 export type ViewGreeting = { viewType: "greeting"; greeting: string };
 
-export type ViewCustomErrors = { viewType: "customErrors"; customErrors?: CustomError[] };
-
-export type ViewText = ViewGreeting | ViewCustomErrors;
+export type ViewText = ViewGreeting;
 
 export type View = ViewGraph | ViewText;
 

@@ -1,5 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import type { CustomError, CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../contracts-ui";
+import type { CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../contracts-ui";
 import { isAnyOtherCustomField, type CustomNode } from "../../customJson";
 import { toNameNodeId } from "../../nodeIds";
 import { jsonParse, options } from "../../utils";
@@ -7,7 +7,7 @@ import { jsonParse, options } from "../../utils";
 type ConfigColumns = { name: string; value: string };
 
 export class SqlCustom {
-  save: (nodes: CustomNode[], errors: CustomError[], when: string) => void;
+  save: (nodes: CustomNode[], when: string) => void;
   shouldReload: (when: string) => boolean;
   viewState: {
     onSave: (
@@ -24,7 +24,6 @@ export class SqlCustom {
     get cachedWhen(): string;
     get customSchemaVersion(): string;
   };
-  readErrors: () => CustomError[];
   readAll: () => CustomNode[];
   close: () => void;
   private readLeafVisible: () => NodeId[];
@@ -47,9 +46,8 @@ export class SqlCustom {
 
     configTable.deleteAll();
 
-    this.save = (nodes: CustomNode[], errors: CustomError[], when: string): void => {
+    this.save = (nodes: CustomNode[], when: string): void => {
       configTable.insert({ name: "nodes", value: JSON.stringify(nodes) });
-      configTable.insert({ name: "errors", value: JSON.stringify(errors) });
 
       const nodeProperties = new Set<string>();
       nodes.forEach((node) =>
@@ -93,12 +91,6 @@ export class SqlCustom {
       !this.viewState.cachedWhen ||
       customSchemaVersionExpected !== this.viewState.customSchemaVersion ||
       Date.parse(this.viewState.cachedWhen) < Date.parse(when);
-
-    this.readErrors = (): CustomError[] => {
-      const o = configTable.selectOne({ name: "errors" });
-      if (!o) throw new Error("Errors not initialized");
-      return JSON.parse(o.value) as CustomError[];
-    };
 
     this.readAll = (): CustomNode[] => {
       const o = configTable.selectOne({ name: "nodes" });
