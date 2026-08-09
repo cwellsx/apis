@@ -6,7 +6,7 @@ import * as dotNetApi from "../dotNetApi";
 import { assert, getAppFilename, getSqlNodePath, jsonParse, log, readJsonT, whenFile } from "../utils";
 import { hash } from "./hash";
 import { insertAll } from "./insertAll";
-import { createTables, dropTables, Tables } from "./schema";
+import { createTables, Tables } from "./schema";
 
 type GetAll = (dataSource: DataSource) => Promise<All>;
 
@@ -38,8 +38,10 @@ export const createSqlCore = async (dataSource: DataSource): Promise<{ all: All;
   assert(Object.keys(all.assemblies).length != 0);
 
   const db = createSqlDatabase(filename, getSqlNodePath());
-  dropTables(db);
   const tables = createTables(db);
-  insertAll(all, tables);
+  if (when != tables.config.getWhen()) {
+    insertAll(all, tables);
+    tables.config.setWhen(when);
+  }
   return { all, tables };
 };

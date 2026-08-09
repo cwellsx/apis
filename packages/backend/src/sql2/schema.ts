@@ -1,7 +1,10 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
+import { Config, config, ConfigKvps } from "./config";
 import { MembersJson } from "./schemaMemberJson";
+
+const schemaVersion = "2026-08-08";
 
 export type Boolean = 0 | 1;
 export type ViewType = "assemblies" | "namespaces" | "references";
@@ -67,6 +70,8 @@ export const tableNames = [
 
   "assemblyGroups",
   "namespaceGroups",
+
+  "configKvps",
 ] as const;
 
 export type TableName = (typeof tableNames)[number];
@@ -89,11 +94,12 @@ type TableRowMap = {
   viewStates: ViewState;
   assemblyGroups: AssemblyGroup;
   namespaceGroups: NamespaceGroup;
+  configKvps: ConfigKvps;
 };
 
 type TableRow<K extends TableName> = TableRowMap[K];
 
-export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { close: () => void };
+export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { config: Config; close: () => void };
 
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 
@@ -127,15 +133,29 @@ const row: TableRowMap = {
 
   assemblyGroups: { id: zero.assemblyGroupId, name: "foo" },
   namespaceGroups: { id: zero.namespaceGroupId, name: "foo" },
+
+  configKvps: { key: "when", value: "value" },
 };
 
-// CREATE TABLE Child (
-//     id INTEGER PRIMARY KEY,
-//     parent_id INTEGER NOT NULL,
-//     FOREIGN KEY (parent_id) REFERENCES Parent(id)
-// );
-
 export const createTables = (db: SqlDatabase): Tables => {
+  const tables = newTables(db);
+  switch (tables.config.getSchema()) {
+    case undefined:
+      // newly created
+      tables.config.setSchema(schemaVersion);
+      break;
+    case schemaVersion:
+      // already created
+      break;
+    default:
+      // must create again
+      dropTables(db);
+      return createTables(db);
+  }
+  return tables;
+};
+
+const newTables = (db: SqlDatabase): Tables => {
   const assemblies = db.newSqlTable("assemblies", "id", row.assemblies);
   const namespaces = db.newSqlTable("namespaces", "id", row.namespaces);
   const typeNames = db.newSqlTable("typeNames", "id", row.typeNames, { nullable: ["namespaceId", "declaringTypeId"] });
@@ -160,6 +180,8 @@ export const createTables = (db: SqlDatabase): Tables => {
   const assemblyGroups = db.newSqlTable("assemblyGroups", "id", row.assemblyGroups);
   const namespaceGroups = db.newSqlTable("namespaceGroups", "id", row.namespaceGroups);
 
+  const configKvps = db.newSqlTable("config", "key", row.configKvps);
+
   const close = () => {
     db.done();
     db.close();
@@ -183,6 +205,8 @@ export const createTables = (db: SqlDatabase): Tables => {
     viewStates,
     assemblyGroups,
     namespaceGroups,
+    configKvps,
+    config: config(configKvps),
     close,
   };
 };
