@@ -7,16 +7,7 @@ import { Namespace } from "./types";
 
 export type DetailedMethod = { title: MethodName; asText: string; detailType: "methodDetails" };
 
-export type DetailedAssembly = {
-  // assemblyId is needed because metadataToken is only unique within a given assembly
-  // so if in future you want to return types from multiple assemblies:
-  // - generate IDs that that globally unique, to replace metadataToken
-  // - concatenate assemblyId with metadataToken
-  // - or return multiple Types instances
-  namespaces: Namespace[];
-
-  detailType: "assemblyDetails";
-};
+export type DetailedAssembly = { namespaces: Namespace[]; detailType: "assemblyDetails" };
 
 export type DetailedCustom = {
   id: string; // the name of the Coclass
@@ -25,6 +16,5 @@ export type DetailedCustom = {
   detailType: "customDetails";
 };
 
-export type DetailType = "methodDetails" | "assemblyDetails" | "customDetails";
-
 export type ViewDetails = DetailedMethod | DetailedAssembly | DetailedCustom;
+export type DetailType = ViewDetails["detailType"];

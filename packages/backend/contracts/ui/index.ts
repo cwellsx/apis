@@ -4,14 +4,8 @@ export type { AppOptions, OptionsType } from "./appOptions";
 export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export type { GraphFilter } from "./graphFilter";
-export { isCustomManual } from "./graphViewOptions";
-export type {
-  ApiViewOptions,
-  CustomViewOptions,
-  CustomViewOptionsManual,
-  MethodViewOptions,
-  ReferenceViewOptions,
-} from "./graphViewOptions";
+export * as GraphOptions from "./graphOptions";
+export type { CommonGraphType, GraphType } from "./graphType";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodName } from "./methodName";
 export { isParent } from "./node";
@@ -22,6 +16,4 @@ export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./type
 export { defaultView } from "./view";
 export type { View, ViewGraph, ViewGraphData, ViewGreeting, ViewText } from "./view";
 export type { DetailedAssembly, DetailedCustom, DetailedMethod, DetailType, ViewDetails } from "./viewDetails";
-export { isCustomViewOptions } from "./viewOptions";
-export type { AnyGraphViewOptions, GraphViewOptions, ViewOptions } from "./viewOptions";
-export type { GraphViewType, ViewType } from "./viewType";
+export type { ViewType } from "./viewType";

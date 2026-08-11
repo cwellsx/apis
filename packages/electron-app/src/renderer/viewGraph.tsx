@@ -3,10 +3,10 @@ import type {
   DetailEvent,
   FilterEvent,
   GraphEvent,
+  GraphOptions,
   OnUserEvent,
   ViewDetails,
   ViewGraph,
-  ViewOptions,
 } from "backend-ui";
 import { nodeIdToText, textToNodeId } from "backend-ui";
 import * as React from "react";
@@ -20,7 +20,7 @@ import { Tree } from "./Tree";
 
 export const getLeft = (
   view: ViewGraph,
-  onViewOptions: (viewOptions: ViewOptions) => void,
+  onViewOptions: (viewOptions: GraphOptions.Any) => void,
   onGraphFilter: (filterEvent: FilterEvent) => void,
   appOptions: AppOptions,
   onAppOptions: (appOptions: AppOptions) => void
@@ -63,8 +63,8 @@ export const getCenter = (view: ViewGraph, onGraphEvent: OnUserEvent<GraphEvent>
       now={view.image.now}
       zoomPercent={zoomPercent}
       onGraphEvent={onGraphEvent}
-      useKeyStates={view.graphViewOptions.viewType == "references"}
-      viewType={view.graphViewOptions.viewType}
+      useKeyStates={view.graphViewOptions.graphType == "references"}
+      viewType={view.graphViewOptions.graphType}
     />
   );
 };

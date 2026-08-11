@@ -1,5 +1,5 @@
-import type { CustomViewOptions, GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
-import { isCustomManual, isParent, NodeType } from "../../contracts-ui";
+import type { GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
+import { GraphOptions, isParent, NodeType } from "../../contracts-ui";
 import { CustomNode } from "../../customJson";
 import type { ImageAttribute, Shape } from "../../image";
 import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "../../nodeIds";
@@ -10,14 +10,15 @@ import type { GraphData } from "./graphData";
 
 export const convertLoadedToCustom = (
   nodes: CustomNode[],
-  graphViewOptions: CustomViewOptions,
+  graphViewOptions: GraphOptions.Custom,
   graphFilter: GraphFilter
 ): GraphData => {
   log("convertLoadedToView");
 
   const tags = new Map<string, boolean>(graphViewOptions.tags.map(({ tag, shown }) => [tag, shown]));
   const leafNodeId = (id: string): NodeId => toNameNodeId("customLeaf", id);
-  const isCustomFolders = !isCustomManual(graphViewOptions) && graphViewOptions.isAutoLayers && options.customFolders;
+  const isCustomFolders =
+    !GraphOptions.isCustomManual(graphViewOptions) && graphViewOptions.isAutoLayers && options.customFolders;
   const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
   const folderNodeId = (id: string): NodeId => toNameNodeId("customFolder", id);
   const hiddenNodeIds = new Set<string>();

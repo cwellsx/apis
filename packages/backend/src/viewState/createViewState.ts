@@ -1,4 +1,4 @@
-import type { AnyNodeType, GraphViewType, Node, NodeId } from "../contracts-ui";
+import type { AnyNodeType, GraphType, Node, NodeId } from "../contracts-ui";
 import { isParent, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
@@ -40,7 +40,7 @@ export type ViewGraphData = {
 - 
 */
 
-const toGraphViewType = (viewType: ViewType): GraphViewType => {
+const toGraphViewType = (viewType: ViewType): GraphType => {
   switch (viewType) {
     case "assemblies":
       return "apis";
@@ -60,7 +60,7 @@ const toNodesFromItems = <TId extends Numeric>(items: Item<TId>[], type: AnyNode
   items.map((item) => ({ nodeId: toNodeId(item.id), label: item.name, parent: null, type }));
 
 export type Call = { fromId: NodeId; toId: NodeId };
-export type GraphNodes = { forest: Forest; calls: Call[]; graphViewType: GraphViewType };
+export type GraphNodes = { forest: Forest; calls: Call[]; graphViewType: GraphType };
 
 export type ViewState = {
   getGraphNodes: () => GraphNodes;

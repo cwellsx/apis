@@ -3,12 +3,12 @@ import type {
   DetailEvent,
   FilterEvent,
   GraphEvent,
+  GraphOptions,
   OnUserEvent,
   PreloadApis,
   View,
   ViewDetails,
   ViewGraph,
-  ViewOptions,
 } from "backend-ui";
 import { defaultAppOptions, defaultView } from "backend-ui";
 import * as React from "react";
@@ -65,7 +65,7 @@ const App: React.FunctionComponent = () => {
     });
   });
 
-  const onViewOptions: OnUserEvent<ViewOptions> = (viewOptions) => mainApi.onViewOptions(viewOptions);
+  const onViewOptions: OnUserEvent<GraphOptions.Any> = (viewOptions) => mainApi.onViewOptions(viewOptions);
   const onAppOptions: OnUserEvent<AppOptions> = (appOptions) => {
     log("onAppOptions!");
     mainApi.onAppOptions(appOptions);

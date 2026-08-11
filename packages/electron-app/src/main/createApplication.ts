@@ -1,6 +1,6 @@
 import { hello, log, setPaths } from "backend-api";
 import type { MainApiAsync } from "backend-app";
-import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, ViewOptions } from "backend-ui";
+import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, GraphOptions } from "backend-ui";
 import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
 import path from "node:path";
 import { registerFileProtocol } from "./convertPathToUrl";
@@ -48,7 +48,7 @@ export const createApplication = async (mainWindow: BrowserWindow, appDataPath: 
 
   // the following event handlers are a bit verbose and repetitive,
   // but it's clearer to see each one explicitly than to abstract them
-  ipcMain.on("onViewOptions", (event, viewOptions: ViewOptions) => {
+  ipcMain.on("onViewOptions", (event, viewOptions: GraphOptions.Any) => {
     invoke(event, (api, arg) => api.onViewOptions(arg), viewOptions);
   });
   ipcMain.on("onAppOptions", (event, appOptions: AppOptions) => {

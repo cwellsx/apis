@@ -1,5 +1,5 @@
 import type { AppConfig, DisplayApi } from "../contracts-app";
-import type { AppOptions, GraphFilter, MethodViewOptions, ViewDetails, ViewGraph, ViewType } from "../contracts-ui";
+import type { AppOptions, GraphFilter, GraphOptions, ViewDetails, ViewGraph, ViewType } from "../contracts-ui";
 import { nodeIdToText } from "../contracts-ui";
 import { bindImage } from "../image";
 import { getClusterNames, isMethodNodeId, MethodNodeId, textToAnyNodeId, toNodeId } from "../nodeIds";
@@ -128,7 +128,7 @@ export const showMethods = (
   const createImage = bindImage(display.convertPathToUrl);
 
   const showViewType = async (): Promise<void> => {
-    const getMethodNodeId = (methodViewOptions: MethodViewOptions): MethodNodeId => {
+    const getMethodNodeId = (methodViewOptions: GraphOptions.Methods): MethodNodeId => {
       if (!methodViewOptions.methodId) throw new Error("No methodId");
       const nodeId = textToAnyNodeId(nodeIdToText(methodViewOptions.methodId));
       if (!isMethodNodeId(nodeId)) throw new Error("Not MethodNodeId");
@@ -143,13 +143,13 @@ export const showMethods = (
 
     const graphFilter: GraphFilter | undefined = methodId
       ? undefined
-      : sqlLoaded.readGraphFilter(methodViewOptions.viewType, methodViewOptions.showClustered.clusterBy);
+      : sqlLoaded.readGraphFilter(methodViewOptions.graphType, methodViewOptions.showClustered.clusterBy);
 
     const graphData = convertCallstackToImage(callstackElements, sqlLoaded.readNames(), methodViewOptions, graphFilter);
 
     if (methodId) {
       sqlLoaded.writeGraphFilter(
-        methodViewOptions.viewType,
+        methodViewOptions.graphType,
         methodViewOptions.showClustered.clusterBy,
         graphData.graphFilter
       );

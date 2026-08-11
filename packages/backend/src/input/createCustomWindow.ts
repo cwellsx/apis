@@ -1,6 +1,6 @@
 import type { AppConfig, MainApiAsync } from "../contracts-app";
-import type { AppOptions, CustomViewOptions, FilterEvent, GraphEvent, ViewOptions, ViewType } from "../contracts-ui";
-import { edgeIdToNodeIds, isCustomManual, isCustomViewOptions, isEdgeId } from "../contracts-ui";
+import type { AppOptions, FilterEvent, GraphEvent, ViewType } from "../contracts-ui";
+import { edgeIdToNodeIds, GraphOptions, isEdgeId } from "../contracts-ui";
 import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
 import { SqlCustom } from "../sql";
@@ -8,8 +8,8 @@ import { viewFeatures } from "../utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, show: ShowCustom): MainApiAsync => {
-  const setCustomViewOptions = (viewOptions: ViewOptions): void => {
-    switch (viewOptions.viewType) {
+  const setCustomViewOptions = (viewOptions: GraphOptions.Any): void => {
+    switch (viewOptions.graphType) {
       case "custom":
         sqlCustom.viewState.customViewOptions = viewOptions;
         break;
@@ -18,7 +18,7 @@ export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, s
     }
   };
 
-  const getCustomViewOptions = (viewType: ViewType): CustomViewOptions => {
+  const getCustomViewOptions = (viewType: ViewType): GraphOptions.Custom => {
     switch (viewType) {
       case "custom":
         return sqlCustom.viewState.customViewOptions;
@@ -29,7 +29,7 @@ export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, s
 
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {
-    onViewOptions: async (viewOptions: ViewOptions): Promise<void> => {
+    onViewOptions: async (viewOptions: GraphOptions.Any): Promise<void> => {
       setCustomViewOptions(viewOptions);
       await show.showViewType();
     },
@@ -49,7 +49,7 @@ export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, s
       if (leafType !== nodeId.type) {
         // this is a group
         const viewOptions = getCustomViewOptions(viewType);
-        const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
+        const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
         const graphFilter = sqlCustom.readGraphFilter(clusterBy);
         toggleNodeId(graphFilter.groupExpanded, id);
         sqlCustom.writeGraphFilter(clusterBy, graphFilter);
@@ -64,8 +64,8 @@ export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, s
     },
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
       const { viewOptions, graphFilter } = filterEvent;
-      if (!isCustomViewOptions(viewOptions)) throw new Error("Unexpected viewType");
-      const clusterBy = isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
+      if (!GraphOptions.isCustom(viewOptions)) throw new Error("Unexpected viewType");
+      const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
       sqlCustom.writeGraphFilter(clusterBy, graphFilter);
       await show.showViewType();
     },

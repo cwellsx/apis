@@ -1,5 +1,5 @@
-import type { AnyGraphViewOptions, AppOptions, GraphViewOptions, OptionsType, ReferenceViewOptions } from "backend-ui";
-import { isCustomManual, isCustomViewOptions } from "backend-ui";
+import type { AppOptions, OptionsType } from "backend-ui";
+import { GraphOptions } from "backend-ui";
 import * as React from "react";
 import "./Options.css";
 import { log } from "./log";
@@ -10,23 +10,37 @@ type BooleanState = [value: boolean, setValue: (newValue: boolean) => void];
 
 // get data from AnyGraphViewOptions
 
-const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] | undefined =>
-  viewOptions["showEdgeLabels"];
+// const getShowEdgeLabels = (viewOptions: GraphOptions.Any): GraphOptions.Any["showEdgeLabels"] | undefined =>
+//   viewOptions["showEdgeLabels"];
 
-const getShowClustered = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showClustered"] | undefined =>
-  viewOptions["showClustered"];
+const getShowEdgeLabels = (viewOptions: GraphOptions.Any): GraphOptions.ShowEdgeLabels | undefined =>
+  (viewOptions as { showEdgeLabels?: GraphOptions.ShowEdgeLabels })["showEdgeLabels"];
 
-const getShowInternalCalls = (viewOptions: AnyGraphViewOptions): BooleanState | undefined => {
-  const value = viewOptions["showInternalCalls"];
+// const getShowClustered = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showClustered"] | undefined =>
+//   viewOptions["showClustered"];
+
+const getShowClustered = (viewOptions: GraphOptions.Any): GraphOptions.ShowClustered | undefined =>
+  (viewOptions as { showClustered?: GraphOptions.ShowClustered })["showClustered"];
+
+// const getShowInternalCalls = (viewOptions: AnyGraphViewOptions): BooleanState | undefined => {
+//   const value = viewOptions["showInternalCalls"];
+//   if (value === undefined) return undefined;
+//   const setValue = (newValue: boolean): void => {
+//     viewOptions["showInternalCalls"] = newValue;
+//   };
+//   return [value, setValue];
+// };
+const getShowInternalCalls = (viewOptions: GraphOptions.Any): BooleanState | undefined => {
+  const value = (viewOptions as { showInternalCalls?: boolean })["showInternalCalls"];
   if (value === undefined) return undefined;
   const setValue = (newValue: boolean): void => {
-    viewOptions["showInternalCalls"] = newValue;
+    (viewOptions as { showInternalCalls?: boolean })["showInternalCalls"] = newValue;
   };
   return [value, setValue];
 };
 
-const isReferenceViewOptions = (viewOptions: GraphViewOptions): viewOptions is ReferenceViewOptions =>
-  viewOptions.viewType === "references";
+const isReferenceViewOptions = (viewOptions: GraphOptions.Any): viewOptions is GraphOptions.References =>
+  viewOptions.graphType === "references";
 
 // agnostic/reusable React element groups
 
@@ -161,9 +175,9 @@ const ShowIntraAssemblyCalls: React.FunctionComponent<ChooseGraphViewOptionsProp
 
 const ShowCustom: React.FunctionComponent<ChooseGraphViewOptionsProps> = (props: ChooseGraphViewOptionsProps) => {
   const { viewOptions, onViewOptions } = props;
-  if (!isCustomViewOptions(viewOptions)) return <></>;
+  if (!GraphOptions.isCustom(viewOptions)) return <></>;
 
-  const groupBy = isCustomManual(viewOptions) ? (
+  const groupBy = GraphOptions.isCustomManual(viewOptions) ? (
     <Select
       label="Group by"
       value={viewOptions.clusterBy.length ? viewOptions.clusterBy[0] : undefined}
@@ -242,7 +256,7 @@ const ShowClustered: React.FunctionComponent<ChooseGraphViewOptionsProps> = (pro
           />
         </p>
       );
-    if (isCustomViewOptions(viewOptions)) return <></>;
+    if (GraphOptions.isCustom(viewOptions)) return <></>;
     throw new Error("Unhandled view type");
   }
   return (
@@ -272,8 +286,8 @@ const ShowClustered: React.FunctionComponent<ChooseGraphViewOptionsProps> = (pro
 };
 
 type ChooseGraphViewOptionsProps = {
-  viewOptions: GraphViewOptions;
-  onViewOptions: (viewOptions: GraphViewOptions) => void;
+  viewOptions: GraphOptions.Any;
+  onViewOptions: (viewOptions: GraphOptions.Any) => void;
   appOptions: AppOptions;
   onAppOptions: (appOptions: AppOptions) => void;
 };
@@ -282,7 +296,7 @@ export const ChooseGraphViewOptions: React.FunctionComponent<ChooseGraphViewOpti
   props: ChooseGraphViewOptionsProps
 ) => {
   const { viewOptions, appOptions, onAppOptions } = props;
-  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, viewOptions.viewType);
+  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, viewOptions.graphType);
 
   return (
     <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>

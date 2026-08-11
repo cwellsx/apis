@@ -2,24 +2,24 @@ import type { AppConfig, MainApiAsync } from "../contracts-app";
 import type {
   AppOptions,
   ClusterBy,
+  CommonGraphType,
   DetailEvent,
   FilterEvent,
   GraphEvent,
-  GraphViewOptions,
-  ViewOptions,
+  GraphOptions,
 } from "../contracts-ui";
 import { isEdgeId } from "../contracts-ui";
 import { isAssemblyNodeId, isMethodNodeId, MethodNodeId, removeNodeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowReflected } from "../output";
-import type { CommonGraphViewType, SqlLoaded } from "../sql";
+import type { SqlLoaded } from "../sql";
 import { viewFeatures } from "../utils";
 import { showAdjacent } from "./onGraphClick";
 
 export type ShowReflectedEx = ShowReflected & { showMethods: (methodNodeId: MethodNodeId) => Promise<void> };
 
 export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show: ShowReflectedEx): MainApiAsync => {
-  const setViewOptions = (viewOptions: ViewOptions): void => {
-    switch (viewOptions.viewType) {
+  const setViewOptions = (viewOptions: GraphOptions.Any): void => {
+    switch (viewOptions.graphType) {
       case "references":
         sqlLoaded.viewState.referenceViewOptions = viewOptions;
         break;
@@ -32,9 +32,7 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
     }
   };
 
-  const getGraphViewOptions = (
-    viewType: CommonGraphViewType
-  ): { viewOptions: GraphViewOptions; clusterBy: ClusterBy } => {
+  const getGraphViewOptions = (viewType: CommonGraphType): { viewOptions: GraphOptions.Any; clusterBy: ClusterBy } => {
     switch (viewType) {
       case "references": {
         const viewOptions = sqlLoaded.viewState.referenceViewOptions;
@@ -51,8 +49,8 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
     }
   };
 
-  const getClusterBy = (viewOptions: GraphViewOptions): ClusterBy => {
-    switch (viewOptions.viewType) {
+  const getClusterBy = (viewOptions: GraphOptions.Any): ClusterBy => {
+    switch (viewOptions.graphType) {
       case "references":
         return "assembly";
 
@@ -66,7 +64,7 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
 
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {
-    onViewOptions: async (viewOptions: ViewOptions): Promise<void> => {
+    onViewOptions: async (viewOptions: GraphOptions.Any): Promise<void> => {
       setViewOptions(viewOptions);
       await show.showViewType();
     },
@@ -128,7 +126,7 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
 
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
       const { viewOptions, graphFilter } = filterEvent;
-      const viewType = viewOptions.viewType;
+      const viewType = viewOptions.graphType;
       if (viewType === "custom") throw new Error("Unexpected viewType");
       const clusterBy = getClusterBy(viewOptions);
       sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);

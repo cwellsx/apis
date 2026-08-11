@@ -1,12 +1,4 @@
-import type {
-  AnyNodeType,
-  ApiViewOptions,
-  GraphFilter,
-  Leaf,
-  MethodViewOptions,
-  NodeId,
-  Parent,
-} from "../../contracts-ui";
+import type { AnyNodeType, GraphFilter, GraphOptions, Leaf, NodeId, Parent } from "../../contracts-ui";
 import { NodeType } from "../../contracts-ui";
 import type { ImageAttribute } from "../../image";
 import { Edges, methodNodeId, NodeIdMap, toMethodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../../nodeIds";
@@ -85,7 +77,7 @@ export const convertLoadedToCallstack = (callstackIterator: CallstackIterator): 
 export const convertCallstackToImage = (
   callstackElements: CallstackElements,
   typeOrMethodName: GetTypeOrMethodName,
-  graphViewOptions: MethodViewOptions | ApiViewOptions,
+  graphViewOptions: GraphOptions.Methods | GraphOptions.Apis,
   graphFilter: GraphFilter | undefined
 ): GraphData => {
   log("convertCallstackToImage");

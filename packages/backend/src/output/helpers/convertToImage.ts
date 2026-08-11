@@ -1,16 +1,13 @@
-import type { AnyGraphViewOptions, GraphFilter, GraphViewOptions, Node, NodeId } from "../../contracts-ui";
-import { edgeIdToText, isParent, nodeIdToText } from "../../contracts-ui";
+import type { GraphFilter, Node, NodeId } from "../../contracts-ui";
+import { edgeIdToText, GraphOptions, isParent, nodeIdToText } from "../../contracts-ui";
 import type { ImageAttribute, ImageData, ImageNode, ImageText } from "../../image";
 import { createLookupNodeId, Edges, NodeIdMap, NodeIdSet } from "../../nodeIds";
 import { log, options, uniqueStrings, viewFeatures } from "../../utils";
 
-const getShowEdgeLabels = (viewOptions: AnyGraphViewOptions): AnyGraphViewOptions["showEdgeLabels"] =>
-  viewOptions["showEdgeLabels"] ?? { groups: false, leafs: false };
-
 export function convertToImage(
   roots: Node[],
   edges: Edges,
-  viewOptions: GraphViewOptions,
+  viewOptions: GraphOptions.Any,
   graphFilter: GraphFilter,
   shortLeafNames: boolean,
   imageAttributes?: NodeIdMap<ImageAttribute>
@@ -101,7 +98,7 @@ export function convertToImage(
     });
 
   const metaGroupLabels = [".NET", "3rd-party"];
-  const { details } = viewFeatures[viewOptions.viewType];
+  const { details } = viewFeatures[viewOptions.graphType];
 
   const toImageNode = (node: Node): ImageNode => {
     const nodeId = node.nodeId;
@@ -134,7 +131,7 @@ export function convertToImage(
       (!isParent(node) || !isGroupExpanded(nodeId))
     ) {
       if (!node.label.startsWith(node.parent.label)) {
-        if (viewOptions.viewType == "references") throw new Error("Unexpected parent node name");
+        if (viewOptions.graphType == "references") throw new Error("Unexpected parent node name");
         // else this is a sublayer so do nothing
       } else textNode.shortLabel = "*" + node.label.substring(node.parent.label.length);
     }
@@ -153,7 +150,7 @@ export function convertToImage(
 
   const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isNodeVisible).map(toImageNode);
 
-  const showEdgeLabels = getShowEdgeLabels(viewOptions);
+  const showEdgeLabels = GraphOptions.getShowEdgeLabels(viewOptions);
   const imageData: ImageData = {
     nodes: toImageNodes(roots),
     edges: visibleEdges.values().map((edge) => {

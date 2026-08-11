@@ -1,5 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import type { CustomViewOptions, GraphFilter, NodeId, ViewType } from "../../contracts-ui";
+import type { GraphFilter, GraphOptions, NodeId, ViewType } from "../../contracts-ui";
 import { isAnyOtherCustomField, type CustomNode } from "../../customJson";
 import { toNameNodeId } from "../../nodeIds";
 import { jsonParse, options } from "../../utils";
@@ -14,11 +14,11 @@ export class SqlCustom {
       when: string,
       customSchemaVersion: string,
       nodeIds: NodeId[],
-      customViewOptions: CustomViewOptions,
+      customViewOptions: GraphOptions.Custom,
       isCheckModelAll: boolean
     ) => void;
-    set customViewOptions(viewOptions: CustomViewOptions);
-    get customViewOptions(): CustomViewOptions;
+    set customViewOptions(viewOptions: GraphOptions.Custom);
+    get customViewOptions(): GraphOptions.Custom;
     get viewType(): ViewType;
     set viewType(value: ViewType);
     get cachedWhen(): string;
@@ -73,9 +73,9 @@ export class SqlCustom {
       const isCustomFolders = isAutoLayers && options.customFolders;
       const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer && false;
 
-      const customViewOptions: CustomViewOptions = isAutoLayers
-        ? { ...base, viewType: "custom", isAutoLayers, layers }
-        : { ...base, viewType: "custom", isAutoLayers, nodeProperties: [...nodeProperties].sort(), clusterBy: [] };
+      const customViewOptions: GraphOptions.Custom = isAutoLayers
+        ? { ...base, graphType: "custom", isAutoLayers, layers }
+        : { ...base, graphType: "custom", isAutoLayers, nodeProperties: [...nodeProperties].sort(), clusterBy: [] };
 
       this.viewState.onSave(
         when,
@@ -141,7 +141,7 @@ export class SqlCustom {
         when: string,
         customSchemaVersion: string,
         nodeIds: NodeId[],
-        customViewOptions: CustomViewOptions,
+        customViewOptions: GraphOptions.Custom,
         isCheckModelAll: boolean
       ): void => {
         configTable.upsert({ name: "when", value: when });
@@ -152,13 +152,13 @@ export class SqlCustom {
         this.writeLeafVisible(nodeIds);
         this.writeIsCheckModelAll(isCheckModelAll);
       },
-      set customViewOptions(viewOptions: CustomViewOptions) {
+      set customViewOptions(viewOptions: GraphOptions.Custom) {
         configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });
       },
-      get customViewOptions(): CustomViewOptions {
+      get customViewOptions(): GraphOptions.Custom {
         const o = configTable.selectOne({ name: "viewOptions" });
         if (!o) throw new Error("viewOptions not initialized");
-        return JSON.parse(o.value) as CustomViewOptions;
+        return JSON.parse(o.value) as GraphOptions.Custom;
       },
       get viewType(): ViewType {
         const o = configTable.selectOne({ name: "viewType" });

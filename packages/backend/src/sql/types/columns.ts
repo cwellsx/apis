@@ -1,7 +1,6 @@
 import type { Members, MethodInfo } from "../../contracts-dotnet";
-import type { ClusterBy, NodeId } from "../../contracts-ui";
+import type { ClusterBy, CommonGraphType, NodeId } from "../../contracts-ui";
 import type { SavedTypeInfo } from "./info";
-import { CommonGraphViewType } from "./viewType";
 
 /*
   This defines types used by most of the SQL source, and imports types from elsewhere -- avoid circular dependencies
@@ -56,11 +55,7 @@ export type TypeNameColumns = {
 
 export type MethodNameColumns = { assemblyName: string; metadataToken: number; name: string; isCompilerMethod: 0 | 1 };
 
-export type GraphFilterColumns = {
-  viewType: CommonGraphViewType;
-  clusterBy: ClusterBy | "leafVisible";
-  nodeIds: NodeId[];
-};
+export type GraphFilterColumns = { viewType: CommonGraphType; clusterBy: ClusterBy | "leafVisible"; nodeIds: NodeId[] };
 
 export type DeclaringTypeColumns = { assemblyName: string; nestedType: number; declaringType: number };
 

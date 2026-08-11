@@ -1,5 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import { ApiViewOptions, MethodViewOptions, ReferenceViewOptions, ViewType } from "../../contracts-ui";
+import { GraphOptions, ViewType } from "../../contracts-ui";
 import { jsonParse } from "../../utils";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
@@ -46,30 +46,30 @@ export class ViewState {
     this._cache.setValue("cachedWhen", value);
   }
 
-  set referenceViewOptions(viewOptions: ReferenceViewOptions) {
+  set referenceViewOptions(viewOptions: GraphOptions.References) {
     this._cache.setValue("referenceViewOptions", JSON.stringify(viewOptions));
   }
-  get referenceViewOptions(): ReferenceViewOptions {
+  get referenceViewOptions(): GraphOptions.References {
     const value = this._cache.getValue("referenceViewOptions");
     return value
       ? { ...defaultViewOptions.referenceViewOptions, ...jsonParse(value) }
       : defaultViewOptions.referenceViewOptions;
   }
 
-  set methodViewOptions(viewOptions: MethodViewOptions) {
+  set methodViewOptions(viewOptions: GraphOptions.Methods) {
     this._cache.setValue("methodViewOptions", JSON.stringify(viewOptions));
   }
-  get methodViewOptions(): MethodViewOptions {
+  get methodViewOptions(): GraphOptions.Methods {
     const value = this._cache.getValue("methodViewOptions");
     return value
       ? { ...defaultViewOptions.methodViewOptions, ...jsonParse(value) }
       : defaultViewOptions.methodViewOptions;
   }
 
-  set apiViewOptions(viewOptions: ApiViewOptions) {
+  set apiViewOptions(viewOptions: GraphOptions.Apis) {
     this._cache.setValue("apiViewOptions", JSON.stringify(viewOptions));
   }
-  get apiViewOptions(): ApiViewOptions {
+  get apiViewOptions(): GraphOptions.Apis {
     const value = this._cache.getValue("apiViewOptions");
     return value ? { ...defaultViewOptions.apiViewOptions, ...jsonParse(value) } : defaultViewOptions.apiViewOptions;
   }

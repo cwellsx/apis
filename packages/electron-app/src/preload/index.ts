@@ -3,17 +3,17 @@ import type {
   DetailEvent,
   FilterEvent,
   GraphEvent,
+  GraphOptions,
   MainApi,
   PreloadApis,
   RendererApi,
   View,
   ViewDetails,
-  ViewOptions,
 } from "backend-ui";
 import { contextBridge, ipcRenderer } from "electron";
 
 const mainApiProxy: MainApi = {
-  onViewOptions: (viewOptions: ViewOptions) => ipcRenderer.send("onViewOptions", viewOptions),
+  onViewOptions: (viewOptions: GraphOptions.Any) => ipcRenderer.send("onViewOptions", viewOptions),
   onAppOptions: (appOptions: AppOptions) => ipcRenderer.send("onAppOptions", appOptions),
   onGraphEvent: (graphEvent: GraphEvent) => ipcRenderer.send("onGraphClick", graphEvent),
   onFilterEvent: (filterEvent: FilterEvent) => ipcRenderer.send("onGraphFilter", filterEvent),
@@ -26,9 +26,6 @@ const bindIpcRenderer = (rendererApi: RendererApi): void => {
   ipcRenderer.on("showAppOptions", (event, appOptions: AppOptions) => rendererApi.showAppOptions(appOptions));
 };
 
-const preloadApis: PreloadApis = {
-  mainApi: mainApiProxy,
-  bindIpc: bindIpcRenderer,
-};
+const preloadApis: PreloadApis = { mainApi: mainApiProxy, bindIpc: bindIpcRenderer };
 
 contextBridge.exposeInMainWorld("preloadApis", preloadApis);

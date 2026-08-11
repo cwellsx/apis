@@ -1,2 +1,2 @@
 export type { Call, GetTypeOrMethodName, TypeAndMethodId } from "../types";
-export type { CallstackIterator, CommonGraphViewType, Direction } from "./sqlLoadedApiTypes";
+export type { CallstackIterator, Direction } from "./sqlLoadedApiTypes";

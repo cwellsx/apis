@@ -1,4 +1,4 @@
-import type { GraphEvent, GraphViewType, Area as MyArea, OnUserEvent } from "backend-ui";
+import type { GraphEvent, GraphType, Area as MyArea, OnUserEvent } from "backend-ui";
 import { textToNodeOrEdgeId } from "backend-ui";
 import * as React from "react";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
@@ -12,7 +12,7 @@ type GraphProps = {
   zoomPercent: number;
   onGraphEvent: OnUserEvent<GraphEvent>;
   useKeyStates: boolean;
-  viewType: GraphViewType;
+  viewType: GraphType;
 };
 
 type State = {
@@ -73,12 +73,7 @@ const initialState = (props: GraphProps): State => {
 };
 
 const size = (imgWidth: number, imgHeight: number, zoomPercent: number) => {
-  return {
-    imgWidth,
-    imgHeight,
-    width: (imgWidth * zoomPercent) / 100,
-    height: (imgHeight * zoomPercent) / 100,
-  };
+  return { imgWidth, imgHeight, width: (imgWidth * zoomPercent) / 100, height: (imgHeight * zoomPercent) / 100 };
 };
 
 const reducer = (state: State, action: Action): State => {
@@ -86,10 +81,7 @@ const reducer = (state: State, action: Action): State => {
     case "NewImage":
       return initialState(action.props);
     case "ImageLoaded":
-      return {
-        ...state,
-        size: size(action.naturalWidth, action.naturalHeight, state.zoomPercent),
-      };
+      return { ...state, size: size(action.naturalWidth, action.naturalHeight, state.zoomPercent) };
     case "ZoomPercent":
       if (!state.size) return { ...state };
       return {

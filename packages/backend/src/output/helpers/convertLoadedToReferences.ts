@@ -1,5 +1,5 @@
 import type { AssemblyReferences } from "../../contracts-dotnet";
-import type { GraphFilter, ReferenceViewOptions } from "../../contracts-ui";
+import type { GraphFilter, GraphOptions } from "../../contracts-ui";
 import { ImageAttribute } from "../../image";
 import { Edges, NodeIdMap, toNameNodeId } from "../../nodeIds";
 import { log } from "../../utils";
@@ -9,7 +9,7 @@ import type { GraphData } from "./graphData";
 
 export const convertLoadedToReferences = (
   assemblyReferences: AssemblyReferences,
-  graphViewOptions: ReferenceViewOptions,
+  graphViewOptions: GraphOptions.References,
   graphFilter: GraphFilter,
   exes: string[]
 ): GraphData => {

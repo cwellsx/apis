@@ -91,8 +91,8 @@ export class SqlLoaded {
 
   // utility method
   readNames: () => GetTypeOrMethodName;
-  readGraphFilter: (viewType: CommonGraphViewType, clusterBy: ClusterBy) => GraphFilter;
-  writeGraphFilter: (viewType: CommonGraphViewType, clusterBy: ClusterBy, graphFilter: GraphFilter) => void;
+  readGraphFilter: (viewType: CommonGraphType, clusterBy: ClusterBy) => GraphFilter;
+  writeGraphFilter: (viewType: CommonGraphType, clusterBy: ClusterBy, graphFilter: GraphFilter) => void;
 
   close: () => void;
 ```

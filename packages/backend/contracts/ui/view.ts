@@ -1,7 +1,7 @@
 import { GraphFilter } from "./graphFilter";
+import * as GraphOptions from "./graphOptions";
 import { Image } from "./image";
 import { Node } from "./node";
-import { GraphViewOptions } from "./viewOptions";
 
 /*
   The types of View are distinguished by the viewType which is an element of every viewOptions
@@ -14,7 +14,7 @@ export type ViewGraphData = {
   groups: Node[];
 
   graphFilter: GraphFilter;
-  graphViewOptions: GraphViewOptions;
+  graphViewOptions: GraphOptions.Any;
 };
 
 export type ViewGraph = ViewGraphData & {
