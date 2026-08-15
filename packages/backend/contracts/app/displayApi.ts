@@ -9,8 +9,8 @@ export type ConvertPathToUrl = (urlPath: string) => string;
 
 export type DisplayApi = RendererApi & {
   showException: (error: unknown) => void;
-  showMessage: (title: string | undefined, message: string) => void;
-  setTitle: (title: string) => void;
+  showTitle: (title: string) => void;
+  showLoadingMessage: (title: string | undefined, message: string) => void;
   createSecondDisplay: (delegate: SecondDisplay) => Promise<void>;
   convertPathToUrl: ConvertPathToUrl;
 };

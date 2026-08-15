@@ -5,8 +5,25 @@ import type { BrowserWindow } from "electron";
 import { convertPathToUrl } from "./convertPathToUrl";
 import { appWindows, createBrowserWindow, loadURL } from "./createBrowserWindow";
 
-export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
+export const showErrorMessage = (mainWindow: BrowserWindow, title: string | undefined, message: string): void => {
+  if (title) mainWindow.setTitle(title);
+  const view: ViewGreeting = { greeting: message, viewType: "greeting" };
+  mainWindow.webContents.send("showView", view);
+};
+
+export const showException = (mainWindow: BrowserWindow, error: unknown): void => {
+  const message = getErrorString(error);
+  showErrorMessage(mainWindow, "Error", message);
+};
+
+export const createDisplay = (mainWindow: BrowserWindow, dataSourcePath: string): DisplayApi => {
   const webContents = mainWindow.webContents;
+
+  const showView = (view: View): void => webContents.send("showView", view);
+
+  const showDetails = (details: ViewDetails): void => webContents.send("showDetails", details);
+
+  const showAppOptions = (appOptions: AppOptions): void => webContents.send("showAppOptions", appOptions);
 
   const showGreeting = (greeting: string): void => {
     const view: ViewGreeting = { greeting, viewType: "greeting" };
@@ -20,26 +37,20 @@ export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
     showGreeting(message);
   };
 
-  const showMessage = (title: string | undefined, message: string): void => {
+  const showLoadingMessage = (title: string | undefined, message: string): void => {
     if (title) mainWindow.setTitle(title);
     showGreeting(message);
   };
 
-  const setTitle = (title: string): void => {
-    mainWindow.setTitle(title);
+  const showTitle = (title: string): void => {
+    mainWindow.setTitle(`${title} — ${dataSourcePath}`);
   };
-
-  const showView = (view: View): void => webContents.send("showView", view);
-
-  const showDetails = (details: ViewDetails): void => webContents.send("showDetails", details);
-
-  const showAppOptions = (appOptions: AppOptions): void => webContents.send("showAppOptions", appOptions);
 
   const createSecondDisplay = async (delegate: SecondDisplay): Promise<void> => {
     const window = createBrowserWindow();
     // and load the index.html of the window
     await loadURL(window);
-    const display = createDisplay(window);
+    const display = createDisplay(window, dataSourcePath);
     const appWindow = await delegate(display);
     appWindows.add(appWindow, window);
   };
@@ -47,10 +58,10 @@ export const createDisplay = (mainWindow: BrowserWindow): DisplayApi => {
   return {
     showView,
     showDetails,
-    setTitle,
+    showTitle,
     showAppOptions,
     showException,
-    showMessage,
+    showLoadingMessage,
     createSecondDisplay,
     convertPathToUrl,
   };

@@ -29,7 +29,7 @@ export class SpyDisplayApi implements DisplayApi {
     this.showExceptionCalls.push(error);
   }
 
-  showMessage(title: string | undefined, message: string): void {
+  showLoadingMessage(title: string | undefined, message: string): void {
     this.showMessageCalls.push({ title, message });
   }
 

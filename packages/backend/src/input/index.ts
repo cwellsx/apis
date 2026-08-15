@@ -1,2 +1,2 @@
-export { createAppWindow, ShowReflectedEx } from "./createAppWindow";
+export { createAppWindow } from "./createAppWindow";
 export { createCustomWindow } from "./createCustomWindow";

@@ -1,7 +1,6 @@
-import { SetViewMenu, ViewMenu } from "backend-app";
-import { ViewType } from "backend-ui";
+import { MenuItem, OnMenuItem, SetMenuItems } from "backend-app";
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
-import { createDisplay } from "./show";
+import { showException } from "./show";
 
 const getMenu = (
   fileSubmenu: MenuItemConstructorOptions[],
@@ -16,15 +15,6 @@ const getMenu = (
   { label: "Inspect", role: "toggleDevTools" },
 ];
 
-export const createSecondMenu = (window: BrowserWindow): { setViewMenu: SetViewMenu } => {
-  const menu = Menu.buildFromTemplate([{ label: "Inspect", role: "toggleDevTools" }]);
-  window.setMenu(menu);
-  const setViewMenu: SetViewMenu = () => {
-    // do nothing
-  };
-  return { setViewMenu };
-};
-
 export const createAppMenu = (
   window: BrowserWindow,
   openAssemblies: () => Promise<void>,
@@ -32,8 +22,8 @@ export const createAppMenu = (
   openCoreJson: () => Promise<void>,
   openRecent: (path: string) => Promise<void>,
   getRecent: () => string[]
-): { setViewMenu: SetViewMenu } => {
-  // this creates and assigns the menu and returns a setView<enu to update the View submenu
+): SetMenuItems => {
+  // this creates and assigns the menu and returns a setViewMenu to update the View submenu
   // could call getRecent() every time we need it, but it's a database select so might as well cache it
   let recent = getRecent();
 
@@ -56,8 +46,6 @@ export const createAppMenu = (
     setMenu();
   };
 
-  const display = createDisplay(window);
-
   const invoke = (func: () => Promise<void>): (() => void) => {
     return () => {
       resetViewMenu();
@@ -66,7 +54,7 @@ export const createAppMenu = (
           updateRecent();
         })
         .catch((error) => {
-          display.showException(error);
+          showException(window, error);
         });
     };
   };
@@ -81,30 +69,17 @@ export const createAppMenu = (
   const getRecentSubmenu = (): MenuItemConstructorOptions[] =>
     recent.map((path) => ({ label: path, click: invoke(async () => openRecent(path)) }));
 
-  const setViewMenu: SetViewMenu = (viewMenu: ViewMenu) => {
-    const { menuItems, currentViewType, showViewType } = viewMenu;
-    const setViewType = async (newViewType: ViewType) => {
-      // update the view
-      await showViewType(newViewType);
-      // update this menu
-      editMenu(newViewType);
-    };
-    const editMenu = (newViewType: ViewType): void => {
-      viewSubmenu = menuItems.map(({ menuLabel, viewType }) => ({
-        label: menuLabel,
-        type: "checkbox",
-        checked: viewType === newViewType,
-        click:
-          viewType === newViewType
-            ? undefined
-            : () => setViewType(viewType).catch((error) => display.showException(error)),
-      }));
-      setMenu();
-    };
-    editMenu(currentViewType);
+  const setMenuItems: SetMenuItems = (menuItems: MenuItem[], onMenuItem: OnMenuItem): void => {
+    viewSubmenu = menuItems.map((menuItem) => ({
+      label: menuItem.label,
+      type: "checkbox",
+      checked: menuItem.picked,
+      click: () => onMenuItem(menuItem).catch((error) => showException(window, error)),
+    }));
+    setMenu();
   };
 
   setMenu();
 
-  return { setViewMenu };
+  return setMenuItems;
 };

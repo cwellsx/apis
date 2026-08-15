@@ -1,21 +1,15 @@
-import { AppConfig, DisplayApi } from "../contracts-app";
+import { DisplayApi } from "../contracts-app";
 import { AppOptions, DetailedCustom, GraphOptions, NodeId, ViewGraph } from "../contracts-ui";
 import { bindImage } from "../image";
 import { anyNodeIdToText, isNameNodeId, toAnyNodeId } from "../nodeIds";
 import { SqlCustom } from "../sql";
 import { convertLoadedToCustom } from "./helpers";
-import { KVP, showMenu } from "./showMenu";
-import { Show, ShowCustom } from "./types";
+import { ShowCustom } from "./types";
 
-export const showCustom = (
-  display: DisplayApi,
-  sqlCustom: SqlCustom,
-  appConfig: AppConfig,
-  dataSourcePath: string
-): Show<ShowCustom> => {
+export const showCustom = (display: DisplayApi, sqlCustom: SqlCustom): ShowCustom => {
   const createImage = bindImage(display.convertPathToUrl);
 
-  const showCustom = async (): Promise<void> => {
+  const showGraphCustom = async (): Promise<void> => {
     const nodes = sqlCustom.readAll();
     const viewOptions = sqlCustom.viewState.customViewOptions;
     const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
@@ -49,23 +43,12 @@ export const showCustom = (
     return Promise.resolve();
   };
 
-  const kvps: KVP[] = [
-    [
-      "custom",
-      //
-      { menuLabel: "Custom JSON", title: `${dataSourcePath}`, showViewType: showCustom },
-    ],
-  ];
-
-  const isEnabled = (/*viewType: ViewType*/): boolean => true;
-
-  const [{ showViewType }, menu] = showMenu(kvps, isEnabled, sqlCustom.viewState, (title) => display.setTitle(title));
-
   const showAppOptions = (appOptions: AppOptions): Promise<void> => {
     display.showAppOptions(appOptions);
     return Promise.resolve();
   };
   const showException = (error: unknown): void => display.showException(error);
+  const showTitle = (title: string): void => display.showTitle(title);
 
-  return { menu, show: { showAppOptions, showViewType, showException, showCustomdDetails } };
+  return { showAppOptions, showGraphCustom, showException, showTitle, showCustomdDetails };
 };

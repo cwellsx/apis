@@ -1,4 +1,4 @@
-import type { AppConfig, MainApiAsync } from "../contracts-app";
+import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
 import type {
   AppOptions,
   ClusterBy,
@@ -7,17 +7,58 @@ import type {
   FilterEvent,
   GraphEvent,
   GraphOptions,
+  ViewType,
 } from "../contracts-ui";
 import { isEdgeId } from "../contracts-ui";
 import { isAssemblyNodeId, isMethodNodeId, MethodNodeId, removeNodeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
-import { ShowReflected } from "../output";
+import { ShowMethod, ShowReflected } from "../output";
 import type { SqlLoaded } from "../sql";
 import { viewFeatures } from "../utils";
 import { showAdjacent } from "./onGraphClick";
 
-export type ShowReflectedEx = ShowReflected & { showMethods: (methodNodeId: MethodNodeId) => Promise<void> };
+type ViewMenuItem = { viewType: ViewType; menuLabel: string; title: string; showViewType: () => Promise<void> };
 
-export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show: ShowReflectedEx): MainApiAsync => {
+export const createAppWindow = async (
+  sqlLoaded: SqlLoaded,
+  appConfig: AppConfig,
+  show: ShowReflected,
+  setMenuItems: SetMenuItems,
+  showMethod: ShowMethod,
+  methodNodeId: MethodNodeId | undefined
+): Promise<MainApiAsync> => {
+  const viewMenuItems: ViewMenuItem[] = [
+    { viewType: "references", menuLabel: "Assemblies", title: "References", showViewType: show.showReferences },
+    { viewType: "apis", menuLabel: "APIs", title: "APIs", showViewType: show.showApis },
+  ];
+
+  if (methodNodeId)
+    viewMenuItems.push({
+      viewType: "methods",
+      menuLabel: "Callstack",
+      title: "Callstack",
+      showViewType: () => showMethod(methodNodeId),
+    });
+
+  const onMenuItem: OnMenuItem = async (selected: MenuItem): Promise<void> => {
+    viewMenuItem = viewMenuItems.find((v) => v.menuLabel == selected.label)!;
+    showMenuItems();
+    await showViewType();
+  };
+
+  // initialize menu
+  const initViewType: ViewType = methodNodeId ? "methods" : sqlLoaded.viewState.viewType;
+  let viewMenuItem = viewMenuItems.find((v) => v.viewType == initViewType)!;
+  const showViewType = async (): Promise<void> => viewMenuItem.showViewType();
+  const showMenuItems = () => {
+    setMenuItems(
+      viewMenuItems.map((v) => ({ label: v.menuLabel, picked: v == viewMenuItem })),
+      onMenuItem
+    );
+    show.showTitle(viewMenuItem.title);
+  };
+  showMenuItems();
+  await showViewType();
+
   const setViewOptions = (viewOptions: GraphOptions.Any): void => {
     switch (viewOptions.graphType) {
       case "references":
@@ -66,7 +107,7 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
   const mainApi: MainApiAsync = {
     onViewOptions: async (viewOptions: GraphOptions.Any): Promise<void> => {
       setViewOptions(viewOptions);
-      await show.showViewType();
+      await showViewType();
     },
 
     onAppOptions: async (appOptions: AppOptions): Promise<void> => {
@@ -90,7 +131,7 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
         const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
         toggleNodeId(graphFilter.groupExpanded, id);
         sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-        await show.showViewType();
+        await showViewType();
         return;
       }
       // else this is a leaf
@@ -110,13 +151,13 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
             const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
             showAdjacent(assemblyReferences, graphFilter, assemblyName);
             sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-            await show.showViewType();
+            await showViewType();
           } else if (event.ctrlKey) {
             const { clusterBy } = getGraphViewOptions(viewType);
             const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);
             removeNodeId(graphFilter.leafVisible, id);
             sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-            await show.showViewType();
+            await showViewType();
           } else {
             await show.showAssemblyDetails(assemblyName);
           }
@@ -130,7 +171,7 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
       if (viewType === "custom") throw new Error("Unexpected viewType");
       const clusterBy = getClusterBy(viewOptions);
       sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
-      await show.showViewType();
+      await showViewType();
     },
 
     onDetailEvent: async (detailEvent: DetailEvent): Promise<void> => {
@@ -138,8 +179,9 @@ export const createAppWindow = (sqlLoaded: SqlLoaded, appConfig: AppConfig, show
       const nodeId = toAnyNodeId(id);
       if (!isMethodNodeId(nodeId)) return; // user clicked on something other than a method
       // launch in a separate window
-      await show.showMethods(nodeId);
+      await showMethod(nodeId);
     },
+
     showException: (error: unknown): void => show.showException(error),
   };
 

@@ -1,5 +1,5 @@
-import type { AppConfig, DisplayApi } from "../contracts-app";
-import type { AppOptions, GraphFilter, GraphOptions, ViewDetails, ViewGraph, ViewType } from "../contracts-ui";
+import type { DisplayApi } from "../contracts-app";
+import type { AppOptions, GraphFilter, GraphOptions, ViewDetails, ViewGraph } from "../contracts-ui";
 import { nodeIdToText } from "../contracts-ui";
 import { bindImage } from "../image";
 import { getClusterNames, isMethodNodeId, MethodNodeId, textToAnyNodeId, toNodeId } from "../nodeIds";
@@ -11,15 +11,10 @@ import {
   convertLoadedToDetailedAssembly,
   convertLoadedToReferences,
 } from "./helpers";
-import { KVP, showMenu } from "./showMenu";
-import type { Show, ShowReflected, ShowTitle } from "./types";
+import type { ShowReflected } from "./types";
 
-const getShowRelected = (
-  display: DisplayApi,
-  sqlLoaded: SqlLoaded,
-  showViewType: () => Promise<void>
-): ShowReflected => {
-  // methods in ShowBase
+export const showReflected = (display: DisplayApi, sqlLoaded: SqlLoaded): ShowReflected => {
+  const createImage = bindImage(display.convertPathToUrl);
 
   const showAppOptions = (appOptions: AppOptions): Promise<void> => {
     display.showAppOptions(appOptions);
@@ -40,18 +35,7 @@ const getShowRelected = (
     return Promise.resolve();
   };
   const showException = (error: unknown): void => display.showException(error);
-  return { showAppOptions, showViewType, showMethodDetails, showAssemblyDetails, showException };
-};
-
-export const showReflected = (
-  display: DisplayApi,
-  sqlLoaded: SqlLoaded,
-  appConfig: AppConfig,
-  dataSourcePath: string
-): Show<ShowReflected> => {
-  const createImage = bindImage(display.convertPathToUrl);
-
-  // methods in Map<ViewType, ViewTypeData>
+  const showTitle = (title: string): void => display.showTitle(title);
 
   const showReferences = async (): Promise<void> => {
     const graphData = convertLoadedToReferences(
@@ -78,7 +62,7 @@ export const showReflected = (
       clusterBy,
       apiViewOptions.showInternalCalls ? getClusterNames(graphFilter.groupExpanded, clusterBy) : []
     );
-    display.showMessage(undefined, `${calls.length} records`);
+    display.showLoadingMessage(undefined, `${calls.length} records`);
     const elements = convertLoadedToCalls(calls);
     const graphData = convertCallstackToImage(elements, sqlLoaded.readNames(), apiViewOptions, graphFilter);
     const image = await createImage(graphData.imageData);
@@ -91,82 +75,47 @@ export const showReflected = (
     display.showView(viewGraph);
   };
 
-  const kvps: KVP[] = [
-    [
-      "references",
-      //
-      { menuLabel: "Assemblies", title: `References — ${dataSourcePath}`, showViewType: showReferences },
-    ],
-    [
-      "apis",
-      //
-      { menuLabel: "APIs", title: `APIs — ${dataSourcePath}`, showViewType: showApis },
-    ],
-  ];
-
-  const isEnabled = (viewType: ViewType): boolean => {
-    switch (viewType) {
-      case "references":
-      case "apis":
-        return true;
-
-      default:
-        throw new Error(`Unknown viewType: ${viewType}`);
-    }
-  };
-
-  const [{ showViewType }, menu] = showMenu(kvps, isEnabled, sqlLoaded.viewState, (title) => display.setTitle(title));
-
-  return { menu, show: getShowRelected(display, sqlLoaded, showViewType) };
+  return { showAppOptions, showMethodDetails, showAssemblyDetails, showException, showTitle, showReferences, showApis }; // methods in Map<ViewType, ViewTypeData>
 };
 
-export const showMethods = (
-  display: DisplayApi,
-  sqlLoaded: SqlLoaded,
-  methodId: MethodNodeId
-): ShowTitle<ShowReflected> => {
+export const showMethods = async (display: DisplayApi, sqlLoaded: SqlLoaded, methodId: MethodNodeId): Promise<void> => {
   const createImage = bindImage(display.convertPathToUrl);
 
-  const showViewType = async (): Promise<void> => {
-    const getMethodNodeId = (methodViewOptions: GraphOptions.Methods): MethodNodeId => {
-      if (!methodViewOptions.methodId) throw new Error("No methodId");
-      const nodeId = textToAnyNodeId(nodeIdToText(methodViewOptions.methodId));
-      if (!isMethodNodeId(nodeId)) throw new Error("Not MethodNodeId");
-      return nodeId;
-    };
-
-    const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
-    const callstackIterator = sqlLoaded.readCallstack(methodId ?? getMethodNodeId(methodViewOptions));
-    const callstackElements = convertLoadedToCallstack(callstackIterator);
-
-    display.showMessage(undefined, `${callstackElements.leafs.length()} records`);
-
-    const graphFilter: GraphFilter | undefined = methodId
-      ? undefined
-      : sqlLoaded.readGraphFilter(methodViewOptions.graphType, methodViewOptions.showClustered.clusterBy);
-
-    const graphData = convertCallstackToImage(callstackElements, sqlLoaded.readNames(), methodViewOptions, graphFilter);
-
-    if (methodId) {
-      sqlLoaded.writeGraphFilter(
-        methodViewOptions.graphType,
-        methodViewOptions.showClustered.clusterBy,
-        graphData.graphFilter
-      );
-      methodViewOptions.methodId = toNodeId(methodId);
-      sqlLoaded.viewState.methodViewOptions = methodViewOptions;
-    }
-
-    const image = await createImage(graphData.imageData);
-    const viewGraph: ViewGraph = {
-      image,
-      groups: graphData.groups,
-      graphFilter: graphData.graphFilter,
-      graphViewOptions: graphData.graphViewOptions,
-    };
-    display.showView(viewGraph);
+  const getMethodNodeId = (methodViewOptions: GraphOptions.Methods): MethodNodeId => {
+    if (!methodViewOptions.methodId) throw new Error("No methodId");
+    const nodeId = textToAnyNodeId(nodeIdToText(methodViewOptions.methodId));
+    if (!isMethodNodeId(nodeId)) throw new Error("Not MethodNodeId");
+    return nodeId;
   };
 
-  // TODO add method name to title
-  return { show: getShowRelected(display, sqlLoaded, showViewType), title: `Callstack` };
+  const methodViewOptions = sqlLoaded.viewState.methodViewOptions;
+  const callstackIterator = sqlLoaded.readCallstack(methodId ?? getMethodNodeId(methodViewOptions));
+  const callstackElements = convertLoadedToCallstack(callstackIterator);
+
+  display.showLoadingMessage(undefined, `${callstackElements.leafs.length()} records`);
+
+  const graphFilter: GraphFilter | undefined = methodId
+    ? undefined
+    : sqlLoaded.readGraphFilter(methodViewOptions.graphType, methodViewOptions.showClustered.clusterBy);
+
+  const graphData = convertCallstackToImage(callstackElements, sqlLoaded.readNames(), methodViewOptions, graphFilter);
+
+  if (methodId) {
+    sqlLoaded.writeGraphFilter(
+      methodViewOptions.graphType,
+      methodViewOptions.showClustered.clusterBy,
+      graphData.graphFilter
+    );
+    methodViewOptions.methodId = toNodeId(methodId);
+    sqlLoaded.viewState.methodViewOptions = methodViewOptions;
+  }
+
+  const image = await createImage(graphData.imageData);
+  const viewGraph: ViewGraph = {
+    image,
+    groups: graphData.groups,
+    graphFilter: graphData.graphFilter,
+    graphViewOptions: graphData.graphViewOptions,
+  };
+  display.showView(viewGraph);
 };

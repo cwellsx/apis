@@ -3,7 +3,7 @@ import type { DataSource } from "backend-app";
 import { FileFilter, dialog, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";
-import { createDisplay } from "./show";
+import { createDisplay, showErrorMessage, showException } from "./show";
 
 declare const CORE_EXE: string;
 
@@ -11,15 +11,14 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
   // instantiate the Config SQL
   const appConfig = createSqlConfig("config.db");
 
-  const display = createDisplay(mainWindow);
-
   const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
     appWindows.closeAll(mainWindow);
     try {
-      const mainApi = await openDataSource(dataSource, display, setViewMenu, appConfig);
+      const display = createDisplay(mainWindow, dataSource.path);
+      const mainApi = await openDataSource(dataSource, display, menuApi, appConfig);
       if (mainApi) appWindows.add(mainApi, mainWindow);
     } catch (error) {
-      display.showException(error);
+      showException(mainWindow, error);
     }
   };
 
@@ -68,22 +67,15 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
     return recent.map((it) => it.path);
   };
 
-  const { setViewMenu } = createAppMenu(
-    mainWindow,
-    openAssemblies,
-    openCustomJson,
-    openCoreJson,
-    openRecent,
-    getRecent
-  );
+  const menuApi = createAppMenu(mainWindow, openAssemblies, openCustomJson, openCoreJson, openRecent, getRecent);
 
   if (appConfig.dataSource) {
     if (existsSync(appConfig.dataSource.path)) {
       await reopenDataSource(appConfig.dataSource);
     } else {
-      display.showMessage("Not found", "Use the File menu, to open a data source.");
+      showErrorMessage(mainWindow, "Not found", "Use the File menu, to open a data source.");
     }
   } else {
-    display.showMessage("No data", "Use the File menu, to open a data source.");
+    showErrorMessage(mainWindow, "No data", "Use the File menu, to open a data source.");
   }
 };

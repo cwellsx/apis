@@ -1,13 +1,35 @@
-import type { AppConfig, MainApiAsync } from "../contracts-app";
+import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
 import type { AppOptions, FilterEvent, GraphEvent, ViewType } from "../contracts-ui";
 import { edgeIdToNodeIds, GraphOptions, isEdgeId } from "../contracts-ui";
 import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
 import { SqlCustom } from "../sql";
-import { viewFeatures } from "../utils";
+import { assert, viewFeatures } from "../utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
-export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, show: ShowCustom): MainApiAsync => {
+export const createCustomWindow = async (
+  sqlCustom: SqlCustom,
+  appConfig: AppConfig,
+  show: ShowCustom,
+  setMenuItems: SetMenuItems
+): Promise<MainApiAsync> => {
+  type ViewMenuItem = { viewType: ViewType; menuLabel: string; title: string; showViewType: () => Promise<void> };
+  const viewMenuItem: ViewMenuItem = {
+    viewType: "custom",
+    menuLabel: "Custom JSON",
+    title: `Custom JSON`,
+    showViewType: show.showGraphCustom,
+  };
+
+  const onMenuItem: OnMenuItem = async (selected: MenuItem): Promise<void> => {
+    assert(selected.label == viewMenuItem.menuLabel);
+    await showViewType();
+  };
+
+  setMenuItems([{ label: viewMenuItem.menuLabel, picked: true }], onMenuItem);
+  const showViewType = async (): Promise<void> => viewMenuItem.showViewType();
+  await showViewType();
+
   const setCustomViewOptions = (viewOptions: GraphOptions.Any): void => {
     switch (viewOptions.graphType) {
       case "custom":
@@ -31,7 +53,7 @@ export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, s
   const mainApi: MainApiAsync = {
     onViewOptions: async (viewOptions: GraphOptions.Any): Promise<void> => {
       setCustomViewOptions(viewOptions);
-      await show.showViewType();
+      await showViewType();
     },
     onAppOptions: async (appOptions: AppOptions): Promise<void> => {
       appConfig.appOptions = appOptions;
@@ -54,7 +76,7 @@ export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, s
         toggleNodeId(graphFilter.groupExpanded, id);
         sqlCustom.writeGraphFilter(clusterBy, graphFilter);
         setCustomViewOptions(viewOptions);
-        await show.showViewType();
+        await showViewType();
         return;
       } else {
         // else this is a leaf
@@ -67,7 +89,7 @@ export const createCustomWindow = (sqlCustom: SqlCustom, appConfig: AppConfig, s
       if (!GraphOptions.isCustom(viewOptions)) throw new Error("Unexpected viewType");
       const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
       sqlCustom.writeGraphFilter(clusterBy, graphFilter);
-      await show.showViewType();
+      await showViewType();
     },
     onDetailEvent: (/* detailEvent */): Promise<void> => {
       throw Error("Not implemented");
