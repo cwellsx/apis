@@ -1,5 +1,5 @@
 import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
-import type { AppOptions, FilterEvent, GraphEvent, GraphType } from "../contracts-ui";
+import type { AppOptions, FilterEvent, GraphEvent } from "../contracts-ui";
 import { edgeIdToNodeIds, GraphOptions, isEdgeId } from "../contracts-ui";
 import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
@@ -13,9 +13,8 @@ export const createCustomWindow = async (
   show: ShowCustom,
   setMenuItems: SetMenuItems
 ): Promise<MainApiAsync> => {
-  type ViewMenuItem = { graphType: GraphType; menuLabel: string; title: string; showViewType: () => Promise<void> };
+  type ViewMenuItem = { menuLabel: string; title: string; showViewType: () => Promise<void> };
   const viewMenuItem: ViewMenuItem = {
-    graphType: "custom",
     menuLabel: "Custom JSON",
     title: `Custom JSON`,
     showViewType: show.showGraphCustom,

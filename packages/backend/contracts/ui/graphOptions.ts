@@ -46,18 +46,27 @@ export type CustomManual = CustomBase & {
   clusterBy: string[];
 };
 
-export const isCustomManual = (viewOptions: Custom): viewOptions is CustomManual => !viewOptions.isAutoLayers;
+export const isCustomManual = (viewOptions: AnyCustom): viewOptions is CustomManual => !viewOptions.isAutoLayers;
 
-export type Custom = CustomAuto | CustomManual;
+export type AnyLoaded = References | Methods | Apis;
+export type AnyCustom = CustomAuto | CustomManual;
 
-export type Any = References | Methods | Apis | Custom;
+export type Any = AnyLoaded | AnyCustom;
 
-//export type AnyOptions = Partial<{ showEdgeLabels?: ShowEdgeLabels }>;
-//type Flatten<U> = { [K in keyof U]: U[K] };
+export type LoadedGraphType = AnyLoaded["graphType"];
+export type AnyGraphType = Any["graphType"];
 
 export const getShowEdgeLabels = (viewOptions: Any): ShowEdgeLabels =>
   (viewOptions as { showEdgeLabels?: ShowEdgeLabels })["showEdgeLabels"] ?? { groups: false, leafs: false };
 
-//export type AnyOptions = Partial<Flatten<Any>>;
-
-export const isCustom = (viewOptions: Any): viewOptions is Custom => viewOptions.graphType === "custom";
+export const isCustom = (viewOptions: Any): viewOptions is AnyCustom => viewOptions.graphType === "custom";
+export const isLoaded = (viewOptions: Any): viewOptions is AnyLoaded => {
+  switch (viewOptions.graphType) {
+    case "references":
+    case "methods":
+    case "apis":
+      return true;
+    default:
+      return false;
+  }
+};

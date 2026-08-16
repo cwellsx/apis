@@ -4,6 +4,8 @@ import { isAnyOtherCustomField, type CustomNode } from "../../customJson";
 import { toNameNodeId } from "../../nodeIds";
 import { jsonParse, options } from "../../utils";
 
+type CustomOptions = GraphOptions.AnyCustom;
+
 type ConfigColumns = { name: string; value: string };
 
 export class SqlCustom {
@@ -14,11 +16,11 @@ export class SqlCustom {
       when: string,
       customSchemaVersion: string,
       nodeIds: NodeId[],
-      customViewOptions: GraphOptions.Custom,
+      customViewOptions: CustomOptions,
       isCheckModelAll: boolean
     ) => void;
-    set customViewOptions(viewOptions: GraphOptions.Custom);
-    get customViewOptions(): GraphOptions.Custom;
+    set customViewOptions(viewOptions: CustomOptions);
+    get customViewOptions(): CustomOptions;
     get cachedWhen(): string;
     get customSchemaVersion(): string;
   };
@@ -71,7 +73,7 @@ export class SqlCustom {
       const isCustomFolders = isAutoLayers && options.customFolders;
       const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer && false;
 
-      const customViewOptions: GraphOptions.Custom = isAutoLayers
+      const customViewOptions: CustomOptions = isAutoLayers
         ? { ...base, graphType: "custom", isAutoLayers, layers }
         : { ...base, graphType: "custom", isAutoLayers, nodeProperties: [...nodeProperties].sort(), clusterBy: [] };
 
@@ -139,7 +141,7 @@ export class SqlCustom {
         when: string,
         customSchemaVersion: string,
         nodeIds: NodeId[],
-        customViewOptions: GraphOptions.Custom,
+        customViewOptions: CustomOptions,
         isCheckModelAll: boolean
       ): void => {
         configTable.upsert({ name: "when", value: when });
@@ -150,13 +152,13 @@ export class SqlCustom {
         this.writeLeafVisible(nodeIds);
         this.writeIsCheckModelAll(isCheckModelAll);
       },
-      set customViewOptions(viewOptions: GraphOptions.Custom) {
+      set customViewOptions(viewOptions: CustomOptions) {
         configTable.upsert({ name: "viewOptions", value: JSON.stringify(viewOptions) });
       },
-      get customViewOptions(): GraphOptions.Custom {
+      get customViewOptions(): CustomOptions {
         const o = configTable.selectOne({ name: "viewOptions" });
         if (!o) throw new Error("viewOptions not initialized");
-        return JSON.parse(o.value) as GraphOptions.Custom;
+        return JSON.parse(o.value) as CustomOptions;
       },
 
       get cachedWhen(): string {

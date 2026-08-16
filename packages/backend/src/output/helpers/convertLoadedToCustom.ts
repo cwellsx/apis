@@ -10,7 +10,7 @@ import type { GraphData } from "./graphData";
 
 export const convertLoadedToCustom = (
   nodes: CustomNode[],
-  graphViewOptions: GraphOptions.Custom,
+  graphViewOptions: GraphOptions.AnyCustom,
   graphFilter: GraphFilter
 ): GraphData => {
   log("convertLoadedToView");

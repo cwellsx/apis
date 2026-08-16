@@ -1,7 +1,10 @@
-import { GraphType } from "../contracts-ui";
+import { GraphOptions } from "../contracts-ui";
 import { AnyNodeId } from "../nodeIds";
 
-export const viewFeatures: Record<GraphType, { leafType: AnyNodeId["type"]; details: ("leaf" | "edge")[] }> = {
+export const viewFeatures: Record<
+  GraphOptions.AnyGraphType,
+  { leafType: AnyNodeId["type"]; details: ("leaf" | "edge")[] }
+> = {
   references: { leafType: "assembly", details: ["leaf"] },
   apis: { leafType: "method", details: ["leaf"] },
   methods: { leafType: "method", details: ["leaf"] },

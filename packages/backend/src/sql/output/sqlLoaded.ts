@@ -3,9 +3,9 @@ import type { AssemblyReferences, MethodInfo, Reflected, TypeInfo } from "../../
 import { loadedVersion } from "../../contracts-dotnet";
 import type {
   ClusterBy,
-  CommonGraphType,
   CompilerMethod,
   GraphFilter,
+  GraphOptions,
   LocalsType,
   MethodName,
   NodeId,
@@ -19,6 +19,8 @@ import type { Call, Columns, GetTypeOrMethodName, SavedTypeInfo, Tables, TypeAnd
 import { getTypeAndMethodNames, newTables } from "../utils";
 
 import { ViewState } from "./viewState";
+
+type GraphType = GraphOptions.LoadedGraphType;
 
 /*
   SqlLoaded saves an instance of the Reflected type, which contains all TypeInfo and all MethodDetails, and which is:
@@ -57,12 +59,12 @@ export class SqlLoaded {
   readNames: () => GetTypeOrMethodName;
   private readMethodTypeId: (nodeId: MethodNodeId) => TypeNodeId;
 
-  private readLeafVisible: (viewType: CommonGraphType) => NodeId[];
-  private readGroupExpanded: (viewType: CommonGraphType, clusterBy: ClusterBy) => NodeId[];
-  private writeLeafVisible: (viewType: CommonGraphType, leafVisible: NodeId[]) => void;
-  private writeGroupExpanded: (viewType: CommonGraphType, clusterBy: ClusterBy, groupExpanded: NodeId[]) => void;
-  readGraphFilter: (viewType: CommonGraphType, clusterBy: ClusterBy) => GraphFilter;
-  writeGraphFilter: (viewType: CommonGraphType, clusterBy: ClusterBy, graphFilter: GraphFilter) => void;
+  private readLeafVisible: (viewType: GraphType) => NodeId[];
+  private readGroupExpanded: (viewType: GraphType, clusterBy: ClusterBy) => NodeId[];
+  private writeLeafVisible: (viewType: GraphType, leafVisible: NodeId[]) => void;
+  private writeGroupExpanded: (viewType: GraphType, clusterBy: ClusterBy, groupExpanded: NodeId[]) => void;
+  readGraphFilter: (viewType: GraphType, clusterBy: ClusterBy) => GraphFilter;
+  writeGraphFilter: (viewType: GraphType, clusterBy: ClusterBy, graphFilter: GraphFilter) => void;
 
   close: () => void;
 
@@ -377,27 +379,27 @@ export class SqlLoaded {
       return typeNodeId(assemblyName, member.typeMetadataToken);
     };
 
-    this.readLeafVisible = (viewType: CommonGraphType): NodeId[] => {
+    this.readLeafVisible = (viewType: GraphType): NodeId[] => {
       const found = table.graphFilter.selectOne({ viewType, clusterBy: "leafVisible" });
       if (!found) throw new Error("readLeafVisible nodes not found");
       return found.nodeIds;
     };
-    this.readGroupExpanded = (viewType: CommonGraphType, clusterBy: ClusterBy): NodeId[] => {
+    this.readGroupExpanded = (viewType: GraphType, clusterBy: ClusterBy): NodeId[] => {
       const found = table.graphFilter.selectOne({ viewType, clusterBy });
       return !found ? [] : found.nodeIds;
     };
-    this.writeLeafVisible = (viewType: CommonGraphType, leafVisible: NodeId[]): void => {
+    this.writeLeafVisible = (viewType: GraphType, leafVisible: NodeId[]): void => {
       table.graphFilter.upsert({ viewType, clusterBy: "leafVisible", nodeIds: leafVisible });
     };
-    this.writeGroupExpanded = (viewType: CommonGraphType, clusterBy: ClusterBy, groupExpanded: NodeId[]): void => {
+    this.writeGroupExpanded = (viewType: GraphType, clusterBy: ClusterBy, groupExpanded: NodeId[]): void => {
       table.graphFilter.upsert({ viewType, clusterBy, nodeIds: groupExpanded });
     };
-    this.readGraphFilter = (viewType: CommonGraphType, clusterBy: ClusterBy): GraphFilter => ({
+    this.readGraphFilter = (viewType: GraphType, clusterBy: ClusterBy): GraphFilter => ({
       leafVisible: this.readLeafVisible(viewType),
       groupExpanded: this.readGroupExpanded(viewType, clusterBy),
       isCheckModelAll: false,
     });
-    this.writeGraphFilter = (viewType: CommonGraphType, clusterBy: ClusterBy, graphFilter: GraphFilter): void => {
+    this.writeGraphFilter = (viewType: GraphType, clusterBy: ClusterBy, graphFilter: GraphFilter): void => {
       this.writeLeafVisible(viewType, graphFilter.leafVisible);
       this.writeGroupExpanded(viewType, clusterBy, graphFilter.groupExpanded);
     };

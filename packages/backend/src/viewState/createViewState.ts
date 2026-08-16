@@ -1,4 +1,4 @@
-import type { AnyNodeType, GraphType, Node, NodeId } from "../contracts-ui";
+import type { AnyNodeType, GraphOptions, Node, NodeId } from "../contracts-ui";
 import { isParent, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
@@ -8,6 +8,8 @@ import { createDatabase } from "./createDatabase";
 import type { Forest } from "./forest";
 import { addLeafs, cloneForest, getTrunk } from "./forest";
 import { NodeState, NodeStates } from "./nodeStates";
+
+type GraphType = GraphOptions.LoadedGraphType;
 
 /*
 To work with the existing front end we need to call this method

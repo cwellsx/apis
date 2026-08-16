@@ -1,8 +1,10 @@
 import { SqlDatabase } from "sqlio";
-import { GraphOptions, GraphType } from "../../contracts-ui";
+import { GraphOptions } from "../../contracts-ui";
 import { jsonParse } from "../../utils";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
+
+type GraphType = GraphOptions.LoadedGraphType;
 
 export class ViewState {
   private _cache: ConfigCache;

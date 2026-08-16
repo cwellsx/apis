@@ -1,5 +1,5 @@
 import type { Members, MethodInfo } from "../../contracts-dotnet";
-import type { ClusterBy, CommonGraphType, NodeId } from "../../contracts-ui";
+import type { ClusterBy, GraphOptions, NodeId } from "../../contracts-ui";
 import type { SavedTypeInfo } from "./info";
 
 /*
@@ -55,7 +55,11 @@ export type TypeNameColumns = {
 
 export type MethodNameColumns = { assemblyName: string; metadataToken: number; name: string; isCompilerMethod: 0 | 1 };
 
-export type GraphFilterColumns = { viewType: CommonGraphType; clusterBy: ClusterBy | "leafVisible"; nodeIds: NodeId[] };
+export type GraphFilterColumns = {
+  viewType: GraphOptions.LoadedGraphType;
+  clusterBy: ClusterBy | "leafVisible";
+  nodeIds: NodeId[];
+};
 
 export type DeclaringTypeColumns = { assemblyName: string; nestedType: number; declaringType: number };
 

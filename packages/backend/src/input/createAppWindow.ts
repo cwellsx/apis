@@ -1,20 +1,12 @@
 import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
-import type {
-  AppOptions,
-  ClusterBy,
-  CommonGraphType,
-  DetailEvent,
-  FilterEvent,
-  GraphEvent,
-  GraphOptions,
-  GraphType,
-} from "../contracts-ui";
-import { isEdgeId } from "../contracts-ui";
+import { AppOptions, ClusterBy, DetailEvent, FilterEvent, GraphEvent, GraphOptions, isEdgeId } from "../contracts-ui";
 import { isAssemblyNodeId, isMethodNodeId, MethodNodeId, removeNodeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowMethod, ShowReflected } from "../output";
 import type { SqlLoaded } from "../sql";
-import { viewFeatures } from "../utils";
+import { assert, viewFeatures } from "../utils";
 import { showAdjacent } from "./onGraphClick";
+
+type GraphType = GraphOptions.LoadedGraphType;
 
 type ViewMenuItem = { graphType: GraphType; menuLabel: string; title: string; showViewType: () => Promise<void> };
 
@@ -59,7 +51,7 @@ export const createAppWindow = async (
   showMenuItems();
   await showViewType();
 
-  const setViewOptions = (viewOptions: GraphOptions.Any): void => {
+  const setViewOptions = (viewOptions: GraphOptions.AnyLoaded): void => {
     switch (viewOptions.graphType) {
       case "references":
         sqlLoaded.viewState.referenceViewOptions = viewOptions;
@@ -73,7 +65,7 @@ export const createAppWindow = async (
     }
   };
 
-  const getGraphViewOptions = (viewType: CommonGraphType): { viewOptions: GraphOptions.Any; clusterBy: ClusterBy } => {
+  const getGraphViewOptions = (viewType: GraphType): { viewOptions: GraphOptions.AnyLoaded; clusterBy: ClusterBy } => {
     switch (viewType) {
       case "references": {
         const viewOptions = sqlLoaded.viewState.referenceViewOptions;
@@ -106,6 +98,7 @@ export const createAppWindow = async (
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {
     onViewOptions: async (viewOptions: GraphOptions.Any): Promise<void> => {
+      assert(GraphOptions.isLoaded(viewOptions));
       setViewOptions(viewOptions);
       await showViewType();
     },
@@ -118,7 +111,6 @@ export const createAppWindow = async (
     onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
       const { id, event } = graphEvent;
       const viewType = viewMenuItem.graphType;
-      if (viewType === "custom") throw new Error("Unexpected viewType");
       const { leafType, details } = viewFeatures[viewType];
       if (isEdgeId(id)) {
         if (!details.includes("edge")) return;
