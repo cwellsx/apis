@@ -1,6 +1,6 @@
 export type { MainApi, OnUserEvent, PreloadApis, RendererApi } from "./apis";
 export { defaultAppOptions } from "./appOptions";
-export type { AppOptions, OptionsType } from "./appOptions";
+export type { AppOptions, DetailsType } from "./appOptions";
 export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export type { DetailEvent, FilterEvent, GraphEvent } from "./events";
 export type { GraphFilter } from "./graphFilter";

@@ -33,7 +33,7 @@ export class SpyDisplayApi implements DisplayApi {
     this.showMessageCalls.push({ title, message });
   }
 
-  setTitle(title: string): void {
+  showTitle(title: string): void {
     this.setTitleCalls.push(title);
   }
 

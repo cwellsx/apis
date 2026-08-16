@@ -1,13 +1,15 @@
-import { DetailType } from "./viewDetails";
-import { ViewType } from "./viewType";
-
-export type OptionsType = ViewType | DetailType | "app";
+export type DetailsType = "app" | "graph";
 
 export type AppOptions = {
+  // these are displayed as text and changed using Ctrol-Scroll of the mouse
   zoomPercent: number;
   fontSize: number;
-  detailsClosed?: OptionsType[];
 
+  // these determine which <details> elements are expanded
+  detailsClosed?: DetailsType[];
+
+  // these will be obsolete in the newer version,
+  // so there won't yet be any app options to display
   showCompilerGeneratedTypes?: boolean;
   showCompilerGeneratedMethod?: boolean;
 };

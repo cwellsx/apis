@@ -1,4 +1,4 @@
-import type { AppOptions, OptionsType } from "backend-ui";
+import type { AppOptions, DetailsType } from "backend-ui";
 import { GraphOptions } from "backend-ui";
 import * as React from "react";
 import "./Options.css";
@@ -296,7 +296,7 @@ export const ChooseGraphViewOptions: React.FunctionComponent<ChooseGraphViewOpti
   props: ChooseGraphViewOptionsProps
 ) => {
   const { viewOptions, appOptions, onAppOptions } = props;
-  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, viewOptions.graphType);
+  const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, "graph");
 
   return (
     <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
@@ -312,7 +312,7 @@ export const ChooseGraphViewOptions: React.FunctionComponent<ChooseGraphViewOpti
 const detailsClosed = (
   appOptions: AppOptions,
   onAppOptions: (appOptions: AppOptions) => void,
-  viewType: OptionsType
+  viewType: DetailsType
 ) => {
   const isClosed = appOptions.detailsClosed?.includes(viewType) ?? false;
 
