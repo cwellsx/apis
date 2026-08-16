@@ -1,4 +1,4 @@
-import type { GraphEvent, GraphType, Area as MyArea, OnUserEvent } from "backend-ui";
+import type { GraphEvent, Area as MyArea, OnUserEvent } from "backend-ui";
 import { textToNodeOrEdgeId } from "backend-ui";
 import * as React from "react";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
@@ -12,7 +12,6 @@ type GraphProps = {
   zoomPercent: number;
   onGraphEvent: OnUserEvent<GraphEvent>;
   useKeyStates: boolean;
-  viewType: GraphType;
 };
 
 type State = {
@@ -151,7 +150,6 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     if (area._id)
       props.onGraphEvent({
         id: textToNodeOrEdgeId(area._id),
-        viewType: props.viewType,
         event: {
           altKey: event.altKey,
           button: event.button,

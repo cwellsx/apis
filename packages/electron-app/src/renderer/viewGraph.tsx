@@ -64,7 +64,6 @@ export const getCenter = (view: ViewGraph, onGraphEvent: OnUserEvent<GraphEvent>
       zoomPercent={zoomPercent}
       onGraphEvent={onGraphEvent}
       useKeyStates={view.graphViewOptions.graphType == "references"}
-      viewType={view.graphViewOptions.graphType}
     />
   );
 };

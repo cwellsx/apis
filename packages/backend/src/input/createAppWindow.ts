@@ -7,7 +7,7 @@ import type {
   FilterEvent,
   GraphEvent,
   GraphOptions,
-  ViewType,
+  GraphType,
 } from "../contracts-ui";
 import { isEdgeId } from "../contracts-ui";
 import { isAssemblyNodeId, isMethodNodeId, MethodNodeId, removeNodeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
@@ -16,7 +16,7 @@ import type { SqlLoaded } from "../sql";
 import { viewFeatures } from "../utils";
 import { showAdjacent } from "./onGraphClick";
 
-type ViewMenuItem = { viewType: ViewType; menuLabel: string; title: string; showViewType: () => Promise<void> };
+type ViewMenuItem = { graphType: GraphType; menuLabel: string; title: string; showViewType: () => Promise<void> };
 
 export const createAppWindow = async (
   sqlLoaded: SqlLoaded,
@@ -27,13 +27,13 @@ export const createAppWindow = async (
   methodNodeId: MethodNodeId | undefined
 ): Promise<MainApiAsync> => {
   const viewMenuItems: ViewMenuItem[] = [
-    { viewType: "references", menuLabel: "Assemblies", title: "References", showViewType: show.showReferences },
-    { viewType: "apis", menuLabel: "APIs", title: "APIs", showViewType: show.showApis },
+    { graphType: "references", menuLabel: "Assemblies", title: "References", showViewType: show.showReferences },
+    { graphType: "apis", menuLabel: "APIs", title: "APIs", showViewType: show.showApis },
   ];
 
   if (methodNodeId)
     viewMenuItems.push({
-      viewType: "methods",
+      graphType: "methods",
       menuLabel: "Callstack",
       title: "Callstack",
       showViewType: () => showMethod(methodNodeId),
@@ -46,8 +46,8 @@ export const createAppWindow = async (
   };
 
   // initialize menu
-  const initViewType: ViewType = methodNodeId ? "methods" : sqlLoaded.viewState.viewType;
-  let viewMenuItem = viewMenuItems.find((v) => v.viewType == initViewType)!;
+  const initViewType: GraphType = methodNodeId ? "methods" : sqlLoaded.viewState.graphType;
+  let viewMenuItem = viewMenuItems.find((v) => v.graphType == initViewType)!;
   const showViewType = async (): Promise<void> => viewMenuItem.showViewType();
   const showMenuItems = () => {
     setMenuItems(
@@ -116,7 +116,8 @@ export const createAppWindow = async (
     },
 
     onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
-      const { id, viewType, event } = graphEvent;
+      const { id, event } = graphEvent;
+      const viewType = viewMenuItem.graphType;
       if (viewType === "custom") throw new Error("Unexpected viewType");
       const { leafType, details } = viewFeatures[viewType];
       if (isEdgeId(id)) {

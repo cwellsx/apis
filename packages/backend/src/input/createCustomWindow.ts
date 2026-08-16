@@ -1,5 +1,5 @@
 import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
-import type { AppOptions, FilterEvent, GraphEvent, ViewType } from "../contracts-ui";
+import type { AppOptions, FilterEvent, GraphEvent, GraphType } from "../contracts-ui";
 import { edgeIdToNodeIds, GraphOptions, isEdgeId } from "../contracts-ui";
 import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
@@ -13,9 +13,9 @@ export const createCustomWindow = async (
   show: ShowCustom,
   setMenuItems: SetMenuItems
 ): Promise<MainApiAsync> => {
-  type ViewMenuItem = { viewType: ViewType; menuLabel: string; title: string; showViewType: () => Promise<void> };
+  type ViewMenuItem = { graphType: GraphType; menuLabel: string; title: string; showViewType: () => Promise<void> };
   const viewMenuItem: ViewMenuItem = {
-    viewType: "custom",
+    graphType: "custom",
     menuLabel: "Custom JSON",
     title: `Custom JSON`,
     showViewType: show.showGraphCustom,
@@ -40,15 +40,6 @@ export const createCustomWindow = async (
     }
   };
 
-  const getCustomViewOptions = (viewType: ViewType): GraphOptions.Custom => {
-    switch (viewType) {
-      case "custom":
-        return sqlCustom.viewState.customViewOptions;
-      default:
-        throw new Error("Unexpected options type");
-    }
-  };
-
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {
     onViewOptions: async (viewOptions: GraphOptions.Any): Promise<void> => {
@@ -60,8 +51,8 @@ export const createCustomWindow = async (
       await show.showAppOptions(appOptions);
     },
     onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
-      const { id, viewType } = graphEvent;
-      const { leafType } = viewFeatures[viewType];
+      const { id } = graphEvent;
+      const { leafType } = viewFeatures.custom;
       if (isEdgeId(id)) {
         const { serverId } = edgeIdToNodeIds(id);
         await show.showCustomdDetails(serverId);
@@ -70,7 +61,7 @@ export const createCustomWindow = async (
       const nodeId = toAnyNodeId(id);
       if (leafType !== nodeId.type) {
         // this is a group
-        const viewOptions = getCustomViewOptions(viewType);
+        const viewOptions = sqlCustom.viewState.customViewOptions;
         const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
         const graphFilter = sqlCustom.readGraphFilter(clusterBy);
         toggleNodeId(graphFilter.groupExpanded, id);

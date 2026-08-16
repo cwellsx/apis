@@ -1,5 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import { GraphOptions, ViewType } from "../../contracts-ui";
+import { GraphOptions, GraphType } from "../../contracts-ui";
 import { jsonParse } from "../../utils";
 import { ConfigCache } from "./configCache";
 import { defaultViewOptions } from "./defaultViewOptions";
@@ -20,7 +20,7 @@ export class ViewState {
     this.apiViewOptions = defaultViewOptions.apiViewOptions;
 
     if (isSchemaChanged) {
-      this.viewType = "references";
+      this.graphType = "references";
     }
   }
 
@@ -82,10 +82,10 @@ export class ViewState {
     return value ? jsonParse(value) : [];
   }
 
-  get viewType(): ViewType {
-    return (this._cache.getValue("viewType") as ViewType) ?? "references";
+  get graphType(): GraphType {
+    return (this._cache.getValue("graphType") as GraphType) ?? "references";
   }
-  set viewType(value: ViewType) {
-    this._cache.setValue("viewType", value);
+  set graphType(value: GraphType) {
+    this._cache.setValue("graphType", value);
   }
 }

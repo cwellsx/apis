@@ -1,5 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import type { GraphFilter, GraphOptions, NodeId, ViewType } from "../../contracts-ui";
+import type { GraphFilter, GraphOptions, NodeId } from "../../contracts-ui";
 import { isAnyOtherCustomField, type CustomNode } from "../../customJson";
 import { toNameNodeId } from "../../nodeIds";
 import { jsonParse, options } from "../../utils";
@@ -19,8 +19,6 @@ export class SqlCustom {
     ) => void;
     set customViewOptions(viewOptions: GraphOptions.Custom);
     get customViewOptions(): GraphOptions.Custom;
-    get viewType(): ViewType;
-    set viewType(value: ViewType);
     get cachedWhen(): string;
     get customSchemaVersion(): string;
   };
@@ -160,14 +158,7 @@ export class SqlCustom {
         if (!o) throw new Error("viewOptions not initialized");
         return JSON.parse(o.value) as GraphOptions.Custom;
       },
-      get viewType(): ViewType {
-        const o = configTable.selectOne({ name: "viewType" });
-        if (!o) return "custom";
-        return o.value as ViewType;
-      },
-      set viewType(value: ViewType) {
-        configTable.upsert({ name: "viewType", value });
-      },
+
       get cachedWhen(): string {
         const o = configTable.selectOne({ name: "when" });
         if (!o) return "";

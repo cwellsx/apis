@@ -1,6 +1,5 @@
 import { GraphFilter } from "./graphFilter";
 import * as GraphOptions from "./graphOptions";
-import { GraphType } from "./graphType";
 import { EdgeId, NodeId } from "./nodeId";
 import { DetailType } from "./viewDetails";
 
@@ -15,7 +14,7 @@ type MouseEvent = {
   shiftKey: boolean;
 };
 
-export type GraphEvent = { id: NodeId | EdgeId; viewType: GraphType; event: MouseEvent };
+export type GraphEvent = { id: NodeId | EdgeId; event: MouseEvent };
 export type FilterEvent = { graphFilter: GraphFilter; viewOptions: GraphOptions.Any };
 
 export type DetailEvent = { id: NodeId; viewType: DetailType };
