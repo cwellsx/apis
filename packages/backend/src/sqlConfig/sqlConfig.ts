@@ -1,7 +1,7 @@
 import { SqlDatabase } from "sqlio";
-import type { AppConfig, DataSource, RecentColumns } from "../../contracts-app";
-import { AppOptions, defaultAppOptions } from "../../contracts-ui";
-import { jsonParse, log } from "../../utils";
+import type { AppConfig, DataSource, RecentColumns } from "../contracts-app";
+import { AppOptions, defaultAppOptions } from "../contracts-ui";
+import { jsonParse, log } from "../utils";
 import { ConfigCache } from "./configCache";
 
 export class SqlConfig implements AppConfig {

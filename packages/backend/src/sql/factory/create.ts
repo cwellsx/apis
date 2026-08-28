@@ -1,5 +1,5 @@
 import { createSqlDatabase } from "sqlio";
-import type { AppConfig, DataSource } from "../../contracts-app";
+import type { DataSource } from "../../contracts-app";
 import type { Reflected } from "../../contracts-dotnet";
 import { isReflected } from "../../contracts-dotnet";
 import { assertCustomJson, fixCustomJson } from "../../customJson";
@@ -15,7 +15,7 @@ import {
   whenFile,
   writeFileSync,
 } from "../../utils";
-import { SqlConfig, SqlCustom, SqlLoaded } from "../output";
+import { SqlCustom, SqlLoaded } from "../output";
 import { hash } from "./hash";
 
 type Opened = { close: () => void };
@@ -103,9 +103,3 @@ export const createSqlCustomFromJson = async (dataSource: DataSource): Promise<S
   opened = sqlCustom;
   return sqlCustom;
 };
-
-export function createSqlConfig(filename: string): AppConfig {
-  filename = getAppFilename(filename);
-  log("createSqlConfig: " + filename);
-  return new SqlConfig(createSqlDatabase(filename, getSqlNodePath()));
-}
