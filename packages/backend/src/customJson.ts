@@ -7,12 +7,12 @@ type CustomError = { messages: string[]; elementJson: string };
 type CustomDependency = { id: string; label: string } & { [key: string]: boolean };
 
 type CustomFields = {
-  id: string;
-  label?: string;
-  tags?: string[];
-  layer?: string; // new
-  shape?: string; // new
-  details?: string[]; // new
+  id: string; // node.nodeId
+  label?: string; // node.label
+  tags?: string[]; // used to group nodes
+  layer?: string; // used to group nodes
+  shape?: string; //
+  details?: string[]; // details pane
   dependencies: CustomDependency[];
 };
 

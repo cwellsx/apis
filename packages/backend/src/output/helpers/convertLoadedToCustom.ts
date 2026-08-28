@@ -1,8 +1,7 @@
 import type { GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
 import { GraphOptions, isParent, NodeType } from "../../contracts-ui";
 import { CustomNode } from "../../customJson";
-import type { ImageAttribute, Shape } from "../../image";
-import { Edges, NodeIdMap, toGroupByNodeId, toNameNodeId } from "../../nodeIds";
+import { Edges, toGroupByNodeId, toNameNodeId } from "../../nodeIds";
 import { getOrThrow, last, log, options } from "../../utils";
 import { createNestedClusters } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
@@ -23,7 +22,6 @@ export const convertLoadedToCustom = (
   const folderNodeId = (id: string): NodeId => toNameNodeId("customFolder", id);
   const hiddenNodeIds = new Set<string>();
   const leafNodes = new Map<string, Leaf>();
-  const imageAttributes = new NodeIdMap<ImageAttribute>();
 
   // do the Leaf[] first to determine which are hidden
   nodes.forEach((node) => {
@@ -35,10 +33,6 @@ export const convertLoadedToCustom = (
       ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id), parent: null, type: NodeType.Group }
       : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id), parent: null, type: NodeType.Group };
     leafNodes.set(node.id, leaf);
-    if (node.shape) {
-      const shape: Shape = node.shape as Shape;
-      imageAttributes.set(leaf.nodeId, { shape, tooltip: node.label });
-    }
   });
 
   // next do the Edge[]
@@ -121,13 +115,6 @@ export const convertLoadedToCustom = (
 
   roots.sort((x, y) => x.label.localeCompare(y.label));
 
-  const imageData = convertToImage(
-    roots,
-    edges,
-    graphViewOptions,
-    graphFilter,
-    graphViewOptions.isAutoLayers,
-    imageAttributes
-  );
+  const imageData = convertToImage(roots, edges, graphViewOptions, graphFilter, graphViewOptions.isAutoLayers);
   return { groups: roots, imageData, graphViewOptions, graphFilter };
 };

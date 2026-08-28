@@ -4,7 +4,7 @@ import { edgeIdToNodeIds, GraphOptions, isEdgeId } from "../contracts-ui";
 import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
 import { SqlCustom } from "../sql";
-import { assert, viewFeatures } from "../utils";
+import { assert } from "../utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = async (
@@ -51,14 +51,13 @@ export const createCustomWindow = async (
     },
     onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
       const { id } = graphEvent;
-      const { leafType } = viewFeatures.custom;
       if (isEdgeId(id)) {
         const { serverId } = edgeIdToNodeIds(id);
         await show.showCustomdDetails(serverId);
         return;
       }
       const nodeId = toAnyNodeId(id);
-      if (leafType !== nodeId.type) {
+      if ("customLeaf" !== nodeId.type) {
         // this is a group
         const viewOptions = sqlCustom.viewState.customViewOptions;
         const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;

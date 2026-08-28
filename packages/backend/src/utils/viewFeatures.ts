@@ -1,12 +1,8 @@
 import { GraphOptions } from "../contracts-ui";
-import { AnyNodeId } from "../nodeIds";
 
-export const viewFeatures: Record<
-  GraphOptions.AnyGraphType,
-  { leafType: AnyNodeId["type"]; details: ("leaf" | "edge")[] }
-> = {
-  references: { leafType: "assembly", details: ["leaf"] },
-  apis: { leafType: "method", details: ["leaf"] },
-  methods: { leafType: "method", details: ["leaf"] },
-  custom: { leafType: "customLeaf", details: ["edge", "leaf"] },
+export const viewFeatures: Record<GraphOptions.AnyGraphType, { details: ("leaf" | "edge")[] }> = {
+  references: { details: ["leaf"] },
+  apis: { details: ["leaf"] },
+  methods: { details: ["leaf"] },
+  custom: { details: ["edge", "leaf"] },
 };

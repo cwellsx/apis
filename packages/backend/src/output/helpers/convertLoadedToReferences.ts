@@ -1,7 +1,6 @@
 import type { AssemblyReferences } from "../../contracts-dotnet";
 import type { GraphFilter, GraphOptions } from "../../contracts-ui";
-import { ImageAttribute } from "../../image";
-import { Edges, NodeIdMap, toNameNodeId } from "../../nodeIds";
+import { Edges, toNameNodeId } from "../../nodeIds";
 import { log } from "../../utils";
 import { convertNamesToNodes } from "./convertNamesToNodes";
 import { convertToImage } from "./convertToImage";
@@ -31,20 +30,13 @@ export const convertLoadedToReferences = (
   // the way in which Groups are created depends on the data i.e. whether it's Loaded or CustomData
   const nestedClusters = graphViewOptions.nestedClusters;
   const { groups, leafs } = convertNamesToNodes(names, exes, "assembly", nestedClusters);
-  // if they're not grouped on the image then pass them all, including .NET assemblies
-  // but we don't disassemble .NET so assign them a non-default ImageAttribute
-  const imageAttributes = new NodeIdMap<ImageAttribute>();
-  const known = Object.keys(assemblyReferences);
-  Object.entries(leafs).forEach(([key, node]) => {
-    if (!known.includes(key)) imageAttributes.set(node.nodeId, { shape: "none", className: "leaf-none" });
-  });
+
   const imageData = convertToImage(
     nestedClusters ? groups : Object.values(leafs),
     edges,
     graphViewOptions,
     graphFilter,
-    nestedClusters,
-    imageAttributes
+    nestedClusters
   );
   return { groups, imageData, graphViewOptions, graphFilter };
 };

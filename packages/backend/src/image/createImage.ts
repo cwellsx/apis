@@ -2,134 +2,16 @@ import os from "os";
 import { ConvertPathToUrl } from "../contracts-app";
 import type { Image } from "../contracts-ui";
 import { textIsEdgeId } from "../contracts-ui";
-import { getAppFilename, log, options, readFileSync, writeFileSync } from "../utils";
+import { getAppFilename, getOrThrow, log, options, readFileSync, writeFileSync } from "../utils";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
+import { getDotFormat } from "./getDotFormat";
 import { runDotExe } from "./graphviz";
-import type { CreateImage, ImageData, ImageNode, Shape } from "./imageDataTypes";
+import type { CreateImage, ImageData } from "./imageDataTypes";
 import { runVizJs } from "./viz-js";
 
 /*
   This is implemented using Graphviz; this is the only module which uses (and therefore encapsulates) Graphviz.
 */
-
-const defaultShape = (node: ImageNode): Shape => {
-  switch (node.type) {
-    case "group":
-      return "rect";
-    case "node":
-      return "folder";
-    // Shape is unused for subgraphs
-    // https://stackoverflow.com/questions/49139028/change-subgraph-cluster-shape-to-rounded-rectangle
-    case "subgraph":
-      return "none";
-  }
-};
-
-const getDotFormat = (
-  imageData: ImageData
-): { lines: string[]; nodes: { [nodeId: string]: ImageNode }; edgeTooltips: { [edgeId: string]: string } } => {
-  const lines: string[] = [];
-  lines.push("digraph SRC {");
-  lines.push("  labeljust=l");
-  // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
-  if (imageData.hasParentEdges) lines.push("  compound=true");
-
-  const nodes: { [nodeId: string]: ImageNode } = {};
-
-  // push the tree of nodes -- use subgraphs for exapanded groups
-  const pushLayer = (layer: ImageNode[], level: number): void => {
-    const prefix = " ".repeat(2 * (level + 1));
-
-    for (const node of layer) {
-      nodes[node.id] = node;
-
-      const shape = node?.shape ?? defaultShape(node);
-      const label = (node?.shortLabel ?? node.label).replace("\\", "\\\\");
-      if (node?.shortLabel && !node.tooltip) node.tooltip = node.label;
-      switch (node.type) {
-        case "node":
-          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${label}" href=foo];`);
-          break;
-        case "group":
-          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${label}" href=foo];`);
-          break;
-        case "subgraph":
-          lines.push(`${prefix}subgraph "cluster_${node.id}" {`);
-          if (node?.style) lines.push(`${prefix}  style="${node.style}"`);
-          lines.push(`${prefix}  label="${label}"`);
-          lines.push(`${prefix}  id="${node.id}"`);
-          lines.push(`${prefix}  href=foo`);
-          pushLayer(node.children, level + 1);
-          if (options.verticalClusters) {
-            // invisible edges between nodes to they're aligned vertically
-            // https://forum.graphviz.org/t/positioning-nodes-in-a-subgraph/1065/18
-            const children = node.children.filter((child) => child.type !== "subgraph");
-            for (let i = 0; i < children.length - 1; ++i) {
-              const first = children[i];
-              const second = children[i + 1];
-              lines.push(`${prefix} "${first.id}" -> "${second.id}" [style=invis]`);
-            }
-          }
-          lines.push(`}`);
-      }
-    }
-  };
-  pushLayer(Object.values(imageData.nodes), 0);
-
-  // used to override the title assigned to edge labels
-  const edgeTooltips: { [edgeId: string]: string } = {};
-
-  const nodeMap = new Map<string, ImageNode>(Object.values(nodes).map((node) => [node.id, node]));
-
-  // push the map of grouped edges
-  imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
-    type EdgeAttribute = { key: string; value: string };
-    const edgeAttributes: EdgeAttribute[] = [];
-
-    const adjust = (nodeId: string, key: string): string => {
-      let node = nodeMap.get(nodeId);
-      if (!node) throw new Error("Edge to undefined node");
-      if (node.type !== "subgraph") return nodeId;
-      if (!imageData.hasParentEdges) throw new Error("Unexpected edge to cluster");
-      // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
-      edgeAttributes.push({ key, value: `cluster_${nodeId}` });
-      while (node.type === "subgraph") {
-        node = node.children[0];
-      }
-      return node.id;
-    };
-
-    clientId = adjust(clientId, "ltail");
-    serverId = adjust(serverId, "lhead");
-
-    // use \l instead of \r\n to left-justify labels
-    // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
-    const edgeLabel = labels.map((s) => s + "\\l").join("");
-    // use \r\b in tooltips, that's OK in the XML
-    const edgeTitle = `${nodes[clientId].label} → ${nodes[serverId]?.label ?? "?"}`;
-    const edgeTooltip = [edgeTitle, ...titles].join("\r\n");
-
-    edgeAttributes.push(
-      ...[
-        { key: "label", value: edgeLabel },
-        { key: "tooltip", value: edgeTooltip },
-        { key: "id", value: edgeId },
-        { key: "href", value: "foo" },
-      ]
-    );
-
-    const attributes = edgeAttributes.map((attribute) => `${attribute.key}="${attribute.value}"`).join(", ");
-
-    // const labelAttributes = `, label="${edgeLabel}", tooltip="${edgeTooltip}"`;
-    // lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
-    lines.push(`  "${clientId}" -> "${serverId}" [${attributes}]`);
-
-    edgeTooltips[edgeId] = edgeTooltip;
-  });
-
-  lines.push("}");
-  return { lines, nodes, edgeTooltips };
-};
 
 type UsingGraphViz = "usingJs" | "usingExe" | "usingBoth";
 const usingGraphViz = (): UsingGraphViz => "usingJs"; // "usingBoth";
@@ -222,10 +104,10 @@ export const bindImage = (convertPathToUrl: ConvertPathToUrl): CreateImage => {
     if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";
 
     // convert to *.dot file format lines
-    const { lines, nodes, edgeTooltips } = getDotFormat(imageData);
+    const { lines, nodeMap, edgeTooltips } = getDotFormat(imageData);
     const dotText = lines.join(os.EOL);
 
-    const countImageNodes = Object.values(nodes).length;
+    const countImageNodes = nodeMap.size;
 
     const tooBig: string[] = [];
     if (imageData.edges.length > options.maxImageSize.edges)
@@ -241,10 +123,7 @@ export const bindImage = (convertPathToUrl: ConvertPathToUrl): CreateImage => {
 
         return { className: imageData.edgeDetails ? "edge-details" : "edge-none", edgeLabelTooltip };
       } else {
-        const node = nodes[id];
-        if (!node) {
-          throw new Error("Node not found");
-        }
+        const node = getOrThrow(nodeMap, id);
         return { className: node.className };
       }
     };

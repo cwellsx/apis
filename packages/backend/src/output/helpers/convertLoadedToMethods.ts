@@ -1,6 +1,5 @@
 import type { AnyNodeType, GraphFilter, GraphOptions, Leaf, NodeId, Parent } from "../../contracts-ui";
 import { NodeType } from "../../contracts-ui";
-import type { ImageAttribute } from "../../image";
 import { Edges, methodNodeId, NodeIdMap, toMethodNodeId, toNameNodeId, toTypeNodeId, typeNodeId } from "../../nodeIds";
 import type { Call, CallstackIterator, Direction, GetTypeOrMethodName, TypeAndMethodId } from "../../sql";
 import { getOrSet, log } from "../../utils";
@@ -93,9 +92,6 @@ export const convertCallstackToImage = (
   const clusterBy = graphViewOptions.showClustered.clusterBy;
 
   // begin to convert to image input format
-  const imageAttributes = new NodeIdMap<ImageAttribute>();
-  const methodAttributes: ImageAttribute = { shape: "none" };
-  const typeAttributes: ImageAttribute = { shape: "folder", style: "rounded" };
 
   // create nodes now, create image nodes later
   type MethodData = { methodNodeId: NodeId; methodName: string };
@@ -142,10 +138,6 @@ export const convertCallstackToImage = (
     // add to the methods collection
     const methodData = getMethodData(methodNodeId, typeAndMethodId);
     typeData.methods.push(methodData);
-
-    // update the imageAttributes
-    imageAttributes.set(typeNodeId, typeAttributes);
-    imageAttributes.set(methodNodeId, { ...methodAttributes, shortLabel: methodData.methodName });
   });
 
   // create image nodes from nodes
@@ -185,7 +177,7 @@ export const convertCallstackToImage = (
   };
 
   // convert to Image
-  const imageData = convertToImage(groups, edges, graphViewOptions, graphFilter, false, imageAttributes);
+  const imageData = convertToImage(groups, edges, graphViewOptions, graphFilter, false);
 
   return { imageData, graphViewOptions, graphFilter, groups };
 };

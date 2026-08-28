@@ -1,6 +1,14 @@
 import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
 import { AppOptions, ClusterBy, DetailEvent, FilterEvent, GraphEvent, GraphOptions, isEdgeId } from "../contracts-ui";
-import { isAssemblyNodeId, isMethodNodeId, MethodNodeId, removeNodeId, toAnyNodeId, toggleNodeId } from "../nodeIds";
+import {
+  AnyNodeId,
+  isAssemblyNodeId,
+  isMethodNodeId,
+  MethodNodeId,
+  removeNodeId,
+  toAnyNodeId,
+  toggleNodeId,
+} from "../nodeIds";
 import { ShowMethod, ShowReflected } from "../output";
 import type { SqlLoaded } from "../sql";
 import { assert, viewFeatures } from "../utils";
@@ -8,7 +16,13 @@ import { showAdjacent } from "./onGraphClick";
 
 type GraphType = GraphOptions.LoadedGraphType;
 
-type ViewMenuItem = { graphType: GraphType; menuLabel: string; title: string; showViewType: () => Promise<void> };
+type ViewMenuItem = {
+  graphType: GraphType;
+  menuLabel: string;
+  title: string;
+  showViewType: () => Promise<void>;
+  leafType: AnyNodeId["type"];
+};
 
 export const createAppWindow = async (
   sqlLoaded: SqlLoaded,
@@ -19,8 +33,14 @@ export const createAppWindow = async (
   methodNodeId: MethodNodeId | undefined
 ): Promise<MainApiAsync> => {
   const viewMenuItems: ViewMenuItem[] = [
-    { graphType: "references", menuLabel: "Assemblies", title: "References", showViewType: show.showReferences },
-    { graphType: "apis", menuLabel: "APIs", title: "APIs", showViewType: show.showApis },
+    {
+      graphType: "references",
+      menuLabel: "Assemblies",
+      title: "References",
+      showViewType: show.showReferences,
+      leafType: "assembly",
+    },
+    { graphType: "apis", menuLabel: "APIs", title: "APIs", showViewType: show.showApis, leafType: "method" },
   ];
 
   if (methodNodeId)
@@ -29,6 +49,7 @@ export const createAppWindow = async (
       menuLabel: "Callstack",
       title: "Callstack",
       showViewType: () => showMethod(methodNodeId),
+      leafType: "method",
     });
 
   const onMenuItem: OnMenuItem = async (selected: MenuItem): Promise<void> => {
@@ -111,14 +132,14 @@ export const createAppWindow = async (
     onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
       const { id, event } = graphEvent;
       const viewType = viewMenuItem.graphType;
-      const { leafType, details } = viewFeatures[viewType];
+      const { details } = viewFeatures[viewType];
       if (isEdgeId(id)) {
         if (!details.includes("edge")) return;
         throw new Error("Edge details not yet implemented");
       }
       // else it's a node not an edge
       const nodeId = toAnyNodeId(id);
-      if (leafType !== nodeId.type) {
+      if (viewMenuItem.leafType !== nodeId.type) {
         // this is a group
         const { clusterBy } = getGraphViewOptions(viewType);
         const graphFilter = sqlLoaded.readGraphFilter(viewType, clusterBy);

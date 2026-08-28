@@ -1,16 +1,20 @@
-import type { GraphFilter, Node, NodeId } from "../../contracts-ui";
+import type { GraphFilter, Leaf, Node, NodeId } from "../../contracts-ui";
 import { edgeIdToText, GraphOptions, isParent, nodeIdToText } from "../../contracts-ui";
-import type { ImageAttribute, ImageData, ImageNode, ImageText } from "../../image";
+import type { ImageData, ImageNode } from "../../image";
 import { createLookupNodeId, Edges, NodeIdMap, NodeIdSet } from "../../nodeIds";
-import { log, options, uniqueStrings, viewFeatures } from "../../utils";
+import { log, uniqueStrings, viewFeatures } from "../../utils";
+
+// TODO support optional shape on CustomNode
+export type CustomLeaf = Leaf & { type: "c"; shape?: string };
+export type CustomParent = Leaf & { children: (Node | CustomLeaf)[] };
+export type InputNode = Node | CustomLeaf | CustomParent;
 
 export function convertToImage(
   roots: Node[],
   edges: Edges,
   viewOptions: GraphOptions.Any,
   graphFilter: GraphFilter,
-  shortLeafNames: boolean,
-  imageAttributes?: NodeIdMap<ImageAttribute>
+  shortLeafNames: boolean
 ): ImageData {
   log("convertToImage");
 
@@ -49,13 +53,6 @@ export function convertToImage(
   };
   sort(roots);
   roots.forEach(assertUnique);
-
-  // const allEdgeIds = new Set<string>();
-  // edges.forEach((edge) => {
-  //   const edgeId = edgeIdToText(edge.clientId, edge.serverId);
-  //   if (allEdgeIds.has(edgeId)) throw new Error(`Duplicate edge id: ${edgeId}`);
-  //   allEdgeIds.add(edgeId);
-  // });
 
   // create a Map to say which leaf nodes are closed by which non-expanded parent nodes
   // parent is the displayed but non-expanded parent
@@ -97,50 +94,16 @@ export function convertToImage(
       );
     });
 
-  const metaGroupLabels = [".NET", "3rd-party"];
   const { details } = viewFeatures[viewOptions.graphType];
 
   const toImageNode = (node: Node): ImageNode => {
     const nodeId = node.nodeId;
 
-    // if (!hasParentEdges)
-    //   if (isParent(node) != (nodeId.type !== leafType)) throw new Error("Unexpected leaf or parent type");
-
-    const imageAttribute: ImageAttribute = imageAttributes?.get(nodeId) ?? {};
-
-    const textNode: ImageText = {
-      id: nodeIdToText(nodeId),
-      label: node.label,
-      className:
-        (imageAttribute.className ?? isParent(node))
-          ? isGroupExpanded(nodeId)
-            ? "expanded"
-            : "closed"
-          : details.includes("leaf")
-            ? "leaf-details"
-            : "leaf-none",
-      ...imageAttribute,
-    };
-
-    // implement this option here to affect the label on the image but not in the tree of groups
-    if (
-      shortLeafNames &&
-      options.shortLeafNames &&
-      node.parent &&
-      !metaGroupLabels.includes(node.parent.label) &&
-      (!isParent(node) || !isGroupExpanded(nodeId))
-    ) {
-      if (!node.label.startsWith(node.parent.label)) {
-        if (viewOptions.graphType == "references") throw new Error("Unexpected parent node name");
-        // else this is a sublayer so do nothing
-      } else textNode.shortLabel = "*" + node.label.substring(node.parent.label.length);
-    }
-
     return !isParent(node)
-      ? { type: "node", ...textNode }
+      ? { type: "leaf", node }
       : !isGroupExpanded(nodeId)
-        ? { type: "group", ...textNode }
-        : { type: "subgraph", ...textNode, children: toImageNodes(node.children) };
+        ? { type: "closed", node }
+        : { type: "subgraph", node, children: toImageNodes(node.children) };
   };
 
   // whether a group is visible depends on whether it contains visible leafs
