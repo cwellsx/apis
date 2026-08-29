@@ -1,7 +1,7 @@
 import { AppOptions, NodeId } from "../contracts-ui";
 import { MethodNodeId } from "../nodeIds";
 
-export type ShowBase = {
+type ShowBase = {
   showAppOptions: (appOptions: AppOptions) => Promise<void>;
   showException: (error: unknown) => void;
   showTitle: (title: string) => void;

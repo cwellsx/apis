@@ -4,9 +4,8 @@ import { MethodNodeId } from "../nodeIds";
 import { showReflected } from "../output";
 import { createSqlLoadedFromCoreJson, createSqlLoadedFromDotNet, SqlLoaded } from "../sql";
 import { RuntimeContext } from "./runtimeContext";
-import { Tuple } from "./tuple";
 
-const openAppWindow = async (sqlLoaded: SqlLoaded, runtimeContext: RuntimeContext): Promise<Tuple> => {
+const openAppWindow = async (sqlLoaded: SqlLoaded, runtimeContext: RuntimeContext): Promise<MainApiAsync> => {
   const { display, appConfig, setMenuItems } = runtimeContext;
   const showMethod = async (methodNodeId: MethodNodeId): Promise<void> => {
     const secondDisplay: SecondDisplay = (newDisplay: DisplayApi): Promise<MainApiAsync> => {
@@ -17,12 +16,11 @@ const openAppWindow = async (sqlLoaded: SqlLoaded, runtimeContext: RuntimeContex
   };
 
   const show = showReflected(display, sqlLoaded);
-  const mainApi = await createAppWindow(sqlLoaded, appConfig, show, setMenuItems, showMethod, undefined);
-  return [mainApi, show];
+  return await createAppWindow(sqlLoaded, appConfig, show, setMenuItems, showMethod, undefined);
 };
 
-export const openFromDotNet = async (runtimeContext: RuntimeContext): Promise<Tuple> =>
+export const openFromDotNet = async (runtimeContext: RuntimeContext): Promise<MainApiAsync> =>
   await openAppWindow(await createSqlLoadedFromDotNet(runtimeContext.dataSource), runtimeContext);
 
-export const openFromCoreJson = async (runtimeContext: RuntimeContext): Promise<Tuple> =>
+export const openFromCoreJson = async (runtimeContext: RuntimeContext): Promise<MainApiAsync> =>
   await openAppWindow(await createSqlLoadedFromCoreJson(runtimeContext.dataSource), runtimeContext);
