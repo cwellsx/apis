@@ -46,9 +46,11 @@ export type CustomManual = CustomBase & {
   clusterBy: string[];
 };
 
+export type None = { graphType: "none" };
+
 export const isCustomManual = (viewOptions: AnyCustom): viewOptions is CustomManual => !viewOptions.isAutoLayers;
 
-export type AnyLoaded = References | Methods | Apis;
+export type AnyLoaded = References | Methods | Apis | None;
 export type AnyCustom = CustomAuto | CustomManual;
 
 export type Any = AnyLoaded | AnyCustom;

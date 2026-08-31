@@ -3,11 +3,11 @@ import * as Id from "../id2";
 import { zero } from "../id2";
 import { Config, config, ConfigKvps } from "./config";
 import { MembersJson } from "./schemaMemberJson";
+import { ViewType } from "./viewType";
 
 const schemaVersion = "2026-08-08";
 
 export type Boolean = 0 | 1;
-export type ViewType = "assemblies" | "namespaces" | "references";
 
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 

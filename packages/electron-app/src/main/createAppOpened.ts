@@ -15,7 +15,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
     appWindows.closeAll(mainWindow);
     try {
       const display = createDisplay(mainWindow, dataSource.path);
-      const mainApi = await openDataSource({ dataSource, display, setMenuItems: menuApi, appConfig });
+      const mainApi = await openDataSource(dataSource, { display, setMenuItems: menuApi, appConfig });
       if (mainApi) appWindows.add(mainApi, mainWindow);
     } catch (error) {
       showException(mainWindow, error);

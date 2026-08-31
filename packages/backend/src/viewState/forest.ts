@@ -1,8 +1,8 @@
 import type { Node, Parent } from "../contracts-ui";
 import { isParent, nodeIdToText } from "../contracts-ui";
 import { toAnyBigId } from "../id2";
+import { ViewType } from "../sql2";
 import { compareOrdinal, getOrThrow } from "../utils";
-import { ViewType } from "./createDatabase";
 import { NodeStates } from "./nodeStates";
 
 export type Forest = { roots: Node[]; allNodes: Node[] };

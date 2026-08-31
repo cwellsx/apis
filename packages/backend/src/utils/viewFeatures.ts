@@ -5,4 +5,5 @@ export const viewFeatures: Record<GraphOptions.AnyGraphType, { details: ("leaf" 
   apis: { details: ["leaf"] },
   methods: { details: ["leaf"] },
   custom: { details: ["edge", "leaf"] },
+  none: { details: ["edge", "leaf"] },
 };

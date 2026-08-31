@@ -100,6 +100,8 @@ export const createAppWindow = async (
         const viewOptions = sqlLoaded.viewState.apiViewOptions;
         return { viewOptions, clusterBy: viewOptions.showClustered.clusterBy };
       }
+      case "none":
+        throw new Error("unexpected");
     }
   };
 
@@ -112,6 +114,7 @@ export const createAppWindow = async (
       case "apis":
         return viewOptions.showClustered.clusterBy;
       case "custom":
+      case "none":
         throw new Error("Unexpected viewType");
     }
   };

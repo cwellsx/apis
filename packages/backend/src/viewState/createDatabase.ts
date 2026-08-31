@@ -1,12 +1,10 @@
 import type { RootNodeType } from "../contracts-ui";
 import { NodeType } from "../contracts-ui";
 import * as Id from "../id2";
-import type { Sql } from "../sql2";
+import type { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
 import type { NodeState } from "./nodeStates";
 import { fromBoolean, NodeStates } from "./nodeStates";
-
-export type ViewType = Sql.ViewType;
 
 // not exported
 // - similar to Top and Leafs exported from forest.ts
