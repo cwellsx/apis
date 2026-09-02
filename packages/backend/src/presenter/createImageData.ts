@@ -1,12 +1,9 @@
 import { Node, NodeType, isParent, makeEdgeId, nodeIdToText } from "../contracts-ui";
 import type { ImageData, ImageEdge, ImageNode } from "../image";
-import { viewFeatures } from "../utils";
 import { Call, GraphNodes } from "../viewState";
 
 export const createImageData = (graphNodes: GraphNodes): ImageData => {
-  const { details } = viewFeatures[graphNodes.graphViewType];
-
-  const isLeaf = (node: Node): boolean => node.type == NodeType.Method || node.type == NodeType.Custom;
+  const isLeaf = (node: Node): boolean => node.type == graphNodes.leafType;
 
   const toImageNode = (node: Node): ImageNode => {
     return isLeaf(node)
@@ -28,7 +25,7 @@ export const createImageData = (graphNodes: GraphNodes): ImageData => {
   return {
     nodes: graphNodes.forest.roots.map(toImageNode),
     edges: graphNodes.calls.map(toImageEdge),
-    edgeDetails: details.includes("edge"),
+    edgeDetails: graphNodes.leafType == NodeType.Method,
     hasParentEdges: false,
   };
 };

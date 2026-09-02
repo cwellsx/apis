@@ -7,7 +7,7 @@ import { NodeStates } from "./nodeStates";
 
 export type Forest = { roots: Node[]; allNodes: Node[] };
 export type Top = { groups: Node[]; roots: Node[] };
-export type Leafs = { typeNames: Node[]; methodNames: Node[]; parents: Map<string, string> };
+export type LeafMethods = { typeNames: Node[]; methodNames: Node[]; parents: Map<string, string> };
 
 const insert = (array: Node[], node: Node): void => {
   let lo = 0;
@@ -82,7 +82,7 @@ export const getTrunk = (top: Top): Forest => {
   return forest;
 };
 
-export const addLeafs = (trunk: Forest, leafs: Leafs): void => {
+export const addLeafMethods = (trunk: Forest, leafs: LeafMethods): void => {
   const parents = leafs.parents;
   const allNodes = new Map<string, Node>(trunk.allNodes.map((value) => [nodeIdToText(value.nodeId), value]));
 

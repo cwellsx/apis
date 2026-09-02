@@ -1,7 +1,7 @@
 import type * as Id from "../id2";
 import { Sql } from "../sql2";
 
-export type NodeState = { isHidden?: boolean; isExpanded?: boolean };
+export type NodeState = { isHidden: boolean; isExpanded: boolean };
 
 const toBoolean = (b: Sql.Boolean): boolean => b == 1;
 export const fromBoolean = (b: boolean): Sql.Boolean => (b ? 1 : 0);

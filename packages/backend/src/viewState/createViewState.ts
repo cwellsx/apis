@@ -1,4 +1,4 @@
-import type { AnyNodeType, GraphFilter, GraphOptions, Node, NodeId } from "../contracts-ui";
+import type { AnyLeafType, AnyNodeType, GraphFilter, Node, NodeId } from "../contracts-ui";
 import { isParent, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
@@ -6,10 +6,8 @@ import { Sql, ViewType } from "../sql2";
 import type { Item, Numeric } from "./createDatabase";
 import { createDatabase } from "./createDatabase";
 import type { Forest } from "./forest";
-import { addLeafs, cloneForest, getTrunk } from "./forest";
+import { addLeafMethods, cloneForest, getTrunk } from "./forest";
 import { NodeState, NodeStates } from "./nodeStates";
-
-type GraphType = GraphOptions.LoadedGraphType;
 
 /*
 To work with the existing front end we need to call this method
@@ -42,17 +40,6 @@ export type ViewGraphData = {
 - 
 */
 
-const toGraphViewType = (viewType: ViewType): GraphType => {
-  switch (viewType) {
-    case "assemblies":
-      return "apis";
-    case "namespaces":
-      return "apis";
-    case "references":
-      return "references";
-  }
-};
-
 const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
   const text = id.toString();
   return textToNodeId(text);
@@ -62,7 +49,7 @@ const toNodesFromItems = <TId extends Numeric>(items: Item<TId>[], type: AnyNode
   items.map((item) => ({ nodeId: toNodeId(item.id), label: item.name, parent: null, type }));
 
 export type Call = { fromId: NodeId; toId: NodeId };
-export type GraphNodes = { forest: Forest; calls: Call[]; graphViewType: GraphType; graphFilter: GraphFilter };
+export type GraphNodes = { forest: Forest; calls: Call[]; graphFilter: GraphFilter; leafType: AnyLeafType };
 
 export type ViewState = {
   getGraphNodes: () => GraphNodes;
@@ -70,7 +57,7 @@ export type ViewState = {
 };
 
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
-  const { rootNodeType, top, getNodeStates, setAnyNodeState, getLeafs } = createDatabase(sqlTables, viewType);
+  const { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, getLeafs } = createDatabase(sqlTables, viewType);
 
   const getCalls = (forest: Forest, nodeStates: NodeStates): Call[] => {
     const leafIds = forest.allNodes
@@ -92,14 +79,17 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
   const getGraphNodes = (): GraphNodes => {
     const nodeStates = getNodeStates();
     const forest = cloneForest(trunk, nodeStates, viewType);
-    const leafs = getLeafs(nodeStates);
-    addLeafs(forest, {
-      typeNames: toNodesFromItems<bigint>(leafs.typeNames, NodeType.Type),
-      methodNames: toNodesFromItems<bigint>(leafs.methodNames, NodeType.Method),
-      parents: new Map<string, string>(
-        [...leafs.parents.entries()].map(([key, value]) => [key.toString(), value.toString()])
-      ),
-    });
+
+    if (leafType == NodeType.Method) {
+      const leafs = getLeafs(nodeStates);
+      addLeafMethods(forest, {
+        typeNames: toNodesFromItems<bigint>(leafs.typeNames, NodeType.Type),
+        methodNames: toNodesFromItems<bigint>(leafs.methodNames, NodeType.Method),
+        parents: new Map<string, string>(
+          [...leafs.parents.entries()].map(([key, value]) => [key.toString(), value.toString()])
+        ),
+      });
+    }
 
     const calls = getCalls(forest, nodeStates);
 
@@ -113,7 +103,7 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
       isCheckModelAll: false,
     };
 
-    return { forest, calls, graphViewType: toGraphViewType(viewType), graphFilter };
+    return { forest, calls, graphFilter, leafType };
   };
 
   return { getGraphNodes, setNodeState };

@@ -1,4 +1,4 @@
-import type { RootNodeType } from "../contracts-ui";
+import type { AnyLeafType, RootNodeType } from "../contracts-ui";
 import { NodeType } from "../contracts-ui";
 import * as Id from "../id2";
 import type { Sql, ViewType } from "../sql2";
@@ -17,6 +17,7 @@ export type Item<TId extends Numeric> = { id: TId; name: string };
 
 export type Database = {
   rootNodeType: RootNodeType;
+  leafType: AnyLeafType;
   top: Top;
   getNodeStates: () => NodeStates;
   getLeafs: (nodeStates: NodeStates) => Leafs;
@@ -25,7 +26,12 @@ export type Database = {
 
 export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Database => {
   type TypeNames = { typeNames: Sql.TypeName[]; typeParents: [Id.AnyId, Id.AnyId][] };
-  type ViewOf = { top: Top; rootNodeType: RootNodeType; getTypeNames: (nodeStates: NodeStates) => TypeNames };
+  type ViewOf = {
+    top: Top;
+    rootNodeType: RootNodeType;
+    leafType: AnyLeafType;
+    getTypeNames: (nodeStates: NodeStates) => TypeNames;
+  };
 
   const viewOfAssemblies = (): ViewOf => {
     const assemblies = sqlTables.assemblies.selectAll();
@@ -38,7 +44,7 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.assemblyId]);
       return { typeNames, typeParents };
     };
-    return { top, rootNodeType: NodeType.Assembly, getTypeNames };
+    return { top, rootNodeType: NodeType.Assembly, leafType: NodeType.Method, getTypeNames };
   };
 
   const viewOfNamespaces = (): ViewOf => {
@@ -52,7 +58,7 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.namespaceId!]);
       return { typeNames, typeParents };
     };
-    return { top, rootNodeType: NodeType.Namespace, getTypeNames };
+    return { top, rootNodeType: NodeType.Namespace, leafType: NodeType.Method, getTypeNames };
   };
 
   const viewOfReferences = (): ViewOf => {
@@ -60,7 +66,7 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     const top: Top = { groups: sqlTables.assemblyGroups.selectAll(), roots: assemblies };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const getTypeNames = (nodeStates: NodeStates): TypeNames => ({ typeNames: [], typeParents: [] });
-    return { top, rootNodeType: NodeType.Assembly, getTypeNames };
+    return { top, rootNodeType: NodeType.Assembly, leafType: NodeType.Assembly, getTypeNames };
   };
 
   const createViewOf = (): ViewOf => {
@@ -74,7 +80,7 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     }
   };
 
-  const { top, rootNodeType, getTypeNames } = createViewOf();
+  const { top, rootNodeType, leafType, getTypeNames } = createViewOf();
 
   const views = sqlTables.views.selectAll();
   const found = views.find((view) => view.viewType == viewType);
@@ -137,6 +143,8 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
   */
 
   const getLeafs = (nodeStates: NodeStates): Leafs => {
+    assert(leafType == NodeType.Method);
+
     // get types
     const { typeNames, typeParents } = getTypeNames(nodeStates);
 
@@ -149,5 +157,5 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     return { typeNames, methodNames, parents };
   };
 
-  return { rootNodeType, top, getNodeStates, setAnyNodeState, getLeafs };
+  return { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, getLeafs };
 };
