@@ -1,7 +1,8 @@
 import type { DataSource, MainApiAsync, RuntimeContext } from "../contracts-app";
 import { log, options, wrapApi } from "../utils";
 import { openCustomJson } from "./openFromCustomJson";
-import { openFromCoreJson, openFromDotNet } from "./openFromLegacy";
+import { openFromDotNet } from "./openFromDotNet";
+import { openFromCoreJson } from "./openFromLegacy";
 
 /*
   openDataSource to open any and all types of DataSource

@@ -4,9 +4,9 @@ import { renameSync } from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import * as Id from "sut/id2";
 import { bindImage } from "sut/image";
+import { createSqlCore } from "sut/openDataSource/createSqlCore";
 import { createImageData } from "sut/presenter/createImageData";
 import { Sql, ViewType } from "sut/sql2";
-import { createSqlCore } from "sut/sql2/createSqlCore";
 import { createViewState } from "sut/viewState";
 import { Forest, printForest } from "sut/viewState/forest";
 import { fileWrite } from "./file";
@@ -57,23 +57,23 @@ const testViewState = async (viewType: ViewType, tables: Sql.Tables): Promise<vo
 
   let node = getForestNode(forest, "Core", getRootNodeType(viewType));
   assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isExpanded: true });
+  viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
   forest = await printViewState();
 
   node = getForestNode(forest, "Microsoft", NodeType.Group);
   assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isExpanded: false });
+  viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
   forest = await printViewState();
 
   node = getForestNode(forest, "System.Collections", NodeType.Group);
   assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isHidden: true });
+  viewState.setNodeState(node.nodeId, node.type, { isHidden: true, isExpanded: true });
   forest = await printViewState();
 
   // choose a type which exists in the Core assembly and in the Core namespace
   node = getForestNode(forest, "Program", NodeType.Type);
   assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isExpanded: true });
+  viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
   forest = await printViewState();
 
   const graphNodes = viewState.getGraphNodes();
@@ -125,7 +125,7 @@ const assertCalls = (tables: Sql.Tables): void => {
 describe("backend2", () => {
   it("loadCoreJson", async () => {
     const dataSource: DataSource = { path: fileCoreJson, type: "coreJson" };
-    const { tables } = await createSqlCore(dataSource);
+    const tables = await createSqlCore(dataSource);
 
     assertCalls(tables);
 

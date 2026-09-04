@@ -296,6 +296,9 @@ export const ChooseGraphViewOptions: React.FunctionComponent<ChooseGraphViewOpti
   props: ChooseGraphViewOptionsProps
 ) => {
   const { viewOptions, appOptions, onAppOptions } = props;
+
+  if (viewOptions.graphType == "none") return <></>;
+
   const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, "graph");
 
   return (

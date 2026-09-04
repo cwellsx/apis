@@ -1,5 +1,4 @@
 export type { Config } from "./config";
-export { createSqlCore } from "./createSqlCore";
-export { createTables, dropTables } from "./schema";
+export { openSql } from "./openSql";
 export type * as Sql from "./schema";
 export type { ViewType } from "./viewType";

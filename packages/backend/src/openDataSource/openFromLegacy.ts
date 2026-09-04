@@ -18,7 +18,7 @@ const openAppWindow = async (sqlLoaded: SqlLoaded, runtimeContext: RuntimeContex
   return await createAppWindow(sqlLoaded, appConfig, show, setMenuItems, showMethod, undefined);
 };
 
-export const openFromDotNet = async (dataSource: DataSource, runtimeContext: RuntimeContext): Promise<MainApiAsync> =>
+export const openFromLegacy = async (dataSource: DataSource, runtimeContext: RuntimeContext): Promise<MainApiAsync> =>
   await openAppWindow(await createSqlLoadedFromDotNet(dataSource), runtimeContext);
 
 export const openFromCoreJson = async (dataSource: DataSource, runtimeContext: RuntimeContext): Promise<MainApiAsync> =>
