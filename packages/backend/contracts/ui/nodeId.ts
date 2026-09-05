@@ -16,6 +16,8 @@ export type NodeId = { readonly [key]: string };
 export const nodeIdToText = (nodeId: NodeId): string => nodeId[key];
 export const textToNodeId = (text: string): NodeId => ({ [key]: text });
 
+export const nodeIdEquals = (x: NodeId, y: NodeId): boolean => nodeIdToText(x) == nodeIdToText(y);
+
 // these string values correspond to other strings defined in the nodeIds module
 export type ClusterBy = "namespace" | "assembly";
 

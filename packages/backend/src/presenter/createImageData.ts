@@ -1,8 +1,11 @@
+import { isLeafVisible } from "../../contracts/ui/graphFilter";
 import { Node, NodeType, isParent, makeEdgeId, nodeIdToText } from "../contracts-ui";
 import type { ImageData, ImageEdge, ImageNode } from "../image";
 import { Call, GraphNodes } from "../viewState";
 
 export const createImageData = (graphNodes: GraphNodes): ImageData => {
+  const isVisible = (node: Node): boolean => isLeafVisible(node.nodeId, graphNodes.graphFilter);
+
   const isLeaf = (node: Node): boolean => node.type == graphNodes.leafType;
 
   const toImageNode = (node: Node): ImageNode => {
@@ -10,7 +13,7 @@ export const createImageData = (graphNodes: GraphNodes): ImageData => {
       ? { type: "leaf", node }
       : !isParent(node)
         ? { type: "closed", node }
-        : { type: "subgraph", node, children: node.children.map(toImageNode) };
+        : { type: "subgraph", node, children: node.children.filter(isVisible).map(toImageNode) };
   };
 
   const toImageEdge = (call: Call): ImageEdge => {
@@ -23,7 +26,7 @@ export const createImageData = (graphNodes: GraphNodes): ImageData => {
   };
 
   return {
-    nodes: graphNodes.forest.roots.map(toImageNode),
+    nodes: graphNodes.forest.roots.filter(isVisible).map(toImageNode),
     edges: graphNodes.calls.map(toImageEdge),
     edgeDetails: graphNodes.leafType == NodeType.Method,
     hasParentEdges: false,
