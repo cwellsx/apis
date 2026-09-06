@@ -1,4 +1,4 @@
-import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
+import type { AppConfig, MainApiAsync, SetMenuItems } from "../contracts-app";
 import { AppOptions, ClusterBy, DetailEvent, FilterEvent, GraphEvent, GraphOptions, isEdgeId } from "../contracts-ui";
 import {
   AnyNodeId,
@@ -52,24 +52,29 @@ export const createAppWindow = async (
       leafType: "method",
     });
 
-  const onMenuItem: OnMenuItem = async (selected: MenuItem): Promise<void> => {
-    viewMenuItem = viewMenuItems.find((v) => v.menuLabel == selected.label)!;
-    showMenuItems();
+  // initialize menu
+  const initViewType: GraphType = methodNodeId ? "methods" : sqlLoaded.viewState.graphType;
+
+  let viewMenuItem = viewMenuItems.find((v) => v.graphType == initViewType)!;
+  const showViewType = async (): Promise<void> => viewMenuItem.showViewType();
+
+  const onViewMenuItem = async (v: ViewMenuItem): Promise<void> => {
+    viewMenuItem = v;
+    createMenuItems();
     await showViewType();
   };
 
-  // initialize menu
-  const initViewType: GraphType = methodNodeId ? "methods" : sqlLoaded.viewState.graphType;
-  let viewMenuItem = viewMenuItems.find((v) => v.graphType == initViewType)!;
-  const showViewType = async (): Promise<void> => viewMenuItem.showViewType();
-  const showMenuItems = () => {
+  const createMenuItems = (): void => {
     setMenuItems(
-      viewMenuItems.map((v) => ({ label: v.menuLabel, picked: v == viewMenuItem })),
-      onMenuItem
+      viewMenuItems.map((v) => ({
+        label: v.menuLabel,
+        picked: v == viewMenuItem,
+        type: "radio",
+        onClick: () => onViewMenuItem(v),
+      }))
     );
-    show.showTitle(viewMenuItem.title);
   };
-  showMenuItems();
+  createMenuItems();
   await showViewType();
 
   const setViewOptions = (viewOptions: GraphOptions.AnyLoaded): void => {

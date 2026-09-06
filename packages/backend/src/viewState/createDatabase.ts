@@ -22,6 +22,7 @@ export type Database = {
   getNodeStates: () => NodeStates;
   getLeafs: (nodeStates: NodeStates) => Leafs;
   setAnyNodeState: (id: Id.AnyBigId, nodeState: NodeState) => void;
+  resetNodeStates: () => void;
 };
 
 export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Database => {
@@ -106,6 +107,10 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     sqlTables.viewStates.upsert(viewState);
   };
 
+  const resetNodeStates = (): void => {
+    sqlTables.viewStates.deleteWhere({ viewId });
+  };
+
   /*
   
   Two ways to implement this -- one way could be to use JOIN e.g. like this
@@ -157,5 +162,5 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     return { typeNames, methodNames, parents };
   };
 
-  return { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, getLeafs };
+  return { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, resetNodeStates, getLeafs };
 };

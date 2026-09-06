@@ -202,6 +202,15 @@ export class SqlTable<T extends object> {
     this.selectAll = () => selectStmt.all().map((u) => fromSql(u));
     this.deleteAll = db.transaction(() => deleteAllStmt.run());
 
+    const prepareDeleteWhere = (where: Partial<T>): Statement<unknown[]> => {
+      const keys = Object.keys(where);
+      keys.sort();
+      const source = `DELETE FROM "${tableName}" WHERE ${whereKeys(keys)}`;
+      return prepare(source);
+    };
+
+    this.deleteWhere = db.transaction((where: Partial<T>) => prepareDeleteWhere(where).run(where));
+
     const prepareSelectWhere = (where: Partial<T>): Statement<unknown[]> => {
       const keys = Object.keys(where);
       keys.sort();
@@ -293,6 +302,7 @@ export class SqlTable<T extends object> {
   insertMany: (many: T[]) => void;
   selectAll: () => T[];
   deleteAll: () => void;
+  deleteWhere: (where: Partial<T>) => void;
   selectWhere: (where: Partial<T>) => T[];
   selectOne: (where: Partial<T>) => T | undefined;
   selectWhereIn: <K extends keyof T>(key: K | K[], values: readonly NonNullable<T[K]>[]) => T[];

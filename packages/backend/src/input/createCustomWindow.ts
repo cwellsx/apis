@@ -1,10 +1,9 @@
-import type { AppConfig, MainApiAsync, MenuItem, OnMenuItem, SetMenuItems } from "../contracts-app";
+import type { AppConfig, MainApiAsync, SetMenuItems } from "../contracts-app";
 import type { AppOptions, FilterEvent, GraphEvent } from "../contracts-ui";
 import { edgeIdToNodeIds, GraphOptions, isEdgeId } from "../contracts-ui";
 import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
 import { SqlCustom } from "../sql";
-import { assert } from "../utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = async (
@@ -13,20 +12,9 @@ export const createCustomWindow = async (
   show: ShowCustom,
   setMenuItems: SetMenuItems
 ): Promise<MainApiAsync> => {
-  type ViewMenuItem = { menuLabel: string; title: string; showViewType: () => Promise<void> };
-  const viewMenuItem: ViewMenuItem = {
-    menuLabel: "Custom JSON",
-    title: `Custom JSON`,
-    showViewType: show.showGraphCustom,
-  };
+  setMenuItems([{ label: "Custom JSON", picked: true, type: "radio", onClick: async () => await showViewType() }]);
 
-  const onMenuItem: OnMenuItem = async (selected: MenuItem): Promise<void> => {
-    assert(selected.label == viewMenuItem.menuLabel);
-    await showViewType();
-  };
-
-  setMenuItems([{ label: viewMenuItem.menuLabel, picked: true }], onMenuItem);
-  const showViewType = async (): Promise<void> => viewMenuItem.showViewType();
+  const showViewType = async (): Promise<void> => show.showGraphCustom();
   await showViewType();
 
   const setCustomViewOptions = (viewOptions: GraphOptions.Any): void => {

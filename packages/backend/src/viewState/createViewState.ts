@@ -54,10 +54,15 @@ export type GraphNodes = { forest: Forest; calls: Call[]; graphFilter: GraphFilt
 export type ViewState = {
   getGraphNodes: () => GraphNodes;
   setNodeState: (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState) => void;
+  resetNodeStates: () => void;
+  viewType: ViewType;
 };
 
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
-  const { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, getLeafs } = createDatabase(sqlTables, viewType);
+  const { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, resetNodeStates, getLeafs } = createDatabase(
+    sqlTables,
+    viewType
+  );
 
   const getCalls = (forest: Forest, nodeStates: NodeStates): Call[] => {
     const leafIds = forest.allNodes
@@ -106,5 +111,5 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
     return { forest, calls, graphFilter, leafType };
   };
 
-  return { getGraphNodes, setNodeState };
+  return { getGraphNodes, setNodeState, viewType, resetNodeStates };
 };

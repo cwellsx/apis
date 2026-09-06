@@ -1,4 +1,4 @@
-import { MenuItem, OnMenuItem, SetMenuItems } from "backend-app";
+import { MenuItem, OnClick, SetMenuItems } from "backend-app";
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
 import { showException } from "./show";
 
@@ -69,13 +69,26 @@ export const createAppMenu = (
   const getRecentSubmenu = (): MenuItemConstructorOptions[] =>
     recent.map((path) => ({ label: path, click: invoke(async () => openRecent(path)) }));
 
-  const setMenuItems: SetMenuItems = (menuItems: MenuItem[], onMenuItem: OnMenuItem): void => {
-    viewSubmenu = menuItems.map((menuItem) => ({
-      label: menuItem.label,
-      type: "checkbox",
-      checked: menuItem.picked,
-      click: () => onMenuItem(menuItem).catch((error) => showException(window, error)),
-    }));
+  const setMenuItems: SetMenuItems = (menuItems: MenuItem[]): void => {
+    const click = (onClick: OnClick) => void onClick().catch((error) => showException(window, error));
+
+    const toMenuItem = (menuItem: MenuItem): Electron.MenuItemConstructorOptions => {
+      switch (menuItem.type) {
+        case "separator":
+          return { type: "separator" };
+        case "normal":
+          return { label: menuItem.label, click: () => click(menuItem.onClick) };
+        case "radio":
+          return {
+            label: menuItem.label,
+            click: () => click(menuItem.onClick),
+            type: "radio",
+            checked: menuItem.picked,
+          };
+      }
+    };
+
+    viewSubmenu = menuItems.map(toMenuItem);
     setMenu();
   };
 

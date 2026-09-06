@@ -10,38 +10,42 @@ import { getNodeOrThrow, toggleExpanded, writeGraphFilter } from "./viewStateOps
 
 export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: RuntimeContext): Promise<MainApiAsync> => {
   const { display, appConfig, setMenuItems } = runtimeContext;
-
-  type MyMenuItem = { label: string; viewType: ViewType };
-
-  const menuItems: MyMenuItem[] = [
-    { label: "Assemblies", viewType: "assemblies" },
-    { label: "Namespaces", viewType: "namespaces" },
-    { label: "References", viewType: "references" },
-  ];
-
+  const { config } = sqlTables;
   const createImage = bindImage(display.convertPathToUrl);
 
-  const { config } = sqlTables;
-  let viewType = config.getViewType() ?? "assemblies";
-  let viewState = createViewState(sqlTables, viewType);
+  let viewState = createViewState(sqlTables, config.getViewType() ?? "assemblies");
 
-  const onMenuItem = (selected: MenuItem): Promise<void> => {
-    const myMenuItem = menuItems.find((it) => (it.label = selected.label));
-    if (!myMenuItem) throw new Error(`Unexpected label ${selected.label}`);
-    viewType = myMenuItem.viewType;
-    config.setViewType(viewType);
-    setMyMenuItems();
-    viewState = createViewState(sqlTables, viewType);
-    return showViewType();
+  const createMenuItems = (): void => {
+    const onSetViewType = (viewType: ViewType): Promise<void> => {
+      config.setViewType(viewType);
+      viewState = createViewState(sqlTables, viewType);
+      createMenuItems();
+      return showViewType();
+    };
+
+    const onReset = (): Promise<void> => {
+      viewState.resetNodeStates();
+      return showViewType();
+    };
+
+    const getSetViewType = (label: string, viewType: ViewType): MenuItem => ({
+      type: "radio",
+      label,
+      picked: viewType == viewState.viewType,
+      onClick: () => onSetViewType(viewType),
+    });
+
+    setMenuItems([
+      getSetViewType("Assemblies", "assemblies"),
+      getSetViewType("Namespaces", "namespaces"),
+      getSetViewType("References", "references"),
+      { type: "separator" },
+      { type: "separator" },
+      { type: "normal", label: "Reset", onClick: onReset },
+    ]);
   };
 
-  const setMyMenuItems = (): void =>
-    setMenuItems(
-      menuItems.map((it) => ({ label: it.label, picked: it.viewType == viewType })),
-      onMenuItem
-    );
-
-  setMyMenuItems();
+  createMenuItems();
 
   let graphNodes: GraphNodes;
 
@@ -90,7 +94,7 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
         return;
       }
       // else this is a leaf
-      switch (viewType) {
+      switch (viewState.viewType) {
         case "assemblies":
         case "namespaces": {
           assert(node.type == NodeType.Method);

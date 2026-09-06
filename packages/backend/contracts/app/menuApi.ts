@@ -1,11 +1,10 @@
-// this is a subset of the vscode.QuickPickItem properties
-export type MenuItem = { label: string; picked: boolean };
+// the application can map this to vscode.QuickPickItem properties and/or Electron.MenuItemConstructorOptions
+export type OnClick = () => Promise<void>;
 
-export type OnMenuItem = (selected: MenuItem) => Promise<void>;
+export type MenuItem =
+  | { type: "radio"; label: string; picked: boolean; onClick: OnClick }
+  | { type: "separator" }
+  | { type: "normal"; label: string; onClick: OnClick };
 
-export type SetMenuItems = (
-  // this sets menu item contents, can be called more than once e.g. after a change to the picked property
-  menuItems: MenuItem[],
-  // callback when the user selects an item
-  onMenuItem: OnMenuItem
-) => void;
+// this sets menu item contents, can be called more than once e.g. after a change to the picked property
+export type SetMenuItems = (menuItems: MenuItem[]) => void;
