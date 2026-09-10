@@ -6,46 +6,28 @@ import { AnyNodeType } from "./nodeTypes";
 // they don't show edges and node properties and don't need more data than this
 // extra data (decorators) are defined in ImageAttribute
 
-export type Leaf = {
+type Common = {
   label: string;
   nodeId: NodeId; // unique within graph and/or within group tree
   parent: Parent | null;
   type: AnyNodeType;
+  shown: "hidden" | "visible";
 };
 
-export type Parent = Leaf & { children: Node[] };
+export type Leaf = Common & { collapsible: "none" };
+export type Closed = Common & { collapsible: "collapsed" };
+export type Parent = Common & { children: Node[]; collapsible: "expanded" };
 
-export type Node = Leaf | Parent;
+export type Node = Leaf | Parent | Closed;
 
 export function isParent(node: Node): node is Parent {
   return (node as Parent).children !== undefined;
 }
 
-/*
+export function isLeaf(node: Node): node is Leaf {
+  return node.collapsible == "none";
+}
 
-In future redefine this as follows:
-
-- Node has children
-- Leaf has empty children
-- Parent is non-empty
-
-```
-export type Node = {
-  label: string;
-  nodeId: NodeId;
-  parent: Node | null;
-  children: Node[];
-};
-
-export type Leaf = Node & { children: [] };
-export type Parent = Node & { children: [Node, ...Node[]] };
-```
-
-And, include NodeState and NodeType in the Node:
-
-```
-export type NodeState = { isHidden?: boolean; isExpanded?: boolean };
-export type NodeType = "g" | "a" | "n" | "t" | "m";
-```
-
-*/
+export function isClosed(node: Node): node is Closed {
+  return node.collapsible == "collapsed";
+}

@@ -1,12 +1,10 @@
 import { isLeafVisible } from "../../contracts/ui/graphFilter";
-import { Node, NodeType, isParent, makeEdgeId, nodeIdToText } from "../contracts-ui";
+import { Node, NodeType, isLeaf, isParent, makeEdgeId, nodeIdToText } from "../contracts-ui";
 import type { ImageData, ImageEdge, ImageNode } from "../image";
 import { Call, GraphNodes } from "../viewState";
 
 export const createImageData = (graphNodes: GraphNodes): ImageData => {
   const isVisible = (node: Node): boolean => isLeafVisible(node.nodeId, graphNodes.graphFilter);
-
-  const isLeaf = (node: Node): boolean => node.type == graphNodes.leafType;
 
   const toImageNode = (node: Node): ImageNode => {
     return isLeaf(node)

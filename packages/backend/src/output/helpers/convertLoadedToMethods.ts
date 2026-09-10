@@ -145,7 +145,19 @@ export const convertCallstackToImage = (
   const topNodeType = getTopNodeType();
   [...topNodes.entries()].forEach(([topName, typeAndMethods]) => {
     const nameNodeId = toNameNodeId(clusterBy, topName);
-    const topParent: Parent = { parent: null, label: topName, nodeId: nameNodeId, children: [], type: topNodeType };
+
+    const shown = "visible";
+
+    const topParent: Parent = {
+      parent: null,
+      label: topName,
+      nodeId: nameNodeId,
+      children: [],
+      type: topNodeType,
+      shown,
+      collapsible: "expanded",
+    };
+
     groups.push(topParent);
 
     typeAndMethods.entries().forEach(([typeNodeId, typeData]) => {
@@ -155,6 +167,8 @@ export const convertCallstackToImage = (
         nodeId: typeNodeId,
         children: [],
         type: NodeType.Type,
+        shown,
+        collapsible: "expanded",
       };
       topParent.children.push(typeParent);
 
@@ -164,6 +178,8 @@ export const convertCallstackToImage = (
           label: methodData.methodName,
           nodeId: methodData.methodNodeId,
           type: NodeType.Method,
+          shown,
+          collapsible: "none",
         };
         typeParent.children.push(methodLeaf);
       });

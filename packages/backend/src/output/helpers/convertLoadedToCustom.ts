@@ -1,3 +1,4 @@
+import { isLeafVisible } from "../../../contracts/ui/graphFilter";
 import type { GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
 import { GraphOptions, isParent, NodeType } from "../../contracts-ui";
 import { CustomNode } from "../../customJson";
@@ -29,9 +30,11 @@ export const convertLoadedToCustom = (
       hiddenNodeIds.add(node.id);
       return;
     }
-    const leaf = !isCustomFolder(node)
-      ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id), parent: null, type: NodeType.Group }
-      : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id), parent: null, type: NodeType.Group };
+    const { label, nodeId } = !isCustomFolder(node)
+      ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id) }
+      : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id) };
+    const shown = isLeafVisible(nodeId, graphFilter) ? "visible" : "hidden";
+    const leaf: Leaf = { label, nodeId, shown, parent: null, type: NodeType.Custom, collapsible: "none" };
     leafNodes.set(node.id, leaf);
   });
 
@@ -97,12 +100,16 @@ export const convertLoadedToCustom = (
         groupName = "" + groupName;
         let parent: Parent = parents[groupName];
         if (!parent) {
+          const nodeId = toGroupByNodeId(groupedBy, groupName);
+          const shown = isLeafVisible(nodeId, graphFilter) ? "visible" : "hidden";
           parent = {
             label: groupName,
-            nodeId: toGroupByNodeId(groupedBy, groupName),
+            nodeId,
             parent: null,
             children: [],
             type: NodeType.Group,
+            shown,
+            collapsible: "expanded",
           };
           roots.push(parent);
           parents[groupName] = parent;

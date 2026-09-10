@@ -1,8 +1,8 @@
 import type { GraphFilter, Leaf, Node, NodeId } from "../../contracts-ui";
-import { edgeIdToText, GraphOptions, isParent, nodeIdToText } from "../../contracts-ui";
+import { edgeIdToText, GraphOptions, isLeaf, isParent, nodeIdToText } from "../../contracts-ui";
 import type { ImageData, ImageNode } from "../../image";
 import { createLookupNodeId, Edges, NodeIdMap, NodeIdSet } from "../../nodeIds";
-import { log, uniqueStrings, viewFeatures } from "../../utils";
+import { assert, log, uniqueStrings, viewFeatures } from "../../utils";
 
 // TODO support optional shape on CustomNode
 export type CustomLeaf = Leaf & { type: "c"; shape?: string };
@@ -99,11 +99,14 @@ export function convertToImage(
   const toImageNode = (node: Node): ImageNode => {
     const nodeId = node.nodeId;
 
-    return !isParent(node)
-      ? { type: "leaf", node }
-      : !isGroupExpanded(nodeId)
-        ? { type: "closed", node }
-        : { type: "subgraph", node, children: toImageNodes(node.children) };
+    if (isLeaf(node)) return { type: "leaf", node };
+
+    // temporary hack -- previous module only generated Leaf and Parent but not Closed
+    assert(isParent(node));
+
+    return !isGroupExpanded(nodeId)
+      ? { type: "closed", node }
+      : { type: "subgraph", node, children: toImageNodes(node.children) };
   };
 
   // whether a group is visible depends on whether it contains visible leafs

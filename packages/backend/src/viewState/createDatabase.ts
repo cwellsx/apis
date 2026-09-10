@@ -5,15 +5,7 @@ import type { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
 import type { NodeState } from "./nodeStates";
 import { fromBoolean, NodeStates } from "./nodeStates";
-
-// not exported
-// - similar to Top and Leafs exported from forest.ts
-// - converted from Item to Node by ViewState
-type Top = { groups: Item<number>[]; roots: Item<number>[] };
-type Leafs = { typeNames: Item<bigint>[]; methodNames: Item<bigint>[]; parents: Map<Id.AnyId, Id.AnyId> };
-
-export type Numeric = number | bigint;
-export type Item<TId extends Numeric> = { id: TId; name: string };
+import { Leafs, Top } from "./types";
 
 export type Database = {
   rootNodeType: RootNodeType;
@@ -25,22 +17,23 @@ export type Database = {
   resetNodeStates: () => void;
 };
 
-export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Database => {
-  type TypeNames = { typeNames: Sql.TypeName[]; typeParents: [Id.AnyId, Id.AnyId][] };
-  type ViewOf = {
-    top: Top;
-    rootNodeType: RootNodeType;
-    leafType: AnyLeafType;
-    getTypeNames: (nodeStates: NodeStates) => TypeNames;
-  };
+type TypeNames = { typeNames: Sql.TypeName[]; typeParents: [Id.AnyId, Id.AnyId][] };
 
+type ViewOf = {
+  top: Top;
+  rootNodeType: RootNodeType;
+  leafType: AnyLeafType;
+  getTypeNames: (nodeStates: NodeStates) => TypeNames;
+};
+
+const createViewOf = (sqlTables: Sql.Tables, viewType: ViewType): ViewOf => {
   const viewOfAssemblies = (): ViewOf => {
     const assemblies = sqlTables.assemblies.selectAll();
-    const top: Top = { groups: sqlTables.assemblyGroups.selectAll(), roots: assemblies };
+    const top: Top = { groupItems: sqlTables.assemblyGroups.selectAll(), rootItems: assemblies };
     const getTypeNames = (nodeStates: NodeStates): TypeNames => {
       const assemblyIds = assemblies
         .map((value) => value.id)
-        .filter((id) => nodeStates.showsChildren(Id.toBigAssemblyId(id), false));
+        .filter((id) => nodeStates.showsChildIds(Id.toBigAssemblyId(id), false));
       const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds);
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.assemblyId]);
       return { typeNames, typeParents };
@@ -50,11 +43,11 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
 
   const viewOfNamespaces = (): ViewOf => {
     const namespaces = sqlTables.namespaces.selectAll();
-    const top: Top = { groups: sqlTables.namespaceGroups.selectAll(), roots: namespaces };
+    const top: Top = { groupItems: sqlTables.namespaceGroups.selectAll(), rootItems: namespaces };
     const getTypeNames = (nodeStates: NodeStates): TypeNames => {
       const namespaceIds = namespaces
         .map((value) => value.id)
-        .filter((id) => nodeStates.showsChildren(Id.toBigNamespaceId(id), false));
+        .filter((id) => nodeStates.showsChildIds(Id.toBigNamespaceId(id), false));
       const typeNames = sqlTables.typeNames.selectWhereIn("namespaceId", namespaceIds);
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.namespaceId!]);
       return { typeNames, typeParents };
@@ -64,24 +57,24 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
 
   const viewOfReferences = (): ViewOf => {
     const assemblies = sqlTables.assemblies.selectAll();
-    const top: Top = { groups: sqlTables.assemblyGroups.selectAll(), roots: assemblies };
+    const top: Top = { groupItems: sqlTables.assemblyGroups.selectAll(), rootItems: assemblies };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const getTypeNames = (nodeStates: NodeStates): TypeNames => ({ typeNames: [], typeParents: [] });
     return { top, rootNodeType: NodeType.Assembly, leafType: NodeType.Assembly, getTypeNames };
   };
 
-  const createViewOf = (): ViewOf => {
-    switch (viewType) {
-      case "assemblies":
-        return viewOfAssemblies();
-      case "namespaces":
-        return viewOfNamespaces();
-      case "references":
-        return viewOfReferences();
-    }
-  };
+  switch (viewType) {
+    case "assemblies":
+      return viewOfAssemblies();
+    case "namespaces":
+      return viewOfNamespaces();
+    case "references":
+      return viewOfReferences();
+  }
+};
 
-  const { top, rootNodeType, leafType, getTypeNames } = createViewOf();
+export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Database => {
+  const { top, rootNodeType, leafType, getTypeNames } = createViewOf(sqlTables, viewType);
 
   const views = sqlTables.views.selectAll();
   const found = views.find((view) => view.viewType == viewType);
@@ -90,7 +83,7 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
 
   const getNodeStates = (): NodeStates => {
     const viewStates: Sql.ViewState[] = sqlTables.viewStates.selectWhere({ viewId });
-    return new NodeStates(viewStates);
+    return new NodeStates(viewStates, viewType);
   };
 
   const setAnyNodeState = (id: Id.AnyBigId, nodeState: NodeState): void => {
@@ -154,12 +147,12 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     const { typeNames, typeParents } = getTypeNames(nodeStates);
 
     // get methods
-    const expandedTypeIds = typeNames.map((value) => value.id).filter((id) => nodeStates.showsChildren(id, false));
+    const expandedTypeIds = typeNames.map((value) => value.id).filter((id) => nodeStates.showsChildIds(id, false));
     const methodNames = sqlTables.methodNames.selectWhereIn("typeId", expandedTypeIds);
     const methodParents = methodNames.map((methodName): [Id.AnyId, Id.AnyId] => [methodName.id, methodName.typeId]);
 
     const parents = new Map<Id.AnyId, Id.AnyId>(typeParents.concat(methodParents));
-    return { typeNames, methodNames, parents };
+    return { typeItems: typeNames, methodItems: methodNames, parentItems: parents };
   };
 
   return { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, resetNodeStates, getLeafs };

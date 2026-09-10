@@ -11,7 +11,14 @@ const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
   const leafs: { [name: string]: Node } = {};
 
   for (const name of names) {
-    const newLeaf: Leaf = { label: name, nodeId: toNameNodeId(nameType, name), parent: null, type };
+    const newLeaf: Leaf = {
+      label: name,
+      nodeId: toNameNodeId(nameType, name),
+      parent: null,
+      type,
+      collapsible: "none",
+      shown: "visible",
+    };
     groups.push(newLeaf);
     leafs[name] = newLeaf;
   }
@@ -35,7 +42,14 @@ export const createNestedClusters = (names: string[], nameType: NameTypes, separ
       partial = !partial ? part : `${partial}${separator}${part}`;
       // append the leaf if this is the leaf
       if (partial === name) {
-        const newLeaf: Leaf = { label: name, nodeId: toNameNodeId(nameType, name), parent, type };
+        const newLeaf: Leaf = {
+          label: name,
+          nodeId: toNameNodeId(nameType, name),
+          parent,
+          type,
+          collapsible: "none",
+          shown: "visible",
+        };
         nodes.push(newLeaf);
         leafs[name] = newLeaf;
       } else {
@@ -46,6 +60,8 @@ export const createNestedClusters = (names: string[], nameType: NameTypes, separ
           children: [],
           parent,
           type,
+          collapsible: "expanded",
+          shown: "visible",
         };
         if (!nodes.length || nodes[nodes.length - 1].label !== partial) nodes.push(newParent);
         const found = nodes[nodes.length - 1];
@@ -104,7 +120,15 @@ export const convertNamesToNodes = (
   // create a new root group and move into all subtrees whose label matches the predicate
   const regroup = (predicate: (name: string) => boolean, label: string, id: string): void => {
     const found = groups.filter((node) => predicate(node.label));
-    const parent = { label, nodeId: toNameNodeId("group", id), parent: null, children: found, type };
+    const parent: Parent = {
+      label,
+      nodeId: toNameNodeId("group", id),
+      parent: null,
+      children: found,
+      type,
+      collapsible: "expanded",
+      shown: "visible",
+    };
     found.forEach((child) => {
       child.parent = parent;
       remove(groups, child);
