@@ -7,8 +7,9 @@ import { bindImage } from "sut/image";
 import { createSqlCore } from "sut/openDataSource/createSqlCore";
 import { createImageData } from "sut/presenter/createImageData";
 import { Sql, ViewType } from "sut/sql2";
-import { createViewState } from "sut/viewState";
-import { Forest, printForest } from "sut/viewState/forest";
+import { createViewState, ViewState } from "sut/viewState";
+import { printForest } from "sut/viewState/printForest";
+import { Forest } from "sut/viewState/types";
 import { fileWrite } from "./file";
 import { fileCoreJson, fileViewState } from "./paths2";
 import {
@@ -19,7 +20,10 @@ import {
   printCallFromTypes,
 } from "./printCalls";
 
-const printLines = (filename: string, printed: string[]) => fileWrite(fileViewState(filename), printed.join("\r\n"));
+const printLines = (filename: string, printed: string[]) => {
+  log(filename);
+  fileWrite(fileViewState(filename), printed.join("\r\n"));
+};
 
 const getRootNodeType = (viewType: ViewType): RootNodeType => {
   switch (viewType) {
@@ -33,51 +37,6 @@ const getRootNodeType = (viewType: ViewType): RootNodeType => {
 
 const getForestNode = (forest: Forest, name: string, rootNodeType: AnyNodeType): Node | undefined =>
   forest.allNodes.find((value) => value.type == rootNodeType && value.label == name);
-
-const testViewState = async (viewType: ViewType, tables: Sql.Tables): Promise<void> => {
-  const createImage = bindImage((urlPath) => urlPath);
-
-  const viewState = createViewState(tables, viewType);
-  let suffix = 0;
-
-  const printViewState = async (): Promise<Forest> => {
-    const graphNodes = viewState.getGraphNodes();
-    const forest = graphNodes.forest;
-    const printed = printForest(forest);
-    printLines(`${viewType}-${suffix++}.txt`, printed);
-
-    const imageData = createImageData(graphNodes);
-    const image = await createImage(imageData);
-    assert(typeof image === "object");
-    renameSync(image.imagePath, fileViewState(`${viewType}-${suffix}.svg`));
-    return forest;
-  };
-
-  let forest = await printViewState();
-
-  let node = getForestNode(forest, "Core", getRootNodeType(viewType));
-  assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
-  forest = await printViewState();
-
-  node = getForestNode(forest, "Microsoft", NodeType.Group);
-  assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
-  forest = await printViewState();
-
-  node = getForestNode(forest, "System.Collections", NodeType.Group);
-  assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isHidden: true, isExpanded: true });
-  forest = await printViewState();
-
-  // choose a type which exists in the Core assembly and in the Core namespace
-  node = getForestNode(forest, "Program", NodeType.Type);
-  assert(!!node);
-  viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
-  forest = await printViewState();
-
-  const graphNodes = viewState.getGraphNodes();
-};
 
 const printTypeRefs = (tables: Sql.Tables): void => {
   type NamedOwner = { ownerId: Id.AnyOwnerId; fullName: string };
@@ -122,10 +81,14 @@ const assertCalls = (tables: Sql.Tables): void => {
   assertCalls({ toId: assemblyId });
 };
 
+const createTables = async (): Promise<Sql.Tables> => {
+  const dataSource: DataSource = { path: fileCoreJson, type: "coreJson" };
+  return await createSqlCore(dataSource);
+};
+
 describe("backend2", () => {
   it("loadCoreJson", async () => {
-    const dataSource: DataSource = { path: fileCoreJson, type: "coreJson" };
-    const tables = await createSqlCore(dataSource);
+    const tables = await createTables();
 
     assertCalls(tables);
 
@@ -157,11 +120,95 @@ describe("backend2", () => {
       result.setTypes.size == result.setMethods.size && difference(result.setMethods, result.setTypes).length == 0
     );
 
-    await testViewState("assemblies", tables);
-    await testViewState("namespaces", tables);
-
     printTypeRefs(tables);
 
     tables.close();
   });
+});
+
+describe("testViewStates", function () {
+  this.timeout(60000);
+
+  const createImage = bindImage((urlPath) => urlPath);
+  let tables: Sql.Tables;
+
+  before(async function () {
+    tables = await createTables(); // runs once
+  });
+
+  after(function () {
+    tables.close();
+  });
+
+  const viewTypes: ViewType[] = ["assemblies", "namespaces"];
+  for (const viewType of viewTypes) {
+    describe(`viewType: ${viewType}`, function () {
+      let viewState: ViewState;
+      //let forest: Forest;
+      let suffix = 0;
+
+      before(function () {
+        // safe: runs after tables is assigned
+        viewState = createViewState(tables, viewType);
+        viewState.resetNodeStates();
+        //forest = viewState.getGraphNodes().forest;
+      });
+
+      const getForest = (): Forest => viewState.getGraphNodes().forest;
+
+      const printViewState = async () => {
+        const graphNodes = viewState.getGraphNodes();
+        const forest = graphNodes.forest;
+        const printed = printForest(forest);
+        const filenameRoot = `${viewType}-${suffix++}`;
+        printLines(`${filenameRoot}.txt`, printed);
+
+        const imageData = createImageData(graphNodes);
+        const image = await createImage(imageData);
+        assert(typeof image === "object");
+        const filename = `${filenameRoot}.svg`;
+        renameSync(image.imagePath, fileViewState(filename));
+        log(filename);
+      };
+
+      it("initial state", async function () {
+        await printViewState();
+      });
+
+      it("expand Core node", async function () {
+        const forest = getForest();
+        const node = getForestNode(forest, "Core", getRootNodeType(viewType));
+        assert(!!node);
+        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
+        await printViewState();
+        // close it again before the next test, because it's expensive to show so many
+        // viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
+      });
+
+      it("collapse Microsoft nodes", async function () {
+        const forest = getForest();
+        const node = getForestNode(forest, "Microsoft", NodeType.Group);
+        assert(!!node);
+        viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
+        await printViewState();
+      });
+
+      it("hide System.Collections node", async function () {
+        const forest = getForest();
+        const node = getForestNode(forest, "System.Collections", NodeType.Group);
+        assert(!!node);
+        viewState.setNodeState(node.nodeId, node.type, { isHidden: true, isExpanded: true });
+        await printViewState();
+      });
+
+      it("expand Program node", async function () {
+        // choose a type which exists in the Core assembly and in the Core namespace
+        const forest = getForest();
+        const node = getForestNode(forest, "Program", NodeType.Type);
+        assert(!!node);
+        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
+        await printViewState();
+      });
+    });
+  }
 });
