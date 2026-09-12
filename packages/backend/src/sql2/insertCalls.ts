@@ -115,6 +115,16 @@ const insertToTypes = (tables: Tables) => {
   tables.calls.insertMany(found);
 };
 
+const insertToNamespace = (tables: Tables) => {
+  const callsFrom = tables.calls
+    .join(tables.typeNames, "id", "toId")
+    .where("typeNames.namespaceId IS NOT NULL")
+    .distinct()
+    .selectAll<Call>({ fromId: "calls.fromId", toId: "typeNames.namespaceId" });
+  logCount("insertToNamespace", callsFrom.length);
+  tables.calls.insertMany(callsFrom);
+};
+
 const insertToAssembly = (tables: Tables) => {
   const callsFrom = tables.calls
     .join(tables.typeNames, "id", "toId")
@@ -136,5 +146,6 @@ export const insertCalls = (tables: Tables): void => {
   logCount("typeRefs", signatureTypes.filter(Id.isOwnerTypeSpecId).length);
 
   insertToTypes(tables);
+  insertToNamespace(tables);
   insertToAssembly(tables);
 };

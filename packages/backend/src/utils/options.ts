@@ -12,8 +12,5 @@ export const options = {
   logApi: false,
   verticalClusters: true,
   customFolders: false, // disable if Graphviz older than v10 then rendering of edge-to-cluster doesn't work well
-  maxImageSize: {
-    nodes: 400,
-    edges: 1000,
-  },
+  maxImageSize: { nodes: 400, edges: 4000 },
 };

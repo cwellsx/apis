@@ -4,9 +4,10 @@ import { renameSync } from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import * as Id from "sut/id2";
 import { bindImage } from "sut/image";
-import { createSqlCore } from "sut/openDataSource/createSqlCore";
+import { createSqlCore, getDbFilename } from "sut/openDataSource/createSqlCore";
 import { createImageData } from "sut/presenter/createImageData";
 import { Sql, ViewType } from "sut/sql2";
+import { deleteFileSync } from "sut/utils";
 import { createViewState, ViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
 import { Forest } from "sut/viewState/types";
@@ -81,14 +82,18 @@ const assertCalls = (tables: Sql.Tables): void => {
   assertCalls({ toId: assemblyId });
 };
 
-const createTables = async (): Promise<Sql.Tables> => {
+const createTables = async (deleteDb: boolean): Promise<Sql.Tables> => {
   const dataSource: DataSource = { path: fileCoreJson, type: "coreJson" };
+  if (deleteDb) {
+    const filename = getDbFilename(dataSource);
+    deleteFileSync(filename);
+  }
   return await createSqlCore(dataSource);
 };
 
 describe("backend2", () => {
   it("loadCoreJson", async () => {
-    const tables = await createTables();
+    const tables = await createTables(false);
 
     assertCalls(tables);
 
@@ -133,7 +138,7 @@ describe("testViewStates", function () {
   let tables: Sql.Tables;
 
   before(async function () {
-    tables = await createTables(); // runs once
+    tables = await createTables(false); // runs once
   });
 
   after(function () {

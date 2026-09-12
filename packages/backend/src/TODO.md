@@ -2,7 +2,6 @@
 
 ## Near term
 
-- Debug - why not calls between namespaces?
 - Debug - expansion of nodes in the tree
 - Test - custom data
 - Test - "references" ViewType

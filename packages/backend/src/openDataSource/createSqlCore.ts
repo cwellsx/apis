@@ -51,3 +51,6 @@ export const createSqlCore = async (dataSource: DataSource): Promise<Sql.Tables>
 
   return openSql(filename, when, all);
 };
+
+// used by unit-test to delete the database before each test run
+export const getDbFilename = (dataSource: DataSource): string => getFilename(dataSource, "db");
