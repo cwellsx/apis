@@ -1,13 +1,30 @@
 Goal is as described in the [README](./README.md).
 
-- Now -- Refactor for VS Code Extension
+- Now -- Refactor
+- Next -- Begin to use an agent
 - Next -- Integrate in VS Code Extension
-- Next -- Use it experimentally and improve the UI
-- Later -- Further languages, documentation, maybe AI
+- Next -- Use experimentally and improve UI
+- Later -- Replace GraphViz
+- Later -- More languages, documentation, AI, ...
 
-Project was paused October 2024, restarted August 2025.
+## Now -- Refactor
 
-## Now -- Refactor for VS Code Extension
+Before continuing do a ground-up rewrite:
+
+- [x] Reimplement the .NET application
+- [x] Reimplement the SQL model
+- [-] Reimplement the backend
+- [ ] Reimplement the front end
+
+For current details and status see [`backend/src/TODO.md`](./packages/backend/src/TODO.md).
+
+## Next -- Begin to use an agent
+
+- Don't try an agent for the previous refactoring
+- Before continuing, install a local agent
+- Also revise the README
+
+## Next -- Integrate for VS Code Extension
 
 Port the existing Electron app to run alternatively as a VS Code extension,
 before further iterating on the UI.
@@ -47,24 +64,11 @@ VS Code has built-in support for multiple windows -- docking, splitting, etc.
 
 </details>
 
-### Caution -- cleanup required
-
-The next phases will be developing UI:
-
-- Implementing a VS Code version of the abstract UI
-- Iterating to add new features to the presentation layer
-
-Before then, i.e. now:
-
-- Fix every known issue in the current presentation layer
-- Use the current UI i.e. the Electron app to verify fixes
-
 ### Expected -- deliverable
 
+- New code in the `vscode-ext` package
+- Able to show the same data as the Electron application can
 - Backend code included in the builds of both applications
-- API receives data from the presentation layer to render in the UI
-- API sends events from the UI to update view state in the presentation layer
-- Backend code is bug-free and easy to maintain -- minimize technical debt
 
 ### Out of scope
 
@@ -75,260 +79,6 @@ I said "minimize technical debt" except documentation is out of scope
 - All `*.md` files are early prototypes -- unmaintained and unreliable
 - The only "supported" files are this ROADMAP and the [README](./README.md)
 </details>
-
-### How
-
-These are issues to be fixed before this phase is "done".
-
-<details><summary>Refactoring -- completed</summary>
-
-This refactoring is more-or-less complete now:
-
-- Create a monorepo for several packages
-- Same versions of dependencies for both applications
-- ESLint and TypeScript debugging of all packages including the backend
-- Remove Electron dependencies from the backend and define two abstract APIs
-- Refactor backend modules for cleaner public contracts and internal folder-level APIs
-- Test the result by regression-testing the Electron app
-
-Proof-of-concept for the VS Code extension to de-risk it:
-
-- Build and use the SQLite dependency
-- Implement a WebView to display an SVG
-- TypeScript in the WebView to make it interactive
-- Two-ways APIs between the WebView and the extension
-</details>
-
-<details><summary>netstandard</summary>
-
-There's something wrong with the implementation which should resolve netstandard types like System.Object
-
-Currently this is hidden by disabling resolution of Microsoft types.
-
-To reproduce the problem, change the `Convert(IEnumerable<VariableReference>` method
-to not exclude Microsoft types.
-
-Try to fix this with a unit-test which tries a resolve a TypeReference to System.Object.
-
-</details>
-
-<details><summary>isCompilerMethod</summary>
-
-Remove:
-
-- `*.ts` code which sets `isCompilerMethod` and `isCompilerType`
-- code which toggles the display of compiler-generated types and methods
-- `info` and error from `Columns.CompilerMethodColumns`
-- `compilerMethods.ts`
-
-</details>
-
-<details><summary>More unit-testing</summary>
-
-I've begun to write unit-tests -- see backend-test -- but they're barely started and far from complete.
-
-They ought to cover whatever UIs are documented as samples.
-
-</details>
-
-<details><summary>leafHidden instead of leafVisible</summary>
-
-This is currently used as view state:
-
-```ts
-export type GraphFilter = { leafVisible: NodeId[]; groupExpanded: NodeId[] };
-```
-
-This requires that visible nodes be listed explicitly, which is a problem:
-
-- An invisible top-level node can't be toggled
-- We need to synthesize this list when new model data is inserted
-
-Instead reverse the logic to use `leafHidden` instead.
-
-So, by default, all top-level nodes in a view will be neither hidden nor expanded.
-
-</details>
-
-<details><summary>Simplify TypeId</summary>
-
-The current TypeId is a structure of properties:
-
-```cs
-public sealed record TypeId(
-    string AssemblyName,
-    string? Namespace,
-    string Name,
-    Values<TypeId> GenericTypeArguments,
-    TypeId? DeclaringType,
-    TypeKind? Kind,
-    TypeId? ElementType,
-    int MetadataToken
-    )
-```
-
-It may be more sensible to replace these with a single string FullName value:
-
-```
-{AssemblyName}::{Namespace}.{DeclaringType+}.{Name}[{Args}]{ElementSuffix}
-```
-
-Where:
-
-- Generic arguments use recursive canonical strings
-- Generic parameters use !0, !1, !!0, !!1
-- Element types use [], \*, &
-
-In ECMA‑335, generic parameters are represented as:
-
-- Type parameters: !0, !1, !2, …
-- Method parameters: !!0, !!1, !!2, …
-
-If ElementType is not null:
-
-- Array: ElementTypeFullName + "[]"
-- Pointer: ElementTypeFullName + "\*"
-- ByRef: ElementTypeFullName + "&"
-
-</details>
-
-<details><summary>Maintain GraphFilter in the backend</summary>
-
-Currently in the Electron app the GraphFilter data is:
-
-- Displayed in a 3rd-party React component named `CheckboxTree`
-- Mutated by the CheckboxTree when the user interacts with the UI
-- Returned to the backend as a filter for the presentation layer
-
-This must be changed:
-
-- A VS Code extension will use `vscode.TreeView` instead of `CheckboxTree`
-- Logic to mutate the view state belongs in the backend
-
-</details>
-
-<details><summary>Tighten coupling between model and presentation</summary>
-
-Currently the presentation layer:
-
-- Selects data from the model
-- Filters or post-processes the data
-- Sends the result to the UI
-
-This won't scale when the model is huge.
-
-- Both CPU and memory limit how much data the presentation layer should process
-- The SQLite layer is better able to handle this:
-  - Data is stored on disk, not in process memory, with its I/O cached by the O/S
-  - It should be quick enough to select however many elements can reasonably be shown on one view
-
-So use the model API to select only whatever data will be displayed.
-
-Goal is that the delay should always be negligible compared to the time it takes for GraphViz to render the SVG.
-
-</details>
-
-<details><summary>Multiple view instance</summary>
-
-Currently view state is stored in the same database as the model
-so there is only one view per model.
-
-To support multiple views (multiple windows or display panels) per model
-the view state tables must be duplicated or have some a "view ID" column added.
-
-</details>
-
-<details><summary>Grouping names</summary>
-
-It's common for namespaces and assemblies to have long, compound names, e.g.:
-
-- `System.Reflection.MetadataLoadContext`
-
-A feature to make the overview useful is to split these names to group them, e.g. to create these parent nodes:
-
-- `System`
-- `System.Reflection`
-
-This is currently implemented in the presentation layer:
-
-- This implementation is difficult
-- Instead it might be better to do it by injecting synthetic tokens into the model
-
-If not then at least it needs to be tidied in the presentation layer, where there's currently different implementations for different view types.
-
-</details>
-
-<details><summary>Unit tests</summary>
-
-I hoped to delay writing unit tests
-until I began to take screenshots for documentation --
-those screenshots would be "contracts" and unit-tests could regression-test selecting the data which they present.
-
-Instead perhaps I should begin to write at least unit-tests now --
-when, what, and why are still TBD.
-
-</details>
-
-<details><summary>Compress Core.json</summary>
-
-The JSON has more data than needed e.g. this
-
-```
-                "propertyType": {
-                  "assemblyName": "System.Private.CoreLib",
-                  "namespace": "System",
-                  "name": "Nullable`1",
-                  "genericTypeArguments": [
-                    {
-                      "assemblyName": "System.Private.CoreLib",
-                      "namespace": "System",
-                      "name": "Boolean",
-                      "metadataToken": 33554682
-                    }
-                  ],
-                  "metadataToken": 33554827
-                },
-```
-
-There are three types of token:
-
-- TypeDef (defined in this assembly)
-- TypeRef (imported from an external assembly)
-- TypeSpec (specialized from a generic)
-
-The distinction isn't in System.Reflection but in System.Reflection.Metadata
-
-</details>
-
-<details><summary>More TODO</summary>
-
-There's an older TODO file here:
-
-- [TODO](./docs//unknown.old/TODO.md)
-
-Careful -- there are many items in this list
-
-- Some may be obsolete
-- Many are details of the Electron app UI, which is deprecated for now with focus on the VS Code Extension instead
-- Some are already mentioned in this roadmap
-- Some of these items may still be valid
-
-This TODO should be reviewed and integrated into this ROADMAP.
-
-</details>
-
-## Next -- Integrate in VS Code Extension
-
-Integrate the shared backend into the VS Code Extension,
-
-### Why -- Goals
-
-So that data from the backend renders in VS Code as well as it does in the Electron application.
-
-### Expected -- deliverable
-
-- New code in the `vscode-ext` package
-- Able to show the same data as the Electron application can
 
 ### How
 
@@ -363,10 +113,6 @@ The visible nodes are displayed in a tree view as well as on the graph.
 - In the Electron app these are displayed in a 3rd-party React component.
 - In the VS Code extension it would be better to use the `vscode.TreeView`
 
-There are differences between these components e.g. the VS Code TreeView cannot display a checkbox with each item.
-
-How to render this using VS Code is still TBD.
-
 </details>
 
 <details><summary>WebView (for the graph)</summary>
@@ -393,26 +139,16 @@ Displaying lines of code is TBD.
 
 </details>
 
-## Next -- Use it experimentally and improve the UI
+## Next -- Use experimentally and improve UI
 
-When application's UI runs "as designed", it's time to experiment to make it more usable.
-
-### Why -- Goals
-
-Making it useful will be challenging and rewarding.
+When it runs "as designed" then experiment to make it more usable.
 
 - The problem is that real-world code is large and difficult to navigate.
 - Graphical views are easily overwhelmed when showing more than a "toy" quantity of data
 
-### Expected -- deliverable
+So try it on real-world software and ask,
 
-- Genuinely useful tool for me to use, to explore a real codebase, and to share with colleagues
-
-### How
-
-To resolve this I expect to try it on real-world software and ask
-
-> How would I like to manipulate this view, to summarize, drill down into, and/or extract from this data?
+> How would I like to manipulate this view -- to summarize, drill down into, and/or extract from this data?
 
 I expect this experiment will rapidly develop a list of new UI features to be implemented.
 
@@ -440,7 +176,112 @@ A similar use case for this is in network endpoints, e.g. the server endpoint of
 
 </details>
 
-## Later -- Further languages, documentation, maybe AI
+<details><summary>Synthetic namespaces</summary>
+
+The graph isn't useful for displaying 100 nodes.
+
+- For example there are 100 types in the Core.exe of the backend-dotnet package
+- These are viewable because, in the source code, they are subdivided/clustered into namespaces
+- Some other worse codebases might not use namespaces internally
+
+The solution might be to synthesize namespaces or clusters of types.
+
+<details><summary>Graph clustering algorithms</summary>
+Use algorithms to find communities -- groups of types that are strongly connected internally but weakly connected externally
+
+- Louvain modularity
+- Leiden
+- Girvan–Newman
+- Infomap
+- Spectral clustering
+
+This is used by NDepend’s Dependency Matrix and Dependency Graph auto‑grouping.
+
+</details>
+
+<details><summary>Name‑pattern clustering</summary>
+Types often follow naming conventions:
+
+- `FooService`, `BarService`, `BazService` → “Services”
+- `FooController`, `BarController` → “Controllers”
+- `FooRepository`, `BarRepository` → “Repositories”
+- `FooManager`, `BarManager` → “Managers”
+- `FooHelper`, `BarHelper` → “Helpers”
+
+You can infer clusters based on suffixes or prefixes.
+
+This is used by VS Architecture Explorer.
+
+</details>
+
+<details><summary>User-defined groups</summary>
+Instead of trying to infer groups automatically:
+
+- User creates their own synthetic groups
+- Maybe drag and drop to assign nodes to groups
+
+Or use chat with an agent to edit a mapping file -- lets the user describe what and how they want to group.
+
+</details>
+
+</details>
+
+<details><summary>Progressive reveal</summary>
+
+Different types of progressive reveal:
+
+- Outside in -- edges between clusters while hiding their internal detail
+- Internal -- edges within a cluster while hiding its external edges
+- Focused -- all edges, near and far, of a single component
+
+</details>
+
+## Later -- Replace GraphViz
+
+GraphViz cannot generate some kind of diagram, e.g.
+
+- Top-level clusters on the graph
+- Details of each cluster within each cluster
+- Zoom into the cluster to view its details
+- i.e. cluster as nested canvasses
+
+Also:
+
+- Reflow layout interactively
+
+Some alternatives are as follows:
+
+- Cytoscape.js -- easiest interactive solution
+- ELK.js -- best layout quality + nested nodes
+- Dagre + D3 -- most customizable
+
+<details><summary>Cytoscape.js</summary>
+
+- Many features -- zooming, panning, collapse/expand, incremental reveal, dynamic layout, custom styling
+- JSON input -- easy conversion from DOT
+- Layout not as pretty as GraphViz but can use Dagre (Graphviz‑like) inside Cytoscape
+
+</details>
+
+<details><summary>ELK.js (Eclipse Layout Kernel)</summary>
+
+- Modern successor to Graphviz for hierarchical layouts
+- Has a WASM version (ELK.js)
+- Supports nested nodes, pan, zoom, better at large graphs than GraphViz, used in VS Code extensions
+- No built‑in viewer -- embed ELK in your own canvas/SVG UI
+
+</details>
+
+<details><summary>Dagre + D3.js</summary>
+
+- JavaScript port of Graphviz’s DOT layout algorithm
+- Works with D3.js for zoom/pan
+- No built‑in nested cluster navigation => more engineering effort
+- This is a “Graphviz‑but-interactive” toolkit
+
+</details>
+
+## Later -- More languages, documentation, AI, ...
 
 With the previous stage finished, the tool is now useful for me and perhaps my colleagues.
 
