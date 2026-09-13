@@ -11,7 +11,7 @@ import type {
 import { nodeIdToText, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
-import * as Icon from "./Icons.Microsoft";
+import { ImageLibrary as Icon } from "./images.tsx";
 
 const makeNode = (
   textNode: Named,

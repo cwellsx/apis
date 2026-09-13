@@ -14,7 +14,8 @@
     "unit-test-1": "ts-node ./tests/customNodes.tests.ts",
     "watch": "tsc --noEmit --watch",
     "type-check": "tsc --noEmit",
-    "show-abi": "electron --abi"
+    "show-abi": "electron --abi",
+    "build-icons": "build-icons.bat"
   },
   "keywords": [
     ".NET",

@@ -24,10 +24,7 @@ const SvgMethodInternal = (props: SVGProps<SVGSVGElement>) => (
           className="MethodInternal_svg__light-purple"
         />
       </g>
-      <path
-        d="M6.009 2.4 10.5 5.189 6 7.787l-4.5-2.6Z"
-        className="MethodInternal_svg__light-purple-10"
-      />
+      <path d="M6.009 2.4 10.5 5.189 6 7.787l-4.5-2.6Z" className="MethodInternal_svg__light-purple-10" />
       <path
         d="m5.754 8.221-4.5-2.6-.014-.858L5.746 1.97h.528l4.491 2.8-.015.857-4.5 2.6Zm-3.28-3.047L6 7.21l3.528-2.036-3.519-2.191Z"
         className="MethodInternal_svg__light-purple"

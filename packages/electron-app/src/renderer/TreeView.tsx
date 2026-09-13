@@ -1,7 +1,7 @@
 import type { Node } from "backend-ui";
 import { isLeaf, isParent, nodeIdToText } from "backend-ui";
 import * as React from "react";
-import * as Icon from "./Icons";
+import { MaterialIcon as Icon } from "./images.tsx";
 import "./TreeView.scss";
 
 // initialize using SVG icons

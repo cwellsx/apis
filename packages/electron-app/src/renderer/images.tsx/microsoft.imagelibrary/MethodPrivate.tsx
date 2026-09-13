@@ -24,10 +24,7 @@ const SvgMethodPrivate = (props: SVGProps<SVGSVGElement>) => (
           className="MethodPrivate_svg__light-purple"
         />
       </g>
-      <path
-        d="M6.009 2.4 10.5 5.189 6 7.787l-4.5-2.6Z"
-        className="MethodPrivate_svg__light-purple-10"
-      />
+      <path d="M6.009 2.4 10.5 5.189 6 7.787l-4.5-2.6Z" className="MethodPrivate_svg__light-purple-10" />
       <path
         d="m5.753 8.221-4.5-2.6-.013-.858L5.746 1.97h.527l4.491 2.8-.014.857-4.5 2.6ZM2.474 5.174 6 7.21l3.528-2.036-3.519-2.191Z"
         className="MethodPrivate_svg__light-purple"

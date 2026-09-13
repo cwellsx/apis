@@ -24,10 +24,7 @@ const SvgMethodProtected = (props: SVGProps<SVGSVGElement>) => (
           className="MethodProtected_svg__light-purple"
         />
       </g>
-      <path
-        d="m6 2.447 4.529 2.6-4.518 2.64-4.522-2.634Z"
-        className="MethodProtected_svg__light-purple-10"
-      />
+      <path d="m6 2.447 4.529 2.6-4.518 2.64-4.522-2.634Z" className="MethodProtected_svg__light-purple-10" />
       <path
         d="M5.759 8.119 1.237 5.484V4.62l4.514-2.6h.5l4.528 2.6v.866L6.263 8.119ZM2.486 5.055 6.01 7.108l3.524-2.061L6 3.024Z"
         className="MethodProtected_svg__light-purple"

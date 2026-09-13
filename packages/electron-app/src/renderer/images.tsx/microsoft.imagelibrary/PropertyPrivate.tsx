@@ -28,10 +28,7 @@ const SvgPropertyPrivate = (props: SVGProps<SVGSVGElement>) => (
         d="M10.026 8.992a3.96 3.96 0 0 1-4-4 3.96 3.96 0 0 1 4-4 4.2 4.2 0 0 1 1.441.24l-2.882 2.96 2.241 2.24 2.959-2.881a4.2 4.2 0 0 1 .241 1.441 4 4 0 0 1-.57 2.054 2.9 2.9 0 0 0-3.264 1.929c-.056.003-.109.017-.166.017"
         className="PropertyPrivate_svg__light-defaultgrey"
       />
-      <path
-        d="M15.5 11.5v4h-5v-4Z"
-        className="PropertyPrivate_svg__light-defaultgrey-10"
-      />
+      <path d="M15.5 11.5v4h-5v-4Z" className="PropertyPrivate_svg__light-defaultgrey-10" />
       <path
         d="M15.5 11H15v-1a2 2 0 0 0-4 0v1h-.5l-.5.5v4l.5.5h5l.5-.5v-4ZM12 10a1 1 0 0 1 2 0v1h-2Zm3 5h-4v-3h4Z"
         className="PropertyPrivate_svg__light-defaultgrey"

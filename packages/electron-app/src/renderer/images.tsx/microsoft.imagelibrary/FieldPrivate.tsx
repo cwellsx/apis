@@ -24,10 +24,7 @@ const SvgFieldPrivate = (props: SVGProps<SVGSVGElement>) => (
           className="FieldPrivate_svg__light-blue"
         />
       </g>
-      <path
-        d="M13.418 5.22 5.239 9.764 1.6 6.129l8.18-4.545Z"
-        className="FieldPrivate_svg__light-blue-10"
-      />
+      <path d="M13.418 5.22 5.239 9.764 1.6 6.129l8.18-4.545Z" className="FieldPrivate_svg__light-blue-10" />
       <path
         d="m5.477 10.194-.586-.082-3.635-3.635.109-.777 8.178-4.546.587.083 3.636 3.635-.108.778ZM2.455 6.285l2.869 2.869 7.266-4.036-2.869-2.869Z"
         className="FieldPrivate_svg__light-blue"
