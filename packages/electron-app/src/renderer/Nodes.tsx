@@ -27,7 +27,7 @@ const convert = (node: TreeNode): CheckboxNode => {
 
 const getNodes = (nodes: TreeNode[] | null): CheckboxNode[] => (nodes ? nodes.map(convert) : []);
 
-export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
+export const Nodes: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const { leafVisible, nodes, groupExpanded, checkModel } = props;
 
   // use these to round-trip to get a new View

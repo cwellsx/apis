@@ -15,8 +15,8 @@ import { CustomDetails } from "./CustomDetails";
 import { Message } from "./elements";
 import { Graph } from "./Graph";
 import { MethodDetails } from "./MethodDetails";
+import { Nodes } from "./Nodes";
 import { ChooseGraphViewOptions } from "./Options";
-import { Tree } from "./Tree";
 
 export const getLeft = (
   view: ViewGraph,
@@ -36,7 +36,7 @@ export const getLeft = (
         appOptions={appOptions}
         onAppOptions={onAppOptions}
       />
-      <Tree
+      <Nodes
         checkModel={checkModel}
         nodes={view.groups}
         leafVisible={leafVisible.map(nodeIdToText)}
