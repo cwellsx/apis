@@ -1,16 +1,14 @@
 import { MethodName } from "backend-ui";
 import * as React from "react";
 
-export const makeRow = (first: string, second: JSX.Element | string) => (
+export const makeRow = (first: string, second: React.ReactNode | string) => (
   <tr>
     <th>{first}</th>
     <td>{second}</td>
   </tr>
 );
 
-type MethodTitleProps = {
-  title: MethodName;
-};
+type MethodTitleProps = { title: MethodName };
 export const MethodTitle: React.FunctionComponent<MethodTitleProps> = (props: MethodTitleProps) => {
   const { title } = props;
   return (

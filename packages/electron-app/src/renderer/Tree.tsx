@@ -1,11 +1,10 @@
 import type { Node as TreeNode } from "backend-ui";
 import { isParent, nodeIdToText } from "backend-ui";
 import * as React from "react";
-import CheckboxTree, { Node as CheckboxNode } from "react-checkbox-tree";
+import { Node as CheckboxNode } from "react-checkbox-tree";
 import "react-checkbox-tree/lib/react-checkbox-tree.css";
 import "./3rd-party/CheckboxTree.css";
 import "./Tree.css";
-import { icons } from "./checkboxTreeIcons";
 
 type TreeProps = {
   nodes: TreeNode[] | null;
@@ -35,18 +34,19 @@ export const Tree: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const onCheck = (value: string[]) => props.setLeafVisible(value);
   const onExpand = (value: string[]) => props.setGroupExpanded(value);
 
-  return (
-    <CheckboxTree
-      checkModel={checkModel}
-      nodes={getNodes(nodes)}
-      checked={leafVisible}
-      expanded={groupExpanded}
-      onCheck={onCheck}
-      onExpand={onExpand}
-      icons={icons}
-      showNodeIcon={false}
-      id="treeid"
-      showExpandAll={true}
-    />
-  );
+  return <>stub</>;
+  // return (
+  //   <CheckboxTree
+  //     checkModel={checkModel}
+  //     nodes={getNodes(nodes)}
+  //     checked={leafVisible}
+  //     expanded={groupExpanded}
+  //     onCheck={onCheck}
+  //     onExpand={onExpand}
+  //     icons={icons}
+  //     showNodeIcon={false}
+  //     id="treeid"
+  //     showExpandAll={true}
+  //   />
+  // );
 };

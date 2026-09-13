@@ -5,7 +5,7 @@ import { Config, config, ConfigKvps } from "./config";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = "2026-08-08";
+const schemaVersion = "2026-09-12";
 
 export type Boolean = 0 | 1;
 
@@ -182,7 +182,7 @@ const newTables = (db: SqlDatabase): Tables => {
   const assemblyGroups = db.newSqlTable("assemblyGroups", "id", row.assemblyGroups);
   const namespaceGroups = db.newSqlTable("namespaceGroups", "id", row.namespaceGroups);
 
-  const configKvps = db.newSqlTable("config", "key", row.configKvps);
+  const configKvps = db.newSqlTable("configKvps", "key", row.configKvps);
 
   const close = () => {
     db.done();

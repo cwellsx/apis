@@ -301,15 +301,16 @@ export const ChooseGraphViewOptions: React.FunctionComponent<ChooseGraphViewOpti
 
   const { isClosed, onToggle } = detailsClosed(appOptions, onAppOptions, "graph");
 
-  return (
-    <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
-      <summary>Options</summary>
-      {ShowClustered(props)}
-      {ShowCustom(props)}
-      {ShowEdgeLabels(props)}
-      {ShowIntraAssemblyCalls(props)}
-    </details>
-  );
+  return <>stub</>;
+  // return (
+  //   <details open={!isClosed} onToggle={(event) => onToggle(event.currentTarget)}>
+  //     <summary>Options</summary>
+  //     {ShowClustered(props)}
+  //     {ShowCustom(props)}
+  //     {ShowEdgeLabels(props)}
+  //     {ShowIntraAssemblyCalls(props)}
+  //   </details>
+  // );
 };
 
 const detailsClosed = (

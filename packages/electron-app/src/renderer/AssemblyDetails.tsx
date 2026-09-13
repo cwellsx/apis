@@ -10,13 +10,12 @@ import type {
 } from "backend-ui";
 import { nodeIdToText, textToNodeId } from "backend-ui";
 import * as React from "react";
-import CheckboxTree, { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
+import { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
 import * as Icon from "./Icons.Microsoft";
-import { icons } from "./checkboxTreeIcons";
 
 const makeNode = (
   textNode: Named,
-  icon: JSX.Element,
+  icon: React.ReactNode,
   className: ClassName,
   children?: CheckboxNode[]
 ): CheckboxNode => {
@@ -110,14 +109,14 @@ const convertTypes = (types: Type[] | undefined): CheckboxNode[] => (types ? typ
 const convertType = (type: Type): CheckboxNode => {
   const makeMemberNode = (
     memberInfo: MemberInfo,
-    getIcon: (access: Access) => JSX.Element,
+    getIcon: (access: Access) => React.ReactNode,
     className: ClassName
   ): CheckboxNode =>
     makeNode(memberInfo, getIcon(memberInfo.access), className, memberInfo.attributes.map(convertAttribute));
 
   const makeMemberNodes = (
     members: MemberInfo[],
-    getIcon: (access: Access) => JSX.Element,
+    getIcon: (access: Access) => React.ReactNode,
     className: ClassName
   ): CheckboxNode[] =>
     members
@@ -184,19 +183,20 @@ export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: De
     props.onDetailEvent({ id: textToNodeId(node.value), viewType: "assemblyDetails" });
   };
 
-  return (
-    <>
-      <h2>Assembly</h2>
-      <CheckboxTree
-        nodes={nodes}
-        expanded={expanded}
-        onExpand={setExpanded}
-        icons={icons}
-        showNodeIcon={true}
-        id="treeid"
-        showExpandAll={false}
-        onClick={onClick}
-      />
-    </>
-  );
+  return <>stub</>;
+  // return (
+  //   <>
+  //     <h2>Assembly</h2>
+  //     <CheckboxTree
+  //       nodes={nodes}
+  //       expanded={expanded}
+  //       onExpand={setExpanded}
+  //       icons={icons}
+  //       showNodeIcon={true}
+  //       id="treeid"
+  //       showExpandAll={false}
+  //       onClick={onClick}
+  //     />
+  //   </>
+  // );
 };

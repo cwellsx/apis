@@ -25,7 +25,7 @@ export const TextView: React.FunctionComponent<TextViewProps> = (props: TextView
   );
 };
 
-const getText = (props: TextViewProps): JSX.Element => {
+const getText = (props: TextViewProps): React.ReactNode => {
   const { view } = props;
   switch (view.viewType) {
     case "greeting":

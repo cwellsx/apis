@@ -24,7 +24,7 @@ export const getLeft = (
   onGraphFilter: (filterEvent: FilterEvent) => void,
   appOptions: AppOptions,
   onAppOptions: (appOptions: AppOptions) => void
-): JSX.Element => {
+): React.ReactNode => {
   const { graphViewOptions: viewOptions, graphFilter } = view;
   const { leafVisible, groupExpanded, isCheckModelAll } = graphFilter;
   const checkModel = isCheckModelAll ? "all" : "leaf";
@@ -52,7 +52,11 @@ export const getLeft = (
   );
 };
 
-export const getCenter = (view: ViewGraph, onGraphEvent: OnUserEvent<GraphEvent>, zoomPercent: number): JSX.Element => {
+export const getCenter = (
+  view: ViewGraph,
+  onGraphEvent: OnUserEvent<GraphEvent>,
+  zoomPercent: number
+): React.ReactNode => {
   // display a message, or an image if there is one
   if (typeof view.image === "string") return <Message message={view.image} />;
 
@@ -71,7 +75,7 @@ export const getCenter = (view: ViewGraph, onGraphEvent: OnUserEvent<GraphEvent>
 export const getRight = (
   details: ViewDetails | undefined,
   onDetailEvent: OnUserEvent<DetailEvent>
-): JSX.Element | undefined => {
+): React.ReactNode | undefined => {
   if (!details) return undefined;
   switch (details.detailType) {
     case "assemblyDetails":

@@ -24,7 +24,7 @@ import { getScrollbarWidth } from "./scrollbarWidth";
 */
 
 type DefaultSize = string | number;
-type Ref = React.RefObject<HTMLElement>;
+type Ref = React.RefObject<HTMLDivElement | null>;
 type Pair = [DefaultSize, Ref];
 export type Input = DefaultSize | Pair;
 
