@@ -1,13 +1,9 @@
-import type { Node as TreeNode } from "backend-ui";
-import { isParent, nodeIdToText } from "backend-ui";
+import type { Node } from "backend-ui";
 import * as React from "react";
-import { Node as CheckboxNode } from "react-checkbox-tree";
-import "react-checkbox-tree/lib/react-checkbox-tree.css";
-import "./3rd-party/CheckboxTree.css";
-import "./Tree.css";
+import { TreeView } from "./TreeView";
 
 type TreeProps = {
-  nodes: TreeNode[] | null;
+  nodes: Node[];
   leafVisible: string[];
   groupExpanded: string[];
   checkModel: "all" | "leaf";
@@ -15,38 +11,21 @@ type TreeProps = {
   setGroupExpanded: (names: string[]) => void;
 };
 
-// convert from GroupNode (defined in "../shared-types") to CheckboxNode (defined in "react-checkbox-tree")
-const convert = (node: TreeNode): CheckboxNode => {
-  return {
-    label: node.label,
-    // a parent node may have the same label as its first child, so mangle the id of all parents
-    value: nodeIdToText(node.nodeId),
-    children: isParent(node) ? node.children.sort((x, y) => x.label.localeCompare(y.label)).map(convert) : undefined,
-  };
-};
-
-const getNodes = (nodes: TreeNode[] | null): CheckboxNode[] => (nodes ? nodes.map(convert) : []);
+function remove<T>(items: T[], item: T) {
+  const index = items.indexOf(item);
+  items.splice(index, 1);
+}
 
 export const Nodes: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const { leafVisible, nodes, groupExpanded, checkModel } = props;
 
-  // use these to round-trip to get a new View
-  const onCheck = (value: string[]) => props.setLeafVisible(value);
-  const onExpand = (value: string[]) => props.setGroupExpanded(value);
+  const onToggle: (id: string) => void = (id) => {
+    if (groupExpanded.includes(id)) remove(groupExpanded, id);
+    else groupExpanded.push(id);
+    props.setGroupExpanded(groupExpanded);
+  };
 
-  return <>stub</>;
-  // return (
-  //   <CheckboxTree
-  //     checkModel={checkModel}
-  //     nodes={getNodes(nodes)}
-  //     checked={leafVisible}
-  //     expanded={groupExpanded}
-  //     onCheck={onCheck}
-  //     onExpand={onExpand}
-  //     icons={icons}
-  //     showNodeIcon={false}
-  //     id="treeid"
-  //     showExpandAll={true}
-  //   />
-  // );
+  const renderNode: (node: Node) => React.ReactNode = (node) => node.label;
+
+  return <TreeView roots={nodes} onToggle={onToggle} renderNode={renderNode} />;
 };

@@ -1,0 +1,34 @@
+ul.tree-root {
+  list-style: none;
+  margin: 0;
+  padding-left: 0;
+
+  .tree-expander {
+    font-family: "Cascadia Code", "JetBrains Mono", "Consolas", "Courier New", monospace;
+    /* font-size: 14px; or whatever matches your UI */
+    line-height: 1;
+    padding: 0 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+  }
+
+  .tree-children {
+    list-style: none;
+    margin: 0;
+    padding-left: 1rem; /* indent children */
+  }
+
+  .tree-item {
+    margin: 0;
+    padding: 0;
+  }
+
+  .tree-expander svg {
+    width: 1em;
+    height: 1em;
+    display: inline-block;
+    vertical-align: middle;
+    fill: currentColor;
+  }
+}
