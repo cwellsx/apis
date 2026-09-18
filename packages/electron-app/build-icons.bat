@@ -12,4 +12,8 @@ REM Second command
 echo building "%IMG_DIR%\microsoft.imagelibrary"
 call npx @svgr/cli --out-dir "%IMG_DIR%\..\images.tsx\microsoft.imagelibrary" --typescript --index-template "%IMG_DIR%\index-template.js" -- "%IMG_DIR%\microsoft.imagelibrary"
 
+REM Third command
+echo building "%IMG_DIR%\microsoft.codicons"
+call npx @svgr/cli --out-dir "%IMG_DIR%\..\images.tsx\microsoft.codicons" --typescript --index-template "%IMG_DIR%\index-template.js" -- "%IMG_DIR%\microsoft.codicons"
+
 endlocal

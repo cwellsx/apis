@@ -3,6 +3,8 @@
 ## Near term
 
 - Debug - expansion of nodes in the tree
+- Refactor - combine the SVG elements and containers
+- Debug - hourglass and prevent overlapping input events from user
 - Test - custom data
 - Test - "references" ViewType
 - Test - TPOSS
@@ -12,6 +14,7 @@
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
 - Implement - details and call graphs for Core data
 - Implement - network APIs
+- Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 
 ## Long term -- replace modules
 

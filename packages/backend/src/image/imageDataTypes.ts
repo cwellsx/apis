@@ -1,5 +1,7 @@
 import type { Image, Leaf, Node, Parent } from "../contracts-ui";
 
+// TODO delete ImageNode
+
 export type ImageLeaf = {
   node: Leaf;
   type: "leaf";

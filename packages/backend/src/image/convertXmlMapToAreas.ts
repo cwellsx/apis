@@ -62,6 +62,7 @@ export function convertXmlMapToAreas(xml: string, getNodeAttributes: (id: string
   const root: ElementCompact = xml2js(xml, { compact: true });
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
   const converted: Attributes[] | Attributes = root["map"]["area"];
+  if (!converted) return [];
   const areas: Attributes[] = Array.isArray(converted) ? converted : [converted];
 
   // very long edges are split (by GraphViz) into two areas with identical id values

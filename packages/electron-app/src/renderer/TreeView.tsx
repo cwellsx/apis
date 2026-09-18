@@ -1,47 +1,54 @@
 import type { Node } from "backend-ui";
 import { isLeaf, isParent, nodeIdToText } from "backend-ui";
 import * as React from "react";
-import { MaterialIcon as Icon } from "./images.tsx";
+import { CheckBox, Checked } from "./CheckBox";
+import { Codeicons } from "./images.tsx";
 import "./TreeView.scss";
 
-// initialize using SVG icons
-// the ./icons folder at the root of this project shows how these SVG components were created
-// if we want default icons then we would need to include FontAwsome
-const icons = {
-  check: <Icon.SvgCheckBox />,
-  uncheck: <Icon.SvgCheckBoxOutlineBlank />,
-  halfCheck: <Icon.SvgIndeterminateCheckBox />,
-  expandClose: <Icon.SvgChevronRight />,
-  expandOpen: <Icon.SvgExpandMore />,
-  expandAll: <Icon.SvgAddBox />,
-  collapseAll: <Icon.SvgRemove />,
-  parentClose: <Icon.SvgFolder />,
-  parentOpen: <Icon.SvgFolderOpen />,
-  leaf: <Icon.SvgNote />,
+// SVG icons
+const chevronRight = <Codeicons.SvgChevronRight />;
+const chevronDown = <Codeicons.SvgChevronDown />;
+
+type OnToggle = (id: string) => void;
+
+type TreeItemProps = {
+  node: Node;
+  onToggleExpand: OnToggle;
+  onToggleCheck: OnToggle | null;
+  renderNode: (node: Node) => React.ReactNode;
 };
 
-type TreeItemProps = { node: Node; onToggle: (id: string) => void; renderNode: (node: Node) => React.ReactNode };
-
-const TreeItem: React.FC<TreeItemProps> = ({ node, onToggle, renderNode }) => {
+const TreeItem: React.FC<TreeItemProps> = ({ node, onToggleExpand, onToggleCheck, renderNode }) => {
   const id = nodeIdToText(node.nodeId);
 
   const isGroup = !isLeaf(node);
   const isExpanded = isParent(node);
 
+  const getCheckBox = (): React.ReactNode => {
+    if (onToggleCheck == null) return <></>;
+    const onToggle = () => onToggleCheck(id);
+    const checked: Checked = node.shown == "visible" ? true : node.shown == "hidden" ? false : "mixed";
+    return <CheckBox onToggle={onToggle} checked={checked} />;
+  };
+
   return (
     <li className="tree-item">
       <div className="tree-row">
-        {isGroup && (
+        {isGroup ? (
           <button
             type="button"
             className="tree-expander"
             aria-label={isExpanded ? "Collapse" : "Expand"}
             aria-expanded={isExpanded}
-            onClick={() => onToggle(id)}
+            onClick={() => onToggleExpand(id)}
           >
-            {isExpanded ? icons.expandOpen : icons.expandClose}
+            {isExpanded ? chevronDown : chevronRight}
           </button>
+        ) : (
+          <div className="tree-expander" />
         )}
+
+        {getCheckBox()}
 
         <span className="tree-content">{renderNode(node)}</span>
       </div>
@@ -49,7 +56,13 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, onToggle, renderNode }) => {
       {isGroup && isExpanded && (
         <ul className="tree-children">
           {node.children.map((child) => (
-            <TreeItem key={nodeIdToText(child.nodeId)} node={child} onToggle={onToggle} renderNode={renderNode} />
+            <TreeItem
+              key={nodeIdToText(child.nodeId)}
+              node={child}
+              onToggleExpand={onToggleExpand}
+              onToggleCheck={onToggleCheck}
+              renderNode={renderNode}
+            />
           ))}
         </ul>
       )}
@@ -57,13 +70,24 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, onToggle, renderNode }) => {
   );
 };
 
-type TreeViewProps = { roots: Node[]; onToggle: (id: string) => void; renderNode: (node: Node) => React.ReactNode };
+type TreeViewProps = {
+  roots: Node[];
+  onToggleExpand: OnToggle;
+  onToggleCheck: OnToggle | null;
+  renderNode: (node: Node) => React.ReactNode;
+};
 
-export const TreeView: React.FC<TreeViewProps> = ({ roots, onToggle, renderNode }) => {
+export const TreeView: React.FC<TreeViewProps> = ({ roots, onToggleExpand, onToggleCheck, renderNode }) => {
   return (
     <ul className="tree-root">
       {roots.map((node) => (
-        <TreeItem key={nodeIdToText(node.nodeId)} node={node} onToggle={onToggle} renderNode={renderNode} />
+        <TreeItem
+          key={nodeIdToText(node.nodeId)}
+          node={node}
+          onToggleExpand={onToggleExpand}
+          onToggleCheck={onToggleCheck}
+          renderNode={renderNode}
+        />
       ))}
     </ul>
   );

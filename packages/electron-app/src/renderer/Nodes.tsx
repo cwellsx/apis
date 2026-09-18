@@ -19,13 +19,21 @@ function remove<T>(items: T[], item: T) {
 export const Nodes: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const { leafVisible, nodes, groupExpanded, checkModel } = props;
 
-  const onToggle: (id: string) => void = (id) => {
+  const onToggleExpand: (id: string) => void = (id) => {
     if (groupExpanded.includes(id)) remove(groupExpanded, id);
     else groupExpanded.push(id);
     props.setGroupExpanded(groupExpanded);
   };
 
+  const onToggleCheck: (id: string) => void = (id) => {
+    if (leafVisible.includes(id)) remove(leafVisible, id);
+    else leafVisible.push(id);
+    props.setLeafVisible(groupExpanded);
+  };
+
   const renderNode: (node: Node) => React.ReactNode = (node) => node.label;
 
-  return <TreeView roots={nodes} onToggle={onToggle} renderNode={renderNode} />;
+  return (
+    <TreeView roots={nodes} onToggleExpand={onToggleExpand} onToggleCheck={onToggleCheck} renderNode={renderNode} />
+  );
 };
