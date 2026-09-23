@@ -1,4 +1,4 @@
-import type { AnyLeafType, AnyNodeType, GraphFilter, Node, NodeId } from "../contracts-ui";
+import type { AnyLeafType, AnyNodeType, NodeId } from "../contracts-ui";
 import { isParent, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
@@ -46,7 +46,7 @@ const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
 };
 
 export type Call = { fromId: NodeId; toId: NodeId };
-export type GraphNodes = { forest: Forest; calls: Call[]; graphFilter: GraphFilter; leafType: AnyLeafType };
+export type GraphNodes = { forest: Forest; calls: Call[]; leafType: AnyLeafType; nodeStates: NodeStates };
 
 export type ViewState = {
   getGraphNodes: () => GraphNodes;
@@ -95,17 +95,7 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
 
     const calls = getCalls(forest, nodeStates);
 
-    const getAnyBigId = (node: Node) => toAnyBigId(node.nodeId, node.type, viewType);
-
-    const graphFilter: GraphFilter = {
-      leafVisible: forest.allNodes.filter((node) => nodeStates.isVisibleNode(node)).map((node) => node.nodeId),
-      groupExpanded: forest.allNodes
-        .filter((node) => nodeStates.isExpandedId(getAnyBigId(node), node.type == NodeType.Group))
-        .map((node) => node.nodeId),
-      isCheckModelAll: false,
-    };
-
-    return { forest, calls, graphFilter, leafType };
+    return { forest, calls, leafType, nodeStates };
   };
 
   return { getGraphNodes, setNodeState, viewType, resetNodeStates };

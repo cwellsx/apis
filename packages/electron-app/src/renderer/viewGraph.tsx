@@ -24,8 +24,7 @@ export const getLeft = (
   appOptions: AppOptions,
   onAppOptions: OnAppOptions
 ): React.ReactNode => {
-  const { graphViewOptions: viewOptions, graphFilter } = view;
-  const { leafVisible, groupExpanded, isCheckModelAll } = graphFilter;
+  const { graphViewOptions: viewOptions, isCheckModelAll } = view;
   const checkModel = isCheckModelAll ? "all" : "leaf";
   return (
     <>

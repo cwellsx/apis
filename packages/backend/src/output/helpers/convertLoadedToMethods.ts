@@ -78,7 +78,7 @@ export const convertCallstackToImage = (
   typeOrMethodName: GetTypeOrMethodName,
   graphViewOptions: GraphOptions.Methods | GraphOptions.Apis,
   graphFilter: GraphFilter | undefined
-): GraphData => {
+): GraphData & { graphFilter: GraphFilter } => {
   log("convertCallstackToImage");
 
   const { leafs, edges } = callstackElements;
@@ -195,5 +195,5 @@ export const convertCallstackToImage = (
   // convert to Image
   const imageData = convertToImage(groups, edges, graphViewOptions, graphFilter, false);
 
-  return { imageData, graphViewOptions, graphFilter, groups };
+  return { imageData, graphViewOptions, graphFilter, groups, isCheckModelAll: graphFilter.isCheckModelAll };
 };

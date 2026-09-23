@@ -123,5 +123,5 @@ export const convertLoadedToCustom = (
   roots.sort((x, y) => x.label.localeCompare(y.label));
 
   const imageData = convertToImage(roots, edges, graphViewOptions, graphFilter, graphViewOptions.isAutoLayers);
-  return { groups: roots, imageData, graphViewOptions, graphFilter };
+  return { groups: roots, imageData, graphViewOptions, isCheckModelAll: graphFilter.isCheckModelAll };
 };

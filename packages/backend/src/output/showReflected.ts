@@ -48,8 +48,8 @@ export const showReflected = (display: DisplayApi, sqlLoaded: SqlLoaded): ShowRe
     const viewGraph: ViewGraph = {
       image,
       groups: graphData.groups,
-      graphFilter: graphData.graphFilter,
       graphViewOptions: graphData.graphViewOptions,
+      isCheckModelAll: false,
     };
     display.showView(viewGraph);
   };
@@ -69,8 +69,8 @@ export const showReflected = (display: DisplayApi, sqlLoaded: SqlLoaded): ShowRe
     const viewGraph: ViewGraph = {
       image,
       groups: graphData.groups,
-      graphFilter: graphData.graphFilter,
       graphViewOptions: graphData.graphViewOptions,
+      isCheckModelAll: graphFilter.isCheckModelAll,
     };
     display.showView(viewGraph);
   };
@@ -114,8 +114,8 @@ export const showMethods = async (display: DisplayApi, sqlLoaded: SqlLoaded, met
   const viewGraph: ViewGraph = {
     image,
     groups: graphData.groups,
-    graphFilter: graphData.graphFilter,
     graphViewOptions: graphData.graphViewOptions,
+    isCheckModelAll: graphData.graphFilter.isCheckModelAll,
   };
   display.showView(viewGraph);
 };

@@ -1,4 +1,3 @@
-import { GraphFilter } from "./graphFilter";
 import * as GraphOptions from "./graphOptions";
 import { Image } from "./image";
 import { Node } from "./node";
@@ -12,8 +11,7 @@ export type ViewGraphData = {
   // but that would require useState and useEffect in the render
   // https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state
   groups: Node[];
-
-  graphFilter: GraphFilter;
+  isCheckModelAll: boolean;
   graphViewOptions: GraphOptions.Any;
 };
 

@@ -6,7 +6,7 @@ import { createImageData } from "../presenter";
 import { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
 import { createViewState, GraphNodes, NodeState } from "../viewState";
-import { getNodeOrThrow, toggleExpanded } from "./viewStateOps";
+import { getNodeOrThrow } from "./viewStateOps";
 
 export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: RuntimeContext): Promise<MainApiAsync> => {
   const { display, appConfig, setMenuItems } = runtimeContext;
@@ -54,12 +54,7 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
     const imageData = createImageData(graphNodes);
     const image = await createImage(imageData);
     const groups: Node[] = graphNodes.forest.roots;
-    const viewGraph: ViewGraph = {
-      image,
-      groups,
-      graphFilter: graphNodes.graphFilter,
-      graphViewOptions: { graphType: "none" },
-    };
+    const viewGraph: ViewGraph = { image, groups, graphViewOptions: { graphType: "none" }, isCheckModelAll: false };
     display.showView(viewGraph);
   };
 
@@ -88,8 +83,10 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
       // else it's a node not an edge
       const node = getNodeOrThrow(id, graphNodes);
       if (graphNodes.leafType !== node.type) {
-        // this is a group
-        toggleExpanded(id, node.type, graphNodes, viewState);
+        // this is a group -- toggle expanded
+        const isExpanded = graphNodes.nodeStates.isExpandedNode(node);
+        const isVisible = graphNodes.nodeStates.isVisibleNode(node);
+        viewState.setNodeState(id, node.type, { isHidden: !isVisible, isExpanded: !isExpanded });
         await showViewType();
         return;
       }

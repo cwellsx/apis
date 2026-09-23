@@ -19,8 +19,8 @@ export const showCustom = (display: DisplayApi, sqlCustom: SqlCustom): ShowCusto
     const viewGraph: ViewGraph = {
       image,
       groups: graphData.groups,
-      graphFilter: graphData.graphFilter,
       graphViewOptions: graphData.graphViewOptions,
+      isCheckModelAll: graphFilter.isCheckModelAll,
     };
     display.showView(viewGraph);
   };

@@ -38,5 +38,5 @@ export const convertLoadedToReferences = (
     graphFilter,
     nestedClusters
   );
-  return { groups, imageData, graphViewOptions, graphFilter };
+  return { groups, imageData, graphViewOptions, isCheckModelAll: graphFilter.isCheckModelAll };
 };
