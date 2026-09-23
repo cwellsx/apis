@@ -4,6 +4,7 @@ import { edgeIdToNodeIds, GraphOptions, isEdgeId } from "../contracts-ui";
 import { toAnyNodeId, toggleNodeId } from "../nodeIds";
 import { ShowCustom } from "../output";
 import { SqlCustom } from "../sql";
+import { assert } from "../utils";
 
 // this is similar to createAppWindow except with an instance of SqlCusom instead of SqlLoaded
 export const createCustomWindow = async (
@@ -62,10 +63,7 @@ export const createCustomWindow = async (
       return;
     },
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
-      const { viewOptions, graphFilter } = filterEvent;
-      if (!GraphOptions.isCustom(viewOptions)) throw new Error("Unexpected viewType");
-      const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
-      sqlCustom.writeGraphFilter(clusterBy, graphFilter);
+      assert(false); // not implemented
       await showViewType();
     },
     onDetailEvent: (/* detailEvent */): Promise<void> => {
@@ -76,3 +74,30 @@ export const createCustomWindow = async (
 
   return mainApi;
 };
+
+/*
+  Could reimplement onFilterEvent with the following
+  but the following might be buggy in some way when I tried it in the UI
+  so better maybe remove GraphFilter and store only, specific non-default states
+
+    onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
+      const { viewOptions, graphFilter } = filterEvent;
+      if (!GraphOptions.isCustom(viewOptions)) throw new Error("Unexpected viewType");
+      const clusterBy = GraphOptions.isCustomManual(viewOptions) ? viewOptions.clusterBy : undefined;
+      sqlCustom.writeGraphFilter(clusterBy, graphFilter);
+      await showViewType();
+    },
+
+  const onToggleExpand: (id: string) => void = (id) => {
+    if (groupExpanded.includes(id)) remove(groupExpanded, id);
+    else groupExpanded.push(id);
+    props.setGroupExpanded(groupExpanded);
+  };
+
+  const onToggleCheck: (id: string) => void = (id) => {
+    if (leafVisible.includes(id)) remove(leafVisible, id);
+    else leafVisible.push(id);
+    props.setLeafVisible(groupExpanded);
+  };
+
+*/

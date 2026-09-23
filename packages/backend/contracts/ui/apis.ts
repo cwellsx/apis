@@ -13,15 +13,21 @@ import type { ViewDetails } from "./viewDetails";
   - https://www.electronjs.org/docs/latest/tutorial/ipc
 */
 
-export type OnUserEvent<T> = (event: T) => void;
+type OnUserEvent<T> = (event: T) => void;
+
+export type OnViewOptions = OnUserEvent<GraphOptions.Any>;
+export type OnAppOptions = OnUserEvent<AppOptions>;
+export type OnGraphEvent = OnUserEvent<GraphEvent>;
+export type OnFilterEvent = OnUserEvent<FilterEvent>;
+export type OnDetailEvent = OnUserEvent<DetailEvent>;
 
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {
-  onViewOptions: OnUserEvent<GraphOptions.Any>;
-  onAppOptions: OnUserEvent<AppOptions>;
-  onGraphEvent: OnUserEvent<GraphEvent>;
-  onFilterEvent: OnUserEvent<FilterEvent>;
-  onDetailEvent: OnUserEvent<DetailEvent>;
+  onViewOptions: OnViewOptions;
+  onAppOptions: OnAppOptions;
+  onGraphEvent: OnGraphEvent;
+  onFilterEvent: OnFilterEvent;
+  onDetailEvent: OnDetailEvent;
 };
 
 // this Api is available to the main process and its functions are all void

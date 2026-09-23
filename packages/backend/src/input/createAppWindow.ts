@@ -188,11 +188,12 @@ export const createAppWindow = async (
     },
 
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
-      const { viewOptions, graphFilter } = filterEvent;
-      const viewType = viewOptions.graphType;
-      if (viewType === "custom") throw new Error("Unexpected viewType");
-      const clusterBy = getClusterBy(viewOptions);
-      sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
+      assert(false); // not implemented
+      // const { viewOptions, graphFilter } = filterEvent;
+      // const viewType = viewOptions.graphType;
+      // if (viewType === "custom") throw new Error("Unexpected viewType");
+      // const clusterBy = getClusterBy(viewOptions);
+      // sqlLoaded.writeGraphFilter(viewType, clusterBy, graphFilter);
       await showViewType();
     },
 

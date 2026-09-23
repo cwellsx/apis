@@ -1,6 +1,6 @@
-import { GraphFilter } from "./graphFilter";
-import * as GraphOptions from "./graphOptions";
+import { Collapsible, Shown } from "./node";
 import { EdgeId, NodeId } from "./nodeId";
+import { AnyNodeType } from "./nodeTypes";
 import { DetailType } from "./viewDetails";
 
 // import OnGraphClick into the renderer-side code, but avoid importing MouseEvent
@@ -15,6 +15,7 @@ type MouseEvent = {
 };
 
 export type GraphEvent = { id: NodeId | EdgeId; event: MouseEvent };
-export type FilterEvent = { graphFilter: GraphFilter; viewOptions: GraphOptions.Any };
+export type NewNodeState = { id: NodeId; nodeType: AnyNodeType; shown: Shown; collapsible: Collapsible };
+export type FilterEvent = NewNodeState[];
 
 export type DetailEvent = { id: NodeId; viewType: DetailType };

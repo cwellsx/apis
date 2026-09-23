@@ -38,7 +38,9 @@ export type Call = { fromId: Id.CallFromId; toId: Id.CallToId };
 
 export type FullName = { id: Id.AnyBigId; fullName: string };
 
-export type View = { id: Id.ViewId; viewType: ViewType }; // in future could add `name: string` column to support multiple view instance
+// in future could add `name: string` column to support multiple view instance
+export type View = { id: Id.ViewId; viewType: ViewType };
+// isExpanded will be false for leaf-type nodes
 export type ViewState = { viewId: Id.ViewId; id: Id.AnyBigId; isHidden: Boolean; isExpanded: Boolean };
 
 export type AssemblyGroup = { id: Id.AssemblyGroupId; name: string };

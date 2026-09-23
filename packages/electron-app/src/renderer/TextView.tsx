@@ -1,4 +1,4 @@
-import { AppOptions, GraphOptions, OnUserEvent, ViewText } from "backend-ui";
+import { AppOptions, OnAppOptions, OnViewOptions, ViewText } from "backend-ui";
 import * as React from "react";
 import { Message } from "./elements";
 import "./TextView.scss";
@@ -8,9 +8,9 @@ type TextViewProps = {
   view: ViewText;
   fontSize: number;
   onWheelFontSize: OnWheel;
-  onViewOptions: OnUserEvent<GraphOptions.Any>;
+  onViewOptions: OnViewOptions;
   appOptions: AppOptions;
-  onAppOptions: OnUserEvent<AppOptions>;
+  onAppOptions: OnAppOptions;
 };
 export const TextView: React.FunctionComponent<TextViewProps> = (props: TextViewProps) => {
   const { fontSize, onWheelFontSize } = props;

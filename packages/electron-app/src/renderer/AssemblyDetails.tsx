@@ -1,13 +1,4 @@
-import type {
-  Access,
-  DetailedAssembly,
-  DetailEvent,
-  MemberInfo,
-  Named,
-  Namespace,
-  OnUserEvent,
-  Type,
-} from "backend-ui";
+import type { Access, DetailedAssembly, MemberInfo, Named, Namespace, OnDetailEvent, Type } from "backend-ui";
 import { nodeIdToText, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
@@ -168,7 +159,7 @@ const reducer = (state: State, action: Action): State => {
   }
 };
 
-type DetailsProps = { types: DetailedAssembly; onDetailEvent: OnUserEvent<DetailEvent> };
+type DetailsProps = { types: DetailedAssembly; onDetailEvent: OnDetailEvent };
 export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: DetailsProps) => {
   const [state, dispatch] = React.useReducer(reducer, initialState(props.types));
   const { nodes, expanded } = state;

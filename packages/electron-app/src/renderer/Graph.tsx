@@ -1,4 +1,4 @@
-import type { GraphEvent, Area as MyArea, OnUserEvent } from "backend-ui";
+import type { Area as MyArea, OnGraphEvent } from "backend-ui";
 import { textToNodeOrEdgeId } from "backend-ui";
 import * as React from "react";
 import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
@@ -10,7 +10,7 @@ type GraphProps = {
   areas: MyArea[];
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
-  onGraphEvent: OnUserEvent<GraphEvent>;
+  onGraphEvent: OnGraphEvent;
   useKeyStates: boolean;
 };
 

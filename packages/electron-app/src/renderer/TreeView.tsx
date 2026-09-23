@@ -9,7 +9,7 @@ import "./TreeView.scss";
 const chevronRight = <Codeicons.SvgChevronRight />;
 const chevronDown = <Codeicons.SvgChevronDown />;
 
-type OnToggle = (id: string) => void;
+export type OnToggle = (node: Node) => void;
 
 type TreeItemProps = {
   node: Node;
@@ -19,14 +19,12 @@ type TreeItemProps = {
 };
 
 const TreeItem: React.FC<TreeItemProps> = ({ node, onToggleExpand, onToggleCheck, renderNode }) => {
-  const id = nodeIdToText(node.nodeId);
-
   const isGroup = !isLeaf(node);
   const isExpanded = isParent(node);
 
   const getCheckBox = (): React.ReactNode => {
     if (onToggleCheck == null) return <></>;
-    const onToggle = () => onToggleCheck(id);
+    const onToggle = () => onToggleCheck(node);
     const checked: Checked = node.shown == "visible" ? true : node.shown == "hidden" ? false : "mixed";
     return <CheckBox onToggle={onToggle} checked={checked} />;
   };
@@ -40,7 +38,7 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, onToggleExpand, onToggleCheck
             className="tree-expander"
             aria-label={isExpanded ? "Collapse" : "Expand"}
             aria-expanded={isExpanded}
-            onClick={() => onToggleExpand(id)}
+            onClick={() => onToggleExpand(node)}
           >
             {isExpanded ? chevronDown : chevronRight}
           </button>

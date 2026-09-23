@@ -6,6 +6,8 @@ import { AnyNodeType } from "./nodeTypes";
 // they don't show edges and node properties and don't need more data than this
 // extra data (decorators) are defined in ImageAttribute
 
+// node types
+
 type Common = {
   label: string;
   nodeId: NodeId; // unique within graph and/or within group tree
@@ -20,14 +22,21 @@ export type Parent = Common & { children: Node[]; collapsible: "expanded" };
 
 export type Node = Leaf | Parent | Closed;
 
-export function isParent(node: Node): node is Parent {
+// node methods
+
+export const isParent = (node: Node): node is Parent => {
   return (node as Parent).children !== undefined;
-}
+};
 
-export function isLeaf(node: Node): node is Leaf {
+export const isLeaf = (node: Node): node is Leaf => {
   return node.collapsible == "none";
-}
+};
 
-export function isClosed(node: Node): node is Closed {
+export const isClosed = (node: Node): node is Closed => {
   return node.collapsible == "collapsed";
-}
+};
+
+// state types -- TODO rename these to isShown and isExpanded booleans
+
+export type Shown = Node["shown"];
+export type Collapsible = Node["collapsible"];

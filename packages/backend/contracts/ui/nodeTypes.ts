@@ -1,4 +1,4 @@
-export const NodeType = { Group: "g", Assembly: "a", Namespace: "n", Type: "t", Method: "m", Custom: "c" } as const;
+import { NodeType } from "./nodeType";
 
 type Group = typeof NodeType.Group;
 type Assembly = typeof NodeType.Assembly;

@@ -1,14 +1,13 @@
 import type {
   AppOptions,
-  DetailEvent,
-  FilterEvent,
-  GraphEvent,
-  GraphOptions,
-  OnUserEvent,
+  OnAppOptions,
+  OnDetailEvent,
+  OnFilterEvent,
+  OnGraphEvent,
+  OnViewOptions,
   ViewDetails,
   ViewGraph,
 } from "backend-ui";
-import { nodeIdToText, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { AssemblyDetails } from "./AssemblyDetails";
 import { CustomDetails } from "./CustomDetails";
@@ -20,10 +19,10 @@ import { ChooseGraphViewOptions } from "./Options";
 
 export const getLeft = (
   view: ViewGraph,
-  onViewOptions: (viewOptions: GraphOptions.Any) => void,
-  onGraphFilter: (filterEvent: FilterEvent) => void,
+  onViewOptions: OnViewOptions,
+  onFilterEvent: OnFilterEvent,
   appOptions: AppOptions,
-  onAppOptions: (appOptions: AppOptions) => void
+  onAppOptions: OnAppOptions
 ): React.ReactNode => {
   const { graphViewOptions: viewOptions, graphFilter } = view;
   const { leafVisible, groupExpanded, isCheckModelAll } = graphFilter;
@@ -36,27 +35,12 @@ export const getLeft = (
         appOptions={appOptions}
         onAppOptions={onAppOptions}
       />
-      <Nodes
-        checkModel={checkModel}
-        nodes={view.groups}
-        leafVisible={leafVisible.map(nodeIdToText)}
-        groupExpanded={groupExpanded.map(nodeIdToText)}
-        setLeafVisible={(names) =>
-          onGraphFilter({ viewOptions, graphFilter: { ...graphFilter, leafVisible: names.map(textToNodeId) } })
-        }
-        setGroupExpanded={(names) =>
-          onGraphFilter({ viewOptions, graphFilter: { ...graphFilter, groupExpanded: names.map(textToNodeId) } })
-        }
-      />
+      <Nodes checkModel={checkModel} nodes={view.groups} onFilterEvent={onFilterEvent} />
     </>
   );
 };
 
-export const getCenter = (
-  view: ViewGraph,
-  onGraphEvent: OnUserEvent<GraphEvent>,
-  zoomPercent: number
-): React.ReactNode => {
+export const getCenter = (view: ViewGraph, onGraphEvent: OnGraphEvent, zoomPercent: number): React.ReactNode => {
   // display a message, or an image if there is one
   if (typeof view.image === "string") return <Message message={view.image} />;
 
@@ -74,7 +58,7 @@ export const getCenter = (
 
 export const getRight = (
   details: ViewDetails | undefined,
-  onDetailEvent: OnUserEvent<DetailEvent>
+  onDetailEvent: OnDetailEvent
 ): React.ReactNode | undefined => {
   if (!details) return undefined;
   switch (details.detailType) {

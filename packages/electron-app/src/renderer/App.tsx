@@ -1,10 +1,10 @@
 import type {
   AppOptions,
-  DetailEvent,
-  FilterEvent,
-  GraphEvent,
-  GraphOptions,
-  OnUserEvent,
+  OnAppOptions,
+  OnDetailEvent,
+  OnFilterEvent,
+  OnGraphEvent,
+  OnViewOptions,
   PreloadApis,
   View,
   ViewDetails,
@@ -65,14 +65,14 @@ const App: React.FunctionComponent = () => {
     });
   });
 
-  const onViewOptions: OnUserEvent<GraphOptions.Any> = (viewOptions) => mainApi.onViewOptions(viewOptions);
-  const onAppOptions: OnUserEvent<AppOptions> = (appOptions) => {
+  const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
+  const onAppOptions: OnAppOptions = (appOptions) => {
     log("onAppOptions!");
     mainApi.onAppOptions(appOptions);
   };
-  const onGraphEvent: OnUserEvent<GraphEvent> = (graphEvent) => mainApi.onGraphEvent(graphEvent);
-  const onFilterEvent: OnUserEvent<FilterEvent> = (filterEvent) => mainApi.onFilterEvent(filterEvent);
-  const onDetailEvent: OnUserEvent<DetailEvent> = (nodeId) => mainApi.onDetailEvent(nodeId);
+  const onGraphEvent: OnGraphEvent = (graphEvent) => mainApi.onGraphEvent(graphEvent);
+  const onFilterEvent: OnFilterEvent = (filterEvent) => mainApi.onFilterEvent(filterEvent);
+  const onDetailEvent: OnDetailEvent = (nodeId) => mainApi.onDetailEvent(nodeId);
 
   if (!isViewGraph(view)) {
     return (

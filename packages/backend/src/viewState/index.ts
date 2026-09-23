@@ -1,2 +1,3 @@
 export { createViewState } from "./createViewState";
 export type { Call, GraphNodes, ViewState } from "./createViewState";
+export type { NodeState } from "./nodeStates";

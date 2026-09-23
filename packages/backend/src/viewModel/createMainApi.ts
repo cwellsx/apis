@@ -5,8 +5,8 @@ import { bindImage } from "../image";
 import { createImageData } from "../presenter";
 import { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
-import { createViewState, GraphNodes } from "../viewState";
-import { getNodeOrThrow, toggleExpanded, writeGraphFilter } from "./viewStateOps";
+import { createViewState, GraphNodes, NodeState } from "../viewState";
+import { getNodeOrThrow, toggleExpanded } from "./viewStateOps";
 
 export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: RuntimeContext): Promise<MainApiAsync> => {
   const { display, appConfig, setMenuItems } = runtimeContext;
@@ -110,8 +110,13 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
     },
 
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
-      const { /*viewOptions,*/ graphFilter } = filterEvent;
-      writeGraphFilter(graphFilter, graphNodes, viewState);
+      filterEvent.forEach((newNodeState) => {
+        const { id, nodeType, shown, collapsible } = newNodeState;
+        const nodeState: NodeState = { isHidden: shown == "hidden", isExpanded: collapsible == "expanded" };
+        viewState.setNodeState(id, nodeType, nodeState);
+      });
+      // const { /*viewOptions,*/ graphFilter } = filterEvent;
+      // writeGraphFilter(graphFilter, graphNodes, viewState);
       await showViewType();
     },
 
