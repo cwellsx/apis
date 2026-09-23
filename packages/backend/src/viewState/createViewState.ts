@@ -3,6 +3,7 @@ import { isParent, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
+import { assert } from "../utils";
 import { createDatabase } from "./createDatabase";
 import { NodeState, NodeStates } from "./nodeStates";
 import { toLeafs, toTrunk } from "./toNodes";
@@ -62,9 +63,8 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
 
   const getCalls = (forest: Forest, nodeStates: NodeStates): Call[] => {
     const leafIds = forest.allNodes
-      .filter((node) => !isParent(node))
-      .map((node) => toAnyBigId(node.nodeId, node.type, viewType))
-      .filter((nodeId) => nodeStates.isVisibleId(nodeId));
+      .filter((node) => !isParent(node) && nodeStates.isExpandedNode(node))
+      .map((node) => toAnyBigId(node.nodeId, node.type, viewType));
     const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
   };
@@ -76,21 +76,29 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
     const nodeStates = getNodeStates();
     const trunk = toTrunk(top, rootNodeType, nodeStates, leafType);
 
-    if (leafType == NodeType.Method) {
-      const leafs = getLeafs(nodeStates);
-      toLeafs(trunk, leafs, nodeStates, leafType);
-    }
+    const getForest = (): Forest => {
+      switch (leafType) {
+        case NodeType.Assembly:
+          return trunk;
+        case NodeType.Custom:
+          assert(false);
+          break;
+        case NodeType.Method: {
+          const leafs = getLeafs(nodeStates);
+          toLeafs(trunk, leafs, nodeStates, leafType);
+          return trunk;
+        }
+      }
+    };
 
-    const forest = trunk;
+    const forest = getForest();
 
     const calls = getCalls(forest, nodeStates);
 
     const getAnyBigId = (node: Node) => toAnyBigId(node.nodeId, node.type, viewType);
 
     const graphFilter: GraphFilter = {
-      leafVisible: forest.allNodes
-        .filter((node) => nodeStates.isVisibleId(getAnyBigId(node)))
-        .map((node) => node.nodeId),
+      leafVisible: forest.allNodes.filter((node) => nodeStates.isVisibleNode(node)).map((node) => node.nodeId),
       groupExpanded: forest.allNodes
         .filter((node) => nodeStates.isExpandedId(getAnyBigId(node), node.type == NodeType.Group))
         .map((node) => node.nodeId),

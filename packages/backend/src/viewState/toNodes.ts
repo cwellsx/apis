@@ -81,7 +81,8 @@ export const toTrunk = (
 
       // if parent closed then don't add this child
       // ditto any descendendants of this child which will find the same closed ancestor
-      if (parent && (isClosed(parent) || parent.shown == "hidden")) return;
+      // but show expanded children even if the parent is hidden
+      if (parent && isClosed(parent)) return;
 
       const node = toTrunkNode(item, type, parent);
       insert(parent ? parent.children : trunk.roots, node);
