@@ -108,8 +108,8 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
 
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
       filterEvent.forEach((newNodeState) => {
-        const { id, nodeType, shown, collapsible } = newNodeState;
-        const nodeState: NodeState = { isHidden: shown == "hidden", isExpanded: collapsible == "expanded" };
+        const { id, nodeType, isShown, collapsible } = newNodeState;
+        const nodeState: NodeState = { isHidden: !isShown, isExpanded: collapsible == "expanded" };
         viewState.setNodeState(id, nodeType, nodeState);
       });
       // const { /*viewOptions,*/ graphFilter } = filterEvent;

@@ -6,6 +6,8 @@ import { options, remove, replace, uniqueStrings } from "../../utils";
 type Result = { leafs: { [id: string]: Node }; groups: Node[] };
 const type = NodeType.Group;
 
+const isShown = true as const;
+
 const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
   const groups: Node[] = [];
   const leafs: { [name: string]: Node } = {};
@@ -17,7 +19,7 @@ const createFlatClusters = (names: string[], nameType: NameTypes): Result => {
       parent: null,
       type,
       collapsible: "none",
-      shown: "visible",
+      isShown,
     };
     groups.push(newLeaf);
     leafs[name] = newLeaf;
@@ -48,7 +50,7 @@ export const createNestedClusters = (names: string[], nameType: NameTypes, separ
           parent,
           type,
           collapsible: "none",
-          shown: "visible",
+          isShown,
         };
         nodes.push(newLeaf);
         leafs[name] = newLeaf;
@@ -61,7 +63,7 @@ export const createNestedClusters = (names: string[], nameType: NameTypes, separ
           parent,
           type,
           collapsible: "expanded",
-          shown: "visible",
+          isShown,
         };
         if (!nodes.length || nodes[nodes.length - 1].label !== partial) nodes.push(newParent);
         const found = nodes[nodes.length - 1];
@@ -127,7 +129,7 @@ export const convertNamesToNodes = (
       children: found,
       type,
       collapsible: "expanded",
-      shown: "visible",
+      isShown,
     };
     found.forEach((child) => {
       child.parent = parent;

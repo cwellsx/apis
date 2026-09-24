@@ -13,7 +13,7 @@ export class NodeStates {
   showsChildIds: (id: Id.AnyBigId, isGroup: boolean) => boolean;
 
   isExpandedNode: <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T) => boolean;
-  isVisibleNode: <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T) => "visible" | "hidden";
+  isVisibleNode: <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T) => boolean;
   showsChildNodes: <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T) => boolean;
 
   constructor(viewStates: Sql.ViewState[], viewType: ViewType) {
@@ -26,6 +26,7 @@ export class NodeStates {
 
     // by default, groups are expanded and node are non-expanded
     this.isExpandedId = (id: Id.AnyBigId, isGroup: boolean): boolean => states.get(id)?.isExpanded ?? isGroup;
+
     // by default, groups and nodes are visible unless explicitly hidden
     this.showsChildIds = (id: Id.AnyBigId, isGroup: boolean) => this.isExpandedId(id, isGroup);
 
@@ -34,8 +35,7 @@ export class NodeStates {
 
     this.isVisibleNode = <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T) => {
       const id: Id.AnyBigId = toAnyBigId(node.nodeId, node.type, viewType);
-      const isVisibleId: boolean = !(states.get(id)?.isHidden ?? false);
-      return isVisibleId ? "visible" : "hidden";
+      return !(states.get(id)?.isHidden ?? false);
     };
 
     this.showsChildNodes = <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T) =>

@@ -33,8 +33,8 @@ export const convertLoadedToCustom = (
     const { label, nodeId } = !isCustomFolder(node)
       ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id) }
       : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id) };
-    const shown = isLeafVisible(nodeId, graphFilter) ? "visible" : "hidden";
-    const leaf: Leaf = { label, nodeId, shown, parent: null, type: NodeType.Custom, collapsible: "none" };
+    const isShown = isLeafVisible(nodeId, graphFilter);
+    const leaf: Leaf = { label, nodeId, isShown, parent: null, type: NodeType.Custom, collapsible: "none" };
     leafNodes.set(node.id, leaf);
   });
 
@@ -101,14 +101,14 @@ export const convertLoadedToCustom = (
         let parent: Parent = parents[groupName];
         if (!parent) {
           const nodeId = toGroupByNodeId(groupedBy, groupName);
-          const shown = isLeafVisible(nodeId, graphFilter) ? "visible" : "hidden";
+          const isShown = isLeafVisible(nodeId, graphFilter);
           parent = {
             label: groupName,
             nodeId,
             parent: null,
             children: [],
             type: NodeType.Group,
-            shown,
+            isShown,
             collapsible: "expanded",
           };
           roots.push(parent);

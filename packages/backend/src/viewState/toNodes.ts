@@ -37,17 +37,17 @@ const toNode = (
   leafType: AnyLeafType
 ): Node => {
   const pair = { nodeId: toNodeId(item.id), type };
-  const shown = nodeStates.isVisibleNode(pair);
+  const isShown = nodeStates.isVisibleNode(pair);
   const isExpanded = nodeStates.isExpandedNode(pair);
-  const partial = { ...pair, label: item.name, parent, shown };
+  const partial = { ...pair, label: item.name, parent };
   if (type == leafType) {
     assert(!isExpanded);
-    return { ...partial, collapsible: "none" };
+    return { ...partial, collapsible: "none", isShown };
   }
   if (!isExpanded) {
-    return { ...partial, collapsible: "collapsed" };
+    return { ...partial, isShown, collapsible: "collapsed" };
   }
-  return { ...partial, collapsible: "expanded", children: [] };
+  return { ...partial, isShown, collapsible: "expanded", children: [] };
 };
 
 export const toTrunk = (

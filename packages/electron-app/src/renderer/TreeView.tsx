@@ -1,7 +1,7 @@
 import type { Node } from "backend-ui";
 import { isLeaf, isParent, nodeIdToText } from "backend-ui";
 import * as React from "react";
-import { CheckBox, Checked } from "./CheckBox";
+import { CheckBox } from "./CheckBox";
 import { Codeicons } from "./images.tsx";
 import "./TreeView.scss";
 
@@ -25,8 +25,7 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, onToggleExpand, onToggleCheck
   const getCheckBox = (): React.ReactNode => {
     if (onToggleCheck == null) return <></>;
     const onToggle = () => onToggleCheck(node);
-    const checked: Checked = node.shown == "visible" ? true : node.shown == "hidden" ? false : "mixed";
-    return <CheckBox onToggle={onToggle} checked={checked} />;
+    return <CheckBox onToggle={onToggle} checked={node.isShown} />;
   };
 
   return (

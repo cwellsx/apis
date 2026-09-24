@@ -1,10 +1,8 @@
-import { Node, NodeType, isLeaf, isParent, makeEdgeId, nodeIdToText } from "../contracts-ui";
+import { Node, NodeType, isLeaf, isParent, isVisible, makeEdgeId, nodeIdToText } from "../contracts-ui";
 import type { ImageData, ImageEdge, ImageNode } from "../image";
 import { Call, GraphNodes } from "../viewState";
 
 export const createImageData = (graphNodes: GraphNodes): ImageData => {
-  const isVisible = (node: Node): boolean => node.shown == "visible";
-
   const toImageNode = (node: Node): ImageNode => {
     return isLeaf(node)
       ? { type: "leaf", node }
