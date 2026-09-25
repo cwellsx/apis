@@ -5,7 +5,7 @@ import { bindImage } from "../image";
 import { createImageData } from "../presenter";
 import { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
-import { createViewState, GraphNodes, NodeState } from "../viewState";
+import { createViewState, getNodeState, GraphNodes, NodeState } from "../viewState";
 import { getNodeOrThrow } from "./viewStateOps";
 
 export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: RuntimeContext): Promise<MainApiAsync> => {
@@ -84,9 +84,9 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
       const node = getNodeOrThrow(id, graphNodes);
       if (graphNodes.leafType !== node.type) {
         // this is a group -- toggle expanded
-        const isExpanded = graphNodes.nodeStates.isExpandedNode(node);
-        const isVisible = graphNodes.nodeStates.isVisibleNode(node);
-        viewState.setNodeState(id, node.type, { isHidden: !isVisible, isExpanded: !isExpanded });
+        const nodeState = getNodeState(node);
+        nodeState.isExpanded = !nodeState.isExpanded;
+        viewState.setNodeState(id, node.type, nodeState);
         await showViewType();
         return;
       }

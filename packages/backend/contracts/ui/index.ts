@@ -8,7 +8,7 @@ export * as GraphOptions from "./graphOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isParent, isVisible } from "./node";
-export type { Collapsible, IsShown, Leaf, Node, Parent } from "./node";
+export type { Closed, Collapsible, IsShown, Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
 export { NodeType } from "./nodeType";
 export type * from "./nodeTypes";

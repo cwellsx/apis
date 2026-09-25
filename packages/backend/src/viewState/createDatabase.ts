@@ -3,8 +3,9 @@ import { NodeType } from "../contracts-ui";
 import * as Id from "../id2";
 import type { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
-import type { NodeState } from "./nodeStates";
-import { fromBoolean, NodeStates } from "./nodeStates";
+import type { NodeState } from "./nodeState";
+import { NodeStates } from "./nodeStates";
+import { fromBoolean } from "./sqlBoolean";
 import { Leafs, Top } from "./types";
 
 export type Database = {
@@ -33,7 +34,7 @@ const createViewOf = (sqlTables: Sql.Tables, viewType: ViewType): ViewOf => {
     const getTypeNames = (nodeStates: NodeStates): TypeNames => {
       const assemblyIds = assemblies
         .map((value) => value.id)
-        .filter((id) => nodeStates.showsChildIds(Id.toBigAssemblyId(id), false));
+        .filter((id) => nodeStates.isExpandedId(Id.toBigAssemblyId(id), false));
       const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds);
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.assemblyId]);
       return { typeNames, typeParents };
@@ -47,7 +48,7 @@ const createViewOf = (sqlTables: Sql.Tables, viewType: ViewType): ViewOf => {
     const getTypeNames = (nodeStates: NodeStates): TypeNames => {
       const namespaceIds = namespaces
         .map((value) => value.id)
-        .filter((id) => nodeStates.showsChildIds(Id.toBigNamespaceId(id), false));
+        .filter((id) => nodeStates.isExpandedId(Id.toBigNamespaceId(id), false));
       const typeNames = sqlTables.typeNames.selectWhereIn("namespaceId", namespaceIds);
       const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.namespaceId!]);
       return { typeNames, typeParents };
@@ -147,7 +148,7 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     const { typeNames, typeParents } = getTypeNames(nodeStates);
 
     // get methods
-    const expandedTypeIds = typeNames.map((value) => value.id).filter((id) => nodeStates.showsChildIds(id, false));
+    const expandedTypeIds = typeNames.map((value) => value.id).filter((id) => nodeStates.isExpandedId(id, false));
     const methodNames = sqlTables.methodNames.selectWhereIn("typeId", expandedTypeIds);
     const methodParents = methodNames.map((methodName): [Id.AnyId, Id.AnyId] => [methodName.id, methodName.typeId]);
 

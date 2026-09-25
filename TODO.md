@@ -2,7 +2,6 @@
 
 ## Near term
 
-- Debug - expansion of hidden nodes in the tree
 - Refactor - combine the SVG elements and containers
 - Debug - hourglass and prevent overlapping input events from user
 - Test - custom data
@@ -10,7 +9,6 @@
 - Test - TPOSS
 - Delete - ImageNode class (just render Node)
 - Delete - GraphFilter class
-- Implement - mixed check state
 - Implement - assembly details
 - Implement - group isMicrosoft assemblies and make these invisible and non-expanded by default
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces

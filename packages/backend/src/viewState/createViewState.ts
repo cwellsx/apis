@@ -5,7 +5,8 @@ import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
 import { createDatabase } from "./createDatabase";
-import { NodeState, NodeStates } from "./nodeStates";
+import type { NodeState } from "./nodeState";
+import type { NodeStates } from "./nodeStates";
 import { toLeafs, toTrunk } from "./toNodes";
 import type { Forest, Numeric } from "./types";
 
@@ -46,7 +47,7 @@ const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
 };
 
 export type Call = { fromId: NodeId; toId: NodeId };
-export type GraphNodes = { forest: Forest; calls: Call[]; leafType: AnyLeafType; nodeStates: NodeStates };
+export type GraphNodes = { forest: Forest; calls: Call[]; leafType: AnyLeafType };
 
 export type ViewState = {
   getGraphNodes: () => GraphNodes;
@@ -95,7 +96,7 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
 
     const calls = getCalls(forest, nodeStates);
 
-    return { forest, calls, leafType, nodeStates };
+    return { forest, calls, leafType };
   };
 
   return { getGraphNodes, setNodeState, viewType, resetNodeStates };

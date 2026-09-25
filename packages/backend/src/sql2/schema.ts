@@ -46,7 +46,7 @@ export type ViewState = { viewId: Id.ViewId; id: Id.AnyBigId; isHidden: Boolean;
 export type AssemblyGroup = { id: Id.AssemblyGroupId; name: string };
 export type NamespaceGroup = { id: Id.NamespaceGroupId; name: string };
 
-export const tableNames = [
+const tableNames = [
   "assemblies",
   "namespaces",
   "typeNames",

@@ -1,7 +1,16 @@
 // two functions help to implement getGraphNodes
-import { Closed, isClosed } from "../../contracts/ui/node";
-import type { AnyLeafType, AnyNodeType, NodeId, RootNodeType } from "../contracts-ui";
-import { isLeaf, isParent, Node, nodeIdToText, NodeType, Parent, textToNodeId } from "../contracts-ui";
+import type { AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
+import {
+  isClosed,
+  isLeaf,
+  isParent,
+  isVisible,
+  Node,
+  nodeIdToText,
+  NodeType,
+  Parent,
+  textToNodeId,
+} from "../contracts-ui";
 import * as Id from "../id2";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
 import { NodeStates } from "./nodeStates";
@@ -37,7 +46,12 @@ const toNode = (
   leafType: AnyLeafType
 ): Node => {
   const pair = { nodeId: toNodeId(item.id), type };
-  const isShown = nodeStates.isVisibleNode(pair);
+  const isParentVisible = parent ? isVisible(parent) : true;
+  const isShown = nodeStates.isVisibleNode(pair, isParentVisible);
+  for (let ancestor = parent; ancestor; ancestor = ancestor?.parent ?? null) {
+    if (ancestor.isShown == "mixed" || ancestor.isShown == isShown) break;
+    ancestor.isShown = "mixed";
+  }
   const isExpanded = nodeStates.isExpandedNode(pair);
   const partial = { ...pair, label: item.name, parent };
   if (type == leafType) {
