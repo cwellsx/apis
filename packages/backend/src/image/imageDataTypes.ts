@@ -1,21 +1,7 @@
-import type { Image, Leaf, Node, Parent } from "../contracts-ui";
-
-// TODO delete ImageNode
-
-export type ImageLeaf = {
-  node: Leaf;
-  type: "leaf";
-  // extra attributes which might come from CustomNode
-  shape?: string;
-};
-export type ImageClosed = { node: Node; type: "closed" };
-export type ImageSubgraph = { node: Parent; type: "subgraph"; children: ImageNode[] };
-export type ImageNode = ImageLeaf | ImageClosed | ImageSubgraph;
-
-export type ImageNodeType = ImageNode["type"];
+import type { Image, Node } from "../contracts-ui";
 
 export type ImageEdge = { clientId: string; serverId: string; edgeId: string; labels: string[]; titles: string[] };
 
-export type ImageData = { nodes: ImageNode[]; edges: ImageEdge[]; edgeDetails: boolean; hasParentEdges: boolean };
+export type ImageData = { nodes: Node[]; edges: ImageEdge[]; edgeDetails: boolean; hasParentEdges: boolean };
 
 export type CreateImage = (imageData: ImageData) => Promise<Image | string>;

@@ -7,7 +7,6 @@
 - Test - custom data
 - Test - "references" ViewType
 - Test - TPOSS
-- Delete - ImageNode class (just render Node)
 - Delete - GraphFilter class
 - Implement - assembly details
 - Implement - group isMicrosoft assemblies and make these invisible and non-expanded by default

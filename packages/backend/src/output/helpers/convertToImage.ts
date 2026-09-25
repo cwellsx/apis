@@ -1,8 +1,8 @@
 import type { GraphFilter, Leaf, Node, NodeId } from "../../contracts-ui";
-import { edgeIdToText, GraphOptions, isLeaf, isParent, nodeIdToText } from "../../contracts-ui";
-import type { ImageData, ImageNode } from "../../image";
+import { edgeIdToText, GraphOptions, isParent, nodeIdToText } from "../../contracts-ui";
+import type { ImageData } from "../../image";
 import { createLookupNodeId, Edges, NodeIdMap, NodeIdSet } from "../../nodeIds";
-import { assert, log, uniqueStrings, viewFeatures } from "../../utils";
+import { log, uniqueStrings, viewFeatures } from "../../utils";
 
 // TODO support optional shape on CustomNode
 export type CustomLeaf = Leaf & { type: "c"; shape?: string };
@@ -96,29 +96,14 @@ export function convertToImage(
 
   const { details } = viewFeatures[viewOptions.graphType];
 
-  const toImageNode = (node: Node): ImageNode => {
-    const nodeId = node.nodeId;
-
-    if (isLeaf(node)) return { type: "leaf", node };
-
-    // temporary hack -- previous module only generated Leaf and Parent but not Closed
-    assert(isParent(node));
-
-    return !isGroupExpanded(nodeId)
-      ? { type: "closed", node }
-      : { type: "subgraph", node, children: toImageNodes(node.children) };
-  };
-
   // whether a group is visible depends on whether it contains visible leafs
   const isNodeVisible = (node: Node): boolean =>
     (isParent(node) && node.children.some((child) => isNodeVisible(child))) ||
     (isLeafVisible(node.nodeId) && edgeLeafs.has(node.nodeId));
 
-  const toImageNodes: (nodes: Node[]) => ImageNode[] = (nodes) => nodes.filter(isNodeVisible).map(toImageNode);
-
   const showEdgeLabels = GraphOptions.getShowEdgeLabels(viewOptions);
   const imageData: ImageData = {
-    nodes: toImageNodes(roots),
+    nodes: roots.filter(isNodeVisible),
     edges: visibleEdges.values().map((edge) => {
       const labels = uniqueStrings(edge.labels).sort();
       const showLabels = !showEdgeLabels ? false : edge.isServerLeaf ? showEdgeLabels.leafs : showEdgeLabels.groups;

@@ -34,11 +34,11 @@ export const getDotFormat = (
       inline = inline ? `, ${inline}` : "";
 
       switch (node.type) {
-        case "leaf":
-        case "closed":
+        case "none":
+        case "collapsed":
           lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${label}", href=foo${inline}];`);
           break;
-        case "subgraph":
+        case "expanded":
           lines.push(`${prefix}subgraph "cluster_${node.id}" {`);
           for (const [key, value] of Object.entries(node.attributes)) lines.push(`${prefix}  ${key}="${value}"`);
           lines.push(`${prefix}  label="${label}"`);
@@ -48,7 +48,7 @@ export const getDotFormat = (
           if (options.verticalClusters) {
             // invisible edges between nodes to they're aligned vertically
             // https://forum.graphviz.org/t/positioning-nodes-in-a-subgraph/1065/18
-            const children = node.children.filter((child) => child.type !== "subgraph");
+            const children = node.children.filter((child) => child.type !== "expanded");
             for (let i = 0; i < children.length - 1; ++i) {
               const first = children[i];
               const second = children[i + 1];
@@ -73,11 +73,11 @@ export const getDotFormat = (
     const adjust = (nodeId: string, key: string): string => {
       let node = nodeMap.get(nodeId);
       if (!node) throw new Error("Edge to undefined node");
-      if (node.type !== "subgraph") return nodeId;
+      if (node.type !== "expanded") return nodeId;
       if (!imageData.hasParentEdges) throw new Error("Unexpected edge to cluster");
       // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
       edgeAttributes.push({ key, value: `cluster_${nodeId}` });
-      while (node.type === "subgraph") {
+      while (node.type === "expanded") {
         node = node.children[0];
       }
       return node.id;

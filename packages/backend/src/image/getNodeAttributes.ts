@@ -1,5 +1,4 @@
-import { AnyNodeType, AreaClass, nodeIdToText } from "../contracts-ui";
-import { ImageClosed, ImageLeaf, ImageNode, ImageNodeType, ImageSubgraph } from "./imageDataTypes";
+import { AnyNodeType, AreaClass, Closed, Collapsible, Leaf, Node, nodeIdToText, Parent } from "../contracts-ui";
 
 type Attributes = {
   id: string;
@@ -11,18 +10,18 @@ type Attributes = {
   attributes: { [key: string]: string };
 };
 
-type NonClusterAttributes = Attributes & { type: (ImageLeaf | ImageClosed)["type"] };
-type ClusterAttributes = Attributes & { type: ImageSubgraph["type"]; children: NodeAttributes[] };
+type NonClusterAttributes = Attributes & { type: (Leaf | Closed)["collapsible"] };
+type ClusterAttributes = Attributes & { type: Parent["collapsible"]; children: NodeAttributes[] };
 
 export type NodeAttributes = ClusterAttributes | NonClusterAttributes;
 
-const getAreaClass = (type: ImageNodeType): AreaClass => {
-  switch (type) {
-    case "subgraph":
+const getAreaClass = (collapsible: Collapsible): AreaClass => {
+  switch (collapsible) {
+    case "expanded":
       return "expanded";
-    case "closed":
+    case "collapsed":
       return "closed";
-    case "leaf":
+    case "none":
       return "leaf-details";
   }
 };
@@ -30,10 +29,10 @@ const getAreaClass = (type: ImageNodeType): AreaClass => {
 const getShortLabel = (label: string, parentLabel: string | undefined): string =>
   !parentLabel || !label.startsWith(parentLabel) ? label : "(*)" + label.substring(parentLabel.length);
 
-export const getNodeAttributes = (imageNode: ImageNode): NodeAttributes => {
-  const { type, node } = imageNode;
+export const getNodeAttributes = (node: Node): NodeAttributes => {
   const id = nodeIdToText(node.nodeId);
   const tooltip = node.label;
+  const type = node.collapsible;
   const className = getAreaClass(type);
   const label = getShortLabel(node.label, node.parent?.label);
   const nodeType = node.type;
@@ -52,9 +51,9 @@ export const getNodeAttributes = (imageNode: ImageNode): NodeAttributes => {
       break;
   }
 
-  if (type != "subgraph") return { id, label, className, tooltip, type, nodeType, attributes };
+  if (type != "expanded") return { id, label, className, tooltip, type, nodeType, attributes };
 
-  const children = imageNode.children.map(getNodeAttributes);
+  const children = node.children.map(getNodeAttributes);
 
   return { id, label, className, tooltip, type, nodeType, attributes, children };
 };
