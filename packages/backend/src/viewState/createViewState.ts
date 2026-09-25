@@ -1,12 +1,11 @@
 import type { AnyLeafType, AnyNodeType, NodeId } from "../contracts-ui";
-import { isParent, NodeType, textToNodeId } from "../contracts-ui";
+import { isParent, isVisible, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
 import { createDatabase } from "./createDatabase";
 import type { NodeState } from "./nodeState";
-import type { NodeStates } from "./nodeStates";
 import { toLeafs, toTrunk } from "./toNodes";
 import type { Forest, Numeric } from "./types";
 
@@ -62,9 +61,9 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
     viewType
   );
 
-  const getCalls = (forest: Forest, nodeStates: NodeStates): Call[] => {
+  const getCalls = (forest: Forest): Call[] => {
     const leafIds = forest.allNodes
-      .filter((node) => !isParent(node) && nodeStates.isExpandedNode(node))
+      .filter((node) => !isParent(node) && isVisible(node))
       .map((node) => toAnyBigId(node.nodeId, node.type, viewType));
     const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
@@ -94,7 +93,7 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
 
     const forest = getForest();
 
-    const calls = getCalls(forest, nodeStates);
+    const calls = getCalls(forest);
 
     return { forest, calls, leafType };
   };
