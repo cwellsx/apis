@@ -1,7 +1,7 @@
 import { IsShown } from "backend-ui";
 import * as React from "react";
+import { Codeicons } from "../images.tsx";
 import "./CheckBox.scss";
-import { Codeicons } from "./images.tsx";
 
 // SVG icons
 const svgCheck = <Codeicons.SvgCheck viewBox="0 0 16 16" />;

@@ -1,8 +1,8 @@
 import type { Node } from "backend-ui";
 import { isLeaf, isParent, nodeIdToText } from "backend-ui";
 import * as React from "react";
+import { Codeicons } from "../images.tsx";
 import { CheckBox } from "./CheckBox";
-import { Codeicons } from "./images.tsx";
 import "./TreeView.scss";
 
 // SVG icons

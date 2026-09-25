@@ -1,6 +1,6 @@
 import { Collapsible, isParent, isVisible, NewNodeState, type Node, type OnFilterEvent } from "backend-ui";
 import * as React from "react";
-import { OnToggle, TreeView } from "./TreeView";
+import { OnToggle, TreeView } from "./components/TreeView";
 
 type TreeProps = { nodes: Node[]; checkModel: "all" | "leaf"; onFilterEvent: OnFilterEvent };
 
