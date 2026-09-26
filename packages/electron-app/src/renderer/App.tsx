@@ -12,10 +12,10 @@ import type {
 } from "backend-ui";
 import { defaultAppOptions, defaultView } from "backend-ui";
 import * as React from "react";
-import { ChooseAppOptions } from "./Options";
-import { Panes } from "./Panes";
-import { TextView } from "./TextView";
+import { Layout } from "./Layout";
 import { log } from "./log";
+import { ChooseAppOptions } from "./Options";
+import { TextView } from "./TextView";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 import { getCenter, getLeft, getRight } from "./viewGraph";
 
@@ -105,19 +105,27 @@ const App: React.FunctionComponent = () => {
   const chooseAppOptions = <ChooseAppOptions appOptions={appOptions} onAppOptions={onAppOptions} />;
 
   return (
-    <React.StrictMode>
-      <Panes
-        left={getLeft(view, onViewOptions, onFilterEvent, appOptions, onAppOptions)}
-        center={getCenter(view, onGraphEvent, zoomPercent)}
-        right={getRight(details, onDetailEvent)}
-        appOptions={chooseAppOptions}
-        fontSize={fontSize}
-        onWheelZoomPercent={onWheelZoomPercent}
-        onWheelFontSize={onWheelFontSize}
-        rightWidthMaxContent={rightWidthMaxContent}
-      />
-    </React.StrictMode>
+    <Layout
+      left={getLeft(view, onViewOptions, onFilterEvent, appOptions, onAppOptions)}
+      center={getCenter(view, onGraphEvent, zoomPercent)}
+      right={getRight(details, onDetailEvent)}
+      appOptions={chooseAppOptions}
+    />
   );
+  // return (
+  //   <React.StrictMode>
+  //     <Panes
+  //       left={getLeft(view, onViewOptions, onFilterEvent, appOptions, onAppOptions)}
+  //       center={getCenter(view, onGraphEvent, zoomPercent)}
+  //       right={getRight(details, onDetailEvent)}
+  //       appOptions={chooseAppOptions}
+  //       fontSize={fontSize}
+  //       onWheelZoomPercent={onWheelZoomPercent}
+  //       onWheelFontSize={onWheelFontSize}
+  //       rightWidthMaxContent={rightWidthMaxContent}
+  //     />
+  //   </React.StrictMode>
+  // );
 };
 
 export const createApp = () => <App />;

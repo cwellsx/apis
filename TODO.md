@@ -14,6 +14,7 @@
 - Implement - details and call graphs for Core data
 - Implement - network APIs
 - Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
+- Experiment - Cline
 
 ## Long term -- replace modules
 

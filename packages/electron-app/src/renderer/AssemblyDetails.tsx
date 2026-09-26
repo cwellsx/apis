@@ -1,9 +1,11 @@
-import type { Access, DetailedAssembly, MemberInfo, Named, Namespace, OnDetailEvent, Type } from "backend-ui";
-import { nodeIdToText, textToNodeId } from "backend-ui";
+import type { DetailedAssembly, OnDetailEvent } from "backend-ui";
 import * as React from "react";
-import { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
-import { ImageLibrary as Icon } from "./images.tsx";
+// import type { Access, DetailedAssembly, MemberInfo, Named, Namespace, OnDetailEvent, Type } from "backend-ui";
+// import { nodeIdToText, textToNodeId } from "backend-ui";
+// import { Node as CheckboxNode, OnCheckNode } from "react-checkbox-tree";
+// import { ImageLibrary as Icon } from "./images.tsx/index.js";
 
+/*
 const makeNode = (
   textNode: Named,
   icon: React.ReactNode,
@@ -190,4 +192,10 @@ export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: De
   //     />
   //   </>
   // );
+};
+*/
+
+type DetailsProps = { types: DetailedAssembly; onDetailEvent: OnDetailEvent };
+export const AssemblyDetails: React.FunctionComponent<DetailsProps> = (props: DetailsProps) => {
+  return "hello";
 };

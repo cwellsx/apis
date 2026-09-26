@@ -8,6 +8,8 @@
     "@typescript-eslint/parser": "8.46.2",
     "@typescript-eslint/eslint-plugin": "8.46.2",
     "electron": "37.6.0",
-    "@types/node": "22.18.12"
+    "@types/node": "22.18.12",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   }
 }

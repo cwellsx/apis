@@ -5,25 +5,22 @@ import { rules } from "./webpack.rules";
 
 import type { Configuration } from "webpack";
 
-rules.push({
-  test: /\.css$/,
-  use: [{ loader: "style-loader" }, { loader: "css-loader" }],
-});
+rules.push({ test: /\.css$/, use: [{ loader: "style-loader" }, { loader: "css-loader" }] });
 
-rules.push({
-  test: /\.(s(a|c)ss)$/,
-  use: [{ loader: "style-loader" }, { loader: "css-loader" }, "sass-loader"],
-});
+rules.push({ test: /\.(s(a|c)ss)$/, use: [{ loader: "style-loader" }, { loader: "css-loader" }, "sass-loader"] });
 
 export const rendererConfig: Configuration = {
   mode: "development",
   devtool: "source-map",
-  module: {
-    rules,
-  },
+  module: { rules },
   plugins,
   resolve: {
     extensions: [".js", ".ts", ".jsx", ".tsx", ".css", ".sass", ".scss"],
     plugins: [new TsconfigPathsPlugin({ configFile: path.resolve(__dirname, "tsconfig.json") })],
+    alias: {
+      // Force all modules to look at your single root/app copy of React 19
+      react: path.resolve(__dirname, "../../node_modules/react"),
+      "react-dom": path.resolve(__dirname, "../../node_modules/react-dom"),
+    },
   },
 };

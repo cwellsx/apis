@@ -12,7 +12,10 @@
       "backend-app": ["../backend/contracts/app/index.ts"],
       "backend-ui": ["../backend/contracts/ui/index.ts"],
       "sut/*": ["../backend/src/*"]
-    }
+    },
+    // don't try to compile e.g. @types/react-dom -- by default the compiler would try to compile all types
+    "types": ["node", "mocha"],
+    "skipLibCheck": true
   },
   "include": ["test", "../backend/src", "../backend/contracts"]
 }

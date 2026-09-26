@@ -65,10 +65,9 @@
     "@viz-js/viz": "^3.8.0",
     "electron-cgi": "^1.0.6",
     "electron-squirrel-startup": "^1.0.0",
+    "flexlayout-react": "^0.11.0",
     "react": "^19.3.0",
-    "react-checkbox-tree": "^1.8.0",
     "react-dom": "^19.3.0",
-    "split-pane-react": "^0.1.3",
     "sqlio": "^0.0.1",
     "xml-js": "^1.6.11"
   }
