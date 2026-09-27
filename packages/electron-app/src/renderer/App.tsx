@@ -33,6 +33,7 @@ const isViewGraph = (view: View): view is ViewGraph => (view as ViewGraph).graph
 
 const App: React.FunctionComponent = () => {
   const [view, setView] = React.useState<View>(defaultView);
+  const [viewVersion, setViewVersion] = React.useState<number>(0);
   const [details, setDetails] = React.useState<ViewDetails | undefined>(undefined);
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
 
@@ -44,6 +45,16 @@ const App: React.FunctionComponent = () => {
   const setFontSize = (fontSize: number): void => onAppOptions({ ...appOptions, fontSize });
   const onWheelFontSize = useFontSize(fontSize, setFontSize);
 
+  const incrementViewVersion = () => {
+    // 🔥 Pass a function down. React injects the absolute latest
+    // live value into 'prev' directly from its internal state queue.
+    setViewVersion((prev) => {
+      const nextVersion = prev + 1;
+      console.log(`Incrementing version to: ${nextVersion}`); // Correctly logs the real update
+      return nextVersion;
+    });
+  };
+
   React.useEffect(() => {
     if (once) return;
     once = true;
@@ -52,6 +63,7 @@ const App: React.FunctionComponent = () => {
       showView(view: View): void {
         log("showView");
         setView(view);
+        incrementViewVersion();
         if (!isViewGraph(view)) setDetails(undefined);
       },
       showDetails(details: ViewDetails): void {
@@ -110,6 +122,7 @@ const App: React.FunctionComponent = () => {
       center={getCenter(view, onGraphEvent, zoomPercent)}
       right={getRight(details, onDetailEvent)}
       appOptions={chooseAppOptions}
+      viewVersion={viewVersion}
     />
   );
   // return (

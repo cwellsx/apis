@@ -2,6 +2,8 @@
 
 ## Near term
 
+- Debug - delete state of descendents on ancestor state change
+- Refactor - remove viewGraph.tsx and move React elements into .\tabs folder
 - Refactor - combine the SVG elements and containers
 - Debug - hourglass and prevent overlapping input events from user
 - Test - custom data

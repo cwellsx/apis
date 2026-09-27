@@ -30,6 +30,12 @@ export const Nodes: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const renderNode: (node: Node) => React.ReactNode = (node) => node.label;
 
   return (
-    <TreeView roots={nodes} onToggleExpand={onToggleExpand} onToggleCheck={onToggleCheck} renderNode={renderNode} />
+    <TreeView
+      id={"explorer"}
+      roots={nodes}
+      onToggleExpand={onToggleExpand}
+      onToggleCheck={onToggleCheck}
+      renderNode={renderNode}
+    />
   );
 };

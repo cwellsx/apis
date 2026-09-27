@@ -72,11 +72,12 @@ type TreeViewProps = {
   onToggleExpand: OnToggle;
   onToggleCheck: OnToggle | null;
   renderNode: (node: Node) => React.ReactNode;
+  id: string;
 };
 
-export const TreeView: React.FC<TreeViewProps> = ({ roots, onToggleExpand, onToggleCheck, renderNode }) => {
+export const TreeView: React.FC<TreeViewProps> = ({ roots, onToggleExpand, onToggleCheck, renderNode, id }) => {
   return (
-    <ul className="tree-root">
+    <ul className="tree-root" id={id}>
       {roots.map((node) => (
         <TreeItem
           key={nodeIdToText(node.nodeId)}
