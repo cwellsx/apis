@@ -3,19 +3,14 @@ import { NodeType } from "../contracts-ui";
 import * as Id from "../id2";
 import type { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
-import { NodeStates } from "./createNodeStates";
 import { Leafs, Top } from "./forest";
-import type { NodeState } from "./nodeState";
-import { fromBoolean } from "./sqlBoolean";
+import type { NodeStates } from "./nodeStates";
 
-export type Database = {
+export type MakeNodeTree = {
   rootNodeType: RootNodeType;
   leafType: AnyLeafType;
   top: Top;
-  getNodeStates: () => NodeStates;
   getLeafs: (nodeStates: NodeStates) => Leafs;
-  setAnyNodeState: (id: Id.AnyBigId, nodeState: NodeState) => void;
-  resetNodeStates: () => void;
 };
 
 type TypeNames = { typeNames: Sql.TypeName[]; typeParents: [Id.AnyId, Id.AnyId][] };
@@ -74,36 +69,8 @@ const createViewOf = (sqlTables: Sql.Tables, viewType: ViewType): ViewOf => {
   }
 };
 
-export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Database => {
+export const databaseNodeTree = (sqlTables: Sql.Tables, viewType: ViewType): MakeNodeTree => {
   const { top, rootNodeType, leafType, getTypeNames } = createViewOf(sqlTables, viewType);
-
-  const views = sqlTables.views.selectAll();
-  const found = views.find((view) => view.viewType == viewType);
-  assert(!!found);
-  const viewId: Id.ViewId = found.id;
-
-  const getNodeStates = (): NodeStates => {
-    const viewStates: Sql.ViewState[] = sqlTables.viewStates.selectWhere({ viewId });
-    return new NodeStates(viewStates, viewType);
-  };
-
-  const setAnyNodeState = (id: Id.AnyBigId, nodeState: NodeState): void => {
-    if (!nodeState.isExpanded && !nodeState.isHidden) {
-      // TODO -- implement DELETE
-      // return;
-    }
-    const viewState: Sql.ViewState = {
-      viewId,
-      id,
-      isHidden: fromBoolean(!!nodeState.isHidden),
-      isExpanded: fromBoolean(!!nodeState.isExpanded),
-    };
-    sqlTables.viewStates.upsert(viewState);
-  };
-
-  const resetNodeStates = (): void => {
-    sqlTables.viewStates.deleteWhere({ viewId });
-  };
 
   /*
   
@@ -156,5 +123,5 @@ export const createDatabase = (sqlTables: Sql.Tables, viewType: ViewType): Datab
     return { typeItems: typeNames, methodItems: methodNames, parentItems: parents };
   };
 
-  return { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, resetNodeStates, getLeafs };
+  return { rootNodeType, leafType, top, getLeafs };
 };

@@ -4,49 +4,15 @@ import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
 import { assert, getOrThrow } from "../utils";
-import { createDatabase } from "./createDatabase";
-import { NodeStates } from "./createNodeStates";
+import { databaseNodeStates } from "./databaseNodeStates";
+import { databaseNodeTree } from "./databaseNodeTree";
 import type { Forest, Numeric } from "./forest";
 import type { NodeState } from "./nodeState";
+import type { NodeStates } from "./nodeStates";
 import { toLeafs, toTrunk } from "./toNodes";
 
-/*
-To work with the existing front end we need to call this method
-
-```
-export function convertToImage(
-  roots: Node[],
-  edges: Edges,
-  viewOptions: GraphViewOptions,
-  graphFilter: GraphFilter,
-  shortLeafNames: boolean,
-  imageAttributes?: NodeIdMap<ImageAttribute>
-): ImageData
-```
-
-And use the ImageData with GraphViewData
-
-```
-export type ViewGraphData = {
-  // could send null if previously-sent Groups has not changed
-  // but that would require useState and useEffect in the render
-  // https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state
-  groups: Node[];
-
-  graphFilter: GraphFilter;
-  graphViewOptions: GraphViewOptions;
-};
-```
-
-- 
-*/
-
-const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
-  const text = id.toString();
-  return textToNodeId(text);
-};
-
 export type Call = { fromId: NodeId; toId: NodeId };
+
 export type GraphNodes = {
   roots: Node[];
   calls: Call[];
@@ -63,10 +29,14 @@ export type ViewState = {
 };
 
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
-  const { rootNodeType, leafType, top, getNodeStates, setAnyNodeState, resetNodeStates, getLeafs } = createDatabase(
-    sqlTables,
-    viewType
-  );
+  // two "make" modules are closures which do database I/O using sqlTables
+  const { rootNodeType, leafType, top, getLeafs } = databaseNodeTree(sqlTables, viewType);
+  const { getNodeStates, setAnyNodeState, resetNodeStates } = databaseNodeStates(sqlTables, viewType);
+
+  const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
+    const text = id.toString();
+    return textToNodeId(text);
+  };
 
   const getCalls = (forest: Forest): Call[] => {
     const allNodes = [...forest.allNodes.values()];
