@@ -5,9 +5,10 @@ import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
 import { assert, getOrThrow } from "../utils";
 import { createDatabase } from "./createDatabase";
+import { NodeStates } from "./createNodeStates";
+import type { Forest, Numeric } from "./forest";
 import type { NodeState } from "./nodeState";
 import { toLeafs, toTrunk } from "./toNodes";
-import type { Forest, Numeric } from "./types";
 
 /*
 To work with the existing front end we need to call this method
@@ -79,26 +80,25 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
   const setNodeState = (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState): void =>
     setAnyNodeState(toAnyBigId(id, nodeType, viewType), nodeState);
 
+  const getForest = (nodeStates: NodeStates): Forest => {
+    const trunk = toTrunk(top, rootNodeType, nodeStates, leafType);
+    switch (leafType) {
+      case NodeType.Assembly:
+        return trunk;
+      case NodeType.Custom:
+        assert(false);
+        break;
+      case NodeType.Method: {
+        const leafs = getLeafs(nodeStates);
+        toLeafs(trunk, leafs, nodeStates, leafType);
+        return trunk;
+      }
+    }
+  };
+
   const getGraphNodes = (): GraphNodes => {
     const nodeStates = getNodeStates();
-    const trunk = toTrunk(top, rootNodeType, nodeStates, leafType);
-
-    const getForest = (): Forest => {
-      switch (leafType) {
-        case NodeType.Assembly:
-          return trunk;
-        case NodeType.Custom:
-          assert(false);
-          break;
-        case NodeType.Method: {
-          const leafs = getLeafs(nodeStates);
-          toLeafs(trunk, leafs, nodeStates, leafType);
-          return trunk;
-        }
-      }
-    };
-
-    const forest = getForest();
+    const forest = getForest(nodeStates);
 
     const calls = getCalls(forest);
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));

@@ -3,10 +3,10 @@ import { NodeType } from "../contracts-ui";
 import * as Id from "../id2";
 import type { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
+import { NodeStates } from "./createNodeStates";
+import { Leafs, Top } from "./forest";
 import type { NodeState } from "./nodeState";
-import { NodeStates } from "./nodeStates";
 import { fromBoolean } from "./sqlBoolean";
-import { Leafs, Top } from "./types";
 
 export type Database = {
   rootNodeType: RootNodeType;

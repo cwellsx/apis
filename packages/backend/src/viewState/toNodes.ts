@@ -13,8 +13,8 @@ import {
 } from "../contracts-ui";
 import * as Id from "../id2";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
-import { NodeStates } from "./nodeStates";
-import { Forest, Item, Leafs, Numeric, Top } from "./types";
+import { NodeStates } from "./createNodeStates";
+import { Forest, Item, Leafs, Numeric, Top } from "./forest";
 
 const insert = <T extends { label: string }>(array: T[], node: T): void => {
   let lo = 0;
