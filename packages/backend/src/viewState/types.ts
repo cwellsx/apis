@@ -13,5 +13,6 @@ export type Leafs = {
   parentItems: Map<Id.AnyId, Id.AnyId>;
 };
 
-// roots and node.children are sorted alphabetically -- allNodes is unsorted
-export type Forest = { roots: Node[]; allNodes: Node[] };
+// roots and node.children are sorted alphabetically
+// the key of allNodes is nodeIdToText(node.nodeId)
+export type Forest = { roots: Node[]; allNodes: Map<string, Node> };

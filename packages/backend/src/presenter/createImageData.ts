@@ -15,7 +15,7 @@ export const createImageData = (graphNodes: GraphNodes): ImageData => {
   };
 
   return {
-    nodes: graphNodes.forest.roots.filter(isVisibleOrMixed),
+    nodes: graphNodes.roots.filter(isVisibleOrMixed),
     edges: graphNodes.calls.map(toImageEdge),
     edgeDetails: graphNodes.leafType == NodeType.Method,
     hasParentEdges: false,

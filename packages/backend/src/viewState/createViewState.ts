@@ -1,9 +1,9 @@
-import type { AnyLeafType, AnyNodeType, NodeId } from "../contracts-ui";
-import { isParent, isVisible, NodeType, textToNodeId } from "../contracts-ui";
+import type { AnyLeafType, AnyNodeType, Node, NodeId } from "../contracts-ui";
+import { isParent, isVisible, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
-import { assert } from "../utils";
+import { assert, getOrThrow } from "../utils";
 import { createDatabase } from "./createDatabase";
 import type { NodeState } from "./nodeState";
 import { toLeafs, toTrunk } from "./toNodes";
@@ -46,7 +46,13 @@ const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
 };
 
 export type Call = { fromId: NodeId; toId: NodeId };
-export type GraphNodes = { forest: Forest; calls: Call[]; leafType: AnyLeafType };
+export type GraphNodes = {
+  roots: Node[];
+  calls: Call[];
+  leafType: AnyLeafType;
+  getNode: (nodeId: NodeId) => Node;
+  findNode: (predicate: (node: Node) => boolean) => Node | undefined;
+};
 
 export type ViewState = {
   getGraphNodes: () => GraphNodes;
@@ -62,7 +68,8 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
   );
 
   const getCalls = (forest: Forest): Call[] => {
-    const leafIds = forest.allNodes
+    const allNodes = [...forest.allNodes.values()];
+    const leafIds = allNodes
       .filter((node) => !isParent(node) && isVisible(node))
       .map((node) => toAnyBigId(node.nodeId, node.type, viewType));
     const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
@@ -94,8 +101,10 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
     const forest = getForest();
 
     const calls = getCalls(forest);
+    const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
+    const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    return { forest, calls, leafType };
+    return { roots: forest.roots, calls, leafType, getNode, findNode };
   };
 
   return { getGraphNodes, setNodeState, viewType, resetNodeStates };

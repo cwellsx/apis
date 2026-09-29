@@ -10,7 +10,6 @@ import { Sql, ViewType } from "sut/sql2";
 import { deleteFileSync } from "sut/utils";
 import { createViewState, ViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
-import { Forest } from "sut/viewState/types";
 import { fileWrite } from "./file";
 import { fileCoreJson, fileViewState } from "./paths2";
 import {
@@ -36,8 +35,8 @@ const getRootNodeType = (viewType: ViewType): RootNodeType => {
   }
 };
 
-const getForestNode = (forest: Forest, name: string, rootNodeType: AnyNodeType): Node | undefined =>
-  forest.allNodes.find((value) => value.type == rootNodeType && value.label == name);
+const getForestNode = (viewState: ViewState, name: string, rootNodeType: AnyNodeType): Node | undefined =>
+  viewState.getGraphNodes().findNode((value) => value.type == rootNodeType && value.label == name);
 
 const printTypeRefs = (tables: Sql.Tables): void => {
   type NamedOwner = { ownerId: Id.AnyOwnerId; fullName: string };
@@ -159,12 +158,9 @@ describe("testViewStates", function () {
         //forest = viewState.getGraphNodes().forest;
       });
 
-      const getForest = (): Forest => viewState.getGraphNodes().forest;
-
       const printViewState = async () => {
         const graphNodes = viewState.getGraphNodes();
-        const forest = graphNodes.forest;
-        const printed = printForest(forest);
+        const printed = printForest(graphNodes.roots);
         const filenameRoot = `${viewType}-${suffix++}`;
         printLines(`${filenameRoot}.txt`, printed);
 
@@ -183,8 +179,7 @@ describe("testViewStates", function () {
       });
 
       it("expand Core node", async function () {
-        const forest = getForest();
-        const node = getForestNode(forest, "Core", getRootNodeType(viewType));
+        const node = getForestNode(viewState, "Core", getRootNodeType(viewType));
         assert(!!node);
         viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
         await printViewState();
@@ -193,16 +188,14 @@ describe("testViewStates", function () {
       });
 
       it("collapse Microsoft nodes", async function () {
-        const forest = getForest();
-        const node = getForestNode(forest, "Microsoft", NodeType.Group);
+        const node = getForestNode(viewState, "Microsoft", NodeType.Group);
         assert(!!node);
         viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
         await printViewState();
       });
 
       it("hide System.Collections node", async function () {
-        const forest = getForest();
-        const node = getForestNode(forest, "System.Collections", NodeType.Group);
+        const node = getForestNode(viewState, "System.Collections", NodeType.Group);
         assert(!!node);
         viewState.setNodeState(node.nodeId, node.type, { isHidden: true, isExpanded: true });
         await printViewState();
@@ -210,8 +203,8 @@ describe("testViewStates", function () {
 
       it("expand Program node", async function () {
         // choose a type which exists in the Core assembly and in the Core namespace
-        const forest = getForest();
-        const node = getForestNode(forest, "Program", NodeType.Type);
+
+        const node = getForestNode(viewState, "Program", NodeType.Type);
         assert(!!node);
         viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false });
         await printViewState();

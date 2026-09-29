@@ -1,15 +1,6 @@
 import type { MainApiAsync, MenuItem, RuntimeContext } from "../contracts-app";
-import type {
-  AppOptions,
-  DetailEvent,
-  FilterEvent,
-  GraphEvent,
-  GraphOptions,
-  Node,
-  NodeId,
-  ViewGraph,
-} from "../contracts-ui";
-import { isEdgeId, nodeIdEquals, NodeType } from "../contracts-ui";
+import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, GraphOptions, Node, ViewGraph } from "../contracts-ui";
+import { isEdgeId, NodeType } from "../contracts-ui";
 import { bindImage } from "../image";
 import { createImageData } from "../presenter";
 import { Sql, ViewType } from "../sql2";
@@ -61,7 +52,7 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
     graphNodes = viewState.getGraphNodes();
     const imageData = createImageData(graphNodes);
     const image = await createImage(imageData);
-    const groups: Node[] = graphNodes.forest.roots;
+    const groups: Node[] = graphNodes.roots;
     const viewGraph: ViewGraph = { image, groups, graphViewOptions: { graphType: "none" }, isCheckModelAll: false };
     display.showView(viewGraph);
   };
@@ -69,11 +60,6 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
   await showViewType();
 
   const notImplemented = () => assert(false, "Not implemented");
-  const findNode = (nodeId: NodeId): Node => {
-    const node = graphNodes.forest.allNodes.find((node) => nodeIdEquals(node.nodeId, nodeId));
-    assert(!!node);
-    return node;
-  };
 
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {
@@ -94,7 +80,7 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
         throw new Error("Edge details not yet implemented");
       }
       // else it's a node not an edge
-      const node = findNode(id);
+      const node = graphNodes.getNode(id);
       if (graphNodes.leafType !== node.type) {
         // this is a group -- toggle expanded
         const nodeState = getNodeState(node);

@@ -38,6 +38,8 @@ const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
   return textToNodeId(text);
 };
 
+const addAllNodes = (forest: Forest, node: Node) => forest.allNodes.set(nodeIdToText(node.nodeId), node);
+
 const toNode = (
   item: Item<Numeric>,
   type: AnyNodeType,
@@ -73,7 +75,15 @@ export const toTrunk = (
   const toTrunkNode = (item: Item<Numeric>, type: AnyNodeType, parent: Parent | null): Node =>
     toNode(item, type, nodeStates, parent, leafType);
 
-  const trunk: Forest = { roots: [], allNodes: [] };
+  // the root nodes don't identify which group contains them
+  // so findParent finds the group by which has the closest name
+  const trunk: Forest = { roots: [], allNodes: new Map<string, Node>() };
+  const allNodes: Node[] = [];
+
+  const addNode = (node: Node): void => {
+    allNodes.push(node);
+    addAllNodes(trunk, node);
+  };
 
   const findParent = (node: Item<number>): Parent | Closed | null => {
     const callbackfn = (previous: Node | null, current: Node): Node | null => {
@@ -81,7 +91,7 @@ export const toTrunk = (
       if (previous && previous.label.length > current.label.length) return previous;
       return current;
     };
-    const result = trunk.allNodes.reduce(callbackfn, null);
+    const result = allNodes.reduce(callbackfn, null);
     assert(!result || !isLeaf(result));
     return result;
   };
@@ -100,7 +110,7 @@ export const toTrunk = (
 
       const node = toTrunkNode(item, type, parent);
       insert(parent ? parent.children : trunk.roots, node);
-      trunk.allNodes.push(node);
+      addNode(node);
     });
   };
 
@@ -117,7 +127,7 @@ export const toTrunk = (
         layer.sort((x, y) => compareOrdinal(x.name, y.name));
         const nodes = layer.map((item) => toTrunkNode(item, NodeType.Group, null));
         trunk.roots.push(...nodes);
-        trunk.allNodes.push(...nodes);
+        nodes.forEach(addNode);
       } else findParents(layer, NodeType.Group);
     }
   };
@@ -132,11 +142,9 @@ export const toLeafs = (trunk: Forest, leafs: Leafs, nodeStates: NodeStates, lea
   const toLeafNode = (item: Item<Numeric>, type: AnyNodeType, parent: Parent): Node =>
     toNode(item, type, nodeStates, parent, leafType);
 
-  const mapNodes = new Map<string, Node>(trunk.allNodes.map((node) => [nodeIdToText(node.nodeId), node]));
-
   const getParent = (id: Id.AnyId): Parent => {
     const parentId = getOrThrow(leafs.parentItems, id);
-    const node = getOrThrow(mapNodes, parentId.toString());
+    const node = getOrThrow(trunk.allNodes, parentId.toString());
     assert(isParent(node));
     return node;
   };
@@ -146,8 +154,7 @@ export const toLeafs = (trunk: Forest, leafs: Leafs, nodeStates: NodeStates, lea
       const parent = getParent(item.id);
       const node = toLeafNode(item, type, parent);
       insert(parent.children, node);
-      mapNodes.set(nodeIdToText(node.nodeId), node);
-      trunk.allNodes.push(node);
+      addAllNodes(trunk, node);
     });
 
   addToParents(leafs.typeItems, NodeType.Type);
