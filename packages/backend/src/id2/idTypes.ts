@@ -2,8 +2,8 @@
 
 export type AssemblyId = number & { __brand: "AssemblyId" };
 export type NamespaceId = number & { __brand: "NamespaceId" };
-export type AssemblyGroupId = number & { __brand: "AssemblyGroupId" };
-export type NamespaceGroupId = number & { __brand: "NamespaceGroupId" };
+export type GroupId = number & { __brand: "GroupId" };
+
 export type ViewId = number & { __brand: "ViewId" };
 
 export type CustomId = number & { __brand: "CustomId" };
@@ -20,8 +20,7 @@ export type MemberId = bigint & { __brand: "MemberId" };
 
 export type BigAssemblyId = bigint & { __brand: "BigAssemblyId" };
 export type BigNamespaceId = bigint & { __brand: "BigNamespaceId" };
-export type BigAssemblyGroupId = bigint & { __brand: "BigAssemblyGroupId" };
-export type BigNamespaceGroupId = bigint & { __brand: "BigNamespaceGroupId" };
+export type BigGroupId = bigint & { __brand: "BigGroupId" };
 export type BigCustomId = bigint & { __brand: "BigCustomId" };
 
 export type CallFromId = MethodDefId | TypeDefId | BigAssemblyId | BigNamespaceId;
@@ -36,14 +35,6 @@ export type AnyOwnerId = TypeSpecId | MethodSpecId | MethodDefId; // ownerId of 
 //export type AnyOwnerId = bigint & { __brand: "TypeSpecId" | "MethodSpecId" | "MethodDefId" };
 
 export type AnyRootId = AssemblyId | NamespaceId;
-export type AnyGroupId = AssemblyGroupId | NamespaceGroupId;
-export type AnyId = TypeId | MethodId | AnyRootId | AnyGroupId | CustomId;
+export type AnyId = TypeId | MethodId | AnyRootId | GroupId | CustomId;
 
-export type AnyBigId =
-  | TypeId
-  | MethodId
-  | BigAssemblyId
-  | BigNamespaceId
-  | BigAssemblyGroupId
-  | BigNamespaceGroupId
-  | BigCustomId;
+export type AnyBigId = TypeId | MethodId | BigAssemblyId | BigNamespaceId | BigGroupId | BigCustomId;

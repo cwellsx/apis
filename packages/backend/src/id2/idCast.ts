@@ -2,8 +2,7 @@ import * as Id from "./idTypes";
 
 export const castAssemblyId = (id: number): Id.AssemblyId => id as Id.AssemblyId;
 export const castNamespaceId = (id: number): Id.NamespaceId => id as Id.NamespaceId;
-export const castAssemblyGroupId = (id: number): Id.AssemblyGroupId => id as Id.AssemblyGroupId;
-export const castNamespaceGroupId = (id: number): Id.NamespaceGroupId => id as Id.NamespaceGroupId;
+export const castGroupId = (id: number): Id.GroupId => id as Id.GroupId;
 export const castViewId = (id: number): Id.ViewId => id as Id.ViewId;
 
 export const castCustomId = (id: number): Id.CustomId => id as Id.CustomId;
@@ -20,15 +19,11 @@ export const castAnyBigId = (id: bigint): Id.AnyBigId => id as Id.TypeDefId;
 
 export const toBigAssemblyId = (id: Id.AssemblyId): Id.BigAssemblyId => BigInt(id) as Id.BigAssemblyId;
 export const toBigNamespaceId = (id: Id.NamespaceId): Id.BigNamespaceId => BigInt(id) as Id.BigNamespaceId;
-export const toBigAssemblyGroupId = (id: Id.AssemblyGroupId): Id.BigAssemblyGroupId =>
-  BigInt(id) as Id.BigAssemblyGroupId;
-export const toBigNamespaceGroupId = (id: Id.NamespaceGroupId): Id.BigNamespaceGroupId =>
-  BigInt(id) as Id.BigNamespaceGroupId;
+export const toBigGroupId = (id: Id.GroupId): Id.BigGroupId => BigInt(id) as Id.BigGroupId;
 
 export const castBigAssemblyId = (id: bigint): Id.BigAssemblyId => id as Id.BigAssemblyId;
 export const castBigNamespaceId = (id: bigint): Id.BigNamespaceId => id as Id.BigNamespaceId;
-export const castBigAssemblyGroupId = (id: bigint): Id.BigAssemblyGroupId => id as Id.BigAssemblyGroupId;
-export const castBigNamespaceGroupId = (id: bigint): Id.BigNamespaceGroupId => id as Id.BigNamespaceGroupId;
+export const castBigGroupId = (id: bigint): Id.BigGroupId => id as Id.BigGroupId;
 
 export const castBigCustomId = (id: bigint): Id.BigCustomId => id as Id.BigCustomId;
 
@@ -36,8 +31,7 @@ export const zero = {
   // number
   assemblyId: castAssemblyId(0),
   namespaceId: castNamespaceId(0),
-  assemblyGroupId: castAssemblyGroupId(0),
-  namespaceGroupId: castNamespaceGroupId(0),
+  groupId: castGroupId(0),
   viewId: castViewId(0),
   // bigint
   typeDefId: castTypeDefId(0n),

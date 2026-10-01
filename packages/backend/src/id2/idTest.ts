@@ -54,6 +54,5 @@ export const isCallToId = (toId: CallToId): "A" | "N" | "T" | "M" => {
 export const enum BoxedId {
   Assembly = 0x40,
   Namespace = 0x41,
-  AssemblyGroup = 0x80,
-  NamespaceGroup = 0x81,
+  Group = 0x42,
 }

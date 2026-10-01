@@ -5,7 +5,7 @@ import { Config, config, ConfigKvps } from "./config";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = "2026-09-12";
+const schemaVersion = "2026-10-01a";
 
 export type Boolean = 0 | 1;
 
@@ -43,8 +43,7 @@ export type View = { id: Id.ViewId; viewType: ViewType };
 // isExpanded will be false for leaf-type nodes
 export type ViewState = { viewId: Id.ViewId; id: Id.AnyBigId; isHidden: Boolean; isExpanded: Boolean };
 
-export type AssemblyGroup = { id: Id.AssemblyGroupId; name: string };
-export type NamespaceGroup = { id: Id.NamespaceGroupId; name: string };
+export type Group = { id: Id.GroupId; name: string };
 
 const tableNames = [
   "assemblies",
@@ -70,8 +69,7 @@ const tableNames = [
   "views",
   "viewStates",
 
-  "assemblyGroups",
-  "namespaceGroups",
+  "groups",
 
   "configKvps",
 ] as const;
@@ -94,8 +92,7 @@ type TableRowMap = {
   fullNames: FullName;
   views: View;
   viewStates: ViewState;
-  assemblyGroups: AssemblyGroup;
-  namespaceGroups: NamespaceGroup;
+  groups: Group;
   configKvps: ConfigKvps;
 };
 
@@ -106,6 +103,8 @@ export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { config: Con
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 
 export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName) => tables[tableName].deleteAll());
+
+const zeroViewType: ViewType = "calls";
 
 const row: TableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
@@ -132,11 +131,10 @@ const row: TableRowMap = {
   calls: { fromId: zero.methodDefId, toId: zero.methodId },
 
   fullNames: { id: zero.anyBigId, fullName: "foo" },
-  views: { id: zero.viewId, viewType: "assemblies" as ViewType },
+  views: { id: zero.viewId, viewType: zeroViewType },
   viewStates: { id: zero.anyBigId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
 
-  assemblyGroups: { id: zero.assemblyGroupId, name: "foo" },
-  namespaceGroups: { id: zero.namespaceGroupId, name: "foo" },
+  groups: { id: zero.groupId, name: "foo" },
 
   configKvps: { key: "when", value: "value" },
 };
@@ -179,10 +177,9 @@ const newTables = (db: SqlDatabase): Tables => {
 
   const fullNames = db.newSqlTable("fullNames", "id", row.fullNames);
   const views = db.newSqlTable("views", "id", row.views);
-  const viewStates = db.newSqlTable("viewStates", "id", row.viewStates);
+  const viewStates = db.newSqlTable("viewStates", ["viewId", "id"], row.viewStates);
 
-  const assemblyGroups = db.newSqlTable("assemblyGroups", "id", row.assemblyGroups);
-  const namespaceGroups = db.newSqlTable("namespaceGroups", "id", row.namespaceGroups);
+  const groups = db.newSqlTable("groups", "id", row.groups);
 
   const configKvps = db.newSqlTable("configKvps", "key", row.configKvps);
 
@@ -207,8 +204,7 @@ const newTables = (db: SqlDatabase): Tables => {
     fullNames,
     views,
     viewStates,
-    assemblyGroups,
-    namespaceGroups,
+    groups,
     configKvps,
     config: config(configKvps),
     close,

@@ -23,9 +23,9 @@ type ViewOf = {
 };
 
 const createViewOf = (sqlTables: Sql.Tables, viewType: ViewType): ViewOf => {
-  const viewOfAssemblies = (): ViewOf => {
+  const viewOfCalls = (): ViewOf => {
     const assemblies = sqlTables.assemblies.selectAll();
-    const top: Top = { groupItems: sqlTables.assemblyGroups.selectAll(), rootItems: assemblies };
+    const top: Top = { groupItems: sqlTables.groups.selectAll(), rootItems: assemblies };
     const getTypeNames = (nodeStates: NodeStates): TypeNames => {
       const assemblyIds = assemblies
         .map((value) => value.id)
@@ -37,33 +37,17 @@ const createViewOf = (sqlTables: Sql.Tables, viewType: ViewType): ViewOf => {
     return { top, rootNodeType: NodeType.Assembly, leafType: NodeType.Method, getTypeNames };
   };
 
-  const viewOfNamespaces = (): ViewOf => {
-    const namespaces = sqlTables.namespaces.selectAll();
-    const top: Top = { groupItems: sqlTables.namespaceGroups.selectAll(), rootItems: namespaces };
-    const getTypeNames = (nodeStates: NodeStates): TypeNames => {
-      const namespaceIds = namespaces
-        .map((value) => value.id)
-        .filter((id) => nodeStates.isExpandedId(Id.toBigNamespaceId(id), false));
-      const typeNames = sqlTables.typeNames.selectWhereIn("namespaceId", namespaceIds);
-      const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.namespaceId!]);
-      return { typeNames, typeParents };
-    };
-    return { top, rootNodeType: NodeType.Namespace, leafType: NodeType.Method, getTypeNames };
-  };
-
   const viewOfReferences = (): ViewOf => {
     const assemblies = sqlTables.assemblies.selectAll();
-    const top: Top = { groupItems: sqlTables.assemblyGroups.selectAll(), rootItems: assemblies };
+    const top: Top = { groupItems: sqlTables.groups.selectAll(), rootItems: assemblies };
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const getTypeNames = (nodeStates: NodeStates): TypeNames => ({ typeNames: [], typeParents: [] });
     return { top, rootNodeType: NodeType.Assembly, leafType: NodeType.Assembly, getTypeNames };
   };
 
   switch (viewType) {
-    case "assemblies":
-      return viewOfAssemblies();
-    case "namespaces":
-      return viewOfNamespaces();
+    case "calls":
+      return viewOfCalls();
     case "references":
       return viewOfReferences();
   }

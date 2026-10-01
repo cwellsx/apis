@@ -27,11 +27,9 @@ const printLines = (filename: string, printed: string[]) => {
 
 const getRootNodeType = (viewType: ViewType): RootNodeType => {
   switch (viewType) {
-    case "assemblies":
+    case "calls":
     case "references":
       return NodeType.Assembly;
-    case "namespaces":
-      return NodeType.Namespace;
   }
 };
 
@@ -144,7 +142,7 @@ describe("testViewStates", function () {
     tables.close();
   });
 
-  const viewTypes: ViewType[] = ["assemblies", "namespaces"];
+  const viewTypes: ViewType[] = ["calls"];
   for (const viewType of viewTypes) {
     describe(`viewType: ${viewType}`, function () {
       let viewState: ViewState;

@@ -36,10 +36,10 @@ export const databaseNodeStates = (sqlTables: Sql.Tables, viewType: ViewType): M
     const isExpandedId = (id: Id.AnyBigId, isGroup: boolean): boolean => states.get(id)?.isExpanded ?? isGroup;
 
     const isExpandedNode = <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T) =>
-      isExpandedId(toAnyBigId(node.nodeId, node.type, viewType), node.type == NodeType.Group);
+      isExpandedId(toAnyBigId(node.nodeId, node.type), node.type == NodeType.Group);
 
     const isVisibleNode = <T extends { nodeId: NodeId; type: AnyNodeType }>(node: T, isParentVisible: boolean) => {
-      const id: Id.AnyBigId = toAnyBigId(node.nodeId, node.type, viewType);
+      const id: Id.AnyBigId = toAnyBigId(node.nodeId, node.type);
       const nodeState = states.get(id);
       return nodeState ? !nodeState.isHidden : isParentVisible;
     };

@@ -1,1 +1,1 @@
-export type ViewType = "assemblies" | "namespaces" | "references";
+export type ViewType = "calls" | "references";

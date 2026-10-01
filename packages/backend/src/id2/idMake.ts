@@ -46,8 +46,4 @@ const makeBoxed = (id: number, boxedId: BoxedId) => id + ((boxedId as number) <<
 
 export const makeAssemblyId = (id: number): Id.AssemblyId => IdCast.castAssemblyId(makeBoxed(id, BoxedId.Assembly));
 export const makeNamespaceId = (id: number): Id.NamespaceId => IdCast.castNamespaceId(makeBoxed(id, BoxedId.Namespace));
-
-export const makeAssemblyGroupId = (id: number): Id.AssemblyGroupId =>
-  IdCast.castAssemblyGroupId(makeBoxed(id, BoxedId.AssemblyGroup));
-export const makeNamespaceGroupId = (id: number): Id.NamespaceGroupId =>
-  IdCast.castNamespaceGroupId(makeBoxed(id, BoxedId.NamespaceGroup));
+export const makeGroupId = (id: number): Id.GroupId => IdCast.castGroupId(makeBoxed(id, BoxedId.Group));

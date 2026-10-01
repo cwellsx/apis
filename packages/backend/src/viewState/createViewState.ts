@@ -42,13 +42,13 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): View
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && isVisible(node))
-      .map((node) => toAnyBigId(node.nodeId, node.type, viewType));
+      .map((node) => toAnyBigId(node.nodeId, node.type));
     const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
   };
 
   const setNodeState = (id: NodeId, nodeType: AnyNodeType, nodeState: NodeState): void =>
-    setAnyNodeState(toAnyBigId(id, nodeType, viewType), nodeState);
+    setAnyNodeState(toAnyBigId(id, nodeType), nodeState);
 
   const getForest = (nodeStates: NodeStates): Forest => {
     const trunk = toTrunk(top, rootNodeType, nodeStates, leafType);

@@ -2,24 +2,12 @@ import { AnyNodeType, NodeId, nodeIdToText, NodeType } from "../contracts-ui";
 import * as IdCast from "./idCast";
 import type { AnyBigId } from "./idTypes";
 
-type ViewType = "assemblies" | "namespaces" | "references";
-
-const toBigGroupId = (bigId: bigint, viewType: ViewType): AnyBigId => {
-  switch (viewType) {
-    case "assemblies":
-    case "references":
-      return IdCast.castBigAssemblyGroupId(bigId);
-    case "namespaces":
-      return IdCast.castBigNamespaceGroupId(bigId);
-  }
-};
-
-export const toAnyBigId = (nodeId: NodeId, nodeType: AnyNodeType, viewType: ViewType): AnyBigId => {
+export const toAnyBigId = (nodeId: NodeId, nodeType: AnyNodeType): AnyBigId => {
   const text = nodeIdToText(nodeId);
   const bigId = BigInt(text);
   switch (nodeType) {
     case NodeType.Group:
-      return toBigGroupId(bigId, viewType);
+      return IdCast.castBigGroupId(bigId);
     case NodeType.Assembly:
       return IdCast.castBigAssemblyId(bigId);
     case NodeType.Namespace:

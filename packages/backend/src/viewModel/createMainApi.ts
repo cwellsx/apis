@@ -12,7 +12,7 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
   const { config } = sqlTables;
   const createImage = bindImage(display.convertPathToUrl);
 
-  let viewState = createViewState(sqlTables, config.getViewType() ?? "assemblies");
+  let viewState = createViewState(sqlTables, config.getViewType() ?? "calls");
 
   const createMenuItems = (): void => {
     const onSetViewType = (viewType: ViewType): Promise<void> => {
@@ -35,9 +35,8 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
     });
 
     setMenuItems([
-      getSetViewType("Assemblies", "assemblies"),
-      getSetViewType("Namespaces", "namespaces"),
-      getSetViewType("References", "references"),
+      getSetViewType("Method Calls", "calls"),
+      getSetViewType("Assembly References", "references"),
       { type: "separator" },
       { type: "separator" },
       { type: "normal", label: "Reset", onClick: onReset },
@@ -91,8 +90,7 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
       }
       // else this is a leaf
       switch (viewState.viewType) {
-        case "assemblies":
-        case "namespaces": {
+        case "calls": {
           assert(node.type == NodeType.Method);
           throw new Error("showMethodDetails is not yet implemented");
         }

@@ -410,20 +410,14 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
   });
   tables.fullNames.insertMany(allFullNames);
 
-  const assemblyGroups = getGroupNames(assemblies.map((value) => value.name)).map((value, index) => ({
-    id: Id.makeAssemblyGroupId(index),
+  const groups = getGroupNames(assemblies.map((value) => value.name)).map((value, index) => ({
+    id: Id.makeGroupId(index),
     name: value,
   }));
-  tables.assemblyGroups.insertMany(assemblyGroups);
+  tables.groups.insertMany(groups);
 
-  const namespaceGroups = getGroupNames(namespaces.map((value) => value.name)).map((value, index) => ({
-    id: Id.makeNamespaceGroupId(index),
-    name: value,
-  }));
-  tables.namespaceGroups.insertMany(namespaceGroups);
-
-  tables.views.insertAuto({ viewType: "assemblies" });
-  tables.views.insertAuto({ viewType: "namespaces" });
+  // insert one view of each view type
+  tables.views.insertAuto({ viewType: "calls" });
   tables.views.insertAuto({ viewType: "references" });
 
   insertCalls(tables);
