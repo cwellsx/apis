@@ -1,6 +1,6 @@
 import { setPaths } from "backend-api";
 import type { Paths } from "backend-app";
-import { dirAppData, fileCoreExe, fileNativeSqlite } from "./paths2";
+import { dirAppData, fileCoreExe, fileNativeSqlite } from "./utils/paths";
 
 /*
   electron-mocha does not currently support mochaHooks
@@ -19,5 +19,5 @@ export const mochaHooks = {
 
 // Your one-time setup logic here
 const paths: Paths = { appDataPath: dirAppData, coreExePath: fileCoreExe, sqlNodePath: fileNativeSqlite };
-console.log(`🔧 Global2 setup using ${dirAppData}`);
+console.log(`🔧 Global setup using ${dirAppData}`);
 setPaths(paths);

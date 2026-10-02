@@ -119,13 +119,19 @@ const remove = (targetPath: string) => {
   }
 };
 
+const getTargetDirs = () => {
+  const targetsDirs = process.argv.slice(2);
+  return targetsDirs.length > 0 ? targetsDirs : ["backend-test"];
+};
+
 const config = (packageJson as unknown as PackageJson).config;
 const isLogging = config.log;
 
 const latestBuild = rebuild(config);
 
-for (const targetDir of process.argv.slice(2)) {
+for (const targetDir of getTargetDirs()) {
   const dest = path.resolve(path.join("..", targetDir, "externals", "dotnet"));
+  consoleLog(`dest ${dest}.`);
   if (fs.existsSync(dest)) {
     const latestCopy = fs.statSync(dest).mtime;
     if (latestCopy >= latestBuild) {

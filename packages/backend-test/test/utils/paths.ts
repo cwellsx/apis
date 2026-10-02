@@ -1,15 +1,18 @@
 import path from "path";
 import { pathExists, pathMkdir } from "./file";
 
+//const here = path.dirname(fileURLToPath(import.meta.url));
+// const pkgJsonPath = require.resolve("./package.json", { paths: [__dirname] });
+// const pkgDir = path.dirname(pkgJsonPath);
+// console.log("Package root:", pkgDir);
+
 // c:/Dev/apis.testdata
 
-const dirRoot = path.resolve(path.join(__dirname, "..", "..", "..", "..", "apis.testdata"));
+const dirRoot = path.resolve(path.join(__dirname, "..", "..", "..", "..", "..", "apis.testdata"));
 pathMkdir(dirRoot);
-const dirTestRoot = path.join(dirRoot, "Core2.2026-04-26");
+const dirTestRoot = path.join(dirRoot, "Core2");
 pathMkdir(dirTestRoot);
 
-export const dirSutBin = path.join(dirTestRoot, "sut.bin");
-pathMkdir(dirSutBin);
 export const fileSutJson = path.join(dirTestRoot, "Core2.json");
 
 export const dirAppData = path.join(dirTestRoot, "appData");

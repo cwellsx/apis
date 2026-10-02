@@ -10,15 +10,15 @@ import { Sql, ViewType } from "sut/sql2";
 import { deleteFileSync } from "sut/utils";
 import { createViewState, ViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
-import { fileWrite } from "./file";
-import { fileCoreJson, fileViewState } from "./paths2";
+import { fileWrite } from "./utils/file";
+import { fileCoreJson, fileViewState } from "./utils/paths";
 import {
   listCallSizes,
   printCallFromAssemblies,
   printCallFromMethods,
   printCallFromNamespaces,
   printCallFromTypes,
-} from "./printCalls";
+} from "./utils/printCalls";
 
 const printLines = (filename: string, printed: string[]) => {
   log(filename);

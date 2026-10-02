@@ -39,6 +39,8 @@ export default defineConfig([
             "react-dom/client",
             // src/contracts-*.ts are facade modules
             "**/contracts/**",
+            // test can reach anywhere and have a ./utils folder
+            "**/backend-test/**",
           ],
         },
       ],

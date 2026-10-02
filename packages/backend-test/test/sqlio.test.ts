@@ -1,5 +1,5 @@
 import { createSqlDatabase } from "sqlio";
-import { fileNativeSqlite, fileTempDb } from "./paths";
+import { fileNativeSqlite, fileTempDb } from "./utils/paths";
 
 describe("sqlio", () => {
   it("Can create database", () => {

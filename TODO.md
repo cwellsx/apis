@@ -3,19 +3,22 @@
 ## Near term
 
 - Debug - delete state of descendents on ancestor state change
+- Debug - add namespaces to tree
 - Refactor - remove viewGraph.tsx and move React elements into .\tabs folder
-- Refactor - combine the SVG elements and containers
+- Refactor - combine the SVG elements with their containers
 - Debug - hourglass and prevent overlapping input events from user
-- Test - custom data
 - Test - "references" ViewType
+- Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 - Test - TPOSS
 - Delete - GraphFilter class
-- Implement - assembly details
 - Implement - group isMicrosoft assemblies and make these invisible and non-expanded by default
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
-- Implement - details and call graphs for Core data
+- Implement - assembly details and call graphs for Core data
+- Reimplement - custom data
+
+## Medium term
+
 - Implement - network APIs
-- Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 - Experiment - Cline
 
 ## Long term -- replace modules

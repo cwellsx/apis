@@ -1,6 +1,6 @@
 import * as assert from "assert";
 import { getAppDataPath, getCoreExePath } from "sut/utils";
-import { pathExists, pathIsDirectory } from "./file";
+import { pathExists, pathIsDirectory } from "./utils/file";
 
 describe("paths", () => {
   it("getAppDataPath", () => {

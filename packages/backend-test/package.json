@@ -5,10 +5,9 @@
   "version": "0.0.1",
   "scripts": {
     "test": "electron-mocha test/**/*.test.ts",
-    "test2": "electron-mocha test/backend2.ts --timeout 30000",
+    "test-backend": "electron-mocha test/backend.ts --timeout 30000",
     "build-dotnet": "npm --workspace=backend-dotnet run build -- backend-test",
-    "test-slow": "electron-mocha test/dotNetApi.slow.ts --timeout 60000",
-    "test2-slow": "electron-mocha test/dotnet2.slow.ts --timeout 60000",
+    "test-dotnet-slow": "electron-mocha test/dotnet.slow.ts --timeout 60000",
     "test-sample": "electron-mocha test/**/sample.test.ts",
     "type-check": "tsc --noEmit",
     "watch": "tsc --noEmit --watch"
@@ -17,7 +16,7 @@
     "require": [
       "ts-node/register",
       "tsconfig-paths/register",
-      "./test/global-hooks2.ts"
+      "./test/global-hooks.ts"
     ]
   },
   "activationEvents": [],
