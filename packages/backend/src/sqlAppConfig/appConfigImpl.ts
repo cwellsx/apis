@@ -4,7 +4,7 @@ import { AppOptions, defaultAppOptions } from "../contracts-ui";
 import { jsonParse, log } from "../utils";
 import { ConfigCache } from "./configCache";
 
-export class SqlConfig implements AppConfig {
+export class AppConfigImpl implements AppConfig {
   private _cache: ConfigCache;
   private _db: SqlDatabase;
   recent: () => RecentColumns[];

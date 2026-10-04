@@ -1,10 +1,10 @@
 import { createSqlDatabase } from "sqlio";
 import { AppConfig } from "../contracts-app";
 import { getAppFilename, getSqlNodePath, log } from "../utils";
-import { SqlConfig } from "./sqlConfig";
+import { AppConfigImpl } from "./appConfigImpl";
 
-export function createSqlConfig(filename: string): AppConfig {
+export function createSqlAppConfig(filename: string): AppConfig {
   filename = getAppFilename(filename);
   log("createSqlConfig: " + filename);
-  return new SqlConfig(createSqlDatabase(filename, getSqlNodePath()));
+  return new AppConfigImpl(createSqlDatabase(filename, getSqlNodePath()));
 }

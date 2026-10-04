@@ -1,6 +1,6 @@
 import { SqlDatabase } from "sqlio";
 import { GraphOptions } from "../../contracts-ui";
-import { ConfigCache } from "../../sqlConfig";
+import { ConfigCache } from "../../sqlAppConfig";
 import { jsonParse } from "../../utils";
 import { defaultViewOptions } from "./defaultViewOptions";
 
