@@ -1,5 +1,7 @@
 # To Do
 
+And `./MORE/*`
+
 ## Near term
 
 - Debug - delete state of descendents on ancestor state change
