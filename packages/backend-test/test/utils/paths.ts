@@ -1,19 +1,17 @@
 import path from "path";
 import { pathExists, pathMkdir } from "./file";
 
-//const here = path.dirname(fileURLToPath(import.meta.url));
-// const pkgJsonPath = require.resolve("./package.json", { paths: [__dirname] });
-// const pkgDir = path.dirname(pkgJsonPath);
-// console.log("Package root:", pkgDir);
-
-// c:/Dev/apis.testdata
-
+// this is fragile -- will break if you move the source file
 const dirRoot = path.resolve(path.join(__dirname, "..", "..", "..", "..", "..", "apis.testdata"));
+
 pathMkdir(dirRoot);
 const dirTestRoot = path.join(dirRoot, "Core2");
 pathMkdir(dirTestRoot);
 
-export const fileSutJson = path.join(dirTestRoot, "Core2.json");
+export const dirTestCustomRoot = path.join(dirRoot, "Custom");
+//pathMkdir(dirTestRoot);
+
+// viewState
 
 export const dirAppData = path.join(dirTestRoot, "appData");
 pathMkdir(dirAppData);
@@ -56,3 +54,7 @@ export const fileNativeSqlite = (() => {
 
 export const dirDotNet = path.resolve("./externals/dotnet");
 export const fileCoreExe = path.join(dirDotNet, "core.exe");
+
+// custom/*
+
+export const dirCustom = path.resolve("./custom");
