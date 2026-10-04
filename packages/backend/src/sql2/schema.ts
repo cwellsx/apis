@@ -1,14 +1,14 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
+import type { Boolean, ViewState } from "../sqlCommon";
 import { log } from "../utils";
 import { Config, config, ConfigKvps } from "./config";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
+export type { Boolean, ViewState } from "../sqlCommon";
 
 const schemaVersion = 1;
-
-export type Boolean = 0 | 1;
 
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
@@ -42,7 +42,6 @@ export type FullName = { id: Id.AnyBigId; fullName: string };
 export type View = { id: Id.ViewId; viewType: ViewType; viewName: string };
 
 // isExpanded will be false for leaf-type nodes
-export type ViewState = { viewId: Id.ViewId; id: Id.AnyBigId; isHidden: Boolean; isExpanded: Boolean };
 
 export type Group = { id: Id.GroupId; name: string };
 

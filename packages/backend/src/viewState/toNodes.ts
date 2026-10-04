@@ -12,9 +12,9 @@ import {
   textToNodeId,
 } from "../contracts-ui";
 import * as Id from "../id2";
+import type { NodeStates } from "../sqlCommon";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
 import { Forest, Item, Leafs, Numeric, Top } from "./forest";
-import type { NodeStates } from "./nodeStates";
 
 const insert = <T extends { label: string }>(array: T[], node: T): void => {
   let lo = 0;
@@ -49,12 +49,12 @@ const toNode = (
 ): Node => {
   const pair = { nodeId: toNodeId(item.id), type };
   const isParentVisible = parent ? isVisible(parent) : true;
-  const isShown = nodeStates.isVisibleNode(pair, isParentVisible);
+  const isShown = nodeStates.isVisibleNode(pair.nodeId, pair.type, isParentVisible);
   for (let ancestor = parent; ancestor; ancestor = ancestor?.parent ?? null) {
     if (ancestor.isShown == "mixed" || ancestor.isShown == isShown) break;
     ancestor.isShown = "mixed";
   }
-  const isExpanded = nodeStates.isExpandedNode(pair);
+  const isExpanded = nodeStates.isExpandedNode(pair.nodeId, pair.type);
   const partial = { ...pair, label: item.name, parent };
   if (type == leafType) {
     assert(!isExpanded);

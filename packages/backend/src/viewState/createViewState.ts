@@ -3,12 +3,11 @@ import { isParent, isVisible, nodeIdToText, NodeType, textToNodeId } from "../co
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
+import { makeNodeStates, NodeStates } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
-import { databaseNodeStates } from "./databaseNodeStates";
 import { databaseNodeTree } from "./databaseNodeTree";
 import type { Forest, Numeric } from "./forest";
 import type { NodeState } from "./nodeState";
-import type { NodeStates } from "./nodeStates";
 import { toLeafs, toTrunk } from "./toNodes";
 
 export type Call = { fromId: NodeId; toId: NodeId };
@@ -31,7 +30,7 @@ export type ViewState = {
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
   // two "make" modules are closures which do database I/O using sqlTables
   const { rootNodeType, leafType, top, getLeafs } = databaseNodeTree(sqlTables, viewType);
-  const { getNodeStates, setAnyNodeState, resetNodeStates } = databaseNodeStates(sqlTables, viewId);
+  const { getNodeStates, setAnyNodeState, resetNodeStates } = makeNodeStates(sqlTables.viewStates, viewId);
 
   const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
     const text = id.toString();

@@ -2,9 +2,9 @@ import type { AnyLeafType, RootNodeType } from "../contracts-ui";
 import { NodeType } from "../contracts-ui";
 import * as Id from "../id2";
 import type { Sql, ViewType } from "../sql2";
+import type { NodeStates } from "../sqlCommon";
 import { assert } from "../utils";
 import { Leafs, Top } from "./forest";
-import type { NodeStates } from "./nodeStates";
 
 export type MakeNodeTree = {
   rootNodeType: RootNodeType;
