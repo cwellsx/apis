@@ -45,3 +45,8 @@ export const zero = {
   memberId: castMemberId(0n),
   anyBigId: castAnyBigId(0n),
 };
+
+export const textToViewId = (id: string | undefined): Id.ViewId | undefined =>
+  id ? castViewId(Number(id)) : undefined;
+export const viewIdToText = (id: Id.ViewId): string => id.toString();
+export const minViewId = (ids: Id.ViewId[]): Id.ViewId => castViewId(Math.min(...ids));

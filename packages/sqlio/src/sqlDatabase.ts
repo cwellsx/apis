@@ -23,12 +23,10 @@ export class SqlDatabase {
       this.db.prepare(source).run();
     };
 
-    this.done = () => {
-      db.pragma("wal_checkpoint(TRUNCATE)");
-    };
-    this.close = () => {
-      db.close();
-    };
+    this.done = () => db.pragma("wal_checkpoint(TRUNCATE)");
+    this.close = () => db.close();
+    this.setUserSchemaVersion = (version: number) => db.pragma(`user_version = ${version}`);
+    this.getUserSchemaVersion = () => db.pragma("user_version", { simple: true }) as number;
   }
 
   newSqlTable: <T extends object>(
@@ -41,6 +39,9 @@ export class SqlDatabase {
   dropTable: (tableName: string) => void;
   done: () => void;
   close: () => void;
+
+  setUserSchemaVersion: (version: number) => void;
+  getUserSchemaVersion: () => number;
 }
 
 export function createSqlDatabase(filename: string, nativeBinding: string): SqlDatabase {

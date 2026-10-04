@@ -1,7 +1,7 @@
 import { SqlTable } from "sqlio";
-import { ViewType } from "./viewType";
+import * as Id from "../id2";
 
-type ConfigKeys = "when" | "schema" | "viewType";
+type ConfigKeys = "when" | "schema" | "viewId";
 export type ConfigKvps = { key: ConfigKeys; value: string };
 
 export type Config = {
@@ -9,8 +9,8 @@ export type Config = {
   setWhen: (value: string) => void;
   getSchema: () => string | undefined;
   setSchema: (value: string) => void;
-  getViewType: () => ViewType | undefined;
-  setViewType: (value: ViewType) => void;
+  getViewId: () => Id.ViewId | undefined;
+  setViewId: (value: Id.ViewId) => void;
 };
 
 export const config = (table: SqlTable<ConfigKvps>): Config => {
@@ -24,8 +24,8 @@ export const config = (table: SqlTable<ConfigKvps>): Config => {
     // schema
     getSchema: () => getConfig("schema"),
     setSchema: (value: string) => setConfig("schema", value),
-    // viewType
-    getViewType: () => getConfig("viewType") as ViewType | undefined,
-    setViewType: (value: ViewType) => setConfig("viewType", value),
+    // viewId
+    getViewId: () => Id.textToViewId(getConfig("viewId")),
+    setViewId: (value: Id.ViewId) => setConfig("viewId", Id.viewIdToText(value)),
   };
 };

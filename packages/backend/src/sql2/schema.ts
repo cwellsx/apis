@@ -1,11 +1,12 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
+import { log } from "../utils";
 import { Config, config, ConfigKvps } from "./config";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = "2026-10-01a";
+const schemaVersion = 1;
 
 export type Boolean = 0 | 1;
 
@@ -38,8 +39,8 @@ export type Call = { fromId: Id.CallFromId; toId: Id.CallToId };
 
 export type FullName = { id: Id.AnyBigId; fullName: string };
 
-// in future could add `name: string` column to support multiple view instance
-export type View = { id: Id.ViewId; viewType: ViewType };
+export type View = { id: Id.ViewId; viewType: ViewType; viewName: string };
+
 // isExpanded will be false for leaf-type nodes
 export type ViewState = { viewId: Id.ViewId; id: Id.AnyBigId; isHidden: Boolean; isExpanded: Boolean };
 
@@ -131,7 +132,7 @@ const row: TableRowMap = {
   calls: { fromId: zero.methodDefId, toId: zero.methodId },
 
   fullNames: { id: zero.anyBigId, fullName: "foo" },
-  views: { id: zero.viewId, viewType: zeroViewType },
+  views: { id: zero.viewId, viewType: zeroViewType, viewName: "foo" },
   viewStates: { id: zero.anyBigId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
 
   groups: { id: zero.groupId, name: "foo" },
@@ -140,20 +141,14 @@ const row: TableRowMap = {
 };
 
 export const createTables = (db: SqlDatabase): Tables => {
-  const tables = newTables(db);
-  switch (tables.config.getSchema()) {
-    case undefined:
-      // newly created
-      tables.config.setSchema(schemaVersion);
-      break;
-    case schemaVersion:
-      // already created
-      break;
-    default:
-      // must create again
-      dropTables(db);
-      return createTables(db);
+  const savedSchemaVersion = db.getUserSchemaVersion();
+  if (savedSchemaVersion != schemaVersion) {
+    // must create again
+    log("dropping tables");
+    dropTables(db);
   }
+  const tables = newTables(db);
+  db.setUserSchemaVersion(schemaVersion);
   return tables;
 };
 

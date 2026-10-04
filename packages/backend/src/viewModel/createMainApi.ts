@@ -1,60 +1,31 @@
-import type { MainApiAsync, MenuItem, RuntimeContext } from "../contracts-app";
+import type { MainApiAsync, RuntimeContext } from "../contracts-app";
 import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, GraphOptions, Node, ViewGraph } from "../contracts-ui";
-import { isEdgeId, NodeType } from "../contracts-ui";
+import { isEdgeId } from "../contracts-ui";
 import { bindImage } from "../image";
 import { createImageData } from "../presenter";
-import { Sql, ViewType } from "../sql2";
 import { assert } from "../utils";
-import { createViewState, getNodeState, GraphNodes, NodeState } from "../viewState";
+import { getNodeState, GraphNodes, NodeState } from "../viewState";
+import { SelectedView } from "./selectedView";
 
-export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: RuntimeContext): Promise<MainApiAsync> => {
-  const { display, appConfig, setMenuItems } = runtimeContext;
-  const { config } = sqlTables;
+export const createMainApi = async (
+  selectedView: SelectedView,
+  runtimeContext: RuntimeContext
+): Promise<MainApiAsync> => {
+  const { display, appConfig } = runtimeContext;
   const createImage = bindImage(display.convertPathToUrl);
-
-  let viewState = createViewState(sqlTables, config.getViewType() ?? "calls");
-
-  const createMenuItems = (): void => {
-    const onSetViewType = (viewType: ViewType): Promise<void> => {
-      config.setViewType(viewType);
-      viewState = createViewState(sqlTables, viewType);
-      createMenuItems();
-      return showViewType();
-    };
-
-    const onReset = (): Promise<void> => {
-      viewState.resetNodeStates();
-      return showViewType();
-    };
-
-    const getSetViewType = (label: string, viewType: ViewType): MenuItem => ({
-      type: "radio",
-      label,
-      picked: viewType == viewState.viewType,
-      onClick: () => onSetViewType(viewType),
-    });
-
-    setMenuItems([
-      getSetViewType("Method Calls", "calls"),
-      getSetViewType("Assembly References", "references"),
-      { type: "separator" },
-      { type: "separator" },
-      { type: "normal", label: "Reset", onClick: onReset },
-    ]);
-  };
-
-  createMenuItems();
 
   let graphNodes: GraphNodes;
 
   const showViewType = async (): Promise<void> => {
-    graphNodes = viewState.getGraphNodes();
+    graphNodes = selectedView.viewState.getGraphNodes();
     const imageData = createImageData(graphNodes);
     const image = await createImage(imageData);
     const groups: Node[] = graphNodes.roots;
     const viewGraph: ViewGraph = { image, groups, graphViewOptions: { graphType: "none" }, isCheckModelAll: false };
     display.showView(viewGraph);
   };
+
+  selectedView.onChanged = showViewType;
 
   await showViewType();
 
@@ -84,30 +55,19 @@ export const createMainApi = async (sqlTables: Sql.Tables, runtimeContext: Runti
         // this is a group -- toggle expanded
         const nodeState = getNodeState(node);
         nodeState.isExpanded = !nodeState.isExpanded;
-        viewState.setNodeState(id, node.type, nodeState);
+        selectedView.viewState.setNodeState(id, node.type, nodeState);
         await showViewType();
         return;
       }
       // else this is a leaf
-      switch (viewState.viewType) {
-        case "calls": {
-          assert(node.type == NodeType.Method);
-          throw new Error("showMethodDetails is not yet implemented");
-        }
-        case "references": {
-          assert(node.type == NodeType.Assembly);
-          // and/or use event.shiftKey to showAdjacent()
-          // and/or use event.ctrlKey to hide this node
-          throw new Error("showAssemblyDetails is not yet implemented");
-        }
-      }
+      throw new Error("showMDetails is not yet implemented");
     },
 
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
       filterEvent.forEach((newNodeState) => {
         const { id, nodeType, isShown, collapsible } = newNodeState;
         const nodeState: NodeState = { isHidden: !isShown, isExpanded: collapsible == "expanded" };
-        viewState.setNodeState(id, nodeType, nodeState);
+        selectedView.viewState.setNodeState(id, nodeType, nodeState);
       });
       // const { /*viewOptions,*/ graphFilter } = filterEvent;
       // writeGraphFilter(graphFilter, graphNodes, viewState);

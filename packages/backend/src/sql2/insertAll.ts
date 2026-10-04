@@ -417,8 +417,8 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
   tables.groups.insertMany(groups);
 
   // insert one view of each view type
-  tables.views.insertAuto({ viewType: "calls" });
-  tables.views.insertAuto({ viewType: "references" });
+  tables.views.insertAuto({ viewType: "calls", viewName: "Method Calls" });
+  tables.views.insertAuto({ viewType: "references", viewName: "Assembly References" });
 
   insertCalls(tables);
 };

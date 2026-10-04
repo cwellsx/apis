@@ -1,8 +1,7 @@
 import { AnyNodeType, NodeId, NodeType } from "../contracts-ui";
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
-import { Sql, ViewType } from "../sql2";
-import { assert } from "../utils";
+import { Sql } from "../sql2";
 import { NodeState } from "./nodeState";
 import type { NodeStates } from "./nodeStates";
 import { fromBoolean, toBoolean } from "./sqlBoolean";
@@ -14,12 +13,7 @@ export type MakeNodeStates = {
   resetNodeStates: () => void;
 };
 
-export const databaseNodeStates = (sqlTables: Sql.Tables, viewType: ViewType): MakeNodeStates => {
-  const views = sqlTables.views.selectAll();
-  const found = views.find((view) => view.viewType == viewType);
-  assert(!!found);
-  const viewId: Id.ViewId = found.id;
-
+export const databaseNodeStates = (sqlTables: Sql.Tables, viewId: Id.ViewId): MakeNodeStates => {
   const getNodeStates = (): NodeStates => {
     const viewStates: Sql.ViewState[] = sqlTables.viewStates.selectWhere({ viewId });
 

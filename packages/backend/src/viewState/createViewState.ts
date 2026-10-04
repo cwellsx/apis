@@ -28,10 +28,10 @@ export type ViewState = {
   viewType: ViewType;
 };
 
-export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType): ViewState => {
+export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
   // two "make" modules are closures which do database I/O using sqlTables
   const { rootNodeType, leafType, top, getLeafs } = databaseNodeTree(sqlTables, viewType);
-  const { getNodeStates, setAnyNodeState, resetNodeStates } = databaseNodeStates(sqlTables, viewType);
+  const { getNodeStates, setAnyNodeState, resetNodeStates } = databaseNodeStates(sqlTables, viewId);
 
   const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
     const text = id.toString();
