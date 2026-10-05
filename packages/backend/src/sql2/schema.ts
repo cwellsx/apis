@@ -2,7 +2,7 @@ import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
 import type { Boolean, ConfigKvpT, ConfigT, ViewState } from "../sqlCommon";
-import { configT } from "../sqlCommon";
+import { configT, zeroViewState } from "../sqlCommon";
 import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
@@ -148,7 +148,7 @@ const row: TableRowMap = {
 
   fullNames: { id: zero.anyBigId, fullName: "foo" },
   views: { id: zero.viewId, viewType: zeroViewType, viewName: "foo" },
-  viewStates: { id: zero.anyBigId, viewId: zero.viewId, isHidden: 0 as Boolean, isExpanded: 0 as Boolean },
+  viewStates: zeroViewState,
 
   groups: { id: zero.groupId, name: "foo" },
 

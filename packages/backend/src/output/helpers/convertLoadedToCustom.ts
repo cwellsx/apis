@@ -1,7 +1,7 @@
 import { isLeafVisible } from "../../../contracts/ui/graphFilter";
 import type { GraphFilter, Leaf, Node, NodeId, Parent } from "../../contracts-ui";
 import { GraphOptions, isParent, NodeType } from "../../contracts-ui";
-import { CustomNode } from "../../customJson";
+import { CustomElement } from "../../customJson";
 import { Edges, toGroupByNodeId, toNameNodeId } from "../../nodeIds";
 import { getOrThrow, last, log, options } from "../../utils";
 import { createNestedClusters } from "./convertNamesToNodes";
@@ -9,7 +9,7 @@ import { convertToImage } from "./convertToImage";
 import type { GraphData } from "./graphData";
 
 export const convertLoadedToCustom = (
-  nodes: CustomNode[],
+  nodes: CustomElement[],
   graphViewOptions: GraphOptions.AnyCustom,
   graphFilter: GraphFilter
 ): GraphData => {
@@ -19,7 +19,7 @@ export const convertLoadedToCustom = (
   const leafNodeId = (id: string): NodeId => toNameNodeId("customLeaf", id);
   const isCustomFolders =
     !GraphOptions.isCustomManual(graphViewOptions) && graphViewOptions.isAutoLayers && options.customFolders;
-  const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer;
+  const isCustomFolder = (node: CustomElement) => isCustomFolders && node.id == node.layer;
   const folderNodeId = (id: string): NodeId => toNameNodeId("customFolder", id);
   const hiddenNodeIds = new Set<string>();
   const leafNodes = new Map<string, Leaf>();

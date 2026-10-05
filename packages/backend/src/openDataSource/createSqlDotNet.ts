@@ -4,8 +4,8 @@ import { DataSource } from "../contracts-app";
 import * as dotNetApi from "../dotNetApi";
 import type { Sql } from "../sql2";
 import { openSql } from "../sql2";
-import { assert, existsSync, getAppFilename, jsonParse, log, readJsonT, whenFile, writeFileSync } from "../utils";
-import { hash } from "./hash";
+import { assert, existsSync, jsonParse, log, readJsonT, whenFile, writeFileSync } from "../utils";
+import { getDbFilename, getFilename } from "./getDbFilename";
 
 const getAllFromCoreExe = async (dataSource: DataSource) => {
   const json = await dotNetApi.getJson(dataSource.path);
@@ -13,9 +13,6 @@ const getAllFromCoreExe = async (dataSource: DataSource) => {
 };
 
 const getAllFromCoreJson = async (dataSource: DataSource) => await readJsonT(dataSource.path, isAll);
-
-const getFilename = (dataSource: DataSource, ext: string) =>
-  getAppFilename(`${dataSource.type}-${hash(dataSource.path)}.${ext}`);
 
 const onType = async (dataSource: DataSource): Promise<{ when: string; all: All }> => {
   switch (dataSource.type) {
@@ -41,16 +38,13 @@ const onType = async (dataSource: DataSource): Promise<{ when: string; all: All 
   }
 };
 
-export const createSqlCore = async (dataSource: DataSource): Promise<Sql.Tables> => {
+export const createSqlDotNet = async (dataSource: DataSource): Promise<Sql.Tables> => {
   const { when, all } = await onType(dataSource);
 
-  const filename = getFilename(dataSource, "db");
+  const filename = getDbFilename(dataSource);
   log(`db filename: ${filename}`);
 
   assert(Object.keys(all.assemblies).length != 0);
 
   return openSql(filename, when, all);
 };
-
-// used by unit-test to delete the database before each test run
-export const getDbFilename = (dataSource: DataSource): string => getFilename(dataSource, "db");

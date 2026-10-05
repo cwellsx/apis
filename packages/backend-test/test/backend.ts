@@ -4,7 +4,8 @@ import { renameSync } from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import * as Id from "sut/id2";
 import { bindImage } from "sut/image";
-import { createSqlCore, getDbFilename } from "sut/openDataSource/createSqlCore";
+import { createSqlDotNet } from "sut/openDataSource/createSqlDotNet";
+import { getDbFilename } from "sut/openDataSource/getDbFilename";
 import { createImageData } from "sut/presenter/createImageData";
 import { Sql, ViewType } from "sut/sql2";
 import { deleteFileSync } from "sut/utils";
@@ -85,7 +86,7 @@ const createTables = async (deleteDb: boolean): Promise<Sql.Tables> => {
     const filename = getDbFilename(dataSource);
     deleteFileSync(filename);
   }
-  return await createSqlCore(dataSource);
+  return await createSqlDotNet(dataSource);
 };
 
 describe("backend2", () => {
@@ -151,7 +152,9 @@ describe("testViewStates", function () {
 
       before(function () {
         // safe: runs after tables is assigned
-        viewState = createViewState(tables, viewType);
+        const view = tables.views.selectOne({ viewType });
+        assert(!!view);
+        viewState = createViewState(tables, view.viewType, view.id);
         viewState.resetNodeStates();
         //forest = viewState.getGraphNodes().forest;
       });

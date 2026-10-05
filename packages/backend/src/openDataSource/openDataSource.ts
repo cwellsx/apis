@@ -1,8 +1,8 @@
 import type { DataSource, MainApiAsync, RuntimeContext } from "../contracts-app";
 import { log, options, wrapApi } from "../utils";
-import { openCustomJson } from "./openFromCustomJson";
 import { openFromDotNet } from "./openFromDotNet";
 import { openFromCoreJson } from "./openFromLegacy";
+import { openFromLegacyCustom } from "./openFromLegacyCustom";
 
 /*
   openDataSource to open any and all types of DataSource
@@ -29,7 +29,7 @@ export const openDataSource = async (dataSource: DataSource, runtimeContext: Run
       break;
 
     case "customJson":
-      mainApi = await openCustomJson(dataSource, runtimeContext);
+      mainApi = await openFromLegacyCustom(dataSource, runtimeContext);
       break;
   }
 

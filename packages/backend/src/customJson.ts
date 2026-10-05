@@ -16,7 +16,7 @@ type CustomFields = {
   dependencies: CustomDependency[];
 };
 
-export type CustomNode = CustomFields & { [key: string]: string | number };
+export type CustomElement = CustomFields & { [key: string]: string | number };
 
 export const isAnyOtherCustomField = (key: string): boolean =>
   ![
@@ -34,12 +34,12 @@ const isBoolean = (value: unknown): boolean => typeof value === "boolean";
 const precondition = (element: unknown): boolean => !!element && typeof element === "object";
 
 const jsonStringify = (element: unknown) => JSON.stringify(element, null, " ");
-const createCustomError = (element: CustomNode, message: string): CustomError => ({
+const createCustomError = (element: CustomElement, message: string): CustomError => ({
   messages: [message],
   elementJson: jsonStringify(element),
 });
 
-const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
+const findAndFixErrors = (element: CustomElement): CustomError | undefined => {
   const customError: CustomError = { messages: [], elementJson: jsonStringify(element) };
 
   const error = (message: string) => customError.messages.push(message);
@@ -100,7 +100,7 @@ const findAndFixErrors = (element: CustomNode): CustomError | undefined => {
   return customError.messages.length ? customError : undefined;
 };
 
-export const fixCustomJson = (nodes: CustomNode[]): CustomError[] => {
+export const fixCustomJson = (nodes: CustomElement[]): CustomError[] => {
   const customErrors: CustomError[] = [];
   nodes.slice().forEach((element) => {
     if (!precondition(element)) {
@@ -141,7 +141,7 @@ export const fixCustomJson = (nodes: CustomNode[]): CustomError[] => {
   return customErrors;
 };
 
-export const assertCustomJson = (json: unknown): asserts json is CustomNode[] => {
+export const assertCustomJson = (json: unknown): asserts json is CustomElement[] => {
   assert(!!json, "Expect json is truthy");
   assert(Array.isArray(json), "Expect json is array");
   assert(json.length != 0, "Expect json array is not empty");
@@ -151,6 +151,6 @@ export const assertCustomJson = (json: unknown): asserts json is CustomNode[] =>
   // do the validation is two stages
   // 1. here, return true or false depending on whether the first node is error-free
   // 2. later, sanitize all the nodes, correct them if needed, return error messages
-  const customError = findAndFixErrors(first as CustomNode);
+  const customError = findAndFixErrors(first as CustomElement);
   if (customError) assert(!customError, [...customError.messages, customError.elementJson].join(os.EOL));
 };

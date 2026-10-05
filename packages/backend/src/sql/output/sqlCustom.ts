@@ -1,6 +1,6 @@
 import { SqlDatabase } from "sqlio";
 import type { GraphFilter, GraphOptions, NodeId } from "../../contracts-ui";
-import { isAnyOtherCustomField, type CustomNode } from "../../customJson";
+import { isAnyOtherCustomField, type CustomElement } from "../../customJson";
 import { toNameNodeId } from "../../nodeIds";
 import { jsonParse, options } from "../../utils";
 
@@ -9,7 +9,7 @@ type CustomOptions = GraphOptions.AnyCustom;
 type ConfigColumns = { name: string; value: string };
 
 export class SqlCustom {
-  save: (nodes: CustomNode[], when: string) => void;
+  save: (nodes: CustomElement[], when: string) => void;
   shouldReload: (when: string) => boolean;
   viewState: {
     onSave: (
@@ -24,7 +24,7 @@ export class SqlCustom {
     get cachedWhen(): string;
     get customSchemaVersion(): string;
   };
-  readAll: () => CustomNode[];
+  readAll: () => CustomElement[];
   close: () => void;
   private readLeafVisible: () => NodeId[];
   private writeLeafVisible: (leafVisible: NodeId[]) => void;
@@ -46,7 +46,7 @@ export class SqlCustom {
 
     configTable.deleteAll();
 
-    this.save = (nodes: CustomNode[], when: string): void => {
+    this.save = (nodes: CustomElement[], when: string): void => {
       configTable.insert({ name: "nodes", value: JSON.stringify(nodes) });
 
       const nodeProperties = new Set<string>();
@@ -71,7 +71,7 @@ export class SqlCustom {
       };
 
       const isCustomFolders = isAutoLayers && options.customFolders;
-      const isCustomFolder = (node: CustomNode) => isCustomFolders && node.id == node.layer && false;
+      const isCustomFolder = (node: CustomElement) => isCustomFolders && node.id == node.layer && false;
 
       const customViewOptions: CustomOptions = isAutoLayers
         ? { ...base, graphType: "custom", isAutoLayers, layers }
@@ -92,10 +92,10 @@ export class SqlCustom {
       customSchemaVersionExpected !== this.viewState.customSchemaVersion ||
       Date.parse(this.viewState.cachedWhen) < Date.parse(when);
 
-    this.readAll = (): CustomNode[] => {
+    this.readAll = (): CustomElement[] => {
       const o = configTable.selectOne({ name: "nodes" });
       if (!o) throw new Error("Nodes not initialized");
-      return JSON.parse(o.value) as CustomNode[];
+      return JSON.parse(o.value) as CustomElement[];
     };
 
     const keyGroupExpanded = (clusterBy: string[] | undefined): string =>
