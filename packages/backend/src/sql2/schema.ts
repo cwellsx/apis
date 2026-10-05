@@ -1,14 +1,30 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
-import type { Boolean, ViewState } from "../sqlCommon";
+import type { Boolean, ConfigKvpT, ConfigT, ViewState } from "../sqlCommon";
+import { configT } from "../sqlCommon";
 import { log } from "../utils";
-import { Config, config, ConfigKvps } from "./config";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 export type { Boolean, ViewState } from "../sqlCommon";
 
 const schemaVersion = 1;
+
+// config
+
+type ConfigKvps = ConfigKvpT<"viewId">;
+
+type Config = ConfigT<"viewId"> & { getViewId: () => Id.ViewId | undefined; setViewId: (value: Id.ViewId) => void };
+
+const config = (table: SqlTable<ConfigKvps>): Config => {
+  const base = configT<"viewId">(table);
+
+  return {
+    ...base,
+    getViewId: () => Id.textToViewId(base.getConfig("viewId")),
+    setViewId: (value: Id.ViewId) => base.setConfig("viewId", Id.viewIdToText(value)),
+  };
+};
 
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
