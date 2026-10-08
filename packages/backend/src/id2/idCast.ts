@@ -5,7 +5,7 @@ export const castNamespaceId = (id: number): Id.NamespaceId => id as Id.Namespac
 export const castGroupId = (id: number): Id.GroupId => id as Id.GroupId;
 export const castViewId = (id: number): Id.ViewId => id as Id.ViewId;
 
-export const castCustomId = (id: number): Id.CustomId => id as Id.CustomId;
+export const castCustomId = (id: string): Id.CustomId => id as Id.CustomId;
 
 export const castTypeDefId = (id: bigint): Id.TypeDefId => id as Id.TypeDefId;
 export const castTypeSpecId = (id: bigint): Id.TypeSpecId => id as Id.TypeSpecId;

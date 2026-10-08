@@ -149,7 +149,7 @@ export const toLeafs = (trunk: Forest, leafs: Leafs, nodeStates: NodeStates, lea
     return node;
   };
 
-  const addToParents = (items: Item<Id.AnyId>[], type: AnyNodeType) =>
+  const addToParents = (items: Item<Id.AnyCoreId>[], type: AnyNodeType) =>
     items.forEach((item) => {
       const parent = getParent(item.id);
       const node = toLeafNode(item, type, parent);

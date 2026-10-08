@@ -10,7 +10,7 @@ export type Top = { groupItems: Item<number>[]; rootItems: Item<number>[] };
 export type Leafs = {
   typeItems: Item<Id.TypeDefId>[];
   methodItems: Item<Id.MethodDefId>[];
-  parentItems: Map<Id.AnyId, Id.AnyId>;
+  parentItems: Map<Id.AnyCoreId, Id.AnyCoreId>;
 };
 
 // roots and node.children are sorted alphabetically

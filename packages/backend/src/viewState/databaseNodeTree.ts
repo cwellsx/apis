@@ -13,7 +13,7 @@ export type MakeNodeTree = {
   getLeafs: (nodeStates: NodeStates) => Leafs;
 };
 
-type TypeNames = { typeNames: Sql.TypeName[]; typeParents: [Id.AnyId, Id.AnyId][] };
+type TypeNames = { typeNames: Sql.TypeName[]; typeParents: [Id.AnyCoreId, Id.AnyCoreId][] };
 
 type ViewOf = {
   top: Top;
@@ -31,7 +31,7 @@ const createViewOf = (sqlTables: Sql.Tables, viewType: ViewType): ViewOf => {
         .map((value) => value.id)
         .filter((id) => nodeStates.isExpandedId(Id.toBigAssemblyId(id), false));
       const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds);
-      const typeParents = typeNames.map((typeName): [Id.AnyId, Id.AnyId] => [typeName.id, typeName.assemblyId]);
+      const typeParents = typeNames.map((typeName): [Id.AnyCoreId, Id.AnyCoreId] => [typeName.id, typeName.assemblyId]);
       return { typeNames, typeParents };
     };
     return { top, rootNodeType: NodeType.Assembly, leafType: NodeType.Method, getTypeNames };
@@ -101,9 +101,12 @@ export const databaseNodeTree = (sqlTables: Sql.Tables, viewType: ViewType): Mak
     // get methods
     const expandedTypeIds = typeNames.map((value) => value.id).filter((id) => nodeStates.isExpandedId(id, false));
     const methodNames = sqlTables.methodNames.selectWhereIn("typeId", expandedTypeIds);
-    const methodParents = methodNames.map((methodName): [Id.AnyId, Id.AnyId] => [methodName.id, methodName.typeId]);
+    const methodParents = methodNames.map((methodName): [Id.AnyCoreId, Id.AnyCoreId] => [
+      methodName.id,
+      methodName.typeId,
+    ]);
 
-    const parents = new Map<Id.AnyId, Id.AnyId>(typeParents.concat(methodParents));
+    const parents = new Map<Id.AnyCoreId, Id.AnyCoreId>(typeParents.concat(methodParents));
     return { typeItems: typeNames, methodItems: methodNames, parentItems: parents };
   };
 
