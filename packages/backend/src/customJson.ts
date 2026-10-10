@@ -1,8 +1,7 @@
 import { randomUUID } from "crypto";
-import os from "os";
 import { assert, remove } from "./utils";
 
-type CustomError = { messages: string[]; elementJson: string };
+type CustomError = { messages: string[]; elementId: string; elementJson: string };
 
 type CustomDependency = { id: string; label: string } & { [key: string]: boolean };
 
@@ -27,19 +26,21 @@ export const isAnyOtherCustomField = (key: string): boolean =>
     "details", // new
   ].includes(key);
 
-const isString = (value: unknown): boolean => typeof value === "string";
 const isNumber = (value: unknown): boolean => typeof value === "number";
 const isBoolean = (value: unknown): boolean => typeof value === "boolean";
-const isObject = (element: unknown): boolean => typeof element === "object";
+const isString = (value: unknown): value is string => typeof value === "string";
+const isObject = (value: unknown): value is object => typeof value === "object";
 
 const jsonStringify = (element: unknown) => JSON.stringify(element, null, " ");
+
 const createCustomError = (element: CustomElement, message: string): CustomError => ({
   messages: [message],
+  elementId: element.id,
   elementJson: jsonStringify(element),
 });
 
 const findAndFixErrors = (element: CustomElement): CustomError | undefined => {
-  const customError: CustomError = { messages: [], elementJson: jsonStringify(element) };
+  const customError: CustomError = { messages: [], elementJson: jsonStringify(element), elementId: element.id };
 
   const error = (message: string) => customError.messages.push(message);
 
@@ -146,16 +147,107 @@ export const fixCustomJson = (nodes: CustomElement[]): CustomError[] => {
   return customErrors;
 };
 
+// do the validation is two stages
+// 1. here, test that it's an array of objects with some id and dependency elements
+// 2. later, sanitize all the nodes, correct them if needed, return error messages
 export const assertCustomJson = (json: unknown): asserts json is CustomElement[] => {
   assert(!!json, "Expect json is truthy");
   assert(Array.isArray(json), "Expect json is array");
   assert(json.length != 0, "Expect json array is not empty");
-  const first = json[0] as unknown;
-  assert(isObject(first), "Expect json array of objects");
+  assert(json.every((item) => isObject(item), "Expect json array of objects"));
+  assert(json.every((item) => "id" in item, "Expect all objects have id"));
+  assert(json.every((item) => isString(item.id), "Expect all ids are strings"));
+  assert(json.some((item) => "dependencies" in item, "Expect some objects have dependencies"));
+};
 
-  // do the validation is two stages
-  // 1. here, return true or false depending on whether the first node is error-free
-  // 2. later, sanitize all the nodes, correct them if needed, return error messages
-  const customError = findAndFixErrors(first as CustomElement);
-  if (customError) assert(!customError, [...customError.messages, customError.elementJson].join(os.EOL));
+type PartiallyValidated = Record<string, unknown> & { id: string };
+
+export const validateCustomJson = (nodes: PartiallyValidated[]): CustomError[] => {
+  const customErrors: CustomError[] = [];
+
+  // all the ids at once
+  const allIds = new Set<string>(nodes.map((node) => node.id));
+  // each id one by one
+  const ids = new Set<string>();
+
+  nodes.forEach((node) => {
+    const customError: CustomError = { messages: [], elementJson: JSON.stringify(node), elementId: node.id };
+
+    if (ids.has(node.id)) {
+      customError.messages.push("Node 'id' is not unique");
+      node.id = randomUUID();
+    } else ids.add(node.id);
+
+    const assertIsString = (key: string) => {
+      if (key in node && !isString(node[key])) {
+        customError.messages.push(`Node '${key}' is not a string`);
+        delete node[key];
+      }
+    };
+    const assertIsArrayOfString = (key: string) => {
+      if (key in node && !(Array.isArray(node[key]) && node[key].every(isString))) {
+        customError.messages.push(`Node '${key}' is not an array of strings`);
+        delete node[key];
+      }
+    };
+
+    assertIsString("label");
+    assertIsString("layer");
+    assertIsString("shape");
+    assertIsArrayOfString("tags");
+    assertIsArrayOfString("details");
+
+    if ("dependencies" in node) {
+      const dependencies = node["dependencies"];
+      const dependencyIds = new Set<string>();
+
+      if (!(Array.isArray(dependencies) && dependencies.every(isObject))) {
+        customError.messages.push(`Node 'dependencies' is not an array of object`);
+        delete node["dependencies"];
+      } else {
+        dependencies.slice().forEach((dependency) => {
+          if (!("id" in dependency)) {
+            customError.messages.push(`Dependency has no id`);
+            remove(dependencies, dependency);
+            return;
+          }
+
+          const dependencyId = dependency["id"];
+          if (!isString(dependencyId)) {
+            customError.messages.push(`Dependency id is not a string`);
+            remove(dependencies, dependency);
+            return;
+          }
+
+          if (!allIds.has(dependencyId)) {
+            customError.messages.push(`Dependency id '${dependencyId}' is unknown`);
+            remove(dependencies, dependency);
+            return;
+          }
+
+          if (dependencyIds.has(dependencyId)) {
+            const found = dependencies.find((it) => "id" in it && it["id"] == dependencyId);
+            assert(!!found);
+            const first = found as Record<string, unknown>;
+            Object.entries(dependency).forEach((entry) => {
+              const [key, value] = entry;
+              if (key in first) {
+                if (JSON.stringify(value) != JSON.stringify(first[key]))
+                  customError.messages.push(
+                    `Dependency id '${dependencyId}' duplicated with mismatched '${key}' -- '${JSON.stringify(first[key])}' and '${JSON.stringify(value)}'`
+                  );
+              } else first[key] = value;
+            });
+            remove(dependencies, dependency);
+          } else dependencyIds.add(dependencyId);
+        });
+
+        assert(dependencies.length == dependencyIds.size);
+      }
+    }
+
+    if (customError.messages.length > 0) customErrors.push(customError);
+  });
+
+  return customErrors;
 };

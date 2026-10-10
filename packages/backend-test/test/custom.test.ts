@@ -1,9 +1,10 @@
 import { DataSource } from "backend-app";
 import * as fs from "fs";
 import path from "path";
-import { assertCustomJson, fixCustomJson } from "sut/customJson";
+import { assertCustomJson, validateCustomJson } from "sut/customJson";
 import { createSqlCustom } from "sut/openDataSource/createSqlCustom";
-import { assert, readJsonT } from "sut/utils";
+import { getDbFilename } from "sut/openDataSource/getDbFilename";
+import { assert, deleteFileSync, readJsonT } from "sut/utils";
 import { fileWrite, pathMkdir } from "./utils/file";
 import { dirCustom, dirTestCustomRoot } from "./utils/paths";
 
@@ -22,11 +23,13 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
     const fullPath = path.join(dirCustom, jsonFile);
     const dataSource: DataSource = { path: fullPath, type: "customJson" };
 
-    it("assert and fix CustomJson", async () => {
+    const filename = getDbFilename(dataSource);
+    deleteFileSync(filename);
+
+    it("assert and validate CustomJson", async () => {
       const nodes = await readJsonT(fullPath, assertCustomJson);
-      const errors = fixCustomJson(nodes);
-      // assert(errors.length == 0);
-      fileWrite(path.join(outputDir, "fixCustomJson.json"), JSON.stringify(nodes, null, " "));
+      const errors = validateCustomJson(nodes);
+      fileWrite(path.join(outputDir, "validateCustomJson.json"), JSON.stringify(errors, null, " "));
     });
 
     // it("old createSqlCustomFromJson", async () => {

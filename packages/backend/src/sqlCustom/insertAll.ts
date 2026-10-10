@@ -1,4 +1,4 @@
-import { CustomElement } from "../customJson";
+import { CustomElement, validateCustomJson } from "../customJson";
 import { makeCustomId } from "../id2";
 import { isDefined } from "../utils";
 import * as Schema from "./schema";
@@ -43,6 +43,7 @@ const getEdgeAttrs = (all: CustomElement[]): Schema.EdgeAttr[] =>
   );
 
 export const insertAll = (all: CustomElement[], tables: Schema.Tables) => {
+  const customErrors = validateCustomJson(all);
   // layer
   const layers = getLayers(all);
   tables.layers.insertMany(layers);

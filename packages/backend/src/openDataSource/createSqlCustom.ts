@@ -1,5 +1,5 @@
 import { DataSource } from "../contracts-app";
-import { assertCustomJson, CustomElement, fixCustomJson } from "../customJson";
+import { assertCustomJson, CustomElement } from "../customJson";
 import type { SqlCustom } from "../sqlCustom";
 import { openSqlCustom } from "../sqlCustom";
 import { assert, log, readJsonT, whenFile } from "../utils";
@@ -10,8 +10,6 @@ const onType = async (dataSource: DataSource): Promise<{ when: string; all: Cust
     case "customJson": {
       const when = await whenFile(dataSource.path);
       const all = await readJsonT(dataSource.path, assertCustomJson);
-      const errors = fixCustomJson(all);
-      // assert(errors.length == 0);
       return { when, all };
     }
     default:
