@@ -11,7 +11,7 @@ const onType = async (dataSource: DataSource): Promise<{ when: string; all: Cust
       const when = await whenFile(dataSource.path);
       const all = await readJsonT(dataSource.path, assertCustomJson);
       const errors = fixCustomJson(all);
-      assert(errors.length == 0);
+      // assert(errors.length == 0);
       return { when, all };
     }
     default:

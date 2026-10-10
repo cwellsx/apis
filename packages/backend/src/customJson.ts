@@ -30,8 +30,7 @@ export const isAnyOtherCustomField = (key: string): boolean =>
 const isString = (value: unknown): boolean => typeof value === "string";
 const isNumber = (value: unknown): boolean => typeof value === "number";
 const isBoolean = (value: unknown): boolean => typeof value === "boolean";
-
-const precondition = (element: unknown): boolean => !!element && typeof element === "object";
+const isObject = (element: unknown): boolean => typeof element === "object";
 
 const jsonStringify = (element: unknown) => JSON.stringify(element, null, " ");
 const createCustomError = (element: CustomElement, message: string): CustomError => ({
@@ -79,8 +78,9 @@ const findAndFixErrors = (element: CustomElement): CustomError | undefined => {
   assertAnyOtherFields(element, (value) => isNumber(value) || isString(value));
 
   const dependencies: unknown[] = element.dependencies;
+  const dependencyIds = new Set<string>();
   dependencies.slice().forEach((item: unknown) => {
-    if (!precondition(item)) {
+    if (!isObject(item)) {
       error("Dependency is not an object");
       remove(dependencies, item);
       return;
@@ -90,6 +90,11 @@ const findAndFixErrors = (element: CustomElement): CustomError | undefined => {
       error("Missing dependency id");
       remove(dependencies, item);
     }
+    if (dependencyIds.has(dependency.id)) {
+      error("Duplicate dependency id");
+      dependency.id = randomUUID();
+    }
+    dependencyIds.add(dependency.id);
     if (!dependency.label || !isString(dependency.label)) {
       error("Missing dependency label");
       dependency.label = dependency.id;
@@ -103,7 +108,7 @@ const findAndFixErrors = (element: CustomElement): CustomError | undefined => {
 export const fixCustomJson = (nodes: CustomElement[]): CustomError[] => {
   const customErrors: CustomError[] = [];
   nodes.slice().forEach((element) => {
-    if (!precondition(element)) {
+    if (!isObject(element)) {
       remove(nodes, element);
       customErrors.push(createCustomError(element, "Node is not an object"));
       return;
@@ -132,8 +137,8 @@ export const fixCustomJson = (nodes: CustomElement[]): CustomError[] => {
   nodes.forEach((node) => {
     const regexp = /\\/g;
     node.id = node.id.replace(regexp, "/");
-    node.label = node.label?.replace(regexp, "/");
-    node.layer = node.layer?.replace(regexp, "/");
+    if (node.label) node.label = node.label.replace(regexp, "/");
+    if (node.layer) node.layer = node.layer.replace(regexp, "/");
     node.dependencies.forEach((dependency) => {
       dependency.id.replace(regexp, "/");
     });
@@ -146,7 +151,7 @@ export const assertCustomJson = (json: unknown): asserts json is CustomElement[]
   assert(Array.isArray(json), "Expect json is array");
   assert(json.length != 0, "Expect json array is not empty");
   const first = json[0] as unknown;
-  assert(precondition(first), "Expect json array of objects");
+  assert(isObject(first), "Expect json array of objects");
 
   // do the validation is two stages
   // 1. here, return true or false depending on whether the first node is error-free

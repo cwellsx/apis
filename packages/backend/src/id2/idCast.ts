@@ -44,6 +44,8 @@ export const zero = {
   methodId: castMethodDefId(0n),
   memberId: castMemberId(0n),
   anyBigId: castAnyBigId(0n),
+
+  customId: castCustomId("foo"),
 };
 
 export const textToViewId = (id: string | undefined): Id.ViewId | undefined =>

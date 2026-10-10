@@ -2,6 +2,7 @@ export * from "./assert";
 export { compareOrdinal } from "./compareOrdinal";
 export * from "./error";
 export * from "./fs";
+export { isDefined } from "./isDefined";
 export { jsonParse } from "./jsonParse";
 export * from "./log";
 export * from "./memberNames";

@@ -2,7 +2,7 @@ import { SqlDatabase } from "sqlio";
 import type { GraphFilter, GraphOptions, NodeId } from "../../contracts-ui";
 import { isAnyOtherCustomField, type CustomElement } from "../../customJson";
 import { toNameNodeId } from "../../nodeIds";
-import { jsonParse, options } from "../../utils";
+import { isDefined, jsonParse, options } from "../../utils";
 
 type CustomOptions = GraphOptions.AnyCustom;
 
@@ -58,8 +58,6 @@ export class SqlCustom {
 
       const tags = new Set<string>();
       nodes.forEach((node) => node.tags?.forEach((tag) => tags.add(tag)));
-
-      const isDefined = (s: string | undefined): s is string => !!s;
 
       const ids = new Set<string>(nodes.map((node) => node.id));
       const layers = [...new Set<string>(nodes.map((node) => node.layer).filter(isDefined))];
