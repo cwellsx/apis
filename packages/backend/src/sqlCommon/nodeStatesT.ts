@@ -1,10 +1,10 @@
 import { SqlTable } from "sqlio";
 import { AnyNodeType, NodeId, NodeType } from "../contracts-ui";
 import * as Id from "../id2";
-import { NodeState } from "./nodeState";
 import { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
+import { Visible } from "./visible";
 
-export type ViewStateT<T extends Id.AnyBigId | string> = {
+export type NodeStateT<T extends Id.AnyBigId | string> = {
   viewId: Id.ViewId;
   id: T;
   isHidden: Boolean;
@@ -19,21 +19,21 @@ export type NodeStatesT<T extends Id.AnyBigId | string> = {
 
 export type MakeNodeStatesT<T extends Id.AnyBigId | string> = {
   getNodeStates: () => NodeStatesT<T>;
-  setAnyNodeState: (id: T, nodeState: NodeState) => void;
+  setAnyNodeState: (id: T, visible: Visible) => void;
   resetNodeStates: () => void;
 };
 
 export type ToT<T extends Id.AnyBigId | string> = (nodeId: NodeId, type: AnyNodeType) => T;
 
 export const makeNodeStatesT = <T extends Id.AnyBigId | string>(
-  sqlTable: SqlTable<ViewStateT<T>>,
+  sqlTable: SqlTable<NodeStateT<T>>,
   viewId: Id.ViewId,
   toT: ToT<T>
 ): MakeNodeStatesT<T> => {
   const getNodeStates = (): NodeStatesT<T> => {
-    const viewStates: ViewStateT<T>[] = sqlTable.selectWhere({ viewId });
+    const viewStates: NodeStateT<T>[] = sqlTable.selectWhere({ viewId });
 
-    const states = new Map<T, NodeState>(
+    const states = new Map<T, Visible>(
       viewStates.map((viewState) => [
         viewState.id,
         { isHidden: toBoolean(viewState.isHidden), isExpanded: toBoolean(viewState.isExpanded) },
@@ -59,16 +59,16 @@ export const makeNodeStatesT = <T extends Id.AnyBigId | string>(
     return { isExpandedId, isExpandedNode, isVisibleNode };
   };
 
-  const setAnyNodeState = (id: T, nodeState: NodeState): void => {
-    if (!nodeState.isExpanded && !nodeState.isHidden) {
+  const setAnyNodeState = (id: T, visible: Visible): void => {
+    if (!visible.isExpanded && !visible.isHidden) {
       // TODO -- implement DELETE
       // return;
     }
-    const viewState: ViewStateT<T> = {
+    const viewState: NodeStateT<T> = {
       viewId,
       id,
-      isHidden: fromBoolean(!!nodeState.isHidden),
-      isExpanded: fromBoolean(!!nodeState.isExpanded),
+      isHidden: fromBoolean(!!visible.isHidden),
+      isExpanded: fromBoolean(!!visible.isExpanded),
     };
     sqlTable.upsert(viewState);
   };

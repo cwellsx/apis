@@ -37,7 +37,7 @@ export const isClosed = (node: Node): node is Closed => {
   return node.collapsible == "collapsed";
 };
 
-export const isVisible = (node: Node): boolean => {
+export const isShown = (node: Node): boolean => {
   return node.isShown == true;
 };
 

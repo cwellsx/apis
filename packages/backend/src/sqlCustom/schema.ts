@@ -1,11 +1,11 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
-import type { ConfigKvpT, ConfigT, CustomViewState } from "../sqlCommon";
-import { configT, zeroCustomViewState } from "../sqlCommon";
+import type { ConfigKvpT, ConfigT, CustomNodeState } from "../sqlCommon";
+import { configT, zeroCustomNodeState } from "../sqlCommon";
 import { log } from "../utils";
 
-export type { Boolean, CustomViewState } from "../sqlCommon";
+export type { Boolean, CustomNodeState as CustomViewState } from "../sqlCommon";
 
 const schemaVersion = 3;
 
@@ -36,7 +36,7 @@ const tableNames = [
   "itemTags",
   "layers",
   // common
-  "viewStates",
+  "nodeStates",
   "groups",
   "configKvps",
 ] as const;
@@ -51,7 +51,7 @@ type TableRowMap = {
   itemTags: ItemTag;
   layers: Layer;
   // these are common and should be declared in sqlCommon
-  viewStates: CustomViewState;
+  nodeStates: CustomNodeState;
   groups: Group;
   configKvps: ConfigKvps;
 };
@@ -69,7 +69,7 @@ const row: TableRowMap = {
   itemTags: { id: zero.customId, tag: "foo" },
   layers: { layer: "foo" },
   // common
-  viewStates: zeroCustomViewState,
+  nodeStates: zeroCustomNodeState,
   groups: { id: zero.customGroupId },
   configKvps: { key: "when", value: "value" },
 };
@@ -94,7 +94,7 @@ const newTables = (db: SqlDatabase): Tables => {
   const itemTags = db.newSqlTable("itemTags", ["id", "tag"], row.itemTags);
   const layers = db.newSqlTable("layers", "layer", row.layers);
   // common
-  const viewStates = db.newSqlTable("viewStates", ["viewId", "id"], row.viewStates);
+  const nodeStates = db.newSqlTable("nodeStates", ["viewId", "id"], row.nodeStates);
   const groups = db.newSqlTable("groups", "id", row.groups);
   const configKvps = db.newSqlTable("configKvps", "key", row.configKvps);
 
@@ -111,7 +111,7 @@ const newTables = (db: SqlDatabase): Tables => {
     itemTags,
     layers,
     // common
-    viewStates,
+    nodeStates,
     groups,
     configKvps,
     config: config(configKvps),

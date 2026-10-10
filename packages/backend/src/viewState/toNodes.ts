@@ -4,7 +4,7 @@ import {
   isClosed,
   isLeaf,
   isParent,
-  isVisible,
+  isShown,
   Node,
   nodeIdToText,
   NodeType,
@@ -48,22 +48,22 @@ const toNode = (
   leafType: AnyLeafType
 ): Node => {
   const pair = { nodeId: toNodeId(item.id), type };
-  const isParentVisible = parent ? isVisible(parent) : true;
-  const isShown = nodeStates.isVisibleNode(pair.nodeId, pair.type, isParentVisible);
+  const isParentVisible = parent ? isShown(parent) : true;
+  const isVisible = nodeStates.isVisibleNode(pair.nodeId, pair.type, isParentVisible);
   for (let ancestor = parent; ancestor; ancestor = ancestor?.parent ?? null) {
-    if (ancestor.isShown == "mixed" || ancestor.isShown == isShown) break;
+    if (ancestor.isShown == "mixed" || ancestor.isShown == isVisible) break;
     ancestor.isShown = "mixed";
   }
   const isExpanded = nodeStates.isExpandedNode(pair.nodeId, pair.type);
   const partial = { ...pair, label: item.name, parent };
   if (type == leafType) {
     assert(!isExpanded);
-    return { ...partial, collapsible: "none", isShown };
+    return { ...partial, collapsible: "none", isShown: isVisible };
   }
   if (!isExpanded) {
-    return { ...partial, isShown, collapsible: "collapsed" };
+    return { ...partial, isShown: isVisible, collapsible: "collapsed" };
   }
-  return { ...partial, isShown, collapsible: "expanded", children: [] };
+  return { ...partial, isShown: isVisible, collapsible: "expanded", children: [] };
 };
 
 export const toTrunk = <TId extends Numeric>(

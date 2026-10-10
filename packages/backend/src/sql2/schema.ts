@@ -1,12 +1,12 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
-import type { Boolean, ConfigKvpT, ConfigT, ViewState } from "../sqlCommon";
-import { configT, zeroViewState } from "../sqlCommon";
+import type { Boolean, ConfigKvpT, ConfigT, NodeState } from "../sqlCommon";
+import { configT, zeroNodeState } from "../sqlCommon";
 import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
-export type { Boolean, ViewState } from "../sqlCommon";
+export type { Boolean, NodeState } from "../sqlCommon";
 
 const schemaVersion = 1;
 
@@ -83,7 +83,7 @@ const tableNames = [
   "fullNames",
 
   "views",
-  "viewStates",
+  "nodeStates",
 
   "groups",
 
@@ -107,7 +107,7 @@ type TableRowMap = {
   calls: Call;
   fullNames: FullName;
   views: View;
-  viewStates: ViewState;
+  nodeStates: NodeState;
   groups: Group;
   configKvps: ConfigKvps;
 };
@@ -148,7 +148,7 @@ const row: TableRowMap = {
 
   fullNames: { id: zero.anyBigId, fullName: "foo" },
   views: { id: zero.viewId, viewType: zeroViewType, viewName: "foo" },
-  viewStates: zeroViewState,
+  nodeStates: zeroNodeState,
 
   groups: { id: zero.groupId, name: "foo" },
 
@@ -187,7 +187,7 @@ const newTables = (db: SqlDatabase): Tables => {
 
   const fullNames = db.newSqlTable("fullNames", "id", row.fullNames);
   const views = db.newSqlTable("views", "id", row.views);
-  const viewStates = db.newSqlTable("viewStates", ["viewId", "id"], row.viewStates);
+  const nodeStates = db.newSqlTable("nodeStates", ["viewId", "id"], row.nodeStates);
 
   const groups = db.newSqlTable("groups", "id", row.groups);
 
@@ -213,7 +213,7 @@ const newTables = (db: SqlDatabase): Tables => {
     calls,
     fullNames,
     views,
-    viewStates,
+    nodeStates,
     groups,
     configKvps,
     config: config(configKvps),
