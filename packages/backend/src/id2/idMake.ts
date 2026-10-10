@@ -49,3 +49,4 @@ export const makeNamespaceId = (id: number): Id.NamespaceId => IdCast.castNamesp
 export const makeGroupId = (id: number): Id.GroupId => IdCast.castGroupId(makeBoxed(id, BoxedId.Group));
 
 export const makeCustomId = (id: string): Id.CustomId => IdCast.castCustomId(id);
+export const makeCustomGroupId = (id: string): Id.CustomGroupId => IdCast.castCustomGroupId(id);

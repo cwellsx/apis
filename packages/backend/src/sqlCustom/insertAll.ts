@@ -1,10 +1,13 @@
 import { CustomElement, validateCustomJson } from "../customJson";
-import { makeCustomId } from "../id2";
+import { makeCustomGroupId, makeCustomId } from "../id2";
+import { getGroupNames } from "../sqlCommon";
 import { isDefined } from "../utils";
 import * as Schema from "./schema";
 
 const getLayers = (all: CustomElement[]): Schema.Layer[] => {
-  all.forEach((item) => item.layer?.replace("\\", "/"));
+  all.forEach((item) => {
+    if (item.layer) item.layer = item.layer.replaceAll("\\", "/");
+  });
   const set = new Set<string>(all.map((item) => item.layer).filter(isDefined));
   const unique = [...set.keys()];
   return unique.map((item) => ({ layer: item }));
@@ -62,4 +65,12 @@ export const insertAll = (all: CustomElement[], tables: Schema.Tables) => {
   // itemAttrs
   const edgeAttrs = getEdgeAttrs(all);
   tables.edgeAttrs.insertMany(edgeAttrs);
+  // groups
+  if (layers.some((row) => row.layer.includes("/"))) {
+    const groups = getGroupNames(
+      layers.map((row) => row.layer),
+      "/"
+    );
+    tables.groups.insertMany(groups.map((group) => ({ id: makeCustomGroupId(group) })));
+  }
 };

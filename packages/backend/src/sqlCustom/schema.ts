@@ -24,7 +24,7 @@ export type EdgeAttr = { fromId: Id.CustomId; toId: Id.CustomId; name: string; v
 export type ItemTag = { id: Id.CustomId; tag: string };
 export type Layer = { layer: string }; // parent is calculated after extracting
 // common
-export type Group = { id: Id.GroupId; name: string };
+export type Group = { id: Id.CustomGroupId };
 
 // tables
 
@@ -70,7 +70,7 @@ const row: TableRowMap = {
   layers: { layer: "foo" },
   // common
   viewStates: zeroCustomViewState,
-  groups: { id: zero.groupId, name: "foo" },
+  groups: { id: zero.customGroupId },
   configKvps: { key: "when", value: "value" },
 };
 

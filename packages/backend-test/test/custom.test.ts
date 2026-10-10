@@ -7,6 +7,7 @@ import { getDbFilename } from "sut/openDataSource/getDbFilename";
 import { assert, deleteFileSync, readJsonT } from "sut/utils";
 import { fileWrite, pathMkdir } from "./utils/file";
 import { dirCustom, dirTestCustomRoot } from "./utils/paths";
+import { tablesToJsonL } from "./utils/toJsonL";
 
 const readJsonFilePaths = (dir: string): string[] =>
   fs
@@ -38,6 +39,9 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
 
     it("createSqlCustom", async () => {
       const sqlCustom = await createSqlCustom(dataSource);
+
+      tablesToJsonL(sqlCustom, outputDir);
+
       const { items, edges, itemAttrs, edgeAttrs, itemTags, layers } = sqlCustom;
       assert(items.selectAll().length > 0);
       assert(edges.selectAll().length > 0);

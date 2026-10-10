@@ -1,9 +1,9 @@
 import * as DotNet from "../../contracts/dotnet2";
 import * as Id from "../id2";
+import { getGroupNames } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
 import { insertCalls } from "./insertCalls";
 import { getFullNames } from "./insertFullNames";
-import { getGroupNames } from "./insertGroups";
 import * as GetMemberJson from "./insertMemberJson";
 import type * as Schema from "./schema";
 import * as MemberJson from "./schemaMemberJson";
@@ -410,10 +410,10 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
   });
   tables.fullNames.insertMany(allFullNames);
 
-  const groups = getGroupNames(assemblies.map((value) => value.name)).map((value, index) => ({
-    id: Id.makeGroupId(index),
-    name: value,
-  }));
+  const groups = getGroupNames(
+    assemblies.map((value) => value.name),
+    "."
+  ).map((value, index) => ({ id: Id.makeGroupId(index), name: value }));
   tables.groups.insertMany(groups);
 
   // insert one view of each view type

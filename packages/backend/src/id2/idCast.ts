@@ -6,6 +6,7 @@ export const castGroupId = (id: number): Id.GroupId => id as Id.GroupId;
 export const castViewId = (id: number): Id.ViewId => id as Id.ViewId;
 
 export const castCustomId = (id: string): Id.CustomId => id as Id.CustomId;
+export const castCustomGroupId = (id: string): Id.CustomGroupId => id as Id.CustomGroupId;
 
 export const castTypeDefId = (id: bigint): Id.TypeDefId => id as Id.TypeDefId;
 export const castTypeSpecId = (id: bigint): Id.TypeSpecId => id as Id.TypeSpecId;
@@ -46,6 +47,7 @@ export const zero = {
   anyBigId: castAnyBigId(0n),
 
   customId: castCustomId("foo"),
+  customGroupId: castCustomGroupId("foo"),
 };
 
 export const textToViewId = (id: string | undefined): Id.ViewId | undefined =>
