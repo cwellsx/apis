@@ -3,8 +3,9 @@ import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, GraphOptions, No
 import { isEdgeId } from "../contracts-ui";
 import { bindImage } from "../image";
 import { createImageData } from "../presenter";
+import { getNodeState, NodeState } from "../sqlCommon";
 import { assert } from "../utils";
-import { getNodeState, GraphNodes, NodeState } from "../viewState";
+import { GraphNodes } from "../viewState";
 import { SelectedView } from "./selectedView";
 
 export const createMainApi = async (

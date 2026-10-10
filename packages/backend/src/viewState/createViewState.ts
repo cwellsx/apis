@@ -3,11 +3,10 @@ import { isParent, isVisible, nodeIdToText, NodeType, textToNodeId } from "../co
 import type * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
-import { makeNodeStates, NodeStates } from "../sqlCommon";
+import { makeNodeStates, NodeState, NodeStates } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
 import { databaseNodeTree } from "./databaseNodeTree";
 import type { Forest, Numeric } from "./forest";
-import type { NodeState } from "./nodeState";
 import { toLeafs, toTrunk } from "./toNodes";
 
 export type Call = { fromId: NodeId; toId: NodeId };

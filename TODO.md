@@ -7,6 +7,7 @@ And `./MORE/*`
 - Reimplement - custom data
 - Debug - delete state of descendents on ancestor state change
 - Debug - add namespaces to tree
+- Refactor - split viewState to *Common, *DotNet, and *Custom
 - Refactor - remove viewGraph.tsx and move React elements into .\tabs folder
 - Refactor - combine the SVG elements with their containers
 - Debug - hourglass and prevent overlapping input events from user

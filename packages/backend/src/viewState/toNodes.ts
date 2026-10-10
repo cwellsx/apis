@@ -14,7 +14,7 @@ import {
 import * as Id from "../id2";
 import type { NodeStates } from "../sqlCommon";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
-import { Forest, Item, Leafs, Numeric, Top } from "./forest";
+import { Forest, Item, Leafs, Numeric, TopT } from "./forest";
 
 const insert = <T extends { label: string }>(array: T[], node: T): void => {
   let lo = 0;
@@ -66,13 +66,13 @@ const toNode = (
   return { ...partial, isShown, collapsible: "expanded", children: [] };
 };
 
-export const toTrunk = (
-  top: Top,
+export const toTrunk = <TId extends Numeric>(
+  top: TopT<TId>,
   rootNodeType: RootNodeType,
   nodeStates: NodeStates,
   leafType: AnyLeafType
 ): Forest => {
-  const toTrunkNode = (item: Item<Numeric>, type: AnyNodeType, parent: Parent | null): Node =>
+  const toTrunkNode = (item: Item<TId>, type: AnyNodeType, parent: Parent | null): Node =>
     toNode(item, type, nodeStates, parent, leafType);
 
   // the root nodes don't identify which group contains them
@@ -85,7 +85,7 @@ export const toTrunk = (
     addAllNodes(trunk, node);
   };
 
-  const findParent = (node: Item<number>): Parent | Closed | null => {
+  const findParent = (node: Item<TId>): Parent | Closed | null => {
     const callbackfn = (previous: Node | null, current: Node): Node | null => {
       if (!node.name.startsWith(current.label)) return previous;
       if (previous && previous.label.length > current.label.length) return previous;
@@ -96,7 +96,7 @@ export const toTrunk = (
     return result;
   };
 
-  const findParents = (layer: Item<number>[], type: AnyNodeType): void => {
+  const findParents = (layer: Item<TId>[], type: AnyNodeType): void => {
     // calculate all the parents before inserting the layer
     // so that items don't find parents within their own layer
     const pairs = layer.map((item) => ({ item, parent: findParent(item) }));
@@ -114,7 +114,7 @@ export const toTrunk = (
     });
   };
 
-  const handleGroups = (groups: Item<number>[]) => {
+  const handleGroups = (groups: Item<TId>[]) => {
     const pairs = groups.map((item) => ({ item, split: item.name.split(".") }));
     const lengths = pairs.map((pair) => pair.split.length);
     const max = Math.max(...lengths);
