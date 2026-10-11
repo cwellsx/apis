@@ -1,34 +1,38 @@
 import { SqlTable } from "sqlio";
-import { AnyNodeType, NodeId, NodeType } from "../contracts-ui";
+import { AnyGroupType, AnyNodeType, NodeId } from "../contracts-ui";
 import * as Id from "../id2";
 import { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
 import { Visible } from "./visible";
 
-export type NodeStateT<T extends Id.AnyBigId | string> = {
+export type NodeStateT<T extends Id.AnyBigId | Id.AnyCustomId> = {
   viewId: Id.ViewId;
   id: T;
   isHidden: Boolean;
   isExpanded: Boolean;
 };
 
-export type NodeStatesT<T extends Id.AnyBigId | string> = {
-  isExpandedId: (id: T, isGroup: boolean) => boolean;
+export type BaseNodeStates = {
   isExpandedNode: (nodeId: NodeId, type: AnyNodeType) => boolean;
   isVisibleNode: (nodeId: NodeId, type: AnyNodeType, isParentVisible: boolean) => boolean;
 };
 
-export type MakeNodeStatesT<T extends Id.AnyBigId | string> = {
+export type NodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = BaseNodeStates & {
+  isExpandedId: (id: T, isGroup: boolean) => boolean;
+};
+
+export type MakeNodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {
   getNodeStates: () => NodeStatesT<T>;
   setAnyNodeState: (id: T, visible: Visible) => void;
   resetNodeStates: () => void;
 };
 
-export type ToT<T extends Id.AnyBigId | string> = (nodeId: NodeId, type: AnyNodeType) => T;
+export type ToT<T extends Id.AnyBigId | Id.AnyCustomId> = (nodeId: NodeId, type: AnyNodeType) => T;
 
-export const makeNodeStatesT = <T extends Id.AnyBigId | string>(
+export const makeNodeStatesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
   sqlTable: SqlTable<NodeStateT<T>>,
   viewId: Id.ViewId,
-  toT: ToT<T>
+  toT: ToT<T>,
+  groupType: AnyGroupType
 ): MakeNodeStatesT<T> => {
   const getNodeStates = (): NodeStatesT<T> => {
     const viewStates: NodeStateT<T>[] = sqlTable.selectWhere({ viewId });
@@ -47,7 +51,7 @@ export const makeNodeStatesT = <T extends Id.AnyBigId | string>(
 
     const isExpandedNode = (nodeId: NodeId, type: AnyNodeType) => {
       const id: T = toT(nodeId, type);
-      return isExpandedId(id, type == NodeType.Group);
+      return isExpandedId(id, type == groupType);
     };
 
     const isVisibleNode = (nodeId: NodeId, type: AnyNodeType, isParentVisible: boolean) => {

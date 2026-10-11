@@ -2,4 +2,4 @@ export { minViewId, textToViewId, toBigAssemblyId, toBigGroupId, toBigNamespaceI
 export * from "./idMake";
 export * from "./idTest";
 export type * from "./idTypes";
-export { toAnyBigId } from "./toAnyBigId";
+export { toAnyBigId, toAnyCustomId, toCustomId } from "./toAnyId";

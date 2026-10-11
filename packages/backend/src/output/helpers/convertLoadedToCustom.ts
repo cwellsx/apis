@@ -34,7 +34,7 @@ export const convertLoadedToCustom = (
       ? { label: node.label ?? node.id, nodeId: leafNodeId(node.id) }
       : { label: last(node.id.split("/")), nodeId: folderNodeId(node.id) };
     const isShown = isLeafVisible(nodeId, graphFilter);
-    const leaf: Leaf = { label, nodeId, isShown, parent: null, type: NodeType.Custom, collapsible: "none" };
+    const leaf: Leaf = { label, nodeId, isShown, parent: null, type: NodeType.CustomLeaf, collapsible: "none" };
     leafNodes.set(node.id, leaf);
   });
 

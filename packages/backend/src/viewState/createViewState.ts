@@ -33,19 +33,17 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
     setAnyNodeState(toAnyBigId(id, nodeType), visible);
 
   const getForest = (nodeStates: NodeStates): Forest => {
-    const trunk = toTrunk(top, rootNodeType, nodeStates, leafType);
+    const trunk = toTrunk(top, rootNodeType, nodeStates, leafType, NodeType.Group);
     switch (leafType) {
       case NodeType.Assembly:
         return trunk;
-      case NodeType.Custom:
-        assert(false);
-        break;
       case NodeType.Method: {
         const leafs = getLeafs(nodeStates);
         toLeafs(trunk, leafs, nodeStates, leafType);
         return trunk;
       }
     }
+    assert(false);
   };
 
   const getGraphNodes = (): GraphNodes => {

@@ -1,5 +1,5 @@
 // two functions help to implement getGraphNodes
-import type { AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
+import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
 import {
   isClosed,
   isLeaf,
@@ -12,7 +12,8 @@ import {
   textToNodeId,
 } from "../contracts-ui";
 import * as Id from "../id2";
-import type { NodeStates } from "../sqlCommon";
+import type { BaseNodeStates, NodeStates, NodeStatesT } from "../sqlCommon";
+
 import { assert, compareOrdinal, getOrThrow } from "../utils";
 import { Forest, Item, Leafs, Numeric, TopT } from "./forest";
 
@@ -43,7 +44,7 @@ const addAllNodes = (forest: Forest, node: Node) => forest.allNodes.set(nodeIdTo
 const toNode = (
   item: Item<Numeric>,
   type: AnyNodeType,
-  nodeStates: NodeStates,
+  nodeStates: BaseNodeStates,
   parent: Parent | null,
   leafType: AnyLeafType
 ): Node => {
@@ -66,11 +67,12 @@ const toNode = (
   return { ...partial, isShown: isVisible, collapsible: "expanded", children: [] };
 };
 
-export const toTrunk = <TId extends Numeric>(
+export const toTrunk = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCustomId>(
   top: TopT<TId>,
   rootNodeType: RootNodeType,
-  nodeStates: NodeStates,
-  leafType: AnyLeafType
+  nodeStates: NodeStatesT<T>,
+  leafType: AnyLeafType,
+  groupType: AnyGroupType
 ): Forest => {
   const toTrunkNode = (item: Item<TId>, type: AnyNodeType, parent: Parent | null): Node =>
     toNode(item, type, nodeStates, parent, leafType);
@@ -125,10 +127,10 @@ export const toTrunk = <TId extends Numeric>(
       if (!layer.length) return;
       if (level == min) {
         layer.sort((x, y) => compareOrdinal(x.name, y.name));
-        const nodes = layer.map((item) => toTrunkNode(item, NodeType.Group, null));
+        const nodes = layer.map((item) => toTrunkNode(item, groupType, null));
         trunk.roots.push(...nodes);
         nodes.forEach(addNode);
-      } else findParents(layer, NodeType.Group);
+      } else findParents(layer, groupType);
     }
   };
 
@@ -136,6 +138,32 @@ export const toTrunk = <TId extends Numeric>(
   findParents(top.rootItems, rootNodeType);
 
   return trunk;
+};
+
+export const addToParent = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCustomId>(
+  trunk: Forest,
+  item: Item<TId>,
+  type: AnyNodeType,
+  nodeStates: NodeStatesT<T>,
+  leafType: AnyLeafType,
+  parentId: string
+): void => {
+  const parent = getOrThrow(trunk.allNodes, parentId);
+  assert(isParent(parent));
+  const node = toNode(item, type, nodeStates, parent, leafType);
+  insert(parent.children, node);
+  addAllNodes(trunk, node);
+};
+
+export const addOrphan = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCustomId>(
+  trunk: Forest,
+  item: Item<TId>,
+  type: AnyNodeType,
+  nodeStates: NodeStatesT<T>,
+  leafType: AnyLeafType
+): void => {
+  const node = toNode(item, type, nodeStates, null, leafType);
+  addAllNodes(trunk, node);
 };
 
 export const toLeafs = (trunk: Forest, leafs: Leafs, nodeStates: NodeStates, leafType: AnyLeafType): void => {

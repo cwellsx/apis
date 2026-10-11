@@ -10,11 +10,15 @@ const getLayers = (all: CustomElement[]): Schema.Layer[] => {
   });
   const set = new Set<string>(all.map((item) => item.layer).filter(isDefined));
   const unique = [...set.keys()];
-  return unique.map((item) => ({ layer: item }));
+  return unique.map((item) => ({ id: makeCustomGroupId(item) }));
 };
 
 const getItems = (all: CustomElement[]): Schema.Item[] =>
-  all.map((item) => ({ id: makeCustomId(item.id), layer: item.layer, label: item.label }));
+  all.map((item) => ({
+    id: makeCustomId(item.id),
+    layer: !item.layer ? undefined : makeCustomGroupId(item.layer),
+    label: item.label,
+  }));
 
 const getItemTags = (all: CustomElement[]): Schema.ItemTag[] =>
   all.flatMap((item) => (item.tags ? item.tags.map((tag) => ({ id: makeCustomId(item.id), tag })) : []));
@@ -66,11 +70,13 @@ export const insertAll = (all: CustomElement[], tables: Schema.Tables) => {
   const edgeAttrs = getEdgeAttrs(all);
   tables.edgeAttrs.insertMany(edgeAttrs);
   // groups
-  if (layers.some((row) => row.layer.includes("/"))) {
+  if (layers.some((row) => row.id.includes("/"))) {
     const groups = getGroupNames(
-      layers.map((row) => row.layer),
+      layers.map((row) => row.id),
       "/"
     );
     tables.groups.insertMany(groups.map((group) => ({ id: makeCustomGroupId(group) })));
   }
+  // views
+  tables.views.insertAuto({ viewName: "Custom" });
 };

@@ -7,7 +7,7 @@ import { log } from "../utils";
 
 export type { Boolean, CustomNodeState as CustomViewState } from "../sqlCommon";
 
-const schemaVersion = 3;
+const schemaVersion = 5;
 
 // config
 
@@ -17,12 +17,14 @@ const config = (table: SqlTable<ConfigKvps>): Config => configT<"when">(table);
 
 // rows
 
-export type Item = { id: Id.CustomId; layer: string | undefined; label: string | undefined };
+export type Item = { id: Id.CustomId; layer?: Id.CustomGroupId; label?: string };
 export type Edge = { fromId: Id.CustomId; toId: Id.CustomId };
 export type ItemAttr = { id: Id.CustomId; name: string; value: string };
 export type EdgeAttr = { fromId: Id.CustomId; toId: Id.CustomId; name: string; value: string };
 export type ItemTag = { id: Id.CustomId; tag: string };
-export type Layer = { layer: string }; // parent is calculated after extracting
+export type Layer = { id: Id.CustomGroupId }; // parent is calculated after extracting
+
+export type View = { id: Id.ViewId; viewName: string };
 // common
 export type Group = { id: Id.CustomGroupId };
 
@@ -35,6 +37,8 @@ const tableNames = [
   "edgeAttrs",
   "itemTags",
   "layers",
+
+  "views",
   // common
   "nodeStates",
   "groups",
@@ -50,6 +54,8 @@ type TableRowMap = {
   edgeAttrs: EdgeAttr;
   itemTags: ItemTag;
   layers: Layer;
+
+  views: View;
   // these are common and should be declared in sqlCommon
   nodeStates: CustomNodeState;
   groups: Group;
@@ -62,12 +68,14 @@ export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) =>
 export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName) => tables[tableName].deleteAll());
 
 const row: TableRowMap = {
-  items: { id: zero.customId, layer: "foo", label: "foo" },
+  items: { id: zero.customId, layer: zero.customGroupId, label: "foo" },
   edges: { fromId: zero.customId, toId: zero.customId },
   itemAttrs: { id: zero.customId, name: "foo", value: "foo" },
   edgeAttrs: { fromId: zero.customId, toId: zero.customId, name: "foo", value: "foo" },
   itemTags: { id: zero.customId, tag: "foo" },
-  layers: { layer: "foo" },
+  layers: { id: zero.customGroupId },
+
+  views: { id: zero.viewId, viewName: "foo" },
   // common
   nodeStates: zeroCustomNodeState,
   groups: { id: zero.customGroupId },
@@ -92,7 +100,9 @@ const newTables = (db: SqlDatabase): Tables => {
   const itemAttrs = db.newSqlTable("itemAttrs", ["id", "name"], row.itemAttrs);
   const edgeAttrs = db.newSqlTable("edgeAttrs", ["fromId", "toId", "name"], row.edgeAttrs);
   const itemTags = db.newSqlTable("itemTags", ["id", "tag"], row.itemTags);
-  const layers = db.newSqlTable("layers", "layer", row.layers);
+  const layers = db.newSqlTable("layers", "id", row.layers);
+
+  const views = db.newSqlTable("views", "id", row.views);
   // common
   const nodeStates = db.newSqlTable("nodeStates", ["viewId", "id"], row.nodeStates);
   const groups = db.newSqlTable("groups", "id", row.groups);
@@ -110,6 +120,7 @@ const newTables = (db: SqlDatabase): Tables => {
     edgeAttrs,
     itemTags,
     layers,
+    views,
     // common
     nodeStates,
     groups,

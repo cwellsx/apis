@@ -8,6 +8,7 @@ export type Item<TId extends Numeric> = { id: TId; name: string };
 export type TopT<TId extends Numeric> = { groupItems: Item<TId>[]; rootItems: Item<TId>[] };
 
 export type Top = TopT<number>;
+export type CustomTop = TopT<string>;
 
 export type Leafs = {
   typeItems: Item<Id.TypeDefId>[];

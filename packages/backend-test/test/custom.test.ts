@@ -5,8 +5,11 @@ import { assertCustomJson, validateCustomJson } from "sut/customJson";
 import { createSqlCustom } from "sut/openDataSource/createSqlCustom";
 import { getDbFilename } from "sut/openDataSource/getDbFilename";
 import { assert, deleteFileSync, readJsonT } from "sut/utils";
+import { createCustomViewState } from "sut/viewState/createCustomViewState";
+import { printForest } from "sut/viewState/printForest";
 import { fileWrite, pathMkdir } from "./utils/file";
 import { dirCustom, dirTestCustomRoot } from "./utils/paths";
+import { printLines } from "./utils/printLines";
 import { tablesToJsonL } from "./utils/toJsonL";
 
 const readJsonFilePaths = (dir: string): string[] =>
@@ -49,6 +52,18 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
       assert(edgeAttrs.selectAll().length > 0);
       //assert(itemTags.selectAll().length > 0);
       assert(layers.selectAll().length > 0);
+      sqlCustom.close();
+    });
+
+    it("createCustomViewState", async () => {
+      const sqlCustom = await createSqlCustom(dataSource);
+      const view = sqlCustom.views.selectOne({ viewName: "Custom" });
+      assert(!!view);
+      const viewState = createCustomViewState(sqlCustom, view.id);
+      const graphNodes = viewState.getGraphNodes();
+      const printed = printForest(graphNodes.roots);
+      let suffix = 0;
+      printLines(`viewState${++suffix}.txt`, printed);
       sqlCustom.close();
     });
   });

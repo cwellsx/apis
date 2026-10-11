@@ -11,7 +11,6 @@ import { Sql, ViewType } from "sut/sql2";
 import { deleteFileSync } from "sut/utils";
 import { createViewState, ViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
-import { fileWrite } from "./utils/file";
 import { fileCoreJson, fileViewState } from "./utils/paths";
 import {
   listCallSizes,
@@ -20,11 +19,7 @@ import {
   printCallFromNamespaces,
   printCallFromTypes,
 } from "./utils/printCalls";
-
-const printLines = (filename: string, printed: string[]) => {
-  log(filename);
-  fileWrite(fileViewState(filename), printed.join("\r\n"));
-};
+import { printLines } from "./utils/printLines";
 
 const getRootNodeType = (viewType: ViewType): RootNodeType => {
   switch (viewType) {

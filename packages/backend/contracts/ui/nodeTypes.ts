@@ -5,9 +5,11 @@ type Assembly = typeof NodeType.Assembly;
 type Namespace = typeof NodeType.Namespace;
 type Type = typeof NodeType.Type;
 type Method = typeof NodeType.Method;
-type Custom = typeof NodeType.Custom;
+type CustomGroup = typeof NodeType.CustomGroup;
+type CustomLeaf = typeof NodeType.CustomLeaf;
 
-export type RootNodeType = Assembly | Namespace;
+export type RootNodeType = Assembly | Namespace | CustomGroup;
 export type MethodNodeType = Method;
-export type AnyNodeType = Group | Assembly | Namespace | Type | Method | Custom;
-export type AnyLeafType = Assembly | Method | Custom;
+export type AnyNodeType = Group | Assembly | Namespace | Type | Method | CustomGroup | CustomLeaf;
+export type AnyLeafType = Assembly | Method | CustomLeaf;
+export type AnyGroupType = Group | CustomGroup;

@@ -1,3 +1,5 @@
+import { assert } from "./assert";
+
 export function remove<T>(items: T[], item: T) {
   const index = items.indexOf(item);
   items.splice(index, 1);
@@ -37,7 +39,7 @@ export const getOrSet = <K, V>(map: Map<K, V>, key: K, create: () => V) => {
 export const getOrThrow = <K, V>(map: Map<K, V>, key: K) => {
   const found = map.get(key);
   if (found) return found;
-  throw new Error(`key not found: ${String(key)}`);
+  assert(false, `key not found: ${String(key)}`);
 };
 
 export const mapOfMaps = <K, K2, V>(records: [K, K2, V][]): Map<K, Map<K2, V>> => {
