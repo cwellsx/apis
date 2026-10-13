@@ -271,19 +271,11 @@ export class SqlTable<T extends object> {
       other: SqlTable<U>,
       foreignKey: keyof U & string,
       localKey: keyof T & string,
-      options?: { optional?: boolean }
+      options?: JoinOptions
     ): JoinQuery<T & U> => {
       return new JoinQuery(
         db,
-        [
-          {
-            leftTable: tableName,
-            rightTable: other.tableName,
-            leftKey: localKey,
-            rightKey: foreignKey,
-            optional: !!options?.optional,
-          },
-        ],
+        [{ leftTable: tableName, rightTable: other.tableName, leftKey: localKey, rightKey: foreignKey, options }],
         [],
         [],
         false,
@@ -314,22 +306,52 @@ export class SqlTable<T extends object> {
     other: SqlTable<U>,
     foreignKey: keyof U & string,
     localKey: keyof T & string,
-    options?: { optional?: boolean }
+    options?: JoinOptions
   ) => JoinQuery<T & U>;
 
   tableName: string;
   useSafeIntegers: boolean;
 }
 
-type Join = {
-  leftTable: string;
-  rightTable: string;
-  leftKey: string;
-  rightKey: string;
-  optional: boolean;
-  leftAlias?: string;
-  rightAlias?: string;
+type JoinOptions = { optional?: boolean; operand?: JoinOperand; leftAlias?: string; rightAlias?: string };
+
+const getOptional = (
+  options: JoinOptions | undefined
+): { optional: boolean; operand: JoinOperand; leftAlias?: string; rightAlias?: string } => ({
+  optional: options?.optional ?? false,
+  operand: options?.operand ?? "=",
+  leftAlias: options?.leftAlias,
+  rightAlias: options?.rightAlias,
+});
+
+type JoinOperand =
+  | "="
+  | "!="
+  | "<"
+  | ">"
+  | "<="
+  | ">="
+  | "IS"
+  | "IS NOT"
+  // these are different kinds of "LIKE" operand
+  | "startsWith"
+  | "endsWith"
+  | "contains";
+
+const getOnOperand = (left: string, operand: JoinOperand, right: string): string => {
+  switch (operand) {
+    case "startsWith":
+      return `${left} LIKE ${right} || '%'`;
+    case "endsWith":
+      return `${left} LIKE '%' || ${right}`;
+    case "contains":
+      return `${left} LIKE '%' || ${right} || '%'`;
+    default:
+      return `${left} ${operand} ${right}`;
+  }
 };
+
+type Join = { leftTable: string; rightTable: string; leftKey: string; rightKey: string; options?: JoinOptions };
 
 // this creates a new prepared statement just in time
 // cost to create an prepared statement is independent of table size
@@ -349,7 +371,7 @@ class JoinQuery<T extends object> {
     foreignKey: keyof U & string,
     localTable: SqlTable<L>, // one of the existing tables in T
     localKey: keyof L & string,
-    options?: { optional?: boolean; leftAlias?: string; rightAlias?: string }
+    options?: { optional?: boolean; operand?: JoinOperand; leftAlias?: string; rightAlias?: string }
   ): JoinQuery<T & U> {
     return new JoinQuery(
       this.db,
@@ -360,9 +382,7 @@ class JoinQuery<T extends object> {
           rightTable: other.tableName,
           leftKey: localKey,
           rightKey: foreignKey,
-          optional: !!options?.optional,
-          leftAlias: options?.leftAlias,
-          rightAlias: options?.rightAlias,
+          options,
         },
       ],
       this.whereClauses,
@@ -401,15 +421,17 @@ class JoinQuery<T extends object> {
     const nameAsAlias = (name: string, alias: string | undefined): string => (alias ? `${name} AS ${alias}` : name);
     const nameOrAlias = (name: string, alias: string | undefined): string => (alias ? alias : name);
 
-    const leftNameAsAlias = nameAsAlias(this.joins[0].leftTable, this.joins[0].leftAlias);
+    const leftNameAsAlias = nameAsAlias(this.joins[0].leftTable, this.joins[0].options?.leftAlias);
     let sql = `${selectKeyword} ${selectSql} FROM ${leftNameAsAlias}`;
 
     for (const j of this.joins) {
-      const joinType = j.optional ? "LEFT JOIN" : "JOIN";
-      const rightNameAsAlias = nameAsAlias(j.rightTable, j.rightAlias);
-      const leftAlias = nameOrAlias(j.leftTable, j.leftAlias);
-      const rightAlias = nameOrAlias(j.rightTable, j.rightAlias);
-      sql += ` ${joinType} ${rightNameAsAlias} ON ${leftAlias}.${j.leftKey} = ${rightAlias}.${j.rightKey}`;
+      const o = getOptional(j.options);
+      const joinType = o.optional ? "LEFT JOIN" : "JOIN";
+      const rightNameAsAlias = nameAsAlias(j.rightTable, o.rightAlias);
+      const leftAlias = nameOrAlias(j.leftTable, o.leftAlias);
+      const rightAlias = nameOrAlias(j.rightTable, o.rightAlias);
+      const onOperand = getOnOperand(`${leftAlias}.${j.leftKey}`, o.operand, `${rightAlias}.${j.rightKey}`);
+      sql += ` ${joinType} ${rightNameAsAlias} ON ${onOperand}`;
     }
 
     if (this.whereClauses.length > 0) {

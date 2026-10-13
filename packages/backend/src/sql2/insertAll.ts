@@ -2,6 +2,7 @@ import * as DotNet from "../../contracts/dotnet2";
 import * as Id from "../id2";
 import { getGroupNames } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
+import { insertAncestors } from "./insertAncestors";
 import { insertCalls } from "./insertCalls";
 import { getFullNames } from "./insertFullNames";
 import * as GetMemberJson from "./insertMemberJson";
@@ -421,4 +422,5 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
   tables.views.insertAuto({ viewType: "references", viewName: "Assembly References" });
 
   insertCalls(tables);
+  insertAncestors(tables);
 };

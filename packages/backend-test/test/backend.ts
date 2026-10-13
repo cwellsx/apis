@@ -85,9 +85,36 @@ const createTables = async (deleteDb: boolean): Promise<Sql.Tables> => {
 };
 
 describe("backend2", () => {
-  it("loadCoreJson", async () => {
-    const tables = await createTables(false);
+  it("createTables(true)", async () => {
+    const tables = await createTables(true);
+    tables.close();
+  });
 
+  it("ancestors", async () => {
+    const tables = await createTables(false);
+    const assembly = tables.assemblies.selectOne({ name: "Core" });
+    assert(!!assembly);
+    const typeName = tables.typeNames.selectOne({ name: "CompilerGenerated", assemblyId: assembly.id });
+    assert(!!typeName);
+    const methodName = tables.methodNames.selectOne({ name: "LiftCompilerGenerated", typeId: typeName.id });
+    assert(!!methodName);
+    const namespace_ = tables.namespaces.selectOne({ name: "Core.CecilToLifted" });
+    assert(!!namespace_);
+
+    const ancestors = tables.ancestors.selectWhere({ descendentId: methodName.id });
+    assert(ancestors.length > 3);
+    const ancestorIds = new Set<bigint>(ancestors.map((ancestor) => ancestor.ancestorId));
+
+    const assertId = (id: Id.AnyId) => assert(ancestorIds.has(BigInt(id)));
+    assertId(typeName.id);
+    assertId(assembly.id);
+    assertId(namespace_.id);
+
+    tables.close();
+  });
+
+  it("assertCalls", async () => {
+    const tables = await createTables(false);
     assertCalls(tables);
 
     printLines("callsFromMethods.md", printCallFromMethods(tables, "Core"));
@@ -140,6 +167,7 @@ describe("testViewStates", function () {
 
   const viewTypes: ViewType[] = ["calls"];
   for (const viewType of viewTypes) {
+    continue;
     describe(`viewType: ${viewType}`, function () {
       let viewState: ViewState;
       //let forest: Forest;

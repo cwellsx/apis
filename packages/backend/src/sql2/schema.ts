@@ -8,7 +8,7 @@ import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 export type { Boolean, NodeState } from "../sqlCommon";
 
-const schemaVersion = 1;
+const schemaVersion = 2;
 
 // config
 
@@ -61,6 +61,8 @@ export type View = { id: Id.ViewId; viewType: ViewType; viewName: string };
 
 export type Group = { id: Id.GroupId; name: string };
 
+export type Ancestor = { ancestorId: Id.AnyBigId; descendentId: Id.AnyBigId };
+
 const tableNames = [
   "assemblies",
   "namespaces",
@@ -87,6 +89,8 @@ const tableNames = [
 
   "groups",
 
+  "ancestors",
+
   "configKvps",
 ] as const;
 
@@ -109,6 +113,7 @@ type TableRowMap = {
   views: View;
   nodeStates: NodeState;
   groups: Group;
+  ancestors: Ancestor;
   configKvps: ConfigKvps;
 };
 
@@ -152,6 +157,8 @@ const row: TableRowMap = {
 
   groups: { id: zero.groupId, name: "foo" },
 
+  ancestors: { ancestorId: zero.anyBigId, descendentId: zero.methodDefId },
+
   configKvps: { key: "when", value: "value" },
 };
 
@@ -191,6 +198,10 @@ const newTables = (db: SqlDatabase): Tables => {
 
   const groups = db.newSqlTable("groups", "id", row.groups);
 
+  const ancestors = db.newSqlTable("ancestors", ["ancestorId", "descendentId"], row.ancestors, {
+    index: ["ancestorId"],
+  });
+
   const configKvps = db.newSqlTable("configKvps", "key", row.configKvps);
 
   const close = () => {
@@ -215,6 +226,7 @@ const newTables = (db: SqlDatabase): Tables => {
     views,
     nodeStates,
     groups,
+    ancestors,
     configKvps,
     config: config(configKvps),
     close,

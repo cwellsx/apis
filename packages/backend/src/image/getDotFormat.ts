@@ -1,4 +1,4 @@
-import { getOrThrow, options } from "../utils";
+import { assert, getOrThrow, options } from "../utils";
 import { getNodeAttributes, NodeAttributes } from "./getNodeAttributes";
 import type { ImageData } from "./imageDataTypes";
 
@@ -74,7 +74,7 @@ export const getDotFormat = (
       let node = nodeMap.get(nodeId);
       if (!node) throw new Error("Edge to undefined node");
       if (node.type !== "expanded") return nodeId;
-      if (!imageData.hasParentEdges) throw new Error("Unexpected edge to cluster");
+      assert(imageData.hasParentEdges, "Unexpected edge to cluster");
       // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
       edgeAttributes.push({ key, value: `cluster_${nodeId}` });
       while (node.type === "expanded") {
