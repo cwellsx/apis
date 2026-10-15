@@ -1,19 +1,20 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
-import type { ConfigKvpT, ConfigT, CustomNodeState } from "../sqlCommon";
-import { configT, zeroCustomNodeState } from "../sqlCommon";
+import type { ConfigKvpT, ConfigT } from "../sqlCommon";
+import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";
 
 export type { Boolean, CustomNodeState as CustomViewState } from "../sqlCommon";
 
-const schemaVersion = 5;
+const schemaVersion = 0;
 
 // config
 
-type ConfigKvps = ConfigKvpT<"when">;
+type TConfig = "when";
+type ConfigKvps = ConfigKvpT<TConfig>;
 type Config = ConfigT<"when">;
-const config = (table: SqlTable<ConfigKvps>): Config => configT<"when">(table);
+const newConfig = (table: SqlTable<ConfigKvps>): Config => configT<"when">(table);
 
 // rows
 
@@ -31,23 +32,19 @@ export type Group = { id: Id.CustomGroupId };
 // tables
 
 const tableNames = [
+  ...SqlCommon.tableNames,
   "items",
   "edges",
   "itemAttrs",
   "edgeAttrs",
   "itemTags",
   "layers",
-
   "views",
-  // common
-  "nodeStates",
-  "groups",
-  "configKvps",
 ] as const;
 
 export type TableName = (typeof tableNames)[number];
 
-type TableRowMap = {
+type CustomTableRowMap = {
   items: Item;
   edges: Edge;
   itemAttrs: ItemAttr;
@@ -56,18 +53,16 @@ type TableRowMap = {
   layers: Layer;
 
   views: View;
-  // these are common and should be declared in sqlCommon
-  nodeStates: CustomNodeState;
-  groups: Group;
-  configKvps: ConfigKvps;
 };
+
+type TableRowMap = SqlCommon.TableRowMap<Id.AnyCustomId, Id.CustomGroupId, TConfig> & CustomTableRowMap;
 
 type TableRow<K extends TableName> = TableRowMap[K];
 export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { config: Config; close: () => void };
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName) => tables[tableName].deleteAll());
 
-const row: TableRowMap = {
+const row: CustomTableRowMap = {
   items: { id: zero.customId, layer: zero.customGroupId, label: "foo" },
   edges: { fromId: zero.customId, toId: zero.customId },
   itemAttrs: { id: zero.customId, name: "foo", value: "foo" },
@@ -76,10 +71,6 @@ const row: TableRowMap = {
   layers: { id: zero.customGroupId },
 
   views: { id: zero.viewId, viewName: "foo" },
-  // common
-  nodeStates: zeroCustomNodeState,
-  groups: { id: zero.customGroupId },
-  configKvps: { key: "when", value: "value" },
 };
 
 export const createTables = (db: SqlDatabase): Tables => {
@@ -103,10 +94,6 @@ const newTables = (db: SqlDatabase): Tables => {
   const layers = db.newSqlTable("layers", "id", row.layers);
 
   const views = db.newSqlTable("views", "id", row.views);
-  // common
-  const nodeStates = db.newSqlTable("nodeStates", ["viewId", "id"], row.nodeStates);
-  const groups = db.newSqlTable("groups", "id", row.groups);
-  const configKvps = db.newSqlTable("configKvps", "key", row.configKvps);
 
   const close = () => {
     db.done();
@@ -114,6 +101,7 @@ const newTables = (db: SqlDatabase): Tables => {
   };
 
   return {
+    ...SqlCommon.newTables(db, zero.anyCustomId, zero.customGroupId, newConfig),
     items,
     edges,
     itemAttrs,
@@ -121,11 +109,7 @@ const newTables = (db: SqlDatabase): Tables => {
     itemTags,
     layers,
     views,
-    // common
-    nodeStates,
-    groups,
-    configKvps,
-    config: config(configKvps),
+
     close,
   };
 };

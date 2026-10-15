@@ -75,7 +75,7 @@ export const insertAll = (all: CustomElement[], tables: Schema.Tables) => {
       layers.map((row) => row.id),
       "/"
     );
-    tables.groups.insertMany(groups.map((group) => ({ id: makeCustomGroupId(group) })));
+    tables.groups.insertMany(groups.map((group) => ({ id: makeCustomGroupId(group), name: group })));
   }
   // views
   tables.views.insertAuto({ viewName: "Custom" });

@@ -29,17 +29,21 @@ export const configT = <T extends string>(table: SqlTable<ConfigKvpT<T>>): Confi
 
 // example of how to extend this
 
-type ConfigKeysTheme = UnionT<"theme">;
-type ConfigKvpTheme = ConfigKvpT<"theme">;
+type ConfigKeysTheme = UnionT<"theme" | "layout">;
+type ConfigKvpTheme = ConfigKvpT<"theme" | "layout">;
 type ConfigMore = ConfigT<ConfigKeysTheme> & {
   getTheme: () => "light" | "dark" | undefined;
   setTheme: (value: "light" | "dark") => void;
+  getLayout: () => "simple" | "complex" | undefined;
+  setLayout: (value: "simple" | "complex") => void;
 };
 export const configTheme = (table: SqlTable<ConfigKvpTheme>): ConfigMore => {
-  const base = configT<"theme">(table);
+  const base = configT<"theme" | "layout">(table);
   return {
     ...base,
     getTheme: () => base.getConfig("theme") as "light" | "dark" | undefined,
     setTheme: (value: "light" | "dark") => base.setConfig("theme", value),
+    getLayout: () => base.getConfig("layout") as "simple" | "complex" | undefined,
+    setLayout: (value: "simple" | "complex") => base.setConfig("layout", value),
   };
 };

@@ -1,22 +1,23 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
-import type { Boolean, ConfigKvpT, ConfigT, NodeState } from "../sqlCommon";
-import { configT, zeroNodeState } from "../sqlCommon";
+import type { Boolean, ConfigKvpT, ConfigT } from "../sqlCommon";
+import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 export type { Boolean, NodeState } from "../sqlCommon";
 
-const schemaVersion = 2;
+const schemaVersion = 0;
 
 // config
 
-type ConfigKvps = ConfigKvpT<"viewId">;
+type TConfig = "viewId";
+type ConfigKvps = ConfigKvpT<TConfig>;
 
 type Config = ConfigT<"viewId"> & { getViewId: () => Id.ViewId | undefined; setViewId: (value: Id.ViewId) => void };
 
-const config = (table: SqlTable<ConfigKvps>): Config => {
+const newConfig = (table: SqlTable<ConfigKvps>): Config => {
   const base = configT<"viewId">(table);
 
   return {
@@ -25,6 +26,10 @@ const config = (table: SqlTable<ConfigKvps>): Config => {
     setViewId: (value: Id.ViewId) => base.setConfig("viewId", Id.viewIdToText(value)),
   };
 };
+
+// Ancestor
+
+export type Ancestor = SqlCommon.AncestorT<Id.AnyBigId>;
 
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
@@ -57,13 +62,8 @@ export type FullName = { id: Id.AnyBigId; fullName: string };
 
 export type View = { id: Id.ViewId; viewType: ViewType; viewName: string };
 
-// isExpanded will be false for leaf-type nodes
-
-export type Group = { id: Id.GroupId; name: string };
-
-export type Ancestor = { ancestorId: Id.AnyBigId; descendentId: Id.AnyBigId };
-
 const tableNames = [
+  ...SqlCommon.tableNames,
   "assemblies",
   "namespaces",
   "typeNames",
@@ -85,18 +85,11 @@ const tableNames = [
   "fullNames",
 
   "views",
-  "nodeStates",
-
-  "groups",
-
-  "ancestors",
-
-  "configKvps",
 ] as const;
 
 export type TableName = (typeof tableNames)[number];
 
-type TableRowMap = {
+type DotNetTableRowMap = {
   assemblies: Assembly;
   namespaces: Namespace;
   typeNames: TypeName;
@@ -111,11 +104,9 @@ type TableRowMap = {
   calls: Call;
   fullNames: FullName;
   views: View;
-  nodeStates: NodeState;
-  groups: Group;
-  ancestors: Ancestor;
-  configKvps: ConfigKvps;
 };
+
+type TableRowMap = SqlCommon.TableRowMap<Id.AnyBigId, Id.GroupId, TConfig> & DotNetTableRowMap;
 
 type TableRow<K extends TableName> = TableRowMap[K];
 
@@ -127,7 +118,7 @@ export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName
 
 const zeroViewType: ViewType = "calls";
 
-const row: TableRowMap = {
+const row: DotNetTableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
   namespaces: { id: zero.namespaceId, name: "foo" },
   typeNames: {
@@ -153,13 +144,6 @@ const row: TableRowMap = {
 
   fullNames: { id: zero.anyBigId, fullName: "foo" },
   views: { id: zero.viewId, viewType: zeroViewType, viewName: "foo" },
-  nodeStates: zeroNodeState,
-
-  groups: { id: zero.groupId, name: "foo" },
-
-  ancestors: { ancestorId: zero.anyBigId, descendentId: zero.methodDefId },
-
-  configKvps: { key: "when", value: "value" },
 };
 
 export const createTables = (db: SqlDatabase): Tables => {
@@ -194,15 +178,6 @@ const newTables = (db: SqlDatabase): Tables => {
 
   const fullNames = db.newSqlTable("fullNames", "id", row.fullNames);
   const views = db.newSqlTable("views", "id", row.views);
-  const nodeStates = db.newSqlTable("nodeStates", ["viewId", "id"], row.nodeStates);
-
-  const groups = db.newSqlTable("groups", "id", row.groups);
-
-  const ancestors = db.newSqlTable("ancestors", ["ancestorId", "descendentId"], row.ancestors, {
-    index: ["ancestorId"],
-  });
-
-  const configKvps = db.newSqlTable("configKvps", "key", row.configKvps);
 
   const close = () => {
     db.done();
@@ -210,6 +185,7 @@ const newTables = (db: SqlDatabase): Tables => {
   };
 
   return {
+    ...SqlCommon.newTables(db, zero.anyBigId, zero.groupId, newConfig),
     assemblies,
     namespaces,
     typeNames,
@@ -224,11 +200,6 @@ const newTables = (db: SqlDatabase): Tables => {
     calls,
     fullNames,
     views,
-    nodeStates,
-    groups,
-    ancestors,
-    configKvps,
-    config: config(configKvps),
     close,
   };
 };
