@@ -35,7 +35,7 @@ export const readFile = (path: string): Promise<string> => fsPromises.readFile(p
 
 export const writeFileSync = (path: string, data: string): void => fs.writeFileSync(path, data);
 
-export const deleteFileSync = (path: string): void => fs.rmSync(path);
+export const deleteFileSync = (path: string): void => fs.rmSync(path, { force: true });
 
 export const whenFile = async (path: string): Promise<string> => {
   assert(existsSync(path), `File not found: ${path}`);

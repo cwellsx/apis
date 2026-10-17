@@ -1,5 +1,5 @@
-import { Collapsible } from "./node";
 import { EdgeId, NodeId } from "./nodeId";
+import { NodeState } from "./nodeState";
 import { AnyNodeType } from "./nodeTypes";
 import { DetailType } from "./viewDetails";
 
@@ -15,7 +15,8 @@ type MouseEvent = {
 };
 
 export type GraphEvent = { id: NodeId | EdgeId; event: MouseEvent };
-export type NewNodeState = { id: NodeId; nodeType: AnyNodeType; isShown: boolean; collapsible: Collapsible };
+
+export type NewNodeState = { id: NodeId; nodeType: AnyNodeType; nodeState: NodeState };
 export type FilterEvent = NewNodeState[];
 
 export type DetailEvent = { id: NodeId; viewType: DetailType };

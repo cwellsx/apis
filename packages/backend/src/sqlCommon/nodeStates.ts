@@ -1,23 +1,90 @@
-import { SqlTable } from "sqlio";
-import { AnyNodeType, NodeId, NodeType } from "../contracts-ui";
+import { SqlDatabase } from "sqlio";
+import { IsShown } from "../contracts-ui";
 import * as Id from "../id2";
-import { makeNodeStatesT, MakeNodeStatesT, NodeStatesT, NodeStateT, ToT } from "./nodeStatesT";
+import { zero } from "../id2";
+import { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
 
-export type NodeState = NodeStateT<Id.AnyBigId>;
-export type CustomNodeState = NodeStateT<Id.AnyCustomId>;
-
+export type NodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {
+  isExpandedId: (id: T, isGroup: boolean) => boolean;
+  isVisibleId: (id: T, isParentVisible: boolean) => boolean;
+};
 export type NodeStates = NodeStatesT<Id.AnyBigId>;
 export type CustomNodeStates = NodeStatesT<Id.AnyCustomId>;
 
-export const makeNodeStates = (sqlTable: SqlTable<NodeState>, viewId: Id.ViewId): MakeNodeStatesT<Id.AnyBigId> => {
-  const toT: ToT<Id.AnyBigId> = (nodeId: NodeId, type: AnyNodeType) => Id.toAnyBigId(nodeId, type);
-  return makeNodeStatesT<Id.AnyBigId>(sqlTable, viewId, toT, NodeType.Group);
+export type GetSetNodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {
+  getNodeStates: () => NodeStatesT<T>;
+  //setNodeState: (id: T, nodeState: NodeState) => void;
+  resetNodeStates: () => void;
+  setIsExpanded: (id: T, isGroup: boolean, isExpanded: boolean) => void;
+  setIsVisible: (id: T, isParentShown: IsShown, isVisible: boolean) => void;
 };
 
-export const makeCustomNodeStates = (
-  sqlTable: SqlTable<CustomNodeState>,
-  viewId: Id.ViewId
-): MakeNodeStatesT<Id.AnyCustomId> => {
-  const toT: ToT<Id.AnyCustomId> = (nodeId: NodeId, type: AnyNodeType) => Id.toAnyCustomId(nodeId, type);
-  return makeNodeStatesT<Id.AnyCustomId>(sqlTable, viewId, toT, NodeType.CustomGroup);
+export type ViewNodeStates<T extends Id.AnyBigId | Id.AnyCustomId> = (viewId: Id.ViewId) => GetSetNodeStatesT<T>;
+
+type BooleanStateT<T extends Id.AnyBigId | Id.AnyCustomId> = { viewId: Id.ViewId; id: T; isTrue: Boolean };
+
+export const nodeStateTablesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
+  db: SqlDatabase,
+  zeroId: T
+): ViewNodeStates<T> => {
+  const zeroBoolean: BooleanStateT<T> = { viewId: zero.viewId, id: zeroId, isTrue: 0 as Boolean };
+
+  const nodeHiddenStates = db.newSqlTable("nodeHiddenStates", ["viewId", "id"], zeroBoolean);
+  const nodeExpandedStates = db.newSqlTable("nodeExpandedStates", ["viewId", "id"], zeroBoolean);
+
+  const viewNodeStates = (viewId: Id.ViewId): GetSetNodeStatesT<T> => {
+    const getNodeStates = (): NodeStatesT<T> => {
+      const toMap = (booleanStates: BooleanStateT<T>[]) =>
+        new Map<T, boolean>(booleanStates.map((it) => [it.id, toBoolean(it.isTrue)]));
+
+      const isHidden = toMap(nodeHiddenStates.selectWhere({ viewId }));
+      const isExpanded = toMap(nodeExpandedStates.selectWhere({ viewId }));
+
+      // by default, groups are expanded and nodes are non-expanded
+      const isExpandedId = (id: T, isGroup: boolean): boolean => isExpanded.get(id) ?? isGroup;
+
+      // be default, any is visible if parent is visible
+      const isVisibleId = (id: T, isParentVisible: boolean): boolean => {
+        const hidden = isHidden.get(id);
+        return hidden === undefined ? isParentVisible : !hidden;
+      };
+
+      return { isExpandedId, isVisibleId };
+    };
+
+    const setIsExpanded = (id: T, isGroup: boolean, isExpanded: boolean): void => {
+      if (isGroup == isExpanded) nodeExpandedStates.deleteWhere({ viewId, id });
+      else nodeExpandedStates.upsert({ viewId, id, isTrue: fromBoolean(isExpanded) });
+    };
+
+    const setIsVisible = (id: T, isParentShown: IsShown, isVisible: boolean): void => {
+      if (isParentShown == isVisible) nodeHiddenStates.deleteWhere({ viewId, id });
+      else nodeHiddenStates.upsert({ viewId, id, isTrue: fromBoolean(!isVisible) });
+    };
+
+    const resetNodeStates = (): void => {
+      nodeHiddenStates.deleteWhere({ viewId });
+      nodeExpandedStates.deleteWhere({ viewId });
+    };
+
+    return { getNodeStates, setIsExpanded, setIsVisible, resetNodeStates };
+  };
+
+  return viewNodeStates;
+};
+
+export const getNodeStatesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
+  isHidden: Map<T, boolean>,
+  isExpanded: Map<T, boolean>
+): NodeStatesT<T> => {
+  // by default, groups are expanded and nodes are non-expanded
+  const isExpandedId = (id: T, isGroup: boolean): boolean => isExpanded.get(id) ?? isGroup;
+
+  // be default, any is visible if parent is visible
+  const isVisibleId = (id: T, isParentVisible: boolean): boolean => {
+    const hidden = isHidden.get(id);
+    return hidden === undefined ? isParentVisible : !hidden;
+  };
+
+  return { isExpandedId, isVisibleId };
 };

@@ -1,14 +1,13 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { zero } from "../id2";
-import type { Boolean, ConfigKvpT, ConfigT } from "../sqlCommon";
+import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
-export type { Boolean, NodeState } from "../sqlCommon";
 
-const schemaVersion = 0;
+const schemaVersion = 1;
 
 // config
 
@@ -33,7 +32,7 @@ export type Ancestor = SqlCommon.AncestorT<Id.AnyBigId>;
 
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
-export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: Boolean };
+export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: SqlCommon.Boolean };
 export type Namespace = { id: Id.NamespaceId; name: string };
 export type TypeName = {
   id: Id.TypeDefId;
@@ -110,7 +109,9 @@ type TableRowMap = SqlCommon.TableRowMap<Id.AnyBigId, Id.GroupId, TConfig> & Dot
 
 type TableRow<K extends TableName> = TableRowMap[K];
 
-export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { config: Config; close: () => void };
+type ExtraApis = SqlCommon.ExtraApis<Id.AnyBigId, TConfig, Config>;
+
+export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & ExtraApis & { close: () => void };
 
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 
@@ -119,7 +120,7 @@ export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName
 const zeroViewType: ViewType = "calls";
 
 const row: DotNetTableRowMap = {
-  assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as Boolean },
+  assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as SqlCommon.Boolean },
   namespaces: { id: zero.namespaceId, name: "foo" },
   typeNames: {
     id: zero.typeDefId,

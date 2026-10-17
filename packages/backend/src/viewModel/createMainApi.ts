@@ -1,9 +1,8 @@
 import type { MainApiAsync, RuntimeContext } from "../contracts-app";
 import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, GraphOptions, Node, ViewGraph } from "../contracts-ui";
-import { isEdgeId } from "../contracts-ui";
+import { isClosed, isEdgeId } from "../contracts-ui";
 import { bindImage } from "../image";
 import { createImageData } from "../presenter";
-import { Visible, toVisible } from "../sqlCommon";
 import { assert } from "../utils";
 import { GraphNodes } from "../viewState";
 import { SelectedView } from "./selectedView";
@@ -53,10 +52,8 @@ export const createMainApi = async (
       // else it's a node not an edge
       const node = graphNodes.getNode(id);
       if (graphNodes.leafType !== node.type) {
-        // this is a group -- toggle expanded
-        const visible = toVisible(node);
-        visible.isExpanded = !visible.isExpanded;
-        selectedView.viewState.setNodeState(id, node.type, visible);
+        // this is a group -- toggle expanded -- if it was closed then it's now expanded or vice versa
+        selectedView.viewState.setNodeState(id, node.type, { isExpanded: isClosed(node) }, graphNodes);
         await showViewType();
         return;
       }
@@ -66,9 +63,8 @@ export const createMainApi = async (
 
     onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
       filterEvent.forEach((newNodeState) => {
-        const { id, nodeType, isShown, collapsible } = newNodeState;
-        const visible: Visible = { isHidden: !isShown, isExpanded: collapsible == "expanded" };
-        selectedView.viewState.setNodeState(id, nodeType, visible);
+        const { id, nodeType, nodeState } = newNodeState;
+        selectedView.viewState.setNodeState(id, nodeType, nodeState, graphNodes);
       });
       // const { /*viewOptions,*/ graphFilter } = filterEvent;
       // writeGraphFilter(graphFilter, graphNodes, viewState);

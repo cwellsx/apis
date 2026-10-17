@@ -1,19 +1,22 @@
-import type { AnyNodeType, Node, NodeId } from "../contracts-ui";
+import type { Node, NodeId } from "../contracts-ui";
 import { isParent, isShown, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
-import type * as Id from "../id2";
+import * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
-import { makeNodeStates, NodeStates, Visible } from "../sqlCommon";
+import { NodeStates } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
 import { databaseNodeTree } from "./databaseNodeTree";
 import type { Forest, Numeric } from "./forest";
-import { toLeafs, toTrunk } from "./toNodes";
+import { makeNodes } from "./makeNodes";
+import { makeSetNodeState } from "./makeSetNodeState";
 import type { Call, GraphNodes, ViewState } from "./types";
 
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
-  // two "make" modules are closures which do database I/O using sqlTables
+  const getSetNodeStates = sqlTables.viewNodeStates(viewId);
+  const { getNodeStates, resetNodeStates } = getSetNodeStates;
+  const setNodeState = makeSetNodeState(getSetNodeStates, Id.toAnyBigId, NodeType.Group);
+
   const { rootNodeType, leafType, top, getLeafs } = databaseNodeTree(sqlTables, viewType);
-  const { getNodeStates, setAnyNodeState, resetNodeStates } = makeNodeStates(sqlTables.nodeStates, viewId);
 
   const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
     const text = id.toString();
@@ -29,17 +32,15 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
   };
 
-  const setNodeState = (id: NodeId, nodeType: AnyNodeType, visible: Visible): void =>
-    setAnyNodeState(toAnyBigId(id, nodeType), visible);
-
   const getForest = (nodeStates: NodeStates): Forest => {
-    const trunk = toTrunk(top, rootNodeType, nodeStates, leafType, NodeType.Group);
+    const { toLeafs, toTrunk } = makeNodes(nodeStates, leafType, NodeType.Group, Id.toAnyBigId);
+    const trunk = toTrunk(top, rootNodeType);
     switch (leafType) {
       case NodeType.Assembly:
         return trunk;
       case NodeType.Method: {
         const leafs = getLeafs(nodeStates);
-        toLeafs(trunk, leafs, nodeStates, leafType);
+        toLeafs(trunk, leafs);
         return trunk;
       }
     }

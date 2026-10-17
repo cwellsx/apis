@@ -1,4 +1,4 @@
-import { Collapsible, isParent, isShown, NewNodeState, type Node, type OnFilterEvent } from "backend-ui";
+import { isParent, NewNodeState, type Node, type OnFilterEvent } from "backend-ui";
 import * as React from "react";
 import { OnToggle, TreeView } from "./components/TreeView";
 
@@ -10,20 +10,14 @@ export const Nodes: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   const onToggleExpand: OnToggle = (node) => {
     // toggle collapsible
     const isExpanded = isParent(node);
-    const collapsible: Collapsible = isExpanded ? "collapsed" : "expanded";
-
-    const newState: NewNodeState = { id: node.nodeId, nodeType: node.type, isShown: isShown(node), collapsible };
+    const newState: NewNodeState = { id: node.nodeId, nodeType: node.type, nodeState: { isExpanded: !isExpanded } };
     onFilterEvent([newState]);
   };
 
   const onToggleCheck: OnToggle = (node) => {
     // toggle isShown
-    const newState: NewNodeState = {
-      id: node.nodeId,
-      nodeType: node.type,
-      isShown: !node.isShown,
-      collapsible: node.collapsible,
-    };
+    const isHidden = !node.isShown;
+    const newState: NewNodeState = { id: node.nodeId, nodeType: node.type, nodeState: { isHidden: !isHidden } };
     onFilterEvent([newState]);
   };
 

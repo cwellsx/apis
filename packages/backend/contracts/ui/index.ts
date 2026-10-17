@@ -10,6 +10,7 @@ export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isParent, isShown } from "./node";
 export type { Closed, Collapsible, IsShown, Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
+export type { NodeState } from "./nodeState";
 export { NodeType } from "./nodeType";
 export type * from "./nodeTypes";
 export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./types";

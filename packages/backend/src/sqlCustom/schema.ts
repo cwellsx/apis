@@ -5,9 +5,7 @@ import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";
 
-export type { Boolean, CustomNodeState as CustomViewState } from "../sqlCommon";
-
-const schemaVersion = 0;
+const schemaVersion = 1;
 
 // config
 
@@ -58,7 +56,11 @@ type CustomTableRowMap = {
 type TableRowMap = SqlCommon.TableRowMap<Id.AnyCustomId, Id.CustomGroupId, TConfig> & CustomTableRowMap;
 
 type TableRow<K extends TableName> = TableRowMap[K];
-export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & { config: Config; close: () => void };
+
+type ExtraApis = SqlCommon.ExtraApis<Id.AnyCustomId, TConfig, Config>;
+
+export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & ExtraApis & { close: () => void };
+
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName) => tables[tableName].deleteAll());
 

@@ -1,6 +1,6 @@
 import * as DotNet from "../../contracts/dotnet2";
 import * as Id from "../id2";
-import { getGroupNames } from "../sqlCommon";
+import { getGroupNames, SqlCommon } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
 import { insertAncestors } from "./insertAncestors";
 import { insertCalls } from "./insertCalls";
@@ -33,8 +33,8 @@ type ToBaseMethodId = (id: DotNet.BaseMethodId, assemblyId: Id.AssemblyId) => Id
 
 const getAssemblies = (all: DotNet.All): Schema.Assembly[] =>
   Object.keys(all.assemblies)
-    .map((value) => ({ name: value, isMicrosoft: 0 as Schema.Boolean }))
-    .concat(Object.keys(all.microsoftAssemblies).map((value) => ({ name: value, isMicrosoft: 1 as Schema.Boolean })))
+    .map((value) => ({ name: value, isMicrosoft: 0 as SqlCommon.Boolean }))
+    .concat(Object.keys(all.microsoftAssemblies).map((value) => ({ name: value, isMicrosoft: 1 as SqlCommon.Boolean })))
     .map((value, index) => ({ id: Id.makeAssemblyId(index + 1), ...value }));
 
 const getAllTypeInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds): AllTypeInfo[] =>

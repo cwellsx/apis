@@ -9,7 +9,7 @@ import { createCustomViewState } from "sut/viewState/createCustomViewState";
 import { printForest } from "sut/viewState/printForest";
 import { fileWrite, pathMkdir } from "./utils/file";
 import { dirCustom, dirTestCustomRoot } from "./utils/paths";
-import { printLines } from "./utils/printLines";
+import { printTestLines } from "./utils/printTestLines";
 import { tablesToJsonL } from "./utils/toJsonL";
 
 const readJsonFilePaths = (dir: string): string[] =>
@@ -22,6 +22,9 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
   const { name } = path.parse(jsonFile);
   const outputDir = `${dirTestCustomRoot}.${name}`;
   pathMkdir(outputDir);
+
+  const printLines = (filename: string, printed: string[]) =>
+    printTestLines((filename: string) => path.join(outputDir, filename), filename, printed);
 
   describe(`custom ${jsonFile}`, () => {
     const fullPath = path.join(dirCustom, jsonFile);
