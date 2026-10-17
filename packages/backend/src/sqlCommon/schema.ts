@@ -2,47 +2,31 @@ import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { ConfigKvpT, ConfigT } from "./config";
 import { GetSetNodeStatesT, nodeStateTablesT } from "./nodeStates";
-
-// Boolean is also a keyword, so, export and import it in the SqlCommon namespace
-export { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
+export { Boolean, fromBoolean, toBoolean } from "./sqlBoolean"; // Boolean is a keyword so export it in the SqlCommon namespace
 
 export type GroupT<TGroup extends Id.GroupId | Id.CustomGroupId> = { id: TGroup; name: string };
 export type AncestorT<T extends Id.AnyBigId | Id.AnyCustomId> = { ancestorId: T; descendentId: T };
 
 export const tableNames = ["groups", "ancestors", "configKvps"] as const;
-
 export type TableName = (typeof tableNames)[number];
 
-export type TableRowMap<
+export interface CommonTypesT<
   T extends Id.AnyBigId | Id.AnyCustomId,
   TGroup extends Id.GroupId | Id.CustomGroupId,
   TConfigKeys extends string,
-> = {
-  //  row types of the common tables
-  groups: GroupT<TGroup>;
-  ancestors: AncestorT<T>;
-  configKvps: ConfigKvpT<TConfigKeys>;
-};
-
-type TableRow<
-  K extends TableName,
-  T extends Id.AnyBigId | Id.AnyCustomId,
-  TGroup extends Id.GroupId | Id.CustomGroupId,
-  TConfigKeys extends string,
-> = TableRowMap<T, TGroup, TConfigKeys>[K];
-
-export type ExtraApis<
-  TId extends Id.AnyBigId | Id.AnyCustomId,
-  TConfigKeys extends string,
   TConfig extends ConfigT<TConfigKeys>,
-> = { config: TConfig; viewNodeStates: (viewId: Id.ViewId) => GetSetNodeStatesT<TId> };
+> {
+  TableRowMap: {
+    //  row types of the common tables
+    groups: GroupT<TGroup>;
+    ancestors: AncestorT<T>;
+    configKvps: ConfigKvpT<TConfigKeys>;
+  };
 
-export type Tables<
-  TId extends Id.AnyBigId | Id.AnyCustomId,
-  TGroup extends Id.GroupId | Id.CustomGroupId,
-  TConfigKeys extends string,
-  TConfig extends ConfigT<TConfigKeys>,
-> = { [K in TableName]: SqlTable<TableRow<K, TId, TGroup, TConfigKeys>> } & ExtraApis<TId, TConfigKeys, TConfig>;
+  ExtraApis: { config: TConfig; viewNodeStates: (viewId: Id.ViewId) => GetSetNodeStatesT<T> };
+
+  Tables: { [K in TableName]: SqlTable<this["TableRowMap"][K]> } & this["ExtraApis"];
+}
 
 export const newTables = <
   T extends Id.AnyBigId | Id.AnyCustomId,
@@ -54,7 +38,7 @@ export const newTables = <
   zeroId: T,
   zeroGroupId: TGroup,
   newConfig: (table: SqlTable<ConfigKvpT<TConfigKeys>>) => TConfig
-): Tables<T, TGroup, TConfigKeys, TConfig> => {
+): CommonTypesT<T, TGroup, TConfigKeys, TConfig>["Tables"] => {
   // zero exemplars
   const zeroGroup: GroupT<TGroup> = { id: zeroGroupId, name: "foo" };
   const zeroAncestor: AncestorT<T> = { ancestorId: zeroId, descendentId: zeroId };

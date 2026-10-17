@@ -11,8 +11,8 @@ const schemaVersion = 1;
 
 // config
 
-type TConfig = "viewId";
-type ConfigKvps = ConfigKvpT<TConfig>;
+type ConfigKeys = "viewId";
+type ConfigKvps = ConfigKvpT<ConfigKeys>;
 
 type Config = ConfigT<"viewId"> & { getViewId: () => Id.ViewId | undefined; setViewId: (value: Id.ViewId) => void };
 
@@ -105,13 +105,13 @@ type DotNetTableRowMap = {
   views: View;
 };
 
-type TableRowMap = SqlCommon.TableRowMap<Id.AnyBigId, Id.GroupId, TConfig> & DotNetTableRowMap;
+type CommonType = SqlCommon.CommonTypesT<Id.AnyBigId, Id.GroupId, ConfigKeys, Config>;
+
+type TableRowMap = CommonType["TableRowMap"] & DotNetTableRowMap;
 
 type TableRow<K extends TableName> = TableRowMap[K];
 
-type ExtraApis = SqlCommon.ExtraApis<Id.AnyBigId, TConfig, Config>;
-
-export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & ExtraApis & { close: () => void };
+export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & CommonType["ExtraApis"] & { close: () => void };
 
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 

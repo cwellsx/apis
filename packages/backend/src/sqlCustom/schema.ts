@@ -9,8 +9,8 @@ const schemaVersion = 1;
 
 // config
 
-type TConfig = "when";
-type ConfigKvps = ConfigKvpT<TConfig>;
+type ConfigKeys = "when";
+type ConfigKvps = ConfigKvpT<ConfigKeys>;
 type Config = ConfigT<"when">;
 const newConfig = (table: SqlTable<ConfigKvps>): Config => configT<"when">(table);
 
@@ -53,13 +53,13 @@ type CustomTableRowMap = {
   views: View;
 };
 
-type TableRowMap = SqlCommon.TableRowMap<Id.AnyCustomId, Id.CustomGroupId, TConfig> & CustomTableRowMap;
+type CommonType = SqlCommon.CommonTypesT<Id.AnyCustomId, Id.CustomGroupId, ConfigKeys, Config>;
+
+type TableRowMap = CommonType["TableRowMap"] & CustomTableRowMap;
 
 type TableRow<K extends TableName> = TableRowMap[K];
 
-type ExtraApis = SqlCommon.ExtraApis<Id.AnyCustomId, TConfig, Config>;
-
-export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & ExtraApis & { close: () => void };
+export type Tables = { [K in TableName]: SqlTable<TableRow<K>> } & CommonType["ExtraApis"] & { close: () => void };
 
 export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) => db.dropTable(tableName));
 export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName) => tables[tableName].deleteAll());
