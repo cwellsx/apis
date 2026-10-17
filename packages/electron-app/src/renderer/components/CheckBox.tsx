@@ -1,4 +1,3 @@
-import { IsShown } from "backend-ui";
 import * as React from "react";
 import { Codeicons } from "../images.tsx";
 import "./CheckBox.scss";
@@ -8,7 +7,7 @@ const svgCheck = <Codeicons.SvgCheck viewBox="0 0 16 16" />;
 const svgDash = <Codeicons.SvgDash viewBox="0 0 16 16" />;
 const svgNone = <></>;
 
-type CheckBoxProps = { checked: IsShown; onToggle: () => void };
+type CheckBoxProps = { checked: boolean | "mixed"; onToggle: () => void };
 
 export const CheckBox: React.FC<CheckBoxProps> = ({ checked, onToggle }) => {
   const [state, element] = (() => {

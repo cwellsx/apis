@@ -13,13 +13,12 @@ type Common = {
   nodeId: NodeId; // unique within graph and/or within group tree
   parent: Parent | null;
   type: AnyNodeType;
+  isVisible: boolean;
 };
 
-export type IsShown = boolean | "mixed";
-
-export type Leaf = Common & { collapsible: "none"; isShown: boolean };
-export type Closed = Common & { collapsible: "collapsed"; isShown: IsShown };
-export type Parent = Common & { collapsible: "expanded"; isShown: IsShown; children: Node[] };
+export type Leaf = Common & { collapsible: "none" };
+export type Closed = Common & { collapsible: "collapsed" };
+export type Parent = Common & { collapsible: "expanded"; isMixed: boolean; children: Node[] };
 
 export type Node = Leaf | Parent | Closed;
 
@@ -35,10 +34,6 @@ export const isLeaf = (node: Node): node is Leaf => {
 
 export const isClosed = (node: Node): node is Closed => {
   return node.collapsible == "collapsed";
-};
-
-export const isShown = (node: Node): boolean => {
-  return node.isShown == true;
 };
 
 // state types -- TODO rename these to isShown and isExpanded booleans

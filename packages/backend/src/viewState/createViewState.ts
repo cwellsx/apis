@@ -1,5 +1,5 @@
 import type { Node, NodeId } from "../contracts-ui";
-import { isParent, isShown, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
+import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
 import * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
@@ -26,7 +26,7 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
   const getCalls = (forest: Forest): Call[] => {
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
-      .filter((node) => !isParent(node) && isShown(node))
+      .filter((node) => !isParent(node) && node.isVisible)
       .map((node) => toAnyBigId(node.nodeId, node.type));
     const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));

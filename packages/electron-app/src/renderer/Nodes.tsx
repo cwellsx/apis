@@ -16,7 +16,7 @@ export const Nodes: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
 
   const onToggleCheck: OnToggle = (node) => {
     // toggle isShown
-    const isHidden = !node.isShown;
+    const isHidden = !node.isVisible;
     const newState: NewNodeState = { id: node.nodeId, nodeType: node.type, nodeState: { isHidden: !isHidden } };
     onFilterEvent([newState]);
   };

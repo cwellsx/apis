@@ -1,5 +1,4 @@
 import { SqlDatabase } from "sqlio";
-import { IsShown } from "../contracts-ui";
 import * as Id from "../id2";
 import { zero } from "../id2";
 import { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
@@ -16,7 +15,7 @@ export type GetSetNodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {
   //setNodeState: (id: T, nodeState: NodeState) => void;
   resetNodeStates: () => void;
   setIsExpanded: (id: T, isGroup: boolean, isExpanded: boolean) => void;
-  setIsVisible: (id: T, isParentShown: IsShown, isVisible: boolean) => void;
+  setIsVisible: (id: T, isParentVisible: boolean, isVisible: boolean) => void;
 };
 
 export type ViewNodeStates<T extends Id.AnyBigId | Id.AnyCustomId> = (viewId: Id.ViewId) => GetSetNodeStatesT<T>;
@@ -57,8 +56,8 @@ export const nodeStateTablesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
       else nodeExpandedStates.upsert({ viewId, id, isTrue: fromBoolean(isExpanded) });
     };
 
-    const setIsVisible = (id: T, isParentShown: IsShown, isVisible: boolean): void => {
-      if (isParentShown == isVisible) nodeHiddenStates.deleteWhere({ viewId, id });
+    const setIsVisible = (id: T, isParentVisible: boolean, isVisible: boolean): void => {
+      if (isParentVisible == isVisible) nodeHiddenStates.deleteWhere({ viewId, id });
       else nodeHiddenStates.upsert({ viewId, id, isTrue: fromBoolean(!isVisible) });
     };
 

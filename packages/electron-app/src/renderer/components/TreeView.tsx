@@ -25,7 +25,8 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, onToggleExpand, onToggleCheck
   const getCheckBox = (): React.ReactNode => {
     if (onToggleCheck == null) return <></>;
     const onToggle = () => onToggleCheck(node);
-    return <CheckBox onToggle={onToggle} checked={node.isShown} />;
+    const isMixed = "isMixed" in node && node.isMixed;
+    return <CheckBox onToggle={onToggle} checked={isMixed ? "mixed" : node.isVisible} />;
   };
 
   return (

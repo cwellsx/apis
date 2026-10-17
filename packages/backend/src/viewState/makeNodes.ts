@@ -1,16 +1,6 @@
 // two functions help to implement getGraphNodes
 import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
-import {
-  isClosed,
-  isLeaf,
-  isParent,
-  isShown,
-  Node,
-  nodeIdToText,
-  NodeType,
-  Parent,
-  textToNodeId,
-} from "../contracts-ui";
+import { isClosed, isLeaf, isParent, Node, nodeIdToText, NodeType, Parent, textToNodeId } from "../contracts-ui";
 import * as Id from "../id2";
 import type { NodeStatesT } from "../sqlCommon";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
@@ -58,22 +48,20 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
   const toNode = (item: Item<Numeric>, type: AnyNodeType, parent: Parent | null): Node => {
     const pair = { nodeId: toNodeId(item.id), type };
     const id = toT(pair.nodeId, pair.type);
-    const isParentVisible = parent ? isShown(parent) : true;
+    const isParentVisible = parent ? parent.isVisible : true;
     const isVisible = nodeStates.isVisibleId(id, isParentVisible);
-    for (let ancestor = parent; ancestor; ancestor = ancestor?.parent ?? null) {
-      if (ancestor.isShown == "mixed" || ancestor.isShown == isVisible) break;
-      ancestor.isShown = "mixed";
-    }
+    if (isVisible != isParentVisible)
+      for (let ancestor = parent; ancestor != null; ancestor = ancestor?.parent ?? null) ancestor.isMixed = true;
     const isExpanded = nodeStates.isExpandedId(id, pair.type === groupType);
     const partial = { ...pair, label: item.name, parent };
     if (type == leafType) {
       assert(!isExpanded);
-      return { ...partial, collapsible: "none", isShown: isVisible };
+      return { ...partial, collapsible: "none", isVisible };
     }
     if (!isExpanded) {
-      return { ...partial, isShown: isVisible, collapsible: "collapsed" };
+      return { ...partial, isVisible, collapsible: "collapsed" };
     }
-    return { ...partial, isShown: isVisible, collapsible: "expanded", children: [] };
+    return { ...partial, isVisible, collapsible: "expanded", isMixed: false, children: [] };
   };
 
   const toTrunk = (top: TopT<TId>, rootNodeType: RootNodeType): Forest => {

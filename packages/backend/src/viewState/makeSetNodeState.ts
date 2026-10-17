@@ -16,8 +16,8 @@ export const makeSetNodeState = <T extends Id.AnyBigId | Id.AnyCustomId>(
     if ("isHidden" in nodeState) {
       const isVisible = !nodeState.isHidden;
       const node = graphNodes.getNode(nodeId);
-      const isParentShown = node.parent?.isShown ?? true;
-      getSetNodeStates.setIsVisible(id, isParentShown, isVisible);
+      const isParentVisible = node.parent?.isVisible ?? true;
+      getSetNodeStates.setIsVisible(id, isParentVisible, isVisible);
     }
 
     if ("isExpanded" in nodeState) {
