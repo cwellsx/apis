@@ -47,6 +47,7 @@ export const newTables = <
   const groups = db.newSqlTable("groups", "id", zeroGroup);
   const ancestors = db.newSqlTable("ancestors", ["ancestorId", "descendentId"], zeroAncestor, {
     index: ["ancestorId"],
+    check: "ancestorId <> descendentId",
   });
   const configKvps = db.newSqlTable("configKvps", "key", zeroConfig);
 

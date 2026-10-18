@@ -36,7 +36,9 @@ export const isClosed = (node: Node): node is Closed => {
   return node.collapsible == "collapsed";
 };
 
-// state types -- TODO rename these to isShown and isExpanded booleans
+// state method
+
+export const isMixed = (node: Node): boolean => "isMixed" in node && node.isMixed;
 
 //export type Shown = Node["shown"];
 export type Collapsible = Node["collapsible"];

@@ -6,8 +6,7 @@ And `./MORE/*`
 
 Sooner:
 
-- Refactor - replace nodeStates: NodeStateT table with two BooleanStateT tables name hiddenStates and expandedStates
-- Debug - delete state of descendents on ancestor state change
+- Debug - Error: Edge to undefined node when child of invisible parent is visible
 - Debug - add namespaces to tree
 - Implement - group isMicrosoft assemblies and make these invisible and non-expanded by default
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces

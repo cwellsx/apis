@@ -8,6 +8,8 @@
     "test-backend": "electron-mocha test/backend.ts --timeout 30000",
     "build-dotnet": "npm --workspace=backend-dotnet run build -- backend-test",
     "test-dotnet-slow": "electron-mocha test/dotnet.slow.ts --timeout 60000",
+    "test-dotnet-load": "electron-mocha test/dotnet.load.ts --timeout 60000",
+    "test-dotnet-view": "electron-mocha test/dotnet.view.ts --timeout 60000",
     "test-sample": "electron-mocha test/**/sample.test.ts",
     "type-check": "tsc --noEmit",
     "watch": "tsc --noEmit --watch"

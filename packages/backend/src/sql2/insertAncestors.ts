@@ -46,7 +46,7 @@ export const insertAncestors = (tables: Tables): void => {
 
   // groups => groups
   const groups2: Ancestor[] = tables.groups
-    .join(tables.groups, "name", "name", { operand: "startsWith", leftAlias: "Left", rightAlias: "Right" })
+    .join(tables.groups, "name", "name", { operand: "startsWithNotEquals", leftAlias: "Left", rightAlias: "Right" })
     .selectAll<Ancestor>({ ancestorId: "Right.id", descendentId: "Left.id" });
   assert(groups2.length > 0);
   tables.ancestors.insertMany(groups2);

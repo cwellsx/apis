@@ -1,5 +1,5 @@
 import type { Node } from "backend-ui";
-import { isLeaf, isParent, nodeIdToText } from "backend-ui";
+import { isLeaf, isMixed, isParent, nodeIdToText } from "backend-ui";
 import * as React from "react";
 import { Codeicons } from "../images.tsx";
 import { CheckBox } from "./CheckBox";
@@ -25,8 +25,7 @@ const TreeItem: React.FC<TreeItemProps> = ({ node, onToggleExpand, onToggleCheck
   const getCheckBox = (): React.ReactNode => {
     if (onToggleCheck == null) return <></>;
     const onToggle = () => onToggleCheck(node);
-    const isMixed = "isMixed" in node && node.isMixed;
-    return <CheckBox onToggle={onToggle} checked={isMixed ? "mixed" : node.isVisible} />;
+    return <CheckBox onToggle={onToggle} checked={isMixed(node) ? "mixed" : node.isVisible} />;
   };
 
   return (

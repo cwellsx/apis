@@ -1,4 +1,4 @@
-import { isParent, NewNodeState, type Node, type OnFilterEvent } from "backend-ui";
+import { isMixed, isParent, NewNodeState, type Node, type OnFilterEvent } from "backend-ui";
 import * as React from "react";
 import { OnToggle, TreeView } from "./components/TreeView";
 
@@ -15,8 +15,8 @@ export const Nodes: React.FunctionComponent<TreeProps> = (props: TreeProps) => {
   };
 
   const onToggleCheck: OnToggle = (node) => {
-    // toggle isShown
-    const isHidden = !node.isVisible;
+    // toggle isVisible
+    const isHidden = !node.isVisible || isMixed(node);
     const newState: NewNodeState = { id: node.nodeId, nodeType: node.type, nodeState: { isHidden: !isHidden } };
     onFilterEvent([newState]);
   };

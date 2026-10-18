@@ -95,7 +95,12 @@ const needSafeIntegers = (t: object): boolean => {
   }
 };
 
-export type SqlOptions<T extends object> = { index?: (keyof T)[]; unique?: (keyof T)[]; nullable?: (keyof T)[] };
+export type SqlOptions<T extends object> = {
+  index?: (keyof T)[];
+  unique?: (keyof T)[];
+  nullable?: (keyof T)[];
+  check?: string;
+};
 
 export class SqlTable<T extends object> {
   // we need to list of keys in T to create corresponding SQL columns
@@ -123,7 +128,8 @@ export class SqlTable<T extends object> {
     });
     const primaryKeyConstraint = `PRIMARY KEY (${primaryKeys.join(", ")})`;
     const withoutRowId = primaryKeys.length > 1 ? " WITHOUT ROWID" : "";
-    const createTable = `CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefs.join(", ")}, ${primaryKeyConstraint})${withoutRowId}`;
+    const checkConstraint = options?.check ? `, CHECK (${options.check})` : "";
+    const createTable = `CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefs.join(", ")}, ${primaryKeyConstraint}${checkConstraint})${withoutRowId}`;
     db.prepare(createTable).run();
 
     const createIndex = (isUnique: boolean, keyNames: (keyof T)[]): void => {
@@ -283,6 +289,12 @@ export class SqlTable<T extends object> {
       );
     };
 
+    this.deleteCustom = (custom: string, params?: unknown[]): void => {
+      const sql = `DELETE FROM "${tableName}" WHERE ${custom}`;
+      const stmt = db.prepare(sql);
+      stmt.run(...(params ?? []));
+    };
+
     this.tableName = tableName;
     this.useSafeIntegers = useSafeIntegers;
   }
@@ -301,6 +313,10 @@ export class SqlTable<T extends object> {
   // don't use selectCustom with big numbers
   selectCustom: (distinct: boolean, custom: string, where?: object) => T[];
   selectCustomSpecific: (u: Partial<T>, distinct: boolean, custom: string, where?: object) => Partial<T>[];
+
+  // this is used to implement "delete where in" e.g. deleteCustom(`id IN (SELECT descendentId FROM ancestors WHERE ancestorId = ?)`, [ancestorId]);
+  // passing a custom SQL string fragment is not ideal -- if there is more need for this in future, it could be reimplemented by a new JOIN-like API
+  deleteCustom: (custom: string, params?: unknown[]) => void;
 
   join: <U extends object>(
     other: SqlTable<U>,
@@ -336,6 +352,8 @@ type JoinOperand =
   // these are different kinds of "LIKE" operand
   | "startsWith"
   | "endsWith"
+  | "startsWithNotEquals"
+  | "endsWithNotEquals"
   | "contains";
 
 const getOnOperand = (left: string, operand: JoinOperand, right: string): string => {
@@ -344,6 +362,10 @@ const getOnOperand = (left: string, operand: JoinOperand, right: string): string
       return `${left} LIKE ${right} || '%'`;
     case "endsWith":
       return `${left} LIKE '%' || ${right}`;
+    case "startsWithNotEquals":
+      return `${left} LIKE ${right} || '%' AND ${left} != ${right}`;
+    case "endsWithNotEquals":
+      return `${left} LIKE '%' || ${right} AND ${left} != ${right}`;
     case "contains":
       return `${left} LIKE '%' || ${right} || '%'`;
     default:

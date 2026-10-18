@@ -59,6 +59,11 @@ export const nodeStateTablesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
     const setIsVisible = (id: T, isParentVisible: boolean, isVisible: boolean): void => {
       if (isParentVisible == isVisible) nodeHiddenStates.deleteWhere({ viewId, id });
       else nodeHiddenStates.upsert({ viewId, id, isTrue: fromBoolean(!isVisible) });
+
+      nodeHiddenStates.deleteCustom(`viewId = ? AND id IN (SELECT descendentId FROM ancestors WHERE ancestorId = ?)`, [
+        viewId,
+        id,
+      ]);
     };
 
     const resetNodeStates = (): void => {

@@ -7,7 +7,7 @@ export type { GraphFilter } from "./graphFilter";
 export * as GraphOptions from "./graphOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodName } from "./methodName";
-export { isClosed, isLeaf, isParent } from "./node";
+export { isClosed, isLeaf, isMixed, isParent } from "./node";
 export type { Closed, Collapsible, Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
 export type { NodeState } from "./nodeState";
