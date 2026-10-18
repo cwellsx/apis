@@ -6,7 +6,6 @@ And `./MORE/*`
 
 Sooner:
 
-- Debug - Error: Edge to undefined node when child of invisible parent is visible
 - Debug - add namespaces to tree
 - Implement - group isMicrosoft assemblies and make these invisible and non-expanded by default
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
