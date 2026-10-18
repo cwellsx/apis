@@ -1,12 +1,11 @@
-import type { Node, NodeId } from "../contracts-ui";
+import type { AnyLeafType, Node, NodeId } from "../contracts-ui";
 import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
 import * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import { Sql, ViewType } from "../sql2";
 import { NodeStates } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
-import { databaseNodeTree } from "./databaseNodeTree";
-import type { Forest, Numeric } from "./forest";
+import type { Forest, Numeric, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeSetNodeState } from "./makeSetNodeState";
 import type { Call, GraphNodes, ViewState } from "./types";
@@ -16,7 +15,19 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
   const { getNodeStates, resetNodeStates } = getSetNodeStates;
   const setNodeState = makeSetNodeState(getSetNodeStates, Id.toAnyBigId, NodeType.Group);
 
-  const { rootNodeType, leafType, top, getLeafs } = databaseNodeTree(sqlTables, viewType);
+  const getLeafType = (): AnyLeafType => {
+    switch (viewType) {
+      case "calls":
+        return NodeType.Method;
+      case "references":
+        return NodeType.Assembly;
+    }
+  };
+
+  const assemblies = sqlTables.assemblies.selectAll();
+  const top: Top = { groupItems: sqlTables.groups.selectAll(), rootItems: assemblies };
+  const rootNodeType = NodeType.Assembly;
+  const leafType = getLeafType();
 
   const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
     const text = id.toString();
@@ -33,14 +44,26 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
   };
 
   const getForest = (nodeStates: NodeStates): Forest => {
-    const { toLeafs, toTrunk } = makeNodes(nodeStates, leafType, NodeType.Group, Id.toAnyBigId);
+    const { toTrunk, addToParent } = makeNodes(nodeStates, leafType, NodeType.Group, Id.toAnyBigId);
     const trunk = toTrunk(top, rootNodeType);
     switch (leafType) {
       case NodeType.Assembly:
         return trunk;
       case NodeType.Method: {
-        const leafs = getLeafs(nodeStates);
-        toLeafs(trunk, leafs);
+        // expanded assemblies
+        const assemblyIds = assemblies
+          .map((item) => item.id)
+          .filter((id) => nodeStates.isExpandedId(Id.toBigAssemblyId(id), false));
+        // type names
+        const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds);
+        typeNames.forEach((typeName) => addToParent(trunk, typeName, NodeType.Type, typeName.assemblyId.toString()));
+        // expanded types
+        const typeIds = typeNames.map((typeName) => typeName.id).filter((id) => nodeStates.isExpandedId(id, false));
+        // method names
+        const methodNames = sqlTables.methodNames.selectWhereIn("typeId", typeIds);
+        methodNames.forEach((methodName) =>
+          addToParent(trunk, methodName, NodeType.Method, methodName.typeId.toString())
+        );
         return trunk;
       }
     }

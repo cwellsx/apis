@@ -1,10 +1,10 @@
 // two functions help to implement getGraphNodes
 import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
-import { isClosed, isLeaf, isParent, Node, nodeIdToText, NodeType, Parent, textToNodeId } from "../contracts-ui";
+import { isClosed, isLeaf, isParent, Node, nodeIdToText, Parent, textToNodeId } from "../contracts-ui";
 import * as Id from "../id2";
 import type { NodeStatesT } from "../sqlCommon";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
-import { Forest, Item, Leafs, Numeric, TopT } from "./forest";
+import { Forest, Item, Numeric, TopT } from "./forest";
 import { ToT } from "./toT";
 
 const insert = <T extends { label: string }>(array: T[], node: T): void => {
@@ -35,7 +35,6 @@ export type MakeNodes<TId extends Numeric> = {
   toTrunk: (top: TopT<TId>, rootNodeType: RootNodeType) => Forest;
   addToParent: (trunk: Forest, item: Item<TId>, type: AnyNodeType, parentId: string) => void;
   addOrphan: (trunk: Forest, item: Item<TId>, type: AnyNodeType) => void;
-  toLeafs: (trunk: Forest, leafs: Leafs) => void;
 };
 
 export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCustomId>(
@@ -143,27 +142,5 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
     addAllNodes(trunk, node);
   };
 
-  const toLeafs = (trunk: Forest, leafs: Leafs): void => {
-    const toLeafNode = (item: Item<Numeric>, type: AnyNodeType, parent: Parent): Node => toNode(item, type, parent);
-
-    const getParent = (id: Id.AnyId): Parent => {
-      const parentId = getOrThrow(leafs.parentItems, id);
-      const node = getOrThrow(trunk.allNodes, parentId.toString());
-      assert(isParent(node));
-      return node;
-    };
-
-    const addToParents = (items: Item<Id.AnyCoreId>[], type: AnyNodeType) =>
-      items.forEach((item) => {
-        const parent = getParent(item.id);
-        const node = toLeafNode(item, type, parent);
-        insert(parent.children, node);
-        addAllNodes(trunk, node);
-      });
-
-    addToParents(leafs.typeItems, NodeType.Type);
-    addToParents(leafs.methodItems, NodeType.Method);
-  };
-
-  return { toTrunk, addToParent, addOrphan, toLeafs };
+  return { toTrunk, addToParent, addOrphan };
 };
