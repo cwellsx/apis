@@ -1,9 +1,10 @@
 import * as Id from "./idTypes";
 
 export const castAssemblyId = (id: number): Id.AssemblyId => id as Id.AssemblyId;
-export const castNamespaceId = (id: number): Id.NamespaceId => id as Id.NamespaceId;
 export const castGroupId = (id: number): Id.GroupId => id as Id.GroupId;
 export const castViewId = (id: number): Id.ViewId => id as Id.ViewId;
+
+export const castNamespaceId = (id: bigint): Id.NamespaceId => id as Id.NamespaceId;
 
 export const castCustomId = (id: string): Id.CustomId => id as Id.CustomId;
 export const castCustomGroupId = (id: string): Id.CustomGroupId => id as Id.CustomGroupId;
@@ -20,20 +21,19 @@ export const castMemberId = (id: bigint): Id.MemberId => id as Id.MemberId;
 export const castAnyBigId = (id: bigint): Id.AnyBigId => id as Id.TypeDefId;
 
 export const toBigAssemblyId = (id: Id.AssemblyId): Id.BigAssemblyId => BigInt(id) as Id.BigAssemblyId;
-export const toBigNamespaceId = (id: Id.NamespaceId): Id.BigNamespaceId => BigInt(id) as Id.BigNamespaceId;
 export const toBigGroupId = (id: Id.GroupId): Id.BigGroupId => BigInt(id) as Id.BigGroupId;
 
 export const castBigAssemblyId = (id: bigint): Id.BigAssemblyId => id as Id.BigAssemblyId;
-export const castBigNamespaceId = (id: bigint): Id.BigNamespaceId => id as Id.BigNamespaceId;
 export const castBigGroupId = (id: bigint): Id.BigGroupId => id as Id.BigGroupId;
 
 export const zero = {
   // number
   assemblyId: castAssemblyId(0),
-  namespaceId: castNamespaceId(0),
   groupId: castGroupId(0),
   viewId: castViewId(0),
   // bigint
+  namespaceId: castNamespaceId(0n),
+
   typeDefId: castTypeDefId(0n),
   typeSpecId: castTypeSpecId(0n),
   genericParamId: castGenericParamId(0n),

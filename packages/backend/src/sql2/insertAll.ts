@@ -1,7 +1,7 @@
 import * as DotNet from "../../contracts/dotnet2";
 import * as Id from "../id2";
 import { getGroupNames, SqlCommon } from "../sqlCommon";
-import { assert, getOrThrow } from "../utils";
+import { assert, getOrSet, getOrThrow } from "../utils";
 import { insertAncestors } from "./insertAncestors";
 import { insertCalls } from "./insertCalls";
 import { getFullNames } from "./insertFullNames";
@@ -67,23 +67,46 @@ const getAllMethodInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds): AllMet
     })
   );
 
-const getNamespaces = (assemblyAndTypeInfos: AllTypeInfo[]): Schema.Namespace[] => {
-  const distinctNamespaces = new Set<string>();
+type NamespaceMap = Map<Id.AssemblyId, Map<string, Schema.Namespace>>;
+
+const getNamespaceMap = (assemblyAndTypeInfos: AllTypeInfo[]): NamespaceMap => {
+  const map = new Map<Id.AssemblyId, Set<string>>();
   assemblyAndTypeInfos.forEach((value) => {
-    if (value.namespace) distinctNamespaces.add(value.namespace);
+    const namespace = value.namespace;
+    if (!namespace) return;
+    const set = getOrSet(map, value.assemblyId, () => new Set<string>());
+    set.add(namespace);
   });
-  return [...distinctNamespaces].sort().map((value, index) => ({ id: Id.makeNamespaceId(index + 1), name: value }));
+
+  const namespaces = new Map<Id.AssemblyId, Map<string, Schema.Namespace>>();
+  [...map].forEach(([assemblyId, set]) => {
+    namespaces.set(
+      assemblyId,
+      new Map<string, Schema.Namespace>(
+        [...set]
+          .sort()
+          .map((name, index): [string, Schema.Namespace] => [
+            name,
+            { name, assemblyId, id: Id.makeNamespaceId(index, assemblyId, true) },
+          ])
+      )
+    );
+  });
+
+  return namespaces;
 };
 
 const getTypeNames = (
   allTypeInfos: AllTypeInfo[],
   assemblyIds: MapAssemblyIds,
-  namespaceIds: Map<string, Id.NamespaceId>
+  namespaceMap: NamespaceMap
 ): Schema.TypeName[] =>
   allTypeInfos.map((value) => ({
     id: value.typeDefId,
     assemblyId: value.assemblyId,
-    namespaceId: value.namespace ? namespaceIds.get(value.namespace) : undefined,
+    namespaceId: value.namespace
+      ? getOrThrow(getOrThrow(namespaceMap, value.assemblyId), value.namespace).id
+      : undefined,
     name: value.name,
     declaringTypeId: value.declaringType
       ? Id.makeTypeDefId(value.declaringType, getOrThrow(assemblyIds, value.assemblyName), false)
@@ -303,12 +326,12 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
   const allTypeInfos = getAllTypeInfos(all, assemblyIds);
 
   // namespaces
-  const namespaces = getNamespaces(allTypeInfos);
+  const namespaceMap = getNamespaceMap(allTypeInfos);
+  const namespaces = [...namespaceMap.values()].flatMap((it) => [...it.values()]);
   tables.namespaces.insertMany(namespaces);
-  const namespaceIds = new Map<string, Id.NamespaceId>(namespaces.map((it) => [it.name, it.id]));
 
   // type names
-  const typeNames = getTypeNames(allTypeInfos, assemblyIds, namespaceIds);
+  const typeNames = getTypeNames(allTypeInfos, assemblyIds, namespaceMap);
   getNestedNamespaces(typeNames);
   tables.typeNames.insertMany(typeNames);
 

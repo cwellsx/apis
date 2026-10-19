@@ -7,7 +7,7 @@ const allIds = new Set<bigint>();
 
 const pack = (id: number, assemblyId: Id.AssemblyId): bigint => (BigInt(assemblyId) << 32n) + BigInt(id);
 
-const make = (id: number, assemblyId: Id.AssemblyId, create: boolean, tableId: TableId): bigint => {
+const make = (id: number, assemblyId: Id.AssemblyId, create: boolean, tableId: TableId | BoxedId): bigint => {
   assert(isTableId(id, tableId));
 
   const result = pack(id, assemblyId);
@@ -42,10 +42,14 @@ export const makeGenericParamId = (id: number, assemblyId: Id.AssemblyId, create
 
 // ---
 
+export const makeNamespaceId = (id: number, assemblyId: Id.AssemblyId, create: boolean): Id.NamespaceId =>
+  IdCast.castNamespaceId(make(makeBoxed(id, BoxedId.Namespace), assemblyId, create, BoxedId.Namespace));
+
+// ---
+
 const makeBoxed = (id: number, boxedId: BoxedId) => id + ((boxedId as number) << 24);
 
 export const makeAssemblyId = (id: number): Id.AssemblyId => IdCast.castAssemblyId(makeBoxed(id, BoxedId.Assembly));
-export const makeNamespaceId = (id: number): Id.NamespaceId => IdCast.castNamespaceId(makeBoxed(id, BoxedId.Namespace));
 export const makeGroupId = (id: number): Id.GroupId => IdCast.castGroupId(makeBoxed(id, BoxedId.Group));
 
 export const makeCustomId = (id: string): Id.CustomId => IdCast.castCustomId(id);

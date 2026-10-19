@@ -43,7 +43,7 @@ const mapArrays = <TKey, TValue, T extends { ownerId: TKey; seqno: number }>(
 
 export const getFullNames = (tables: Tables): FullName[] => {
   const assemblies = tables.assemblies.map((value) => ({ id: Id.toBigAssemblyId(value.id), fullName: value.name }));
-  const namespaces = tables.namespaces.map((value) => ({ id: Id.toBigNamespaceId(value.id), fullName: value.name }));
+  const namespaces = tables.namespaces.map((value) => ({ id: value.id, fullName: value.name }));
 
   const mapNamespaces = new Map<Id.NamespaceId, string>(tables.namespaces.map((value) => [value.id, value.name]));
 

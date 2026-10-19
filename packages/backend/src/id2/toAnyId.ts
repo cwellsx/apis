@@ -12,7 +12,7 @@ export const toAnyBigId = (nodeId: NodeId, nodeType: AnyNodeType): AnyBigId => {
     case NodeType.Assembly:
       return IdCast.castBigAssemblyId(bigId);
     case NodeType.Namespace:
-      return IdCast.castBigNamespaceId(bigId);
+      return IdCast.castNamespaceId(bigId);
     case NodeType.Type:
       return IdCast.castTypeDefId(bigId);
     case NodeType.Method:

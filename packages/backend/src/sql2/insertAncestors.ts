@@ -20,7 +20,7 @@ export const insertAncestors = (tables: Tables): void => {
   const namespaces: Ancestor[] = tables.typeNames
     .selectAll()
     .filter((typeName) => !!typeName.namespaceId)
-    .map((typeName) => ({ ancestorId: Id.toBigNamespaceId(typeName.namespaceId!), descendentId: typeName.id }));
+    .map((typeName) => ({ ancestorId: typeName.namespaceId!, descendentId: typeName.id }));
   assert(namespaces.length > 0);
   tables.ancestors.insertMany(namespaces);
 

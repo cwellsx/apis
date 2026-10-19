@@ -7,7 +7,7 @@ import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = 2;
+const schemaVersion = 3;
 
 // config
 
@@ -33,7 +33,7 @@ export type Ancestor = SqlCommon.AncestorT<Id.AnyBigId>;
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
 export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: SqlCommon.Boolean };
-export type Namespace = { id: Id.NamespaceId; name: string };
+export type Namespace = { id: Id.NamespaceId; assemblyId: Id.AssemblyId; name: string };
 export type TypeName = {
   id: Id.TypeDefId;
   assemblyId: Id.AssemblyId;
@@ -121,7 +121,7 @@ const zeroViewType: ViewType = "calls";
 
 const row: DotNetTableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as SqlCommon.Boolean },
-  namespaces: { id: zero.namespaceId, name: "foo" },
+  namespaces: { id: zero.namespaceId, assemblyId: zero.assemblyId, name: "foo" },
   typeNames: {
     id: zero.typeDefId,
     name: "foo",
