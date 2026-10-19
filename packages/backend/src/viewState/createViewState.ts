@@ -54,9 +54,23 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
         const assemblyIds = assemblies
           .map((item) => item.id)
           .filter((id) => nodeStates.isExpandedId(Id.toBigAssemblyId(id), false));
+        // namespaces
+        const namespaces = sqlTables.namespaces.selectWhereIn("assemblyId", assemblyIds);
+        namespaces.forEach((namespace) =>
+          addToParent(trunk, namespace, NodeType.Namespace, namespace.assemblyId.toString())
+        );
         // type names
-        const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds);
-        typeNames.forEach((typeName) => addToParent(trunk, typeName, NodeType.Type, typeName.assemblyId.toString()));
+        const typeNames = sqlTables.typeNames
+          .selectWhereIn("assemblyId", assemblyIds)
+          .filter((typeName) => !typeName.namespaceId || nodeStates.isExpandedId(typeName.namespaceId, false));
+        typeNames.forEach((typeName) =>
+          addToParent(
+            trunk,
+            typeName,
+            NodeType.Type,
+            typeName.namespaceId ? typeName.namespaceId.toString() : typeName.assemblyId.toString()
+          )
+        );
         // expanded types
         const typeIds = typeNames.map((typeName) => typeName.id).filter((id) => nodeStates.isExpandedId(id, false));
         // method names

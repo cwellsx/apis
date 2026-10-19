@@ -103,6 +103,14 @@ describe("testViewStates", function () {
         await printViewState();
       });
 
+      it("expand Core namespace", async function () {
+        // choose a type which exists in the Core assembly and in the Core namespace
+        const [graphNodes, node] = getForestNode(viewState, "Core", NodeType.Namespace);
+        assert(!!node);
+        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
+        await printViewState();
+      });
+
       it("expand Program node", async function () {
         // choose a type which exists in the Core assembly and in the Core namespace
         const [graphNodes, node] = getForestNode(viewState, "Program", NodeType.Type);
