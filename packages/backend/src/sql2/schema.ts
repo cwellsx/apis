@@ -105,7 +105,11 @@ type DotNetTableRowMap = {
   views: View;
 };
 
-type CommonType = SqlCommon.CommonTypesT<Id.AnyBigId, Id.GroupId, ConfigKeys, Config>;
+type Group = { id: Id.GroupId; name: string; isMicrosoft: SqlCommon.Boolean };
+const zeroGroup: Group = { id: zero.groupId, name: "foo", isMicrosoft: 0 as SqlCommon.Boolean };
+export const netFrameworkGroup: Group = { id: Id.makeGroupId(0), name: ".NET Framework", isMicrosoft: 1 };
+
+type CommonType = SqlCommon.CommonTypesT<Id.AnyBigId, Id.GroupId, ConfigKeys, Config, Group>;
 
 type TableRowMap = CommonType["TableRowMap"] & DotNetTableRowMap;
 
@@ -186,7 +190,7 @@ const newTables = (db: SqlDatabase): Tables => {
   };
 
   return {
-    ...SqlCommon.newTables(db, zero.anyBigId, zero.groupId, newConfig),
+    ...SqlCommon.newTables(db, zero.anyBigId, zeroGroup, newConfig),
     assemblies,
     namespaces,
     typeNames,

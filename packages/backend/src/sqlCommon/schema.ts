@@ -4,7 +4,7 @@ import { ConfigKvpT, ConfigT } from "./config";
 import { GetSetNodeStatesT, nodeStateTablesT } from "./nodeStates";
 export { Boolean, fromBoolean, toBoolean } from "./sqlBoolean"; // Boolean is a keyword so export it in the SqlCommon namespace
 
-export type GroupT<TGroup extends Id.GroupId | Id.CustomGroupId> = { id: TGroup; name: string };
+export type GroupT<TGroupId extends Id.GroupId | Id.CustomGroupId> = { id: TGroupId; name: string };
 export type AncestorT<T extends Id.AnyBigId | Id.AnyCustomId> = { ancestorId: T; descendentId: T };
 
 export const tableNames = ["groups", "ancestors", "configKvps"] as const;
@@ -12,13 +12,14 @@ export type TableName = (typeof tableNames)[number];
 
 export interface CommonTypesT<
   T extends Id.AnyBigId | Id.AnyCustomId,
-  TGroup extends Id.GroupId | Id.CustomGroupId,
+  TGroupId extends Id.GroupId | Id.CustomGroupId,
   TConfigKeys extends string,
   TConfig extends ConfigT<TConfigKeys>,
+  TGroup extends GroupT<TGroupId>,
 > {
   TableRowMap: {
     //  row types of the common tables
-    groups: GroupT<TGroup>;
+    groups: TGroup;
     ancestors: AncestorT<T>;
     configKvps: ConfigKvpT<TConfigKeys>;
   };
@@ -30,17 +31,19 @@ export interface CommonTypesT<
 
 export const newTables = <
   T extends Id.AnyBigId | Id.AnyCustomId,
-  TGroup extends Id.GroupId | Id.CustomGroupId,
+  TGroupId extends Id.GroupId | Id.CustomGroupId,
   TConfigKeys extends string,
   TConfig extends ConfigT<TConfigKeys>,
+  TGroup extends GroupT<TGroupId>,
 >(
   db: SqlDatabase,
   zeroId: T,
-  zeroGroupId: TGroup,
+  //zeroGroupId: TGroupId,
+  zeroGroup: TGroup,
   newConfig: (table: SqlTable<ConfigKvpT<TConfigKeys>>) => TConfig
-): CommonTypesT<T, TGroup, TConfigKeys, TConfig>["Tables"] => {
+): CommonTypesT<T, TGroupId, TConfigKeys, TConfig, TGroup>["Tables"] => {
   // zero exemplars
-  const zeroGroup: GroupT<TGroup> = { id: zeroGroupId, name: "foo" };
+  //const zeroGroup: GroupT<TGroupId> = { id: zeroGroupId, name: "foo" };
   const zeroAncestor: AncestorT<T> = { ancestorId: zeroId, descendentId: zeroId };
   const zeroConfig: ConfigKvpT<TConfigKeys> = { key: "when", value: "foo" };
 

@@ -24,8 +24,6 @@ export type ItemTag = { id: Id.CustomId; tag: string };
 export type Layer = { id: Id.CustomGroupId }; // parent is calculated after extracting
 
 export type View = { id: Id.ViewId; viewName: string };
-// common
-export type Group = { id: Id.CustomGroupId };
 
 // tables
 
@@ -53,7 +51,10 @@ type CustomTableRowMap = {
   views: View;
 };
 
-type CommonType = SqlCommon.CommonTypesT<Id.AnyCustomId, Id.CustomGroupId, ConfigKeys, Config>;
+export type Group = { id: Id.CustomGroupId; name: string };
+const zeroGroup: Group = { id: zero.customGroupId, name: "foo" };
+
+type CommonType = SqlCommon.CommonTypesT<Id.AnyCustomId, Id.CustomGroupId, ConfigKeys, Config, Group>;
 
 type TableRowMap = CommonType["TableRowMap"] & CustomTableRowMap;
 
@@ -103,7 +104,7 @@ const newTables = (db: SqlDatabase): Tables => {
   };
 
   return {
-    ...SqlCommon.newTables(db, zero.anyCustomId, zero.customGroupId, newConfig),
+    ...SqlCommon.newTables(db, zero.anyCustomId, zeroGroup, newConfig),
     items,
     edges,
     itemAttrs,

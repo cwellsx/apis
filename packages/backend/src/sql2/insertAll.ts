@@ -6,7 +6,7 @@ import { insertAncestors } from "./insertAncestors";
 import { insertCalls } from "./insertCalls";
 import { getFullNames } from "./insertFullNames";
 import * as GetMemberJson from "./insertMemberJson";
-import type * as Schema from "./schema";
+import * as Schema from "./schema";
 import * as MemberJson from "./schemaMemberJson";
 
 type AllTypeInfo = { typeDefId: Id.TypeDefId; assemblyId: Id.AssemblyId; assemblyName: string } & DotNet.TypeInfo;
@@ -434,11 +434,17 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
   });
   tables.fullNames.insertMany(allFullNames);
 
-  const groups = getGroupNames(
-    assemblies.map((value) => value.name),
-    "."
-  ).map((value, index) => ({ id: Id.makeGroupId(index), name: value }));
-  tables.groups.insertMany(groups);
+  const insertGroups = (isMicrosoft: SqlCommon.Boolean, nGroups: number): number => {
+    const groups = getGroupNames(
+      assemblies.filter((value) => value.isMicrosoft == isMicrosoft).map((value) => value.name),
+      "."
+    ).map((value, index) => ({ id: Id.makeGroupId(index + nGroups + 1), name: value, isMicrosoft }));
+    tables.groups.insertMany(groups);
+    return groups.length;
+  };
+
+  const nGroups = insertGroups(0, 0);
+  insertGroups(1, nGroups);
 
   // insert one view of each view type
   tables.views.insertAuto({ viewType: "calls", viewName: "Method Calls" });
@@ -446,4 +452,15 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
 
   insertCalls(tables);
   insertAncestors(tables);
+
+  tables.groups.insert(Schema.netFrameworkGroup);
+  tables.ancestors.insertMany(
+    tables.groups
+      .selectWhere({ isMicrosoft: 1 })
+      .filter((group) => group.id != Schema.netFrameworkGroup.id)
+      .map((group) => ({
+        descendentId: Id.toBigGroupId(group.id),
+        ancestorId: Id.toBigGroupId(Schema.netFrameworkGroup.id),
+      }))
+  );
 };

@@ -29,10 +29,12 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
   };
 
-  const toItem = (row: SqlCustom.Group): Item<string> => ({ id: row.id, name: row.id });
+  const groupToItem = (row: SqlCustom.Group): Item<string> => ({ id: row.id, name: row.name });
+  const layerToItem = (row: SqlCustom.Layer): Item<string> => ({ id: row.id, name: row.id });
+
   const top: CustomTop = {
-    groupItems: sqlTables.groups.selectAll().map(toItem),
-    rootItems: sqlTables.layers.selectAll().map(toItem),
+    groupItems: sqlTables.groups.selectAll().map(groupToItem),
+    rootItems: sqlTables.layers.selectAll().map(layerToItem),
   };
 
   const getForest = (nodeStates: CustomNodeStates): Forest => {

@@ -1,10 +1,11 @@
 // two functions help to implement getGraphNodes
 import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
-import { isClosed, isLeaf, isParent, Node, nodeIdToText, Parent, textToNodeId } from "../contracts-ui";
+import { isClosed, isLeaf, isParent, Node, nodeIdToText, Parent } from "../contracts-ui";
 import * as Id from "../id2";
 import type { NodeStatesT } from "../sqlCommon";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
-import { Forest, Item, Numeric, TopT } from "./forest";
+import { Forest, Item, Numeric, RootItem, TopT } from "./forest";
+import { toNodeId } from "./toNodeId";
 import { ToT } from "./toT";
 
 const insert = <T extends { label: string }>(array: T[], node: T): void => {
@@ -23,18 +24,13 @@ const insert = <T extends { label: string }>(array: T[], node: T): void => {
   array.splice(lo, 0, node);
 };
 
-// like toNodeId in ../nodeIds but this accepts Numeric instead of AnyNodeId
-const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
-  const text = id.toString();
-  return textToNodeId(text);
-};
-
 const addAllNodes = (forest: Forest, node: Node) => forest.allNodes.set(nodeIdToText(node.nodeId), node);
 
 export type MakeNodes<TId extends Numeric> = {
-  toTrunk: (top: TopT<TId>, rootNodeType: RootNodeType) => Forest;
+  toTrunk: (top: TopT<TId>, rootNodeType: RootNodeType, netFrameworkNode?: Parent) => Forest;
   addToParent: (trunk: Forest, item: Item<TId>, type: AnyNodeType, parentId: string) => void;
   addOrphan: (trunk: Forest, item: Item<TId>, type: AnyNodeType) => void;
+  makeRootNode: (rootItem: RootItem<TId>, forest: Forest) => Parent | Closed;
 };
 
 export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCustomId>(
@@ -63,7 +59,7 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
     return { ...partial, isVisible, collapsible: "expanded", isMixed: false, children: [] };
   };
 
-  const toTrunk = (top: TopT<TId>, rootNodeType: RootNodeType): Forest => {
+  const toTrunk = (top: TopT<TId>, rootNodeType: RootNodeType, netFrameworkNode?: Parent): Forest => {
     const toTrunkNode = (item: Item<TId>, type: AnyNodeType, parent: Parent | null): Node => toNode(item, type, parent);
 
     // the root nodes don't identify which group contains them
@@ -116,9 +112,12 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
         if (!layer.length) return;
         if (level == min) {
           layer.sort((x, y) => compareOrdinal(x.name, y.name));
-          const nodes = layer.map((item) => toTrunkNode(item, groupType, null));
-          trunk.roots.push(...nodes);
-          nodes.forEach(addNode);
+          layer.forEach((item) => {
+            const node = toTrunkNode(item, groupType, netFrameworkNode ?? null);
+            if (netFrameworkNode) insert(netFrameworkNode.children, node);
+            trunk.roots.push(node);
+            addNode(node);
+          });
         } else findParents(layer, groupType);
       }
     };
@@ -142,5 +141,25 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
     addAllNodes(trunk, node);
   };
 
-  return { toTrunk, addToParent, addOrphan };
+  const makeRootNode = (rootItem: RootItem<TId>, forest: Forest): Parent | Closed => {
+    const { item, type, isVisible, isExpanded } = rootItem;
+    const nodeId: NodeId = toNodeId(item.id);
+    const id = toT(nodeId, type);
+    const partial = {
+      label: item.name,
+      nodeId,
+      parent: null,
+      type,
+      isVisible: nodeStates.isVisibleId(id, isVisible),
+      isMixed: false,
+    };
+    const rootNode: Parent | Closed = nodeStates.isExpandedId(id, isExpanded)
+      ? { ...partial, collapsible: "expanded", children: [] }
+      : { ...partial, collapsible: "collapsed" };
+    forest.roots.push(rootNode);
+    addAllNodes(forest, rootNode);
+    return rootNode;
+  };
+
+  return { toTrunk, addToParent, addOrphan, makeRootNode };
 };

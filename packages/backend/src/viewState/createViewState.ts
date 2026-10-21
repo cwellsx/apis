@@ -1,19 +1,33 @@
 import type { AnyLeafType, Node, NodeId } from "../contracts-ui";
-import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
+import { isParent, nodeIdToText, NodeType } from "../contracts-ui";
 import * as Id from "../id2";
 import { toAnyBigId } from "../id2";
-import { Sql, ViewType } from "../sql2";
-import { NodeStates } from "../sqlCommon";
+import type { Sql, ViewType } from "../sql2";
+import { netFrameworkGroup } from "../sql2";
+import { NodeStates, SqlCommon } from "../sqlCommon";
 import { assert, getOrThrow } from "../utils";
-import type { Forest, Numeric, Top } from "./forest";
+import type { Forest, RootItem, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
-import { makeSetNodeState } from "./makeSetNodeState";
+import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
+import { toNodeId } from "./toNodeId";
 import type { Call, GraphNodes, ViewState } from "./types";
 
 export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
+  const netFrameworkItem: RootItem<number> = {
+    item: { id: netFrameworkGroup.id, name: netFrameworkGroup.name },
+    type: NodeType.Group,
+    isVisible: false,
+    isExpanded: false,
+  };
+
   const getSetNodeStates = sqlTables.viewNodeStates(viewId);
   const { getNodeStates, resetNodeStates } = getSetNodeStates;
-  const setNodeState = makeSetNodeState(getSetNodeStates, Id.toAnyBigId, NodeType.Group);
+  const setNodeState = makeSetNodeState(
+    getSetNodeStates,
+    Id.toAnyBigId,
+    NodeType.Group,
+    makeRootDefaults(Id.toAnyBigId, [netFrameworkItem])
+  );
 
   const getLeafType = (): AnyLeafType => {
     switch (viewType) {
@@ -25,14 +39,15 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
   };
 
   const assemblies = sqlTables.assemblies.selectAll();
-  const top: Top = { groupItems: sqlTables.groups.selectAll(), rootItems: assemblies };
+  const groups = sqlTables.groups.selectAll();
+  const makeTop = (b: SqlCommon.Boolean): Top => ({
+    groupItems: groups.filter((group) => group.isMicrosoft == b),
+    rootItems: assemblies.filter((assembly) => assembly.isMicrosoft == b),
+  });
+  const top: Top = makeTop(0);
+  const top2: Top = makeTop(1);
   const rootNodeType = NodeType.Assembly;
   const leafType = getLeafType();
-
-  const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
-    const text = id.toString();
-    return textToNodeId(text);
-  };
 
   const getCalls = (forest: Forest): Call[] => {
     const allNodes = [...forest.allNodes.values()];
@@ -44,8 +59,16 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
   };
 
   const getForest = (nodeStates: NodeStates): Forest => {
-    const { toTrunk, addToParent } = makeNodes(nodeStates, leafType, NodeType.Group, Id.toAnyBigId);
+    const { toTrunk, addToParent, makeRootNode } = makeNodes(nodeStates, leafType, NodeType.Group, Id.toAnyBigId);
     const trunk = toTrunk(top, rootNodeType);
+
+    const netFrameworkNode = makeRootNode(netFrameworkItem, trunk);
+
+    if (isParent(netFrameworkNode)) {
+      const trunk2 = toTrunk(top2, rootNodeType, netFrameworkNode);
+      trunk2.allNodes.forEach((value, key) => trunk.allNodes.set(key, value));
+    }
+
     switch (leafType) {
       case NodeType.Assembly:
         return trunk;

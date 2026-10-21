@@ -6,7 +6,6 @@ And `./MORE/*`
 
 Sooner:
 
-- Implement - group isMicrosoft assemblies and make these invisible and non-expanded by default
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
 - Implement - assembly details and call graphs for Core data
 
