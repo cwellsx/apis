@@ -2,8 +2,10 @@ import { DataSource } from "backend-app";
 import * as fs from "fs";
 import path from "path";
 import { assertCustomJson, validateCustomJson } from "sut/customJson";
+import { bindImage } from "sut/image";
 import { createSqlCustom } from "sut/openDataSource/createSqlCustom";
 import { getDbFilename } from "sut/openDataSource/getDbFilename";
+import { createImageData } from "sut/presenter";
 import { assert, deleteFileSync, readJsonT } from "sut/utils";
 import { createCustomViewState } from "sut/viewState/createCustomViewState";
 import { printForest } from "sut/viewState/printForest";
@@ -22,6 +24,8 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
   const { name } = path.parse(jsonFile);
   const outputDir = `${dirTestCustomRoot}.${name}`;
   pathMkdir(outputDir);
+
+  const fileViewState = (filename: string) => path.join(outputDir, filename);
 
   const printLines = (filename: string, printed: string[]) =>
     printTestLines((filename: string) => path.join(outputDir, filename), filename, printed);
@@ -59,6 +63,7 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
     });
 
     it("createCustomViewState", async () => {
+      const createImage = bindImage((urlPath) => urlPath);
       const sqlCustom = await createSqlCustom(dataSource);
       const view = sqlCustom.views.selectOne({ viewName: "Custom" });
       assert(!!view);
@@ -66,7 +71,16 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
       const graphNodes = viewState.getGraphNodes();
       const printed = printForest(graphNodes.roots);
       let suffix = 0;
-      printLines(`viewState${++suffix}.txt`, printed);
+      const filenameRoot = `viewState-${suffix++}`;
+      printLines(`${filenameRoot}.txt`, printed);
+
+      const imageData = createImageData(graphNodes);
+      const image = await createImage(imageData);
+
+      assert(typeof image === "object");
+      const filename = `${filenameRoot}.svg`;
+      fs.renameSync(image.imagePath, fileViewState(filename));
+
       sqlCustom.close();
     });
   });

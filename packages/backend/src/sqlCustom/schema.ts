@@ -9,10 +9,22 @@ const schemaVersion = 1;
 
 // config
 
-type ConfigKeys = "when";
+// type ConfigKeys = "when";
+// type ConfigKvps = ConfigKvpT<ConfigKeys>;
+// type Config = ConfigT<"when">;
+// const newConfig = (table: SqlTable<ConfigKvps>): Config => configT<"when">(table);
+
+type ConfigKeys = "viewId";
 type ConfigKvps = ConfigKvpT<ConfigKeys>;
-type Config = ConfigT<"when">;
-const newConfig = (table: SqlTable<ConfigKvps>): Config => configT<"when">(table);
+type Config = ConfigT<"viewId"> & { getViewId: () => Id.ViewId | undefined; setViewId: (value: Id.ViewId) => void };
+const newConfig = (table: SqlTable<ConfigKvps>): Config => {
+  const base = configT<"viewId">(table);
+  return {
+    ...base,
+    getViewId: () => Id.textToViewId(base.getConfig("viewId")),
+    setViewId: (value: Id.ViewId) => base.setConfig("viewId", Id.viewIdToText(value)),
+  };
+};
 
 // rows
 

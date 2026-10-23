@@ -136,9 +136,14 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
     addAllNodes(trunk, node);
   };
 
+  const addRoot = (forest: Forest, rootNode: Node) => {
+    forest.roots.push(rootNode);
+    addAllNodes(forest, rootNode);
+  };
+
   const addOrphan = (trunk: Forest, item: Item<TId>, type: AnyNodeType): void => {
     const node = toNode(item, type, null);
-    addAllNodes(trunk, node);
+    addRoot(trunk, node);
   };
 
   const makeRootNode = (rootItem: RootItem<TId>, forest: Forest): Parent | Closed => {
@@ -156,8 +161,7 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
     const rootNode: Parent | Closed = nodeStates.isExpandedId(id, isExpanded)
       ? { ...partial, collapsible: "expanded", children: [] }
       : { ...partial, collapsible: "collapsed" };
-    forest.roots.push(rootNode);
-    addAllNodes(forest, rootNode);
+    addRoot(forest, rootNode);
     return rootNode;
   };
 

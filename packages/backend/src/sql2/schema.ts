@@ -13,12 +13,9 @@ const schemaVersion = 3;
 
 type ConfigKeys = "viewId";
 type ConfigKvps = ConfigKvpT<ConfigKeys>;
-
 type Config = ConfigT<"viewId"> & { getViewId: () => Id.ViewId | undefined; setViewId: (value: Id.ViewId) => void };
-
 const newConfig = (table: SqlTable<ConfigKvps>): Config => {
   const base = configT<"viewId">(table);
-
   return {
     ...base,
     getViewId: () => Id.textToViewId(base.getConfig("viewId")),

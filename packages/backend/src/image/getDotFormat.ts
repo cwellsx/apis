@@ -72,7 +72,7 @@ export const getDotFormat = (
 
     const adjust = (nodeId: string, key: string): string => {
       let node = nodeMap.get(nodeId);
-      if (!node) throw new Error("Edge to undefined node");
+      assert(!!node, "Edge to undefined node");
       if (node.type !== "expanded") return nodeId;
       assert(imageData.hasParentEdges, "Unexpected edge to cluster");
       // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs

@@ -1,8 +1,7 @@
 import type { DataSource, MainApiAsync, RuntimeContext } from "../contracts-app";
 import { log, options, wrapApi } from "../utils";
+import { openFromCustom } from "./openFromCustom";
 import { openFromDotNet } from "./openFromDotNet";
-import { openFromCoreJson } from "./openFromLegacy";
-import { openFromLegacyCustom } from "./openFromLegacyCustom";
 
 /*
   openDataSource to open any and all types of DataSource
@@ -21,15 +20,12 @@ export const openDataSource = async (dataSource: DataSource, runtimeContext: Run
   let mainApi: MainApiAsync;
   switch (dataSource.type) {
     case "loadedAssemblies":
+    case "coreJson":
       mainApi = await openFromDotNet(dataSource, runtimeContext);
       break;
 
-    case "coreJson":
-      mainApi = await openFromCoreJson(dataSource, runtimeContext);
-      break;
-
     case "customJson":
-      mainApi = await openFromLegacyCustom(dataSource, runtimeContext);
+      mainApi = await openFromCustom(dataSource, runtimeContext);
       break;
   }
 

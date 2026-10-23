@@ -8,6 +8,7 @@ Sooner:
 
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
 - Implement - assembly details and call graphs for Core data
+- Refactor - merge openSql and openSqlCustom?
 
 Then:
 
