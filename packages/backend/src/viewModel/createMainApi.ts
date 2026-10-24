@@ -2,9 +2,9 @@ import type { MainApiAsync, RuntimeContext } from "../contracts-app";
 import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, GraphOptions, Node, ViewGraph } from "../contracts-ui";
 import { isClosed, isEdgeId } from "../contracts-ui";
 import { bindImage } from "../image";
-import { createImageData } from "../presenter";
 import { assert } from "../utils";
 import { GraphNodes } from "../viewState";
+import { createImageData } from "./createImageData";
 import { SelectedView } from "./selectedView";
 
 export const createMainApi = async (
