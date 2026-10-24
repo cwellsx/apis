@@ -28,12 +28,14 @@ const newConfig = (table: SqlTable<ConfigKvps>): Config => {
 
 // rows
 
-export type Item = { id: Id.CustomId; layer?: Id.CustomGroupId; label?: string };
-export type Edge = { fromId: Id.CustomId; toId: Id.CustomId };
-export type ItemAttr = { id: Id.CustomId; name: string; value: string };
-export type EdgeAttr = { fromId: Id.CustomId; toId: Id.CustomId; name: string; value: string };
-export type ItemTag = { id: Id.CustomId; tag: string };
-export type Layer = { id: Id.CustomGroupId }; // parent is calculated after extracting
+export type Item = { id: Id.CustomLeafId; layer?: Id.CustomNodeId; label?: string };
+export type ItemAttr = { id: Id.CustomLeafId; name: string; value: string };
+
+export type Edge = { fromId: Id.CustomCallId; toId: Id.CustomCallId };
+export type EdgeAttr = { fromId: Id.CustomLeafId; toId: Id.CustomLeafId; name: string; value: string };
+export type ItemTag = { id: Id.CustomLeafId; tag: string };
+
+export type Layer = { id: Id.CustomNodeId }; // parent is calculated after extracting
 
 export type View = { id: Id.ViewId; viewName: string };
 
@@ -78,12 +80,12 @@ export const dropTables = (db: SqlDatabase) => tableNames.forEach((tableName) =>
 export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName) => tables[tableName].deleteAll());
 
 const row: CustomTableRowMap = {
-  items: { id: zero.customId, layer: zero.customGroupId, label: "foo" },
-  edges: { fromId: zero.customId, toId: zero.customId },
-  itemAttrs: { id: zero.customId, name: "foo", value: "foo" },
-  edgeAttrs: { fromId: zero.customId, toId: zero.customId, name: "foo", value: "foo" },
-  itemTags: { id: zero.customId, tag: "foo" },
-  layers: { id: zero.customGroupId },
+  items: { id: zero.customLeafId, layer: zero.customNodeId, label: "foo" },
+  edges: { fromId: zero.customLeafId, toId: zero.customLeafId },
+  itemAttrs: { id: zero.customLeafId, name: "foo", value: "foo" },
+  edgeAttrs: { fromId: zero.customLeafId, toId: zero.customLeafId, name: "foo", value: "foo" },
+  itemTags: { id: zero.customLeafId, tag: "foo" },
+  layers: { id: zero.customNodeId },
 
   views: { id: zero.viewId, viewName: "foo" },
 };

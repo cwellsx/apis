@@ -6,8 +6,9 @@ export const castViewId = (id: number): Id.ViewId => id as Id.ViewId;
 
 export const castNamespaceId = (id: bigint): Id.NamespaceId => id as Id.NamespaceId;
 
-export const castCustomId = (id: string): Id.CustomId => id as Id.CustomId;
+export const castCustomLeafId = (id: string): Id.CustomLeafId => id as Id.CustomLeafId;
 export const castCustomGroupId = (id: string): Id.CustomGroupId => id as Id.CustomGroupId;
+export const castCustomNodeId = (id: string): Id.CustomNodeId => id as Id.CustomNodeId;
 export const castAnyCustomId = (id: string): Id.AnyCustomId => id as Id.AnyCustomId;
 
 export const castTypeDefId = (id: bigint): Id.TypeDefId => id as Id.TypeDefId;
@@ -46,7 +47,8 @@ export const zero = {
 
   anyBigId: castAnyBigId(0n),
 
-  customId: castCustomId("foo"),
+  customLeafId: castCustomLeafId("foo"),
+  customNodeId: castCustomNodeId("foo"),
   customGroupId: castCustomGroupId("foo"),
   anyCustomId: castAnyCustomId("foo"),
 };

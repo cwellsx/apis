@@ -10,7 +10,7 @@ export class CustomSelectedView implements SelectedView {
   viewState: ViewState;
   onChanged: () => Promise<void>;
 
-  constructor(sqlTables: SqlCustom.Tables, _setMenuItems: SetMenuItems) {
+  constructor(sqlTables: SqlCustom.Tables, setMenuItems: SetMenuItems) {
     const initialView = (): SqlCustom.View => {
       const viewId = sqlTables.config.getViewId() ?? minViewId(sqlTables.views.selectAll().map((view) => view.id));
       const view = sqlTables.views.selectOne({ id: viewId });
@@ -20,10 +20,20 @@ export class CustomSelectedView implements SelectedView {
 
     const selectedViewState = () => createCustomViewState(sqlTables, this.view.id);
 
+    const createMenuItems = (): void => {
+      const onReset = (): Promise<void> => {
+        this.viewState.resetNodeStates();
+        return this.onChanged();
+      };
+
+      setMenuItems([{ type: "normal", label: "Reset", onClick: onReset }]);
+    };
+
     // initially null until createMainApi installs showViewType
     this.onChanged = () => Promise.resolve();
 
     this.view = initialView();
     this.viewState = selectedViewState();
+    createMenuItems();
   }
 }

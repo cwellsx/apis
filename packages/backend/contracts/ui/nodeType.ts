@@ -5,5 +5,7 @@ export const NodeType = {
   Type: "t",
   Method: "m",
   CustomGroup: "cg",
+  CustomNode: "cn",
   CustomLeaf: "cl",
+  //CustomEndpoint: "ce",
 } as const;

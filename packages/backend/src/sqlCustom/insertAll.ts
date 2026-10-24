@@ -1,5 +1,5 @@
 import { CustomElement, validateCustomJson } from "../customJson";
-import { makeCustomGroupId, makeCustomId } from "../id2";
+import { makeCustomGroupId, makeCustomLeafId, makeCustomNodeId } from "../id2";
 import { getGroupNames } from "../sqlCommon";
 import { isDefined } from "../utils";
 import * as Schema from "./schema";
@@ -10,22 +10,25 @@ const getLayers = (all: CustomElement[]): Schema.Layer[] => {
   });
   const set = new Set<string>(all.map((item) => item.layer).filter(isDefined));
   const unique = [...set.keys()];
-  return unique.map((item) => ({ id: makeCustomGroupId(item) }));
+  return unique.map((item) => ({ id: makeCustomNodeId(item) }));
 };
 
 const getItems = (all: CustomElement[]): Schema.Item[] =>
   all.map((item) => ({
-    id: makeCustomId(item.id),
-    layer: !item.layer ? undefined : makeCustomGroupId(item.layer),
+    id: makeCustomLeafId(item.id),
+    layer: !item.layer ? undefined : makeCustomNodeId(item.layer),
     label: item.label,
   }));
 
 const getItemTags = (all: CustomElement[]): Schema.ItemTag[] =>
-  all.flatMap((item) => (item.tags ? item.tags.map((tag) => ({ id: makeCustomId(item.id), tag })) : []));
+  all.flatMap((item) => (item.tags ? item.tags.map((tag) => ({ id: makeCustomLeafId(item.id), tag })) : []));
 
 const getEdges = (all: CustomElement[]): Schema.Edge[] =>
   all.flatMap((item) =>
-    item.dependencies.map((dependency) => ({ fromId: makeCustomId(item.id), toId: makeCustomId(dependency.id) }))
+    item.dependencies.map((dependency) => ({
+      fromId: makeCustomLeafId(item.id),
+      toId: makeCustomLeafId(dependency.id),
+    }))
   );
 
 const knownItemKeys = new Set<string>(["dependencies", "tags", "layer"]);
@@ -34,15 +37,15 @@ const getItemAttrs = (all: CustomElement[]): Schema.ItemAttr[] =>
   all.flatMap((item) =>
     Object.entries(item)
       .filter((kvp) => !knownItemKeys.has(kvp[0]))
-      .map((kvp) => ({ id: makeCustomId(item.id), name: kvp[0], value: JSON.stringify(kvp[1]) }))
+      .map((kvp) => ({ id: makeCustomLeafId(item.id), name: kvp[0], value: JSON.stringify(kvp[1]) }))
   );
 
 const getEdgeAttrs = (all: CustomElement[]): Schema.EdgeAttr[] =>
   all.flatMap((item) =>
     item.dependencies.flatMap((dependency) =>
       Object.entries(dependency).map((kvp) => ({
-        fromId: makeCustomId(item.id),
-        toId: makeCustomId(dependency.id),
+        fromId: makeCustomLeafId(item.id),
+        toId: makeCustomLeafId(dependency.id),
         name: kvp[0],
         value: JSON.stringify(kvp[1]),
       }))
@@ -79,4 +82,17 @@ export const insertAll = (all: CustomElement[], tables: Schema.Tables) => {
   }
   // views
   tables.views.insertAuto({ viewName: "Custom" });
+
+  // grouped edges
+  const edgesFrom = tables.edges
+    .join(tables.items, "id", "fromId")
+    .distinct()
+    .selectAll<Schema.Edge>({ fromId: "items.layer", toId: "edges.toId" });
+  tables.edges.insertMany(edgesFrom.filter((edge) => !!edge.fromId));
+
+  const edgesTo = tables.edges
+    .join(tables.items, "id", "toId")
+    .distinct()
+    .selectAll<Schema.Edge>({ fromId: "edges.fromId", toId: "items.layer" });
+  tables.edges.insertMany(edgesTo.filter((edge) => !!edge.toId));
 };

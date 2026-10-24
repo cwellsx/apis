@@ -89,6 +89,13 @@ describe("testViewStates", function () {
         // viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
       });
 
+      it("export .NET Framework node", async function () {
+        const [graphNodes, node] = getForestNode(viewState, ".NET Framework", NodeType.Group);
+        assert(!!node);
+        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true }, graphNodes);
+        await printViewState();
+      });
+
       it("collapse Microsoft nodes", async function () {
         const [graphNodes, node] = getForestNode(viewState, "Microsoft", NodeType.Group);
         assert(!!node);

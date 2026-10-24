@@ -52,5 +52,6 @@ const makeBoxed = (id: number, boxedId: BoxedId) => id + ((boxedId as number) <<
 export const makeAssemblyId = (id: number): Id.AssemblyId => IdCast.castAssemblyId(makeBoxed(id, BoxedId.Assembly));
 export const makeGroupId = (id: number): Id.GroupId => IdCast.castGroupId(makeBoxed(id, BoxedId.Group));
 
-export const makeCustomId = (id: string): Id.CustomId => IdCast.castCustomId(id);
+export const makeCustomLeafId = (id: string): Id.CustomLeafId => IdCast.castCustomLeafId(id);
+export const makeCustomNodeId = (id: string): Id.CustomNodeId => IdCast.castCustomNodeId(id);
 export const makeCustomGroupId = (id: string): Id.CustomGroupId => IdCast.castCustomGroupId(id);

@@ -6,7 +6,8 @@ export type ViewId = number & { __brand: "ViewId" };
 
 // string
 
-export type CustomId = string & { __brand: "CustomId" };
+export type CustomLeafId = string & { __brand: "CustomLeafId" };
+export type CustomNodeId = string & { __brand: "CustomNodeId" };
 export type CustomGroupId = string & { __brand: "CustomGroupId" };
 
 // synthetic bigint
@@ -24,11 +25,12 @@ export type MethodSpecId = bigint & { __brand: "MethodSpecId" };
 export type MemberId = bigint & { __brand: "MemberId" };
 
 export type BigAssemblyId = bigint & { __brand: "BigAssemblyId" };
-//export type BigNamespaceId = bigint & { __brand: "BigNamespaceId" };
 export type BigGroupId = bigint & { __brand: "BigGroupId" };
 
 export type CallFromId = MethodDefId | TypeDefId | BigAssemblyId | NamespaceId;
 export type CallToId = CallFromId | MethodSpecId | TypeSpecId;
+
+export type CustomCallId = CustomLeafId | CustomNodeId;
 
 export type BaseTypeId = TypeDefId | GenericParamId; // resolvedId of a TypeSpec
 export type TypeId = BaseTypeId | TypeSpecId;
@@ -37,12 +39,10 @@ export type MethodId = MethodDefId | MethodSpecId;
 export type AnyDefId = TypeDefId | MethodDefId; // ownerId of a GenericParam
 export type AnyOwnerId = TypeSpecId | MethodSpecId | MethodDefId; // ownerId of a SignatureType
 
-export type AnyRootId = AssemblyId | NamespaceId;
-
 export type AnyCoreId = AssemblyId | NamespaceId | TypeId | MethodId;
 
-export type AnyId = TypeId | MethodId | AnyRootId | GroupId | CustomId | CustomGroupId;
+export type AnyId = GroupId | AnyCoreId | AnyCustomId;
 
 export type AnyBigId = TypeId | MethodId | BigAssemblyId | NamespaceId | BigGroupId;
 
-export type AnyCustomId = CustomId | CustomGroupId;
+export type AnyCustomId = CustomLeafId | CustomNodeId | CustomGroupId;

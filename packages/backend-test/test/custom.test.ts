@@ -43,10 +43,6 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
       fileWrite(path.join(outputDir, "validateCustomJson.json"), JSON.stringify(errors, null, " "));
     });
 
-    // it("old createSqlCustomFromJson", async () => {
-    //   const sqlCustom = await createSqlCustomFromJson(dataSource);
-    // });
-
     it("createSqlCustom", async () => {
       const sqlCustom = await createSqlCustom(dataSource);
 

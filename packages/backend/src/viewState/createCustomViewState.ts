@@ -1,10 +1,10 @@
 import type { Node, NodeId } from "../contracts-ui";
 import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
 import * as Id from "../id2";
-import { toCustomId } from "../id2";
+import { toCustomCallId } from "../id2";
 import { CustomNodeStates } from "../sqlCommon";
 import { SqlCustom } from "../sqlCustom";
-import { getOrThrow } from "../utils";
+import { assert, getOrThrow } from "../utils";
 import { CustomTop, Forest, Item, Numeric } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeSetNodeState } from "./makeSetNodeState";
@@ -24,17 +24,19 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && node.isVisible)
-      .map((node) => toCustomId(node.nodeId, node.type));
+      .map((node) => toCustomCallId(node.nodeId, node.type));
     const calls = sqlTables.edges.selectWhereIn(["fromId", "toId"], leafIds);
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
   };
 
   const groupToItem = (row: SqlCustom.Group): Item<string> => ({ id: row.id, name: row.name });
   const layerToItem = (row: SqlCustom.Layer): Item<string> => ({ id: row.id, name: row.id });
+  const leafToItem = (leaf: SqlCustom.Item): Item<string> => ({ id: leaf.id, name: leaf.label ?? leaf.id });
 
+  const layers = sqlTables.layers.selectAll();
   const top: CustomTop = {
     groupItems: sqlTables.groups.selectAll().map(groupToItem),
-    rootItems: sqlTables.layers.selectAll().map(layerToItem),
+    rootItems: layers.map(layerToItem),
   };
 
   const getForest = (nodeStates: CustomNodeStates): Forest => {
@@ -44,14 +46,31 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
       NodeType.CustomGroup,
       Id.toAnyCustomId
     );
-    const trunk = toTrunk(top, NodeType.CustomGroup);
-    const isExpanded = (item: SqlCustom.Item): boolean => !item.layer || !nodeStates.isExpandedId(item.layer, false);
-    const leafs = sqlTables.items.selectAll().filter(isExpanded);
-    leafs.forEach((leaf) => {
-      const item = { id: leaf.id, name: leaf.label ?? leaf.id };
-      if (!leaf.layer) addOrphan(trunk, item, NodeType.CustomLeaf);
-      else addToParent(trunk, item, NodeType.CustomLeaf, leaf.layer);
+    const trunk = toTrunk(top, NodeType.CustomNode);
+
+    // expanded layers
+    const layerIds = layers.map((item) => item.id).filter((id) => nodeStates.isExpandedId(id, false));
+
+    // layered items
+    sqlTables.items.selectWhereIn("layer", layerIds).forEach((leaf) => {
+      assert(!!leaf.layer);
+      const item = leafToItem(leaf);
+      addToParent(trunk, item, NodeType.CustomLeaf, leaf.layer);
     });
+
+    // orphaned items
+    sqlTables.items.selectWhere({ layer: undefined }).forEach((leaf) => {
+      assert(!leaf.layer);
+      const item = leafToItem(leaf);
+      addOrphan(trunk, item, NodeType.CustomLeaf);
+    });
+    // const isExpanded = (item: SqlCustom.Item): boolean => !item.layer || !nodeStates.isExpandedId(item.layer, false);
+    // const leafs = sqlTables.items.selectAll().filter(isExpanded);
+    // leafs.forEach((leaf) => {
+    //   const item = { id: leaf.id, name: leaf.label ?? leaf.id };
+    //   if (!leaf.layer) addOrphan(trunk, item, NodeType.CustomLeaf);
+    //   else addToParent(trunk, item, NodeType.CustomLeaf, leaf.layer);
+    // });
     return trunk;
   };
 

@@ -148,7 +148,31 @@ export class SqlTable<T extends object> {
     const insert = `INSERT ${insertParameters}`;
     const insertStmt = db.prepare(insert);
 
-    const whereKeys = (keys: string[]) => keys.map((key) => `"${key}" = @${key}`).join(" AND ");
+    const whereKeys = (keys: string[]): string => keys.map((key) => `"${key}" = @${key}`).join(" AND ");
+
+    const whereKeysOrNull = (where: Partial<T>): { clauses: string; params: Record<string, unknown> } => {
+      const keys = Object.keys(where);
+      keys.sort();
+
+      const clauses: string[] = [];
+      const params: Record<string, unknown> = {};
+
+      for (const key of keys) {
+        const value = where[key as keyof T];
+
+        if (value === undefined || value === null) {
+          // special case
+          clauses.push(`"${key}" IS NULL`);
+          // do NOT add to params
+        } else {
+          // normal case: = @key
+          clauses.push(`"${key}" = @${key}`);
+          params[key] = value;
+        }
+      }
+
+      return { clauses: clauses.join(" AND "), params };
+    };
 
     primaryKeys.forEach((primaryKey) => {
       const index = keys.indexOf(primaryKey);
@@ -208,26 +232,35 @@ export class SqlTable<T extends object> {
     this.selectAll = () => selectStmt.all().map((u) => fromSql(u));
     this.deleteAll = db.transaction(() => deleteAllStmt.run());
 
-    const prepareDeleteWhere = (where: Partial<T>): Statement<unknown[]> => {
-      const keys = Object.keys(where);
-      keys.sort();
-      const source = `DELETE FROM "${tableName}" WHERE ${whereKeys(keys)}`;
-      return prepare(source);
+    const prepareDeleteWhere = (
+      where: Partial<T>
+    ): { statement: Statement<unknown[]>; params: Record<string, unknown> } => {
+      const { clauses, params } = whereKeysOrNull(where);
+      const source = `DELETE FROM "${tableName}" WHERE ${clauses}`;
+      return { statement: prepare(source), params };
     };
 
-    this.deleteWhere = db.transaction((where: Partial<T>) => prepareDeleteWhere(where).run(where));
-
-    const prepareSelectWhere = (where: Partial<T>): Statement<unknown[]> => {
-      const keys = Object.keys(where);
-      keys.sort();
-      const source = `SELECT * FROM "${tableName}" WHERE ${whereKeys(keys)}`;
-      return prepare(source);
+    const prepareSelectWhere = (
+      where: Partial<T>
+    ): { statement: Statement<unknown[]>; params: Record<string, unknown> } => {
+      const { clauses, params } = whereKeysOrNull(where);
+      const source = `SELECT * FROM "${tableName}" WHERE ${clauses}`;
+      return { statement: prepare(source), params };
     };
 
-    this.selectWhere = (where: Partial<T>): T[] => prepareSelectWhere(where).all(where).map(fromSql);
+    this.deleteWhere = db.transaction((where: Partial<T>) => {
+      const { statement, params } = prepareDeleteWhere(where);
+      statement.run(params);
+    });
+
+    this.selectWhere = (where: Partial<T>): T[] => {
+      const { statement, params } = prepareSelectWhere(where);
+      return statement.all(params).map(fromSql);
+    };
 
     this.selectOne = (where: Partial<T>): T | undefined => {
-      const u = prepareSelectWhere(where).get(where);
+      const { statement, params } = prepareSelectWhere(where);
+      const u = statement.get(params);
       return u === undefined ? undefined : fromSql(u);
     };
 
