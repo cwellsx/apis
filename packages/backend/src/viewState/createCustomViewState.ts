@@ -13,7 +13,7 @@ import type { Call, GraphNodes, ViewState } from "./types";
 export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.ViewId): ViewState => {
   const getSetNodeStates = sqlTables.viewNodeStates(viewId);
   const { getNodeStates, resetNodeStates } = getSetNodeStates;
-  const setNodeState = makeSetNodeState(getSetNodeStates, Id.toAnyCustomId, NodeType.Group);
+  const setNodeState = makeSetNodeState(getSetNodeStates, Id.toAnyCustomId, NodeType.CustomGroup);
 
   const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
     const text = id.toString();
@@ -23,7 +23,7 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
   const getCalls = (forest: Forest): Call[] => {
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
-      .filter((node) => !isParent(node) && node.isVisible)
+      .filter((node) => !isParent(node) && node.isVisible && node.type != NodeType.CustomGroup)
       .map((node) => toCustomCallId(node.nodeId, node.type));
     const calls = sqlTables.edges.selectWhereIn(["fromId", "toId"], leafIds);
     return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
@@ -64,13 +64,7 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
       const item = leafToItem(leaf);
       addOrphan(trunk, item, NodeType.CustomLeaf);
     });
-    // const isExpanded = (item: SqlCustom.Item): boolean => !item.layer || !nodeStates.isExpandedId(item.layer, false);
-    // const leafs = sqlTables.items.selectAll().filter(isExpanded);
-    // leafs.forEach((leaf) => {
-    //   const item = { id: leaf.id, name: leaf.label ?? leaf.id };
-    //   if (!leaf.layer) addOrphan(trunk, item, NodeType.CustomLeaf);
-    //   else addToParent(trunk, item, NodeType.CustomLeaf, leaf.layer);
-    // });
+
     return trunk;
   };
 

@@ -1,4 +1,5 @@
-import { DataSource } from "backend-app";
+import { DataSource, SetMenuItems } from "backend-app";
+import { AnyNodeType, Node, NodeType } from "backend-ui";
 import * as fs from "fs";
 import path from "path";
 import { assertCustomJson, validateCustomJson } from "sut/customJson";
@@ -6,7 +7,10 @@ import { bindImage } from "sut/image";
 import { createSqlCustom } from "sut/openDataSource/createSqlCustom";
 import { getDbFilename } from "sut/openDataSource/getDbFilename";
 import { createImageData } from "sut/presenter";
-import { assert, deleteFileSync, readJsonT } from "sut/utils";
+import { SqlCustom } from "sut/sqlCustom";
+import { assert, deleteFileSync, log, readJsonT } from "sut/utils";
+import { CustomSelectedView } from "sut/viewModel";
+import { GraphNodes, ViewState } from "sut/viewState";
 import { createCustomViewState } from "sut/viewState/createCustomViewState";
 import { printForest } from "sut/viewState/printForest";
 import { fileWrite, pathMkdir } from "./utils/file";
@@ -19,6 +23,27 @@ const readJsonFilePaths = (dir: string): string[] =>
     .readdirSync(dir, { withFileTypes: true })
     .filter((entry) => entry.isFile() && entry.name.endsWith(".json"))
     .map((entry) => entry.name);
+
+const getOutput = (name: string) => {
+  const outputDir = `${dirTestCustomRoot}.${name}`;
+  pathMkdir(outputDir);
+
+  const fileViewState = (filename: string) => path.join(outputDir, filename);
+
+  const printLines = (filename: string, printed: string[]) =>
+    printTestLines((filename: string) => path.join(outputDir, filename), filename, printed);
+
+  return { outputDir, fileViewState, printLines };
+};
+
+const getForestNode = (
+  viewState: ViewState,
+  name: string,
+  rootNodeType: AnyNodeType
+): [GraphNodes, Node | undefined] => {
+  const graphNodes = viewState.getGraphNodes();
+  return [graphNodes, graphNodes.findNode((value) => value.type == rootNodeType && value.label == name)];
+};
 
 for (const jsonFile of readJsonFilePaths(dirCustom)) {
   const { name } = path.parse(jsonFile);
@@ -64,10 +89,10 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
       const view = sqlCustom.views.selectOne({ viewName: "Custom" });
       assert(!!view);
       const viewState = createCustomViewState(sqlCustom, view.id);
+      viewState.resetNodeStates();
       const graphNodes = viewState.getGraphNodes();
       const printed = printForest(graphNodes.roots);
-      let suffix = 0;
-      const filenameRoot = `viewState-${suffix++}`;
+      const filenameRoot = `viewState-initial`;
       printLines(`${filenameRoot}.txt`, printed);
 
       const imageData = createImageData(graphNodes);
@@ -81,3 +106,66 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
     });
   });
 }
+
+describe("testViewStates", function () {
+  this.timeout(60000);
+
+  const createImage = bindImage((urlPath) => urlPath);
+  let tables: SqlCustom.Tables;
+  let viewState: ViewState;
+  //let forest: Forest;
+  let suffix = 0;
+
+  const { outputDir, fileViewState, printLines } = getOutput("Coclasses");
+
+  before(async function () {
+    const fullPath = path.join(dirCustom, "Coclasses.json");
+    const dataSource: DataSource = { path: fullPath, type: "customJson" };
+    tables = await createSqlCustom(dataSource); // runs once
+    const setMenuItems: SetMenuItems = (menuItems) => {};
+    viewState = new CustomSelectedView(tables, setMenuItems).viewState;
+    viewState.resetNodeStates();
+  });
+
+  after(function () {
+    tables.close();
+  });
+
+  const printViewState = async () => {
+    const graphNodes = viewState.getGraphNodes();
+    const printed = printForest(graphNodes.roots);
+    const filenameRoot = `viewState-${suffix++}`;
+    printLines(`${filenameRoot}.txt`, printed);
+
+    assert(graphNodes.calls.length != 0);
+
+    const imageData = createImageData(graphNodes);
+    const image = await createImage(imageData);
+    assert(typeof image === "object");
+    const filename = `${filenameRoot}.svg`;
+    fs.renameSync(image.imagePath, fileViewState(filename));
+    log(filename);
+  };
+
+  it("initial state", async function () {
+    await printViewState();
+  });
+
+  it("collapse Common group", async function () {
+    const [graphNodes, node] = getForestNode(viewState, "Common", NodeType.CustomGroup);
+    assert(!!node);
+    viewState.setNodeState(node.nodeId, node.type, { isExpanded: false }, graphNodes);
+    await printViewState();
+  });
+
+  it("expand DataCaptor/Core/ClientLayer/ClientLayerMng group", async function () {
+    const [graphNodes, node] = getForestNode(
+      viewState,
+      "DataCaptor/Core/ClientLayer/ClientLayerMng",
+      NodeType.CustomNode
+    );
+    assert(!!node);
+    viewState.setNodeState(node.nodeId, node.type, { isExpanded: true }, graphNodes);
+    await printViewState();
+  });
+});
