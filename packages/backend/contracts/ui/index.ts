@@ -1,9 +1,16 @@
-export type * from "./apis";
+export type {
+  MainApi,
+  OnAppOptions,
+  OnDetailEvent,
+  OnFilterEvent,
+  OnGraphEvent,
+  OnViewOptions,
+  PreloadApis,
+  RendererApi,
+} from "./apis";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, DetailsType } from "./appOptions";
-export type { CompilerMethod, LocalsType } from "./compilerMethod";
 export type { DetailEvent, FilterEvent, GraphEvent, NewNodeState } from "./events";
-export type { GraphFilter } from "./graphFilter";
 export * as GraphOptions from "./graphOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodName } from "./methodName";
