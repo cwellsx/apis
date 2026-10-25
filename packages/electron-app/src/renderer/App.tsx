@@ -12,12 +12,18 @@ import type {
 } from "backend-ui";
 import { defaultAppOptions, defaultView } from "backend-ui";
 import * as React from "react";
+import { AssemblyDetails } from "./AssemblyDetails";
+import { CustomDetails } from "./CustomDetails";
+import { Message } from "./elements";
+import { Graph } from "./Graph";
+import { MethodDetails } from "./MethodDetails";
+import { Nodes } from "./Nodes";
+import { ChooseGraphViewOptions } from "./Options";
 import { Layout } from "./Layout";
 import { log } from "./log";
 import { ChooseAppOptions } from "./Options";
 import { TextView } from "./TextView";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
-import { getCenter, getLeft, getRight } from "./viewGraph";
 
 declare global {
   export interface Window {
@@ -116,15 +122,55 @@ const App: React.FunctionComponent = () => {
 
   const chooseAppOptions = <ChooseAppOptions appOptions={appOptions} onAppOptions={onAppOptions} />;
 
-  return (
-    <Layout
-      left={getLeft(view, onViewOptions, onFilterEvent, appOptions, onAppOptions)}
-      center={getCenter(view, onGraphEvent, zoomPercent)}
-      right={getRight(details, onDetailEvent)}
-      appOptions={chooseAppOptions}
-      viewVersion={viewVersion}
+const checkModel = view.isCheckModelAll ? "all" : "leaf";
+
+const left = (
+  <>
+    <ChooseGraphViewOptions
+      viewOptions={view.graphViewOptions}
+      onViewOptions={onViewOptions}
+      appOptions={appOptions}
+      onAppOptions={onAppOptions}
+    />
+    <Nodes checkModel={checkModel} nodes={view.groups} onFilterEvent={onFilterEvent} />
+  </>
+);
+
+const center =
+  typeof view.image === "string" ? (
+    <Message message={view.image} />
+  ) : (
+    <Graph
+      imagePath={view.image.imagePath}
+      areas={view.image.areas}
+      now={view.image.now}
+      zoomPercent={zoomPercent}
+      onGraphEvent={onGraphEvent}
+      useKeyStates={view.graphViewOptions.graphType == "references"}
     />
   );
+
+const right = (() => {
+  if (!details) return undefined;
+  switch (details.detailType) {
+    case "assemblyDetails":
+      return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
+    case "methodDetails":
+      return <MethodDetails methodBody={details} />;
+    case "customDetails":
+      return <CustomDetails details={details} />;
+  }
+})();
+
+return (
+  <Layout
+    left={left}
+    center={center}
+    right={right}
+    appOptions={chooseAppOptions}
+    viewVersion={viewVersion}
+  />
+);
   // return (
   //   <React.StrictMode>
   //     <Panes
