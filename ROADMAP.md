@@ -1,145 +1,12 @@
 Goal is as described in the [README](./README.md).
 
-- Now -- Refactor
+- Now -- Use experimentally and improve UI
 - Next -- Begin to use an agent
 - Next -- Integrate in VS Code Extension
-- Next -- Use experimentally and improve UI
 - Later -- Replace GraphViz
 - Later -- More languages, documentation, AI, ...
 
-## Now -- Refactor
-
-Before continuing do a ground-up rewrite:
-
-- [x] Reimplement the .NET application
-- [x] Reimplement the SQL model
-- [-] Reimplement the backend
-- [ ] Reimplement the front end
-
-For current details and status see [`backend/src/TODO.md`](./packages/backend/src/TODO.md).
-
-## Next -- Begin to use an agent
-
-- Don't try an agent for the previous refactoring
-- Before continuing, install a local agent
-- Also revise the README
-
-## Next -- Integrate for VS Code Extension
-
-Port the existing Electron app to run alternatively as a VS Code extension,
-before further iterating on the UI.
-
-### Why -- Goals
-
-<details><summary>Better packaging</summary>
-
-Compared with an Electron app, a VS Code extension:
-
-- UX is more familiar
-- Installation (via Visual Studio Marketplace)
-- Integration with user's IDE for source code
-</details>
-
-<details><summary>Cleaner architecture</summary>
-
-Supporting both is a constraint
-which requires a cleaner architecture,
-beyond the separation required by Electron:
-
-- Generic/reusable "Node" code in the backend ("model" and "presentation" layers)
-- Abstraction of the UI, with two implementations of that abstraction
-</details>
-
-<details><summary>UI design</summary>
-
-VS Code constrains the UI, whereas an Electron app's UI could be anything.
-
-- That constraint is "UI architecture" or "framework"
-- Maybe better UI if designed within a framework
-</details>
-
-<details><summary>Window management</summary>
-
-VS Code has built-in support for multiple windows -- docking, splitting, etc.
-
-</details>
-
-### Expected -- deliverable
-
-- New code in the `vscode-ext` package
-- Able to show the same data as the Electron application can
-- Backend code included in the builds of both applications
-
-### Out of scope
-
-<details><summary>Documentation (all <code>*.md</code>)</summary>
-
-I said "minimize technical debt" except documentation is out of scope
-
-- All `*.md` files are early prototypes -- unmaintained and unreliable
-- The only "supported" files are this ROADMAP and the [README](./README.md)
-</details>
-
-### How
-
-Use `vscode` extension APIs to display the data from the backend presentation layer.
-
-- Implement the `DisplayApi` including the `RendererApi` in the extension
-- Pass that API as a parameter to the backend's openDataSource function
-
-Comparatively:
-
-- In the Electron app everything is rendered in one window using React.
-- VS Code exposes several UI element API for an extension to use.
-
-<details><summary>Settings</summary>
-
-VS Code has a UI for extensions' settings, and storage for these settings.
-
-- The extension should use this storage
-- That may need refactoring the backend API, which expect to contain the settings
-
-I don't find VS Code settings especially easy to use
-
-- Use them for infrequently-modified configuration, e.g. `AppConfig` and `AppOptions`
-- The view state which is modified frequently by the UI will remain in the backend
-
-</details>
-
-<details><summary>TreeView (for the filter)</summary>
-
-The visible nodes are displayed in a tree view as well as on the graph.
-
-- In the Electron app these are displayed in a 3rd-party React component.
-- In the VS Code extension it would be better to use the `vscode.TreeView`
-
-</details>
-
-<details><summary>WebView (for the graph)</summary>
-
-I hope to avoid React in the `Webview`, and instead inject only enough TypeScript to:
-
-- Load an SVG into the DOM
-- Install event handlers on for on-hover and on-click
-
-In future there'll be more UI elements -- context menus and/or a toolbar on hover -- these too are presumably implementable without React.
-
-</details>
-<details><summary>TBD for text-like details</summary>
-
-I need to render text-like details:
-
-- The contents of a group -- e.g. types and method
-- The contents of a method -- i.e. lines of code
-- Various diagnostics
-
-The token tree within a group is presumably displayed in a TreeView.
-
-Displaying lines of code is TBD.
-
-</details>
-
-## Next -- Use experimentally and improve UI
+## Now -- Use experimentally and improve UI
 
 When it runs "as designed" then experiment to make it more usable.
 
@@ -233,6 +100,131 @@ Different types of progressive reveal:
 - Outside in -- edges between clusters while hiding their internal detail
 - Internal -- edges within a cluster while hiding its external edges
 - Focused -- all edges, near and far, of a single component
+
+</details>
+
+## Next -- Begin to use an agent
+
+- Don't try an agent for the previous refactoring
+- Before continuing, install a local agent
+- Also revise the README
+
+## Next -- Integrate for VS Code Extension
+
+Port the existing Electron app to run alternatively as a VS Code extension,
+before further iterating on the UI.
+
+### Why -- Goals
+
+<details><summary>Better packaging</summary>
+
+Compared with an Electron app, a VS Code extension:
+
+- UX is more familiar
+- Installation (via Visual Studio Marketplace)
+- Integration with user's IDE for source code
+
+</details>
+
+<details><summary>Cleaner architecture</summary>
+
+Supporting both is a constraint
+which requires a cleaner architecture,
+beyond the separation required by Electron:
+
+- Generic/reusable "Node" code in the backend ("model" and "presentation" layers)
+- Abstraction of the UI, with two implementations of that abstraction
+
+</details>
+
+<details><summary>UI design</summary>
+
+VS Code constrains the UI, whereas an Electron app's UI could be anything.
+
+- That constraint is "UI architecture" or "framework"
+- Maybe better UI if designed within a framework
+
+</details>
+
+<details><summary>Window management</summary>
+
+VS Code has built-in support for multiple windows -- docking, splitting, etc.
+
+</details>
+
+### Expected -- deliverable
+
+- New code in the `vscode-ext` package
+- Able to show the same data as the Electron application can
+- Backend code included in the builds of both applications
+
+### Out of scope
+
+<details><summary>Documentation (all <code>*.md</code>)</summary>
+
+I said "minimize technical debt" except documentation is out of scope
+
+- All `*.md` files are early prototypes -- unmaintained and unreliable
+- The only "supported" files are this ROADMAP and the [README](./README.md)
+
+</details>
+
+### How
+
+Use `vscode` extension APIs to display the data from the backend presentation layer.
+
+- Implement the `DisplayApi` including the `RendererApi` in the extension
+- Pass that API as a parameter to the backend's openDataSource function
+
+Comparatively:
+
+- In the Electron app everything is rendered in one window using React.
+- VS Code exposes several UI element API for an extension to use.
+
+<details><summary>Settings</summary>
+
+VS Code has a UI for extensions' settings, and storage for these settings.
+
+- The extension should use this storage
+- That may need refactoring the backend API, which expect to contain the settings
+
+I don't find VS Code settings especially easy to use
+
+- Use them for infrequently-modified configuration, e.g. `AppConfig` and `AppOptions`
+- The view state which is modified frequently by the UI will remain in the backend
+
+</details>
+
+<details><summary>TreeView (for the filter)</summary>
+
+The visible nodes are displayed in a tree view as well as on the graph.
+
+- In the Electron app these are displayed in a 3rd-party React component.
+- In the VS Code extension it would be better to use the `vscode.TreeView`
+
+</details>
+
+<details><summary>WebView (for the graph)</summary>
+
+I hope to avoid React in the `Webview`, and instead inject only enough TypeScript to:
+
+- Load an SVG into the DOM
+- Install event handlers on for on-hover and on-click
+
+In future there'll be more UI elements -- context menus and/or a toolbar on hover -- these too are presumably implementable without React.
+
+</details>
+<details><summary>TBD for text-like details</summary>
+
+I need to render text-like details:
+
+- The contents of a group -- e.g. types and method
+- The contents of a method -- i.e. lines of code
+- Various diagnostics
+
+The token tree within a group is presumably displayed in a TreeView.
+
+Displaying lines of code is TBD.
 
 </details>
 

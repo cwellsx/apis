@@ -4,52 +4,16 @@ And `./MORE/*`
 
 ## Near term
 
-Sooner:
-
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
 - Implement - assembly details and call graphs for Core data
-- Refactor - merge openSql and openSqlCustom?
-
-Then:
-
 - Debug - hourglass and prevent overlapping input events from user
 - Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
-- Test - TPOSS
-- Delete - GraphFilter class
-
-Later:
-
-- Refactor - remove viewGraph.tsx and move React elements into .\tabs folder
-- Refactor - combine the SVG elements with their containers
-- Refactor - split viewState to *Common, *DotNet, and *Custom
-- Improve - make custom data work better, maybe aggregate calls and/or remove folder-shaped nodes
-- Reimplement - arbitrary custom data
 
 ## Medium term
 
 - Implement - network APIs
 - Experiment - Cline
 - Debug/Reimplement - custom data
-
-## Long term -- replace modules
-
-| New       | Obsolete |
-| --------- | -------- |
-| sql2, id2 | sql      |
-| output2   | output   |
-| dotnet2   | dotnet   |
-|           | input    |
-|           | nodeIds  |
-
-Change modules which depend on the above.
-
-| New       | Component                                 |
-| --------- | ----------------------------------------- |
-| sql2, id2 | Repository or Persistence Adapter         |
-| viewState | Domain Model or ViewModel plus View State |
-| output2   | Presenter                                 |
-| contracts | Output Port                               |
-| input(2)  | Controller or Interactor                  |
 
 ## Backend alias
 
