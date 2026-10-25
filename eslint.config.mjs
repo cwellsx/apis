@@ -6,6 +6,8 @@ import tseslint from "typescript-eslint";
 const ignorePaths = [
   // per-file override: do not use project-based type-checking for the config file itself
   "eslint.config.mjs",
+  // won't lint the vitest config files
+  "packages/electron-app-test/vitest.config.js",
   // don't lint 3rd-party source code
   "packages/electron-app/src/renderer/3rd-party/**",
   // won't lint the webpack config files
@@ -41,6 +43,7 @@ export default defineConfig([
             "**/contracts/**",
             // test can reach anywhere and have a ./utils folder
             "**/backend-test/**",
+            "**/electron-app-test/**",
           ],
         },
       ],
@@ -60,6 +63,15 @@ export default defineConfig([
           alwaysTryTypes: true,
         },
       },
+    },
+  },
+  // Test packages are integration-style: they may reach into any source module
+  // (including other packages' src/) and use their own ./utils folders, so the
+  // no-internal-modules boundary rule does not apply there.
+  {
+    files: ["packages/backend-test/**/*", "packages/electron-app-test/**/*"],
+    rules: {
+      "import/no-internal-modules": "off",
     },
   },
 ]);
