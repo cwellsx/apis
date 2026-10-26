@@ -72,3 +72,8 @@ input {
 pre {
   white-space: pre-wrap;
 }
+
+body.busy,
+body.busy * {
+  cursor: wait !important;
+}

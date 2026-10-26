@@ -13,15 +13,15 @@ import type {
 import { defaultAppOptions, defaultView } from "backend-ui";
 import * as React from "react";
 import { AssemblyDetails } from "./AssemblyDetails";
+import { beep } from "./components";
 import { CustomDetails } from "./CustomDetails";
 import { Message } from "./elements";
 import { Graph } from "./Graph";
-import { MethodDetails } from "./MethodDetails";
-import { Nodes } from "./Nodes";
-import { ChooseGraphViewOptions } from "./Options";
 import { Layout } from "./Layout";
 import { log } from "./log";
-import { ChooseAppOptions } from "./Options";
+import { MethodDetails } from "./MethodDetails";
+import { Nodes } from "./Nodes";
+import { ChooseAppOptions, ChooseGraphViewOptions } from "./Options";
 import { TextView } from "./TextView";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
@@ -42,6 +42,8 @@ const App: React.FunctionComponent = () => {
   const [viewVersion, setViewVersion] = React.useState<number>(0);
   const [details, setDetails] = React.useState<ViewDetails | undefined>(undefined);
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
+
+  const [isBusy, setIsBusy] = React.useState(false);
 
   const zoomPercent = appOptions.zoomPercent;
   const setZoomPercent = (zoomPercent: number): void => onAppOptions({ ...appOptions, zoomPercent });
@@ -71,26 +73,39 @@ const App: React.FunctionComponent = () => {
         setView(view);
         incrementViewVersion();
         if (!isViewGraph(view)) setDetails(undefined);
+        setIsBusy(false);
       },
       showDetails(details: ViewDetails): void {
         log("showDetails");
         setDetails(details);
+        setIsBusy(false);
       },
       showAppOptions(appOptions: AppOptions): void {
         log("showAppOptions");
         setAppOptions(appOptions);
+        setIsBusy(false);
       },
     });
   });
 
-  const onViewOptions: OnViewOptions = (viewOptions) => mainApi.onViewOptions(viewOptions);
-  const onAppOptions: OnAppOptions = (appOptions) => {
-    log("onAppOptions!");
-    mainApi.onAppOptions(appOptions);
+  React.useEffect(() => {
+    document.body.classList.toggle("busy", isBusy);
+  }, [isBusy]);
+
+  const on = <TParam, TMethod extends (param: TParam) => void>(param: TParam, method: TMethod) => {
+    if (isBusy) {
+      beep();
+      return;
+    }
+    setIsBusy(true);
+    method(param);
   };
-  const onGraphEvent: OnGraphEvent = (graphEvent) => mainApi.onGraphEvent(graphEvent);
-  const onFilterEvent: OnFilterEvent = (filterEvent) => mainApi.onFilterEvent(filterEvent);
-  const onDetailEvent: OnDetailEvent = (nodeId) => mainApi.onDetailEvent(nodeId);
+
+  const onViewOptions: OnViewOptions = (viewOptions) => on(viewOptions, mainApi.onViewOptions);
+  const onAppOptions: OnAppOptions = (appOptions) => on(appOptions, mainApi.onAppOptions);
+  const onGraphEvent: OnGraphEvent = (graphEvent) => on(graphEvent, mainApi.onGraphEvent);
+  const onFilterEvent: OnFilterEvent = (filterEvent) => on(filterEvent, mainApi.onFilterEvent);
+  const onDetailEvent: OnDetailEvent = (nodeId) => on(nodeId, mainApi.onDetailEvent);
 
   if (!isViewGraph(view)) {
     return (
@@ -122,55 +137,47 @@ const App: React.FunctionComponent = () => {
 
   const chooseAppOptions = <ChooseAppOptions appOptions={appOptions} onAppOptions={onAppOptions} />;
 
-const checkModel = view.isCheckModelAll ? "all" : "leaf";
+  const checkModel = view.isCheckModelAll ? "all" : "leaf";
 
-const left = (
-  <>
-    <ChooseGraphViewOptions
-      viewOptions={view.graphViewOptions}
-      onViewOptions={onViewOptions}
-      appOptions={appOptions}
-      onAppOptions={onAppOptions}
-    />
-    <Nodes checkModel={checkModel} nodes={view.groups} onFilterEvent={onFilterEvent} />
-  </>
-);
-
-const center =
-  typeof view.image === "string" ? (
-    <Message message={view.image} />
-  ) : (
-    <Graph
-      imagePath={view.image.imagePath}
-      areas={view.image.areas}
-      now={view.image.now}
-      zoomPercent={zoomPercent}
-      onGraphEvent={onGraphEvent}
-      useKeyStates={view.graphViewOptions.graphType == "references"}
-    />
+  const left = (
+    <>
+      <ChooseGraphViewOptions
+        viewOptions={view.graphViewOptions}
+        onViewOptions={onViewOptions}
+        appOptions={appOptions}
+        onAppOptions={onAppOptions}
+      />
+      <Nodes checkModel={checkModel} nodes={view.groups} onFilterEvent={onFilterEvent} />
+    </>
   );
 
-const right = (() => {
-  if (!details) return undefined;
-  switch (details.detailType) {
-    case "assemblyDetails":
-      return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
-    case "methodDetails":
-      return <MethodDetails methodBody={details} />;
-    case "customDetails":
-      return <CustomDetails details={details} />;
-  }
-})();
+  const center =
+    typeof view.image === "string" ? (
+      <Message message={view.image} />
+    ) : (
+      <Graph
+        imagePath={view.image.imagePath}
+        areas={view.image.areas}
+        now={view.image.now}
+        zoomPercent={zoomPercent}
+        onGraphEvent={onGraphEvent}
+        useKeyStates={view.graphViewOptions.graphType == "references"}
+      />
+    );
 
-return (
-  <Layout
-    left={left}
-    center={center}
-    right={right}
-    appOptions={chooseAppOptions}
-    viewVersion={viewVersion}
-  />
-);
+  const right = (() => {
+    if (!details) return undefined;
+    switch (details.detailType) {
+      case "assemblyDetails":
+        return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
+      case "methodDetails":
+        return <MethodDetails methodBody={details} />;
+      case "customDetails":
+        return <CustomDetails details={details} />;
+    }
+  })();
+
+  return <Layout left={left} center={center} right={right} appOptions={chooseAppOptions} viewVersion={viewVersion} />;
   // return (
   //   <React.StrictMode>
   //     <Panes
