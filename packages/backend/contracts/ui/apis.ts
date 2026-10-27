@@ -1,6 +1,5 @@
 import type { AppOptions } from "./appOptions";
 import type { DetailEvent, FilterEvent, GraphEvent } from "./events";
-import * as GraphOptions from "./graphOptions";
 import type { View } from "./view";
 import type { ViewDetails } from "./viewDetails";
 
@@ -15,7 +14,6 @@ import type { ViewDetails } from "./viewDetails";
 
 type OnUserEvent<T> = (event: T) => void;
 
-export type OnViewOptions = OnUserEvent<GraphOptions.Any>;
 export type OnAppOptions = OnUserEvent<AppOptions>;
 export type OnGraphEvent = OnUserEvent<GraphEvent>;
 export type OnFilterEvent = OnUserEvent<FilterEvent>;
@@ -23,7 +21,6 @@ export type OnDetailEvent = OnUserEvent<DetailEvent>;
 
 // this Api is implemented in the preload script and available to the renderer
 export type MainApi = {
-  onViewOptions: OnViewOptions;
   onAppOptions: OnAppOptions;
   onGraphEvent: OnGraphEvent;
   onFilterEvent: OnFilterEvent;

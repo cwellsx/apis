@@ -3,7 +3,6 @@ import type {
   DetailEvent,
   FilterEvent,
   GraphEvent,
-  GraphOptions,
   MainApi,
   PreloadApis,
   RendererApi,
@@ -13,7 +12,6 @@ import type {
 import { contextBridge, ipcRenderer } from "electron";
 
 const mainApiProxy: MainApi = {
-  onViewOptions: (viewOptions: GraphOptions.Any) => ipcRenderer.send("onViewOptions", viewOptions),
   onAppOptions: (appOptions: AppOptions) => ipcRenderer.send("onAppOptions", appOptions),
   onGraphEvent: (graphEvent: GraphEvent) => ipcRenderer.send("onGraphClick", graphEvent),
   onFilterEvent: (filterEvent: FilterEvent) => ipcRenderer.send("onGraphFilter", filterEvent),

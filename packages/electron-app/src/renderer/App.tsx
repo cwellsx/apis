@@ -4,11 +4,10 @@ import type {
   OnDetailEvent,
   OnFilterEvent,
   OnGraphEvent,
-  OnViewOptions,
   PreloadApis,
   View,
   ViewDetails,
-  ViewGraph,
+  ViewGreeting,
 } from "backend-ui";
 import { defaultAppOptions, defaultView } from "backend-ui";
 import * as React from "react";
@@ -21,7 +20,6 @@ import { Layout } from "./Layout";
 import { log } from "./log";
 import { MethodDetails } from "./MethodDetails";
 import { Nodes } from "./Nodes";
-import { ChooseAppOptions, ChooseGraphViewOptions } from "./Options";
 import { TextView } from "./TextView";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
@@ -35,7 +33,7 @@ const mainApi = window.preloadApis.mainApi;
 
 let once = false;
 
-const isViewGraph = (view: View): view is ViewGraph => (view as ViewGraph).graphViewOptions !== undefined;
+const isViewGreeting = (view: View): view is ViewGreeting => (view as ViewGreeting).viewType == "greeting";
 
 const App: React.FunctionComponent = () => {
   const [view, setView] = React.useState<View>(defaultView);
@@ -72,7 +70,7 @@ const App: React.FunctionComponent = () => {
         log("showView");
         setView(view);
         incrementViewVersion();
-        if (!isViewGraph(view)) setDetails(undefined);
+        if (isViewGreeting(view)) setDetails(undefined);
         setIsBusy(false);
       },
       showDetails(details: ViewDetails): void {
@@ -101,20 +99,18 @@ const App: React.FunctionComponent = () => {
     method(param);
   };
 
-  const onViewOptions: OnViewOptions = (viewOptions) => on(viewOptions, mainApi.onViewOptions);
   const onAppOptions: OnAppOptions = (appOptions) => on(appOptions, mainApi.onAppOptions);
   const onGraphEvent: OnGraphEvent = (graphEvent) => on(graphEvent, mainApi.onGraphEvent);
   const onFilterEvent: OnFilterEvent = (filterEvent) => on(filterEvent, mainApi.onFilterEvent);
   const onDetailEvent: OnDetailEvent = (nodeId) => on(nodeId, mainApi.onDetailEvent);
 
-  if (!isViewGraph(view)) {
+  if (isViewGreeting(view)) {
     return (
       <React.StrictMode>
         <TextView
           view={view}
           fontSize={fontSize}
           onWheelFontSize={onWheelFontSize}
-          onViewOptions={onViewOptions}
           appOptions={appOptions}
           onAppOptions={onAppOptions}
         />
@@ -135,19 +131,11 @@ const App: React.FunctionComponent = () => {
     }
   })();
 
-  const chooseAppOptions = <ChooseAppOptions appOptions={appOptions} onAppOptions={onAppOptions} />;
-
-  const checkModel = view.isCheckModelAll ? "all" : "leaf";
+  const chooseAppOptions = <>App options placeholder</>;
 
   const left = (
     <>
-      <ChooseGraphViewOptions
-        viewOptions={view.graphViewOptions}
-        onViewOptions={onViewOptions}
-        appOptions={appOptions}
-        onAppOptions={onAppOptions}
-      />
-      <Nodes checkModel={checkModel} nodes={view.groups} onFilterEvent={onFilterEvent} />
+      <Nodes nodes={view.groups} onFilterEvent={onFilterEvent} />
     </>
   );
 
@@ -161,7 +149,6 @@ const App: React.FunctionComponent = () => {
         now={view.image.now}
         zoomPercent={zoomPercent}
         onGraphEvent={onGraphEvent}
-        useKeyStates={view.graphViewOptions.graphType == "references"}
       />
     );
 

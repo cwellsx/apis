@@ -4,14 +4,12 @@ export type {
   OnDetailEvent,
   OnFilterEvent,
   OnGraphEvent,
-  OnViewOptions,
   PreloadApis,
   RendererApi,
 } from "./apis";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, DetailsType } from "./appOptions";
 export type { DetailEvent, FilterEvent, GraphEvent, NewNodeState } from "./events";
-export * as GraphOptions from "./graphOptions";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isMixed, isParent } from "./node";

@@ -1,4 +1,3 @@
-import * as GraphOptions from "./graphOptions";
 import { Image } from "./image";
 import { Node } from "./node";
 
@@ -11,8 +10,6 @@ export type ViewGraphData = {
   // but that would require useState and useEffect in the render
   // https://react.dev/learn/you-might-not-need-an-effect#updating-state-based-on-props-or-state
   groups: Node[];
-  isCheckModelAll: boolean;
-  graphViewOptions: GraphOptions.Any;
 };
 
 export type ViewGraph = ViewGraphData & {

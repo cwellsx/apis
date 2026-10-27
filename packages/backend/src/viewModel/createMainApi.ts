@@ -1,5 +1,5 @@
 import type { MainApiAsync, RuntimeContext } from "../contracts-app";
-import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, GraphOptions, Node, ViewGraph } from "../contracts-ui";
+import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, Node, ViewGraph } from "../contracts-ui";
 import { isClosed, isEdgeId } from "../contracts-ui";
 import { bindImage } from "../image";
 import { assert } from "../utils";
@@ -21,7 +21,7 @@ export const createMainApi = async (
     const imageData = createImageData(graphNodes);
     const image = await createImage(imageData);
     const groups: Node[] = graphNodes.roots;
-    const viewGraph: ViewGraph = { image, groups, graphViewOptions: { graphType: "none" }, isCheckModelAll: false };
+    const viewGraph: ViewGraph = { image, groups };
     display.showView(viewGraph);
   };
 
@@ -33,11 +33,6 @@ export const createMainApi = async (
 
   // implement the MainApiAsync which will be bound to ipcMain
   const mainApi: MainApiAsync = {
-    onViewOptions: async (viewOptions: GraphOptions.Any): Promise<void> => {
-      notImplemented(); // setViewOptions(viewOptions);
-      await showViewType();
-    },
-
     onAppOptions: async (appOptions: AppOptions): Promise<void> => {
       appConfig.appOptions = appOptions;
       display.showAppOptions(appOptions);

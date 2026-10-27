@@ -11,7 +11,6 @@ type GraphProps = {
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
   onGraphEvent: OnGraphEvent;
-  useKeyStates: boolean;
 };
 
 type State = {
@@ -107,8 +106,8 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
 
     const keyboardEvent: (event: KeyboardEvent) => void = (event) => {
       if (event.repeat) return; // don't spike the CPU if a key is held down
-      const shiftKey: boolean = event.shiftKey && props.useKeyStates;
-      const ctrlKey: boolean = event.ctrlKey && props.useKeyStates;
+      const shiftKey: boolean = event.shiftKey;
+      const ctrlKey: boolean = event.ctrlKey;
       const newClassName: string | undefined = shiftKey
         ? ctrlKey
           ? "shiftKey ctrlKey"
