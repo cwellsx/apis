@@ -3,7 +3,7 @@ import { AnyNodeType, Node, NodeType } from "backend-ui";
 import * as fs from "fs";
 import path from "path";
 import { assertCustomJson, validateCustomJson } from "sut/customJson";
-import { bindImage } from "sut/image";
+import { createImage } from "sut/image";
 import { createSqlCustom } from "sut/openDataSource/createSqlCustom";
 import { getDbFilename } from "sut/openDataSource/getDbFilename";
 import { SqlCustom } from "sut/sqlCustom";
@@ -84,7 +84,6 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
     });
 
     it("createCustomViewState", async () => {
-      const createImage = bindImage((urlPath) => urlPath);
       const sqlCustom = await createSqlCustom(dataSource);
       const view = sqlCustom.views.selectOne({ viewName: "Custom" });
       assert(!!view);
@@ -110,7 +109,6 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
 describe("testViewStates", function () {
   this.timeout(60000);
 
-  const createImage = bindImage((urlPath) => urlPath);
   let tables: SqlCustom.Tables;
   let viewState: ViewState;
   //let forest: Forest;

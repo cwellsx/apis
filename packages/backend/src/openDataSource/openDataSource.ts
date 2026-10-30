@@ -1,41 +1,31 @@
-import type { DataSource, MainApiAsync, RuntimeContext } from "../contracts-app";
-import { log, options, wrapApi } from "../utils";
+import type { DataSource, SetMenuItems } from "../contracts-app";
+import { PresenterApi } from "../contracts-ui";
+import { log } from "../utils";
 import { openFromCustom } from "./openFromCustom";
 import { openFromDotNet } from "./openFromDotNet";
+import { ShowLoadingMessage } from "./showLoadingMessage";
+import { wrapPresenterApi } from "./wrapPresenterApi";
 
 /*
   openDataSource to open any and all types of DataSource
 */
 
-export const openDataSource = async (dataSource: DataSource, runtimeContext: RuntimeContext): Promise<MainApiAsync> => {
-  // log the API
-  if (options.logApi) runtimeContext.display = wrapApi("send", runtimeContext.display);
-  const { appConfig, display } = runtimeContext;
-
+export const openDataSource = async (
+  dataSource: DataSource,
+  setMenuItems: SetMenuItems,
+  showLoadingMessage: ShowLoadingMessage
+): Promise<PresenterApi> => {
   log("openDataSource");
   const path = dataSource.path;
-  display.showLoadingMessage(`Loading ${path}`, "Loading...");
+  showLoadingMessage(`Loading ${path}`, "Loading...");
   log(`openDataSource: ${path}`);
 
-  let mainApi: MainApiAsync;
   switch (dataSource.type) {
     case "loadedAssemblies":
     case "coreJson":
-      mainApi = await openFromDotNet(dataSource, runtimeContext);
-      break;
+      return wrapPresenterApi(await openFromDotNet(dataSource, setMenuItems));
 
     case "customJson":
-      mainApi = await openFromCustom(dataSource, runtimeContext);
-      break;
+      return wrapPresenterApi(await openFromCustom(dataSource, setMenuItems));
   }
-
-  // log the API
-  const result: MainApiAsync = options.logApi ? wrapApi("on", mainApi) : mainApi;
-
-  display.showAppOptions(appConfig.appOptions);
-
-  // remember as most-recently-opened iff it opens successfully
-  appConfig.dataSource = dataSource;
-
-  return result;
 };

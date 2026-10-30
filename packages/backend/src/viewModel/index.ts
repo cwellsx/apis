@@ -1,3 +1,3 @@
-export { createMainApi } from "./createMainApi";
+export { createPresenter } from "./createMainApi";
 export { CustomSelectedView } from "./customSelectedView";
 export { DotnetSelectedView } from "./dotnetSelectedView";

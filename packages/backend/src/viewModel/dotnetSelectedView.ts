@@ -1,4 +1,5 @@
 import { MenuItem, SetMenuItems } from "../contracts-app";
+import { AnyView } from "../contracts-ui";
 import { minViewId } from "../id2";
 import { Sql } from "../sql2";
 import { assert } from "../utils";
@@ -8,7 +9,7 @@ import { SelectedView } from "./selectedView";
 export class DotnetSelectedView implements SelectedView {
   private view: Sql.View;
   viewState: ViewState;
-  onChanged: () => Promise<void>;
+  onChanged: () => Promise<AnyView[]>;
 
   constructor(sqlTables: Sql.Tables, setMenuItems: SetMenuItems) {
     const initialView = (): Sql.View => {
@@ -21,7 +22,7 @@ export class DotnetSelectedView implements SelectedView {
     const selectedViewState = () => createViewState(sqlTables, this.view.viewType, this.view.id);
 
     const createMenuItems = (): void => {
-      const onSetViewType = (view: Sql.View): Promise<void> => {
+      const onSetViewType = (view: Sql.View): Promise<AnyView[]> => {
         sqlTables.config.setViewId(view.id);
         this.view = view;
         this.viewState = selectedViewState();
@@ -29,7 +30,7 @@ export class DotnetSelectedView implements SelectedView {
         return this.onChanged();
       };
 
-      const onReset = (): Promise<void> => {
+      const onReset = (): Promise<AnyView[]> => {
         this.viewState.resetNodeStates();
         return this.onChanged();
       };
@@ -50,7 +51,7 @@ export class DotnetSelectedView implements SelectedView {
     };
 
     // initially null until createMainApi installs showViewType
-    this.onChanged = () => Promise.resolve();
+    this.onChanged = () => Promise.resolve([]);
 
     this.view = initialView();
     this.viewState = selectedViewState();

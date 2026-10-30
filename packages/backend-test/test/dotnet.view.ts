@@ -1,7 +1,7 @@
 import { assert, log } from "backend-api";
 import { renameSync } from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
-import { bindImage } from "sut/image";
+import { createImage } from "sut/image";
 import { Sql, ViewType } from "sut/sql2";
 import { createImageData } from "sut/viewModel/createImageData";
 import { createViewState, GraphNodes, ViewState } from "sut/viewState";
@@ -32,7 +32,6 @@ const getForestNode = (
 describe("testViewStates", function () {
   this.timeout(60000);
 
-  const createImage = bindImage((urlPath) => urlPath);
   let tables: Sql.Tables;
 
   before(async function () {

@@ -1,6 +1,6 @@
 import { MenuItem, OnClick, SetMenuItems } from "backend-app";
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
-import { showException } from "./show";
+import { show, showException } from "./show";
 
 const getMenu = (
   fileSubmenu: MenuItemConstructorOptions[],
@@ -70,7 +70,11 @@ export const createAppMenu = (
     recent.map((path) => ({ label: path, click: invoke(async () => openRecent(path)) }));
 
   const setMenuItems: SetMenuItems = (menuItems: MenuItem[]): void => {
-    const click = (onClick: OnClick) => void onClick().catch((error) => showException(window, error));
+    const click = (onClick: OnClick): void => {
+      onClick()
+        .then((views) => show(window, views))
+        .catch((error) => showException(window, error));
+    };
 
     const toMenuItem = (menuItem: MenuItem): Electron.MenuItemConstructorOptions => {
       switch (menuItem.type) {

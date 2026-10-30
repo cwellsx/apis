@@ -4,9 +4,9 @@
 
 Reimplement the IPC API.
 
-Depend on Electron `invoke` to return updates in response to events.
-
-When that's complete, replace Electron `invoke` with a platform-neutral layer e.g. as follows
+- Depend on Electron `invoke` to return updates in response to events.
+- When that's complete, replace Electron `invoke` with a platform-neutral layer e.g. as follows
+- Ensure that menus are reconnected i.e. that OnClick results in UI update
 
 ```ts
 class RpcClient {
@@ -64,7 +64,7 @@ class RpcServer {
 - Debug - hourglass and prevent overlapping input events from user
 - Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
-- Implement - assembly details and call graphs for Core data
+- Implement - assembly details and call graphs for Core data -- see e.g. MORE/DETAILS.md
 
 ### Graph options
 

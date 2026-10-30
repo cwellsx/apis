@@ -1,2 +1,2 @@
-export { bindImage } from "./createImage";
+export { createImage } from "./createImage";
 export type * from "./imageDataTypes";

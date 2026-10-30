@@ -1,11 +1,12 @@
-import { AppOptions, OnAppOptions, ViewText } from "backend-ui";
+import { AppOptions, TextView as TextViewData } from "backend-ui";
 import * as React from "react";
 import { Message } from "./elements";
+import { OnAppOptions } from "./onEvent";
 import "./TextView.scss";
 import { OnWheel } from "./useZoomPercent";
 
 type TextViewProps = {
-  view: ViewText;
+  view: TextViewData;
   fontSize: number;
   onWheelFontSize: OnWheel;
   appOptions: AppOptions;
@@ -26,8 +27,6 @@ export const TextView: React.FunctionComponent<TextViewProps> = (props: TextView
 
 const getText = (props: TextViewProps): React.ReactNode => {
   const { view } = props;
-  switch (view.viewType) {
-    case "greeting":
-      return <Message message={view.greeting} />;
-  }
+
+  return <Message message={view.text} />;
 };

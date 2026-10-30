@@ -1,44 +1,53 @@
-import type {
-  AppOptions,
-  OnAppOptions,
-  OnDetailEvent,
-  OnFilterEvent,
-  OnGraphEvent,
-  PreloadApis,
-  View,
-  ViewDetails,
-  ViewGreeting,
-} from "backend-ui";
-import { defaultAppOptions, defaultView } from "backend-ui";
+// import type {
+//   AppOptions,
+//   OnAppOptions,
+//   OnDetailEvent,
+//   OnFilterEvent,
+//   OnGraphEvent,
+//   PreloadApis,
+//   View,
+//   ViewDetails,
+//   ViewGreeting,
+// } from "backend-ui";
+import { AnyEvent, AnyView, defaultAppOptions, Image, Node, TextView as TextViewData } from "backend-ui";
 import * as React from "react";
-import { AssemblyDetails } from "./AssemblyDetails";
+import { PRELOAD_API_KEY, PreloadApis, RendererApi } from "../shared";
 import { beep } from "./components";
-import { CustomDetails } from "./CustomDetails";
+// import { AssemblyDetails } from "./details/AssemblyDetails";
+// import { CustomDetails } from "./details/CustomDetails";
+// import { MethodDetails } from "./details/MethodDetails";
 import { Message } from "./elements";
 import { Graph } from "./Graph";
 import { Layout } from "./Layout";
-import { log } from "./log";
-import { MethodDetails } from "./MethodDetails";
 import { Nodes } from "./Nodes";
+import { OnAppOptions, OnFilterEvent, OnGraphEvent } from "./onEvent";
 import { TextView } from "./TextView";
 import { useFontSize, useZoomPercent } from "./useZoomPercent";
 
 declare global {
   export interface Window {
-    preloadApis: PreloadApis;
+    [PRELOAD_API_KEY]: PreloadApis;
   }
 }
 
-const mainApi = window.preloadApis.mainApi;
+const { mainApi, bindIpc } = window[PRELOAD_API_KEY];
 
 let once = false;
 
-const isViewGreeting = (view: View): view is ViewGreeting => (view as ViewGreeting).viewType == "greeting";
+//const isViewGreeting = (view: View): view is ViewGreeting => (view as ViewGreeting).viewType == "greeting";
 
 const App: React.FunctionComponent = () => {
-  const [view, setView] = React.useState<View>(defaultView);
+  // const [view, setView] = React.useState<View>(defaultView);
+
+  // viewVersion is used with useEffect inside the Layout element -- it's used to snap the width of
+  // the left-hand pane to the size of the node tree once, each time the node tree state is changed
   const [viewVersion, setViewVersion] = React.useState<number>(0);
-  const [details, setDetails] = React.useState<ViewDetails | undefined>(undefined);
+
+  const [nodes, setNodes] = React.useState<Node[]>([]);
+  const [image, setImage] = React.useState<Image | string>("");
+  const [textView, setTextView] = React.useState<TextViewData | undefined>(undefined);
+
+  //  const [details, setDetails] = React.useState<ViewDetails | undefined>(undefined);
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
 
   const [isBusy, setIsBusy] = React.useState(false);
@@ -61,54 +70,62 @@ const App: React.FunctionComponent = () => {
     });
   };
 
+  const rendererApi: RendererApi = {
+    show: (views: AnyView[]): void => {
+      // a text message will erase every other view
+      setTextView(undefined);
+
+      views.forEach((view) => {
+        switch (view.type) {
+          case "appOptions":
+            setAppOptions(view.payload);
+            return;
+          case "nodes":
+            setNodes(view.payload.nodes);
+            incrementViewVersion();
+            return;
+          case "image":
+            setImage(view.payload.image);
+            return;
+          case "text":
+            setTextView(view.payload);
+            return;
+        }
+      });
+
+      setIsBusy(false);
+    },
+  };
+
   React.useEffect(() => {
     if (once) return;
     once = true;
-
-    window.preloadApis.bindIpc({
-      showView(view: View): void {
-        log("showView");
-        setView(view);
-        incrementViewVersion();
-        if (isViewGreeting(view)) setDetails(undefined);
-        setIsBusy(false);
-      },
-      showDetails(details: ViewDetails): void {
-        log("showDetails");
-        setDetails(details);
-        setIsBusy(false);
-      },
-      showAppOptions(appOptions: AppOptions): void {
-        log("showAppOptions");
-        setAppOptions(appOptions);
-        setIsBusy(false);
-      },
-    });
+    bindIpc(rendererApi);
   });
 
   React.useEffect(() => {
     document.body.classList.toggle("busy", isBusy);
   }, [isBusy]);
 
-  const on = <TParam, TMethod extends (param: TParam) => void>(param: TParam, method: TMethod) => {
+  const on = (event: AnyEvent) => {
     if (isBusy) {
       beep();
       return;
     }
     setIsBusy(true);
-    method(param);
+    mainApi.onEvent([event]);
   };
 
-  const onAppOptions: OnAppOptions = (appOptions) => on(appOptions, mainApi.onAppOptions);
-  const onGraphEvent: OnGraphEvent = (graphEvent) => on(graphEvent, mainApi.onGraphEvent);
-  const onFilterEvent: OnFilterEvent = (filterEvent) => on(filterEvent, mainApi.onFilterEvent);
-  const onDetailEvent: OnDetailEvent = (nodeId) => on(nodeId, mainApi.onDetailEvent);
+  const onAppOptions: OnAppOptions = (appOptions) => on({ type: "appOptions", payload: appOptions });
+  const onGraphEvent: OnGraphEvent = (graphEvent) => on({ type: "graph", payload: graphEvent });
+  const onFilterEvent: OnFilterEvent = (filterEvent) => on({ type: "filter", payload: filterEvent });
+  // const onDetailEvent: OnDetailEvent = (nodeId) => on(nodeId, mainApi.onDetailEvent);
 
-  if (isViewGreeting(view)) {
+  if (textView) {
     return (
       <React.StrictMode>
         <TextView
-          view={view}
+          view={textView}
           fontSize={fontSize}
           onWheelFontSize={onWheelFontSize}
           appOptions={appOptions}
@@ -119,49 +136,51 @@ const App: React.FunctionComponent = () => {
   }
 
   const rightWidthMaxContent = (() => {
-    switch (details?.detailType) {
-      case undefined:
-        return false;
-      case "assemblyDetails":
-        return true;
-      case "methodDetails":
-        return false;
-      case "customDetails":
-        return false;
-    }
+    return false;
+    // switch (details?.detailType) {
+    //   case undefined:
+    //     return false;
+    //   case "assemblyDetails":
+    //     return true;
+    //   case "methodDetails":
+    //     return false;
+    //   case "customDetails":
+    //     return false;
+    // }
   })();
 
   const chooseAppOptions = <>App options placeholder</>;
 
   const left = (
     <>
-      <Nodes nodes={view.groups} onFilterEvent={onFilterEvent} />
+      <Nodes nodes={nodes} onFilterEvent={onFilterEvent} />
     </>
   );
 
   const center =
-    typeof view.image === "string" ? (
-      <Message message={view.image} />
+    typeof image === "string" ? (
+      <Message message={image} />
     ) : (
       <Graph
-        imagePath={view.image.imagePath}
-        areas={view.image.areas}
-        now={view.image.now}
+        imagePath={image.imagePath}
+        areas={image.areas}
+        now={image.now}
         zoomPercent={zoomPercent}
         onGraphEvent={onGraphEvent}
       />
     );
 
   const right = (() => {
-    if (!details) return undefined;
-    switch (details.detailType) {
-      case "assemblyDetails":
-        return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
-      case "methodDetails":
-        return <MethodDetails methodBody={details} />;
-      case "customDetails":
-        return <CustomDetails details={details} />;
-    }
+    return undefined;
+    // if (!details) return undefined;
+    // switch (details.detailType) {
+    //   case "assemblyDetails":
+    //     return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
+    //   case "methodDetails":
+    //     return <MethodDetails methodBody={details} />;
+    //   case "customDetails":
+    //     return <CustomDetails details={details} />;
+    // }
   })();
 
   return <Layout left={left} center={center} right={right} appOptions={chooseAppOptions} viewVersion={viewVersion} />;

@@ -1,68 +1,35 @@
-import { getErrorString, log } from "backend-api";
-import type { DisplayApi, SecondDisplay } from "backend-app";
-import type { AppOptions, View, ViewDetails, ViewGreeting } from "backend-ui";
+import { getErrorString } from "backend-api";
+import { AnyView } from "backend-ui";
 import type { BrowserWindow } from "electron";
+import { IPC_CHANNELS } from "../shared";
 import { convertPathToUrl } from "./convertPathToUrl";
-import { appWindows, createBrowserWindow, loadURL } from "./createBrowserWindow";
 
-export const showErrorMessage = (mainWindow: BrowserWindow, title: string | undefined, message: string): void => {
-  if (title) mainWindow.setTitle(title);
-  const view: ViewGreeting = { greeting: message, viewType: "greeting" };
-  mainWindow.webContents.send("showView", view);
+export const show = (browserWindow: BrowserWindow, views: AnyView[]) => {
+  // intercept title which is set in main using browserWindow API
+  const title = views.find((view) => view.type == "title")?.payload;
+  if (title) browserWindow.setTitle(title);
+
+  // convert image path to URL
+  const imageView = views.find((view) => view.type == "image")?.payload;
+  if (imageView && !(typeof imageView.image === "string"))
+    imageView.image.imagePath = convertPathToUrl(imageView.image.imagePath);
+
+  browserWindow.webContents.send(IPC_CHANNELS.show, views);
 };
 
-export const showException = (mainWindow: BrowserWindow, error: unknown): void => {
+export const showMessage = (browserWindow: BrowserWindow, title: string | undefined, message: string): void => {
+  const views: AnyView[] = [{ type: "text", payload: { text: message } }];
+  if (title) views.push({ type: "title", payload: title });
+  show(browserWindow, views);
+};
+
+export const showErrorMessage = (browserWindow: BrowserWindow, title: string | undefined, message: string): void => {
+  const views: AnyView[] = [{ type: "text", payload: { text: message } }];
+  if (title) views.push({ type: "title", payload: title });
+  show(browserWindow, views);
+};
+
+export const showException = (browserWindow: BrowserWindow, error: unknown): void => {
   const message = getErrorString(error);
-  showErrorMessage(mainWindow, "Error", message);
-};
-
-export const createDisplay = (mainWindow: BrowserWindow, dataSourcePath: string): DisplayApi => {
-  const webContents = mainWindow.webContents;
-
-  const showView = (view: View): void => webContents.send("showView", view);
-
-  const showDetails = (details: ViewDetails): void => webContents.send("showDetails", details);
-
-  const showAppOptions = (appOptions: AppOptions): void => webContents.send("showAppOptions", appOptions);
-
-  const showGreeting = (greeting: string): void => {
-    const view: ViewGreeting = { greeting, viewType: "greeting" };
-    log(`showGreeting(${greeting})`);
-    webContents.send("showView", view);
-  };
-
-  const showException = (error: unknown): void => {
-    mainWindow.setTitle("Error");
-    const message = getErrorString(error);
-    showGreeting(message);
-  };
-
-  const showLoadingMessage = (title: string | undefined, message: string): void => {
-    if (title) mainWindow.setTitle(title);
-    showGreeting(message);
-  };
-
-  const showTitle = (title: string): void => {
-    mainWindow.setTitle(`${title} — ${dataSourcePath}`);
-  };
-
-  const createSecondDisplay = async (delegate: SecondDisplay): Promise<void> => {
-    const window = createBrowserWindow();
-    // and load the index.html of the window
-    await loadURL(window);
-    const display = createDisplay(window, dataSourcePath);
-    const appWindow = await delegate(display);
-    appWindows.add(appWindow, window);
-  };
-
-  return {
-    showView,
-    showDetails,
-    showTitle,
-    showAppOptions,
-    showException,
-    showLoadingMessage,
-    createSecondDisplay,
-    convertPathToUrl,
-  };
+  showErrorMessage(browserWindow, "Error", message);
 };

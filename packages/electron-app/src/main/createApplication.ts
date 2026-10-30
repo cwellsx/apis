@@ -1,11 +1,11 @@
 import { hello, log, setPaths } from "backend-api";
-import type { MainApiAsync } from "backend-app";
-import type { AppOptions, DetailEvent, FilterEvent, GraphEvent } from "backend-ui";
-import { BrowserWindow, IpcMainEvent, ipcMain } from "electron";
+import { BrowserWindow, ipcMain } from "electron";
 import path from "node:path";
+import { IPC_CHANNELS } from "../shared";
 import { registerFileProtocol } from "./convertPathToUrl";
 import { createAppOpened } from "./createAppOpened";
-import { appWindows, loadURL } from "./createBrowserWindow";
+import { loadURL } from "./createBrowserWindow";
+import { onElectronEvents } from "./onEvents";
 
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
@@ -31,36 +31,8 @@ export const createApplication = async (mainWindow: BrowserWindow, appDataPath: 
 
   registerFileProtocol();
 
-  const on = (event: IpcMainEvent): MainApiAsync | undefined => appWindows.find(event);
-
-  type Invoke<T> = (api: MainApiAsync, arg: T) => Promise<void>;
-
-  const invoke = <T extends object>(event: Electron.IpcMainEvent, handler: Invoke<T>, argument: T): void => {
-    const api = on(event);
-    if (!api) return;
-    try {
-      const result = handler(api, argument);
-      result.catch((error) => api.showException(error));
-    } catch (error) {
-      api.showException(error);
-    }
-  };
-
-  // the following event handlers are a bit verbose and repetitive,
-  // but it's clearer to see each one explicitly than to abstract them
-
-  ipcMain.on("onAppOptions", (event, appOptions: AppOptions) => {
-    invoke(event, (api, arg) => api.onAppOptions(arg), appOptions);
-  });
-  ipcMain.on("onGraphClick", (event, graphEvent: GraphEvent) => {
-    invoke(event, (api, arg) => api.onGraphEvent(arg), graphEvent);
-  });
-  ipcMain.on("onGraphFilter", (event, filterEvent: FilterEvent) => {
-    invoke(event, (api, arg) => api.onFilterEvent(arg), filterEvent);
-  });
-  ipcMain.on("onDetailClick", (event, detailEvent: DetailEvent) => {
-    invoke(event, (api, arg) => api.onDetailEvent(arg), detailEvent);
-  });
+  // TODO this ignores the fact that onEvents returns a promise
+  ipcMain.on(IPC_CHANNELS.onEvents, onElectronEvents);
 
   await loadURL(mainWindow);
   log("onRendererLoaded");

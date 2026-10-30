@@ -1,77 +1,65 @@
-import type { MainApiAsync, RuntimeContext } from "../contracts-app";
-import type { AppOptions, DetailEvent, FilterEvent, GraphEvent, Node, ViewGraph } from "../contracts-ui";
+import type { AnyEvent, AnyView, FilterEvent, GraphEvent, Node, PresenterApi } from "../contracts-ui";
 import { isClosed, isEdgeId } from "../contracts-ui";
-import { bindImage } from "../image";
-import { assert } from "../utils";
+import { createImage } from "../image";
 import { GraphNodes } from "../viewState";
 import { createImageData } from "./createImageData";
 import { SelectedView } from "./selectedView";
 
-export const createMainApi = async (
-  selectedView: SelectedView,
-  runtimeContext: RuntimeContext
-): Promise<MainApiAsync> => {
-  const { display, appConfig } = runtimeContext;
-  const createImage = bindImage(display.convertPathToUrl);
-
+export const createPresenter = (selectedView: SelectedView): PresenterApi => {
   let graphNodes: GraphNodes;
 
-  const showViewType = async (): Promise<void> => {
+  const showViews = async (): Promise<AnyView[]> => {
     graphNodes = selectedView.viewState.getGraphNodes();
     const imageData = createImageData(graphNodes);
     const image = await createImage(imageData);
-    const groups: Node[] = graphNodes.roots;
-    const viewGraph: ViewGraph = { image, groups };
-    display.showView(viewGraph);
+    const nodes: Node[] = graphNodes.roots;
+    return [
+      { type: "nodes", payload: { nodes } },
+      { type: "image", payload: { image } },
+    ];
   };
 
-  selectedView.onChanged = showViewType;
-
-  await showViewType();
-
-  const notImplemented = () => assert(false, "Not implemented");
+  selectedView.onChanged = showViews;
 
   // implement the MainApiAsync which will be bound to ipcMain
-  const mainApi: MainApiAsync = {
-    onAppOptions: async (appOptions: AppOptions): Promise<void> => {
-      appConfig.appOptions = appOptions;
-      display.showAppOptions(appOptions);
-      return Promise.resolve();
-    },
-
-    onGraphEvent: async (graphEvent: GraphEvent): Promise<void> => {
-      const { id /*, event*/ } = graphEvent;
-      if (isEdgeId(id)) {
-        throw new Error("Edge details not yet implemented");
+  const presenter: PresenterApi = async (events: AnyEvent[]) => {
+    for (const event of events) {
+      switch (event.type) {
+        case "graph":
+          onGraphEvent(event.payload);
+          break;
+        case "filter":
+          onFilterEvent(event.payload);
+          break;
       }
-      // else it's a node not an edge
-      const node = graphNodes.getNode(id);
-      if (graphNodes.leafType !== node.type) {
-        // this is a group -- toggle expanded -- if it was closed then it's now expanded or vice versa
-        selectedView.viewState.setNodeState(id, node.type, { isExpanded: isClosed(node) }, graphNodes);
-        await showViewType();
-        return;
-      }
-      // else this is a leaf
-      throw new Error("showMDetails is not yet implemented");
-    },
+    }
 
-    onFilterEvent: async (filterEvent: FilterEvent): Promise<void> => {
-      filterEvent.forEach((newNodeState) => {
-        const { id, nodeType, nodeState } = newNodeState;
-        selectedView.viewState.setNodeState(id, nodeType, nodeState, graphNodes);
-      });
-      // const { /*viewOptions,*/ graphFilter } = filterEvent;
-      // writeGraphFilter(graphFilter, graphNodes, viewState);
-      await showViewType();
-    },
-
-    onDetailEvent: async (detailEvent: DetailEvent): Promise<void> => {
-      const { id } = detailEvent;
-      throw new Error("showMethods is not yet implemented");
-    },
-    showException: (error: unknown): void => display.showException(error),
+    const result = await showViews();
+    return result;
   };
 
-  return mainApi;
+  const onGraphEvent = (graphEvent: GraphEvent): void => {
+    const { id /*, event*/ } = graphEvent;
+    if (isEdgeId(id)) {
+      throw new Error("Edge details not yet implemented");
+    }
+    // else it's a node not an edge
+    const node = graphNodes.getNode(id);
+    if (graphNodes.leafType !== node.type) {
+      // this is a group -- toggle expanded -- if it was closed then it's now expanded or vice versa
+      selectedView.viewState.setNodeState(id, node.type, { isExpanded: isClosed(node) }, graphNodes);
+      return;
+    }
+    // else this is a leaf
+    throw new Error("showMDetails is not yet implemented");
+  };
+
+  const onFilterEvent = (filterEvent: FilterEvent): void => {
+    filterEvent.forEach((newNodeState) => {
+      const { id, nodeType, nodeState } = newNodeState;
+      selectedView.viewState.setNodeState(id, nodeType, nodeState, graphNodes);
+    });
+  };
+
+  return presenter;
 };

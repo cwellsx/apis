@@ -1,24 +1,35 @@
-import { createSqlConfig, existsSync, openDataSource, pathJoin } from "backend-api";
+import { createSqlConfig, existsSync, openDataSource, pathJoin, ShowLoadingMessage } from "backend-api";
 import type { DataSource } from "backend-app";
-import { FileFilter, dialog, type BrowserWindow } from "electron";
+import { dialog, FileFilter, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";
-import { createDisplay, showErrorMessage, showException } from "./show";
+import { onEvents } from "./onEvents";
+import { show, showErrorMessage, showException, showMessage } from "./show";
 
 declare const CORE_EXE: string;
 
-export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> => {
+export const createAppOpened = async (mainBrowserWindow: BrowserWindow): Promise<void> => {
   // instantiate the Config SQL
   const appConfig = createSqlConfig("config.db");
 
   const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
-    appWindows.closeAll(mainWindow);
+    appWindows.closeAll(mainBrowserWindow);
     try {
-      const display = createDisplay(mainWindow, dataSource.path);
-      const mainApi = await openDataSource(dataSource, { display, setMenuItems: menuApi, appConfig });
-      if (mainApi) appWindows.add(mainApi, mainWindow);
+      const showLoadingMessage: ShowLoadingMessage = (title: string | undefined, message: string) =>
+        showMessage(mainBrowserWindow, title, message);
+
+      const presenterApi = await openDataSource(dataSource, setMenuItems, showLoadingMessage);
+
+      // associate the API with the browser so that events are routed to this window
+      appWindows.add(presenterApi, mainBrowserWindow);
+      // remember as most-recently-opened after it opens successfully
+      appConfig.dataSource = dataSource;
+      // show appOptions
+      show(mainBrowserWindow, [{ type: "appOptions", payload: appConfig.appOptions }]);
+      // kick the presenterApi
+      await onEvents([], { presenterApi, browserWindow: mainBrowserWindow });
     } catch (error) {
-      showException(mainWindow, error);
+      showException(mainBrowserWindow, error);
     }
   };
 
@@ -27,7 +38,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
   */
 
   const openAssemblies = async (): Promise<void> => {
-    const paths = dialog.showOpenDialogSync(mainWindow, { properties: ["openDirectory"] });
+    const paths = dialog.showOpenDialogSync(mainBrowserWindow, { properties: ["openDirectory"] });
     if (!paths) return;
     const path = paths[0];
     const dataSource: DataSource = { path, type: "loadedAssemblies" };
@@ -35,7 +46,7 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
   };
 
   const openJsonPath = (filters: FileFilter[], defaultPath?: string): string | undefined => {
-    const paths = dialog.showOpenDialogSync(mainWindow, { properties: ["openFile"], filters, defaultPath });
+    const paths = dialog.showOpenDialogSync(mainBrowserWindow, { properties: ["openFile"], filters, defaultPath });
     if (!paths) return;
     return paths[0];
   };
@@ -67,15 +78,22 @@ export const createAppOpened = async (mainWindow: BrowserWindow): Promise<void> 
     return recent.map((it) => it.path);
   };
 
-  const menuApi = createAppMenu(mainWindow, openAssemblies, openCustomJson, openCoreJson, openRecent, getRecent);
+  const setMenuItems = createAppMenu(
+    mainBrowserWindow,
+    openAssemblies,
+    openCustomJson,
+    openCoreJson,
+    openRecent,
+    getRecent
+  );
 
   if (appConfig.dataSource) {
     if (existsSync(appConfig.dataSource.path)) {
       await reopenDataSource(appConfig.dataSource);
     } else {
-      showErrorMessage(mainWindow, "Not found", "Use the File menu, to open a data source.");
+      showErrorMessage(mainBrowserWindow, "Not found", "Use the File menu, to open a data source.");
     }
   } else {
-    showErrorMessage(mainWindow, "No data", "Use the File menu, to open a data source.");
+    showErrorMessage(mainBrowserWindow, "No data", "Use the File menu, to open a data source.");
   }
 };

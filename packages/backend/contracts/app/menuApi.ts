@@ -1,5 +1,7 @@
+import { AnyView } from "../ui";
+
 // the application can map this to vscode.QuickPickItem properties and/or Electron.MenuItemConstructorOptions
-export type OnClick = () => Promise<void>;
+export type OnClick = () => Promise<AnyView[]>;
 
 export type MenuItem =
   | { type: "radio"; label: string; picked: boolean; onClick: OnClick }
