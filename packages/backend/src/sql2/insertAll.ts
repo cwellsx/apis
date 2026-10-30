@@ -1,4 +1,4 @@
-import * as DotNet from "../../contracts/dotnet2";
+import * as DotNet from "../contracts-dotnet";
 import * as Id from "../id2";
 import { getGroupNames, SqlCommon } from "../sqlCommon";
 import { assert, getOrSet, getOrThrow } from "../utils";

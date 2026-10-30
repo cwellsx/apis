@@ -1,4 +1,4 @@
-import * as DotNet from "../../contracts/dotnet2";
+import * as DotNet from "../contracts-dotnet";
 import { WithoutNameAndMetadataToken } from "./schemaMemberJson";
 
 export const getFieldMemberJson = (value: DotNet.FieldMember): WithoutNameAndMetadataToken<DotNet.FieldMember> => ({

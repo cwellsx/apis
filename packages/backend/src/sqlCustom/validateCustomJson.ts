@@ -1,21 +1,6 @@
 import { randomUUID } from "crypto";
-import { assert, remove } from "./utils";
-
-type CustomError = { messages: string[]; elementId: string; elementJson: string };
-
-type CustomDependency = { id: string; label: string } & { [key: string]: boolean };
-
-type CustomFields = {
-  id: string; // node.nodeId
-  label?: string; // node.label
-  tags?: string[]; // used to group nodes
-  layer?: string; // used to group nodes
-  shape?: string; //
-  details?: string[]; // details pane
-  dependencies: CustomDependency[];
-};
-
-export type CustomElement = CustomFields & { [key: string]: string | number };
+import { CustomDependency, CustomElement, CustomError } from "../contracts-custom";
+import { assert, remove } from "../utils";
 
 export const isAnyOtherCustomField = (key: string): boolean =>
   ![

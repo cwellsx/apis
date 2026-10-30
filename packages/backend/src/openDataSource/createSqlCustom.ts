@@ -1,7 +1,7 @@
 import { DataSource } from "../contracts-app";
-import { assertCustomJson, CustomElement } from "../customJson";
+import { CustomElement } from "../contracts-custom";
 import type { SqlCustom } from "../sqlCustom";
-import { openSqlCustom } from "../sqlCustom";
+import { assertCustomJson, openSqlCustom } from "../sqlCustom";
 import { assert, log, readJsonT, whenFile } from "../utils";
 import { getDbFilename } from "./getDbFilename";
 

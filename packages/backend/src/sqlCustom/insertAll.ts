@@ -1,8 +1,9 @@
-import { CustomElement, validateCustomJson } from "../customJson";
+import { CustomElement } from "../contracts-custom";
 import { makeCustomGroupId, makeCustomLeafId, makeCustomNodeId } from "../id2";
 import { getGroupNames } from "../sqlCommon";
 import { isDefined } from "../utils";
 import * as Schema from "./schema";
+import { validateCustomJson } from "./validateCustomJson";
 
 const getLayers = (all: CustomElement[]): Schema.Layer[] => {
   all.forEach((item) => {

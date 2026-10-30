@@ -12,6 +12,8 @@ const ignorePaths = [
   "packages/electron-app/src/renderer/3rd-party/**",
   // won't lint the webpack config files
   "packages/electron-app/webpack.*.config.ts",
+  // svgr index template (CommonJS build tooling, not app source)
+  "packages/electron-app/src/renderer/images.org/**",
 ];
 
 export default defineConfig([
@@ -34,16 +36,17 @@ export default defineConfig([
         {
           allow: [
             // any css module by extension anywhere
+            // e.g. because these can't be exported instead by a barrel file
             "**/*.css",
-            // any path segment named 3rd-party
-            "**/3rd-party/**",
+            // // any path segment named 3rd-party
+            // "**/3rd-party/**",
             // react
             "react-dom/client",
-            // src/contracts-*.ts are facade modules
-            "**/contracts/**",
-            // test can reach anywhere and have a ./utils folder
-            "**/backend-test/**",
-            "**/electron-app-test/**",
+            // // src/contracts-*.ts are facade modules
+            // "**/contracts/**",
+            // // test can reach anywhere and have a ./utils folder
+            // "**/backend-test/**",
+            // "**/electron-app-test/**",
           ],
         },
       ],
@@ -69,9 +72,7 @@ export default defineConfig([
   // (including other packages' src/) and use their own ./utils folders, so the
   // no-internal-modules boundary rule does not apply there.
   {
-    files: ["packages/backend-test/**/*", "packages/electron-app-test/**/*"],
-    rules: {
-      "import/no-internal-modules": "off",
-    },
+    files: ["packages/backend-test/**/*", "packages/electron-app-test/**/*", "packages/backend/src/contracts-*.ts"],
+    rules: { "import/no-internal-modules": "off" },
   },
 ]);

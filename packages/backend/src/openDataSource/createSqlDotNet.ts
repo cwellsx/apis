@@ -1,6 +1,6 @@
-import type { All } from "../../contracts/dotnet2";
-import { isAll } from "../../contracts/dotnet2";
 import { DataSource } from "../contracts-app";
+import type { All } from "../contracts-dotnet";
+import { isAll } from "../contracts-dotnet";
 import * as dotNetApi from "../dotNetApi";
 import type { Sql } from "../sql2";
 import { openSql } from "../sql2";

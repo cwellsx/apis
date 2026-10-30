@@ -1,5 +1,5 @@
 import { createSqlDatabase } from "sqlio";
-import type { All } from "../../contracts/dotnet2";
+import type { All } from "../contracts-dotnet";
 import { getSqlNodePath } from "../utils";
 import { insertAll } from "./insertAll";
 import { createTables, deleteAllTables, Tables } from "./schema";

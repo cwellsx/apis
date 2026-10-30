@@ -11,6 +11,7 @@
       "backend-api": ["../backend/src/index.ts"],
       "backend-app": ["../backend/contracts/app/index.ts"],
       "backend-ui": ["../backend/contracts/ui/index.ts"],
+      "backend-custom": ["../backend/contracts/customJson.ts"],
       "sut/*": ["../backend/src/*"]
     },
     // don't try to compile e.g. @types/react-dom -- by default the compiler would try to compile all types

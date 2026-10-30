@@ -1,7 +1,7 @@
 import type { Area as MyArea } from "backend-ui";
 import { textToNodeOrEdgeId } from "backend-ui";
 import * as React from "react";
-import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party/ImageMapper"; // copied from "react-image-mapper2"
+import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party"; // copied from "react-image-mapper2"
 import "./Graph.css";
 import { log } from "./log";
 import { OnGraphEvent } from "./onEvent";

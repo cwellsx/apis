@@ -1,5 +1,5 @@
 import { createSqlDatabase } from "sqlio";
-import type { CustomElement } from "../customJson";
+import type { CustomElement } from "../contracts-custom";
 import { getSqlNodePath } from "../utils";
 import { insertAll } from "./insertAll";
 import { createTables, deleteAllTables, Tables } from "./schema";

@@ -2,6 +2,8 @@
 
 ## Now
 
+- Implement and test the appOptions round-trip -- font size and zoom
+
 Reimplement the IPC API.
 
 - Depend on Electron `invoke` to return updates in response to events.
@@ -61,6 +63,7 @@ class RpcServer {
 
 ## Near term
 
+- Delete Panes.tsx and SplitPane and split-pane-react
 - Debug - hourglass and prevent overlapping input events from user
 - Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
