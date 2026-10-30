@@ -1,10 +1,10 @@
 import { DataSource } from "../contracts-app";
 import type { All } from "../contracts-dotnet";
 import { isAll } from "../contracts-dotnet";
-import * as dotNetApi from "../dotNetApi";
 import type { Sql } from "../sql2";
 import { openSql } from "../sql2";
 import { assert, existsSync, jsonParse, log, readJsonT, whenFile, writeFileSync } from "../utils";
+import * as dotNetApi from "./dotNetApi";
 import { getDbFilename, getFilename } from "./getDbFilename";
 
 const getAllFromCoreExe = async (dataSource: DataSource) => {

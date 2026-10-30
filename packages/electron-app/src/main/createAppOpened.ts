@@ -1,5 +1,5 @@
-import { createSqlConfig, existsSync, openDataSource, pathJoin, ShowLoadingMessage } from "backend-api";
-import type { DataSource } from "backend-app";
+import { createSqlAppConfig, existsSync, openDataSource, pathJoin } from "backend-api";
+import type { DataSource, ShowLoadingMessage } from "backend-app";
 import { dialog, FileFilter, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";
@@ -10,7 +10,7 @@ declare const CORE_EXE: string;
 
 export const createAppOpened = async (mainBrowserWindow: BrowserWindow): Promise<void> => {
   // instantiate the Config SQL
-  const appConfig = createSqlConfig("config.db");
+  const appConfig = createSqlAppConfig("config.db");
 
   const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
     appWindows.closeAll(mainBrowserWindow);

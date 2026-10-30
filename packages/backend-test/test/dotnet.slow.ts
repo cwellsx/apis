@@ -1,5 +1,5 @@
 // this is slow so it's run as an explicit script instead of being a test
-import { getJson, getWhen } from "sut/dotNetApi";
+import { getJson, getWhen } from "sut/openDataSource/dotNetApi";
 import "./global-hooks";
 import { fileWrite } from "./utils/file";
 import { dirDotNet, fileCoreJson, fileCorePrettyJson } from "./utils/paths";

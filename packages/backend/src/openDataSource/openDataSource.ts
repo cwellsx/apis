@@ -1,9 +1,8 @@
-import type { DataSource, SetMenuItems } from "../contracts-app";
+import type { DataSource, SetMenuItems, ShowLoadingMessage } from "../contracts-app";
 import { PresenterApi } from "../contracts-ui";
 import { log } from "../utils";
 import { openFromCustom } from "./openFromCustom";
 import { openFromDotNet } from "./openFromDotNet";
-import { ShowLoadingMessage } from "./showLoadingMessage";
 import { wrapPresenterApi } from "./wrapPresenterApi";
 
 /*

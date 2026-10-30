@@ -1,1 +1,1 @@
-export * from "../contracts/app";
+export type * from "../contracts/app";

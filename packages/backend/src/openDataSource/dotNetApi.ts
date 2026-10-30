@@ -1,5 +1,5 @@
 import { Connection, ConnectionBuilder } from "electron-cgi";
-import { getCoreExePath, log } from "./utils";
+import { getCoreExePath, log } from "../utils";
 
 // instantiate the Connection instance
 let connection: Connection | undefined = undefined;
