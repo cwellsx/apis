@@ -1,4 +1,4 @@
-import { DataSource, SetMenuItems } from "backend-app";
+import { DataSource } from "backend-app";
 import { AnyNodeType, Node, NodeType } from "backend-ui";
 import * as fs from "fs";
 import path from "path";
@@ -120,8 +120,7 @@ describe("testViewStates", function () {
     const fullPath = path.join(dirCustom, "Coclasses.json");
     const dataSource: DataSource = { path: fullPath, type: "customJson" };
     tables = await createSqlCustom(dataSource); // runs once
-    const setMenuItems: SetMenuItems = (menuItems) => {};
-    viewState = new CustomSelectedView(tables, setMenuItems).viewState;
+    viewState = new CustomSelectedView(tables).viewState;
     viewState.resetNodeStates();
   });
 

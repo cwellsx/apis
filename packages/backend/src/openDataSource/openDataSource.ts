@@ -1,6 +1,6 @@
-import type { DataSource, SetMenuItems, ShowLoadingMessage } from "../contracts-app";
-import { PresenterApi } from "../contracts-ui";
+import type { DataSource, OpenDataSource, ShowProgress } from "../contracts-app";
 import { log } from "../utils";
+import { createPresenter, SelectedView } from "../viewModel";
 import { openFromCustom } from "./openFromCustom";
 import { openFromDotNet } from "./openFromDotNet";
 import { wrapPresenterApi } from "./wrapPresenterApi";
@@ -9,22 +9,24 @@ import { wrapPresenterApi } from "./wrapPresenterApi";
   openDataSource to open any and all types of DataSource
 */
 
-export const openDataSource = async (
-  dataSource: DataSource,
-  setMenuItems: SetMenuItems,
-  showLoadingMessage: ShowLoadingMessage
-): Promise<PresenterApi> => {
-  log("openDataSource");
-  const path = dataSource.path;
-  showLoadingMessage(`Loading ${path}`, "Loading...");
-  log(`openDataSource: ${path}`);
-
+const getSelectedView = async (dataSource: DataSource): Promise<SelectedView> => {
   switch (dataSource.type) {
     case "loadedAssemblies":
     case "coreJson":
-      return wrapPresenterApi(await openFromDotNet(dataSource, setMenuItems));
+      return await openFromDotNet(dataSource);
 
     case "customJson":
-      return wrapPresenterApi(await openFromCustom(dataSource, setMenuItems));
+      return openFromCustom(dataSource);
   }
+};
+
+export const openDataSource = async (dataSource: DataSource, showProgress: ShowProgress): Promise<OpenDataSource> => {
+  const path = dataSource.path;
+  log(`openDataSource: ${path}`);
+  showProgress(`Loading ${path}`, "Loading...");
+
+  const selectedView = await getSelectedView(dataSource);
+  const result = await createPresenter(selectedView);
+  result.presenterApi = wrapPresenterApi(result.presenterApi);
+  return result;
 };

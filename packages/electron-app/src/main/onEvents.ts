@@ -1,12 +1,15 @@
+import { AppEvent } from "backend-app";
 import { AnyEvent } from "backend-ui";
-import { AppWindow, appWindows } from "./createBrowserWindow";
-import { show, showException } from "./show";
+import { appWindows } from "./createBrowserWindow";
+import { showAppViews, showException } from "./show";
+import type { AppWindow } from "./types";
 
-export const onEvents = async (events: AnyEvent[], appWindow: AppWindow) => {
-  const { presenterApi, browserWindow } = appWindow;
+// this supports AppEvent as well as AnyEvent
+export const onEvents = async (events: AppEvent[], appWindow: AppWindow): Promise<void> => {
+  const { presenterApi, browserWindow, setMenuItems } = appWindow;
   try {
-    const views = await presenterApi(events);
-    show(browserWindow, views);
+    const appViews = await presenterApi(events);
+    showAppViews(appWindow, appViews);
   } catch (e) {
     showException(browserWindow, e);
   }

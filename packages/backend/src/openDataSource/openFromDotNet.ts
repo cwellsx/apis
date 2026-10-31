@@ -1,10 +1,8 @@
-import { DataSource, SetMenuItems } from "../contracts-app";
-import { PresenterApi } from "../contracts-ui";
-import { createPresenter, DotnetSelectedView } from "../viewModel";
+import { DataSource } from "../contracts-app";
+import { DotnetSelectedView, SelectedView } from "../viewModel";
 import { createSqlDotNet } from "./createSqlDotNet";
 
-export const openFromDotNet = async (dataSource: DataSource, setMenuItems: SetMenuItems): Promise<PresenterApi> => {
+export const openFromDotNet = async (dataSource: DataSource): Promise<SelectedView> => {
   const tables = await createSqlDotNet(dataSource);
-  const selectedView = new DotnetSelectedView(tables, setMenuItems);
-  return createPresenter(selectedView);
+  return new DotnetSelectedView(tables);
 };

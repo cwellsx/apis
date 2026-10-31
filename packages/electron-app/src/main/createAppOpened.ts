@@ -1,35 +1,35 @@
 import { createSqlAppConfig, existsSync, openDataSource, pathJoin } from "backend-api";
-import type { DataSource, ShowLoadingMessage } from "backend-app";
+import type { DataSource, ShowProgress } from "backend-app";
 import { dialog, FileFilter, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";
-import { onEvents } from "./onEvents";
-import { show, showErrorMessage, showException, showMessage } from "./show";
+import { showAppViews, showErrorMessage, showException, showMessage } from "./show";
+import { AppWindow } from "./types";
 
 declare const CORE_EXE: string;
 
-export const createAppOpened = async (mainBrowserWindow: BrowserWindow): Promise<void> => {
+export const createAppOpened = async (browserWindow: BrowserWindow): Promise<void> => {
   // instantiate the Config SQL
   const appConfig = createSqlAppConfig("config.db");
 
   const reopenDataSource = async (dataSource: DataSource): Promise<void> => {
-    appWindows.closeAll(mainBrowserWindow);
+    appWindows.closeAll(browserWindow);
     try {
-      const showLoadingMessage: ShowLoadingMessage = (title: string | undefined, message: string) =>
-        showMessage(mainBrowserWindow, title, message);
+      const showProgress: ShowProgress = (title: string | undefined, message: string) =>
+        showMessage(browserWindow, title, message);
 
-      const presenterApi = await openDataSource(dataSource, setMenuItems, showLoadingMessage);
+      const { presenterApi, views } = await openDataSource(dataSource, showProgress);
 
       // associate the API with the browser so that events are routed to this window
-      appWindows.add(presenterApi, mainBrowserWindow);
+      const appWindow: AppWindow = { presenterApi, browserWindow, setMenuItems };
+      appWindows.add(appWindow);
       // remember as most-recently-opened after it opens successfully
       appConfig.dataSource = dataSource;
-      // show appOptions
-      show(mainBrowserWindow, [{ type: "appOptions", payload: appConfig.appOptions }]);
-      // kick the presenterApi
-      await onEvents([], { presenterApi, browserWindow: mainBrowserWindow });
+      // show appOptions and views
+      views.push({ type: "appOptions", payload: appConfig.appOptions });
+      showAppViews(appWindow, views);
     } catch (error) {
-      showException(mainBrowserWindow, error);
+      showException(browserWindow, error);
     }
   };
 
@@ -38,7 +38,7 @@ export const createAppOpened = async (mainBrowserWindow: BrowserWindow): Promise
   */
 
   const openAssemblies = async (): Promise<void> => {
-    const paths = dialog.showOpenDialogSync(mainBrowserWindow, { properties: ["openDirectory"] });
+    const paths = dialog.showOpenDialogSync(browserWindow, { properties: ["openDirectory"] });
     if (!paths) return;
     const path = paths[0];
     const dataSource: DataSource = { path, type: "loadedAssemblies" };
@@ -46,7 +46,7 @@ export const createAppOpened = async (mainBrowserWindow: BrowserWindow): Promise
   };
 
   const openJsonPath = (filters: FileFilter[], defaultPath?: string): string | undefined => {
-    const paths = dialog.showOpenDialogSync(mainBrowserWindow, { properties: ["openFile"], filters, defaultPath });
+    const paths = dialog.showOpenDialogSync(browserWindow, { properties: ["openFile"], filters, defaultPath });
     if (!paths) return;
     return paths[0];
   };
@@ -79,7 +79,7 @@ export const createAppOpened = async (mainBrowserWindow: BrowserWindow): Promise
   };
 
   const setMenuItems = createAppMenu(
-    mainBrowserWindow,
+    browserWindow,
     openAssemblies,
     openCustomJson,
     openCoreJson,
@@ -91,9 +91,9 @@ export const createAppOpened = async (mainBrowserWindow: BrowserWindow): Promise
     if (existsSync(appConfig.dataSource.path)) {
       await reopenDataSource(appConfig.dataSource);
     } else {
-      showErrorMessage(mainBrowserWindow, "Not found", "Use the File menu, to open a data source.");
+      showErrorMessage(browserWindow, "Not found", "Use the File menu, to open a data source.");
     }
   } else {
-    showErrorMessage(mainBrowserWindow, "No data", "Use the File menu, to open a data source.");
+    showErrorMessage(browserWindow, "No data", "Use the File menu, to open a data source.");
   }
 };

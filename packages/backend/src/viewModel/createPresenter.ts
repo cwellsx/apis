@@ -1,28 +1,33 @@
-import type { AnyEvent, AnyView, FilterEvent, GraphEvent, Node, PresenterApi } from "../contracts-ui";
+import { AppEvent, AppView, OpenDataSource, PresenterApi } from "../contracts-app";
+import type { FilterEvent, GraphEvent, Node } from "../contracts-ui";
 import { isClosed, isEdgeId } from "../contracts-ui";
 import { createImage } from "../image";
 import { GraphNodes } from "../viewState";
 import { createImageData } from "./createImageData";
 import { SelectedView } from "./selectedView";
 
-export const createPresenter = (selectedView: SelectedView): PresenterApi => {
+export const createPresenter = async (selectedView: SelectedView): Promise<OpenDataSource> => {
   let graphNodes: GraphNodes;
 
-  const showViews = async (): Promise<AnyView[]> => {
+  const showViews = async (needMenuItems: boolean): Promise<AppView[]> => {
     graphNodes = selectedView.viewState.getGraphNodes();
     const imageData = createImageData(graphNodes);
     const image = await createImage(imageData);
     const nodes: Node[] = graphNodes.roots;
-    return [
+    const views: AppView[] = [
       { type: "nodes", payload: { nodes } },
       { type: "image", payload: { image } },
     ];
+    if (needMenuItems) {
+      const menuItems = selectedView.getMenuItems();
+      views.push({ type: "menuItems", payload: menuItems });
+    }
+    return views;
   };
 
-  selectedView.onChanged = showViews;
+  const presenterApi: PresenterApi = async (events: AppEvent[]) => {
+    let needMenuItems = false;
 
-  // implement the MainApiAsync which will be bound to ipcMain
-  const presenter: PresenterApi = async (events: AnyEvent[]) => {
     for (const event of events) {
       switch (event.type) {
         case "graph":
@@ -31,10 +36,13 @@ export const createPresenter = (selectedView: SelectedView): PresenterApi => {
         case "filter":
           onFilterEvent(event.payload);
           break;
+        case "menuItem":
+          needMenuItems ||= selectedView.onMenuItem(event.payload.menuItemId);
+          break;
       }
     }
 
-    const result = await showViews();
+    const result = await showViews(needMenuItems);
     return result;
   };
 
@@ -61,5 +69,6 @@ export const createPresenter = (selectedView: SelectedView): PresenterApi => {
     });
   };
 
-  return presenter;
+  const views = await showViews(true);
+  return { presenterApi, views };
 };

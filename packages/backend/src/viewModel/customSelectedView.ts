@@ -1,5 +1,4 @@
-import { SetMenuItems } from "../contracts-app";
-import { AnyView } from "../contracts-ui";
+import { MenuItem } from "../contracts-app";
 import { minViewId } from "../id2";
 import { SqlCustom } from "../sqlCustom";
 import { assert } from "../utils";
@@ -9,9 +8,10 @@ import { SelectedView } from "./selectedView";
 export class CustomSelectedView implements SelectedView {
   private view: SqlCustom.View;
   viewState: ViewState;
-  onChanged: () => Promise<AnyView[]>;
+  getMenuItems: () => MenuItem[];
+  onMenuItem: (menuItemId: string) => boolean;
 
-  constructor(sqlTables: SqlCustom.Tables, setMenuItems: SetMenuItems) {
+  constructor(sqlTables: SqlCustom.Tables) {
     const initialView = (): SqlCustom.View => {
       const viewId = sqlTables.config.getViewId() ?? minViewId(sqlTables.views.selectAll().map((view) => view.id));
       const view = sqlTables.views.selectOne({ id: viewId });
@@ -19,22 +19,22 @@ export class CustomSelectedView implements SelectedView {
       return view;
     };
 
-    const selectedViewState = () => createCustomViewState(sqlTables, this.view.id);
-
-    const createMenuItems = (): void => {
-      const onReset = (): Promise<AnyView[]> => {
-        this.viewState.resetNodeStates();
-        return this.onChanged();
-      };
-
-      setMenuItems([{ type: "normal", label: "Reset", onClick: onReset }]);
+    const onReset = (): void => {
+      this.viewState.resetNodeStates();
     };
 
-    // initially null until createMainApi installs showViewType
-    this.onChanged = () => Promise.resolve([]);
+    const onMenuItem = (menuItemId: string): boolean => {
+      switch (menuItemId) {
+        case "reset":
+          onReset();
+          break;
+      }
+      return false;
+    };
 
     this.view = initialView();
-    this.viewState = selectedViewState();
-    createMenuItems();
+    this.viewState = createCustomViewState(sqlTables, this.view.id);
+    this.getMenuItems = () => [{ type: "normal", label: "Reset", menuItemId: "reset" }];
+    this.onMenuItem = onMenuItem;
   }
 }

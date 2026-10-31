@@ -1,7 +1,7 @@
-export type { PresenterApi } from "./api";
+export type { AnyEvent, FilterEvent, GraphEvent, NewNodeState } from "./anyEvent";
+export type { AnyView, ImageView, NodeView, TextView } from "./anyView";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, DetailsType } from "./appOptions";
-export type { AnyEvent, FilterEvent, GraphEvent, NewNodeState } from "./events";
 export type { Area, AreaClass, Image } from "./image";
 export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isMixed, isParent } from "./node";
@@ -11,4 +11,3 @@ export type { NodeState } from "./nodeState";
 export { NodeType } from "./nodeType";
 export type * from "./nodeTypes";
 export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./types";
-export type { AnyView, ImageView, NodeView, TextView } from "./views";

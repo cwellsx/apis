@@ -1,4 +1,4 @@
-import { AnyEvent, PresenterApi } from "../contracts-ui";
+import { AppEvent, PresenterApi } from "../contracts-app";
 import { log, options } from "../utils";
 
 const logTimeStamp = (): void => {
@@ -22,7 +22,7 @@ const logData = (args: unknown[]): void => {
 
 export const wrapPresenterApi = (presenter: PresenterApi): PresenterApi => {
   if (!options.logApi) return presenter;
-  const wrapped: PresenterApi = async (events: AnyEvent[]) => {
+  const wrapped: PresenterApi = async (events: AppEvent[]) => {
     logData(events);
     const results = await presenter(events);
     logData(results);

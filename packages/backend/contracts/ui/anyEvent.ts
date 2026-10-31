@@ -26,4 +26,3 @@ export type AnyEvent =
   | { type: "appOptions"; payload: AppOptions }
   | { type: "graph"; payload: GraphEvent }
   | { type: "filter"; payload: FilterEvent };
-//  | { type: "detail"; payload: DetailEvent };
