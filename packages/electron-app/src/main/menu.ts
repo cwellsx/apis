@@ -1,6 +1,6 @@
 import { MenuItem, PresenterApi } from "backend-app";
 import { BrowserWindow, Menu, MenuItemConstructorOptions } from "electron";
-import { onEvents } from "./onEvents";
+import { onMenuEvent } from "./onEvents";
 import { showException } from "./show";
 import { SetMenuItems } from "./types";
 
@@ -74,7 +74,7 @@ export const createAppMenu = (
   const setMenuItems: SetMenuItems = (menuItems: MenuItem[], presenterApi: PresenterApi): void => {
     const onMenuItemId = (menuItemId: string): void => {
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      onEvents([{ type: "menuItem", payload: { menuItemId } }], { presenterApi, browserWindow: window, setMenuItems });
+      onMenuEvent(menuItemId, { presenterApi, browserWindow: window, setMenuItems });
     };
 
     const toMenuItem = (menuItem: MenuItem): Electron.MenuItemConstructorOptions => {
