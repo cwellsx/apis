@@ -1,11 +1,11 @@
-import { hello, log, setPaths } from "backend-api";
-import { BrowserWindow, ipcMain } from "electron";
+import { createSqlAppConfig, existsSync, hello, log, setPaths } from "backend-api";
+import { BrowserWindow } from "electron";
 import path from "node:path";
-import { IPC_CHANNELS } from "../shared";
 import { registerFileProtocol } from "./convertPathToUrl";
-import { createAppOpened } from "./createAppOpened";
-import { loadURL } from "./createBrowserWindow";
-import { onElectronEvents } from "./onEvents";
+import { loadRenderer } from "./createBrowserWindow";
+import { createOpen } from "./createOpen";
+import { bindIpcMain } from "./onEvents";
+import { showErrorMessage } from "./show";
 
 /*
   Assume that complicated functions can be defined but not run, before this function is called.
@@ -31,10 +31,27 @@ export const createApplication = async (mainWindow: BrowserWindow, appDataPath: 
 
   registerFileProtocol();
 
-  // TODO this ignores the fact that onEvents returns a promise
-  ipcMain.on(IPC_CHANNELS.onEvents, onElectronEvents);
+  // instantiate the Config SQL early in order to bind it into the onEvent function
+  const appConfig = createSqlAppConfig("config.db");
 
-  await loadURL(mainWindow);
+  // initialize the onEvent listener before starting the renderer
+  bindIpcMain(appConfig);
+
+  // load the renderer
+  await loadRenderer(mainWindow);
   log("onRendererLoaded");
-  await createAppOpened(mainWindow);
+
+  // create main menu options and define functions to open a data source
+  const bindDataSource = createOpen(mainWindow, appConfig);
+
+  // automatically reopen the previously-opened dataSource
+  if (appConfig.dataSource) {
+    if (existsSync(appConfig.dataSource.path)) {
+      await bindDataSource(appConfig.dataSource);
+    } else {
+      showErrorMessage(mainWindow, "Not found", "Use the File menu, to open a data source.");
+    }
+  } else {
+    showErrorMessage(mainWindow, "No data", "Use the File menu, to open a data source.");
+  }
 };
