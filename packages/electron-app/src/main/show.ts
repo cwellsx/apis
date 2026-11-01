@@ -4,7 +4,7 @@ import { AnyView } from "backend-ui";
 import type { BrowserWindow } from "electron";
 import { IPC_CHANNELS } from "../shared";
 import { convertPathToUrl } from "./convertPathToUrl";
-import { AppWindow } from "./types";
+import { WindowContext } from "./types";
 
 const show = (browserWindow: BrowserWindow, views: AnyView[]) => {
   // intercept title which is set in main using browserWindow API
@@ -19,8 +19,8 @@ const show = (browserWindow: BrowserWindow, views: AnyView[]) => {
   browserWindow.webContents.send(IPC_CHANNELS.show, views);
 };
 
-export const showAppViews = (appWindow: AppWindow, appViews: AppView[]) => {
-  const { presenterApi, browserWindow, setMenuItems } = appWindow;
+export const showAppViews = (windowContext: WindowContext, appViews: AppView[]) => {
+  const { presenterApi, browserWindow, setMenuItems } = windowContext;
   // intercept "app" elements and handle defined in AppView
   const anyViews: AnyView[] = [];
   for (const appView of appViews) {

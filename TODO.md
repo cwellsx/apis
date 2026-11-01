@@ -3,12 +3,9 @@
 ## Now
 
 - Implement and test the appOptions round-trip -- font size and zoom
-
-Reimplement the IPC API.
-
+- Fix useEffect
 - Depend on Electron `invoke` to return updates in response to events.
 - When that's complete, replace Electron `invoke` with a platform-neutral layer e.g. as follows
-- Ensure that menus are reconnected i.e. that OnClick results in UI update
 
 ```ts
 class RpcClient {

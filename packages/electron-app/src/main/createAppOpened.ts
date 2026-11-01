@@ -4,7 +4,7 @@ import { dialog, FileFilter, type BrowserWindow } from "electron";
 import { appWindows } from "./createBrowserWindow";
 import { createAppMenu } from "./menu";
 import { showAppViews, showErrorMessage, showException, showMessage } from "./show";
-import { AppWindow } from "./types";
+import { WindowContext } from "./types";
 
 declare const CORE_EXE: string;
 
@@ -21,13 +21,13 @@ export const createAppOpened = async (browserWindow: BrowserWindow): Promise<voi
       const { presenterApi, views } = await openDataSource(dataSource, showProgress);
 
       // associate the API with the browser so that events are routed to this window
-      const appWindow: AppWindow = { presenterApi, browserWindow, setMenuItems };
-      appWindows.add(appWindow);
+      const windowContext: WindowContext = { presenterApi, browserWindow, setMenuItems };
+      appWindows.add(windowContext);
       // remember as most-recently-opened after it opens successfully
       appConfig.dataSource = dataSource;
       // show appOptions and views
       views.push({ type: "appOptions", payload: appConfig.appOptions });
-      showAppViews(appWindow, views);
+      showAppViews(windowContext, views);
     } catch (error) {
       showException(browserWindow, error);
     }
