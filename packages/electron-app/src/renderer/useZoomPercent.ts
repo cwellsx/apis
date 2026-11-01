@@ -1,4 +1,5 @@
 import * as React from "react";
+import { log } from "./log";
 
 // divisor is set to halve after 6 clicks i.e. 1.122462
 const zooms = [
@@ -14,6 +15,7 @@ export function useZoomPercent(zoomPercent: number, setZoomPercent: (zoomPercent
     // however exact value of event.deltaY is unreliable, sometimes 100 or -100, sometimes e.g. -91.28
     const delta = -Math.sign(event.deltaY);
     const index = Math.max(Math.min(zooms.indexOf(zoomPercent) + delta, zooms.length - 1), 0);
+    log("onWheel", zooms[index]);
     setZoomPercent(zooms[index]);
   };
   return onWheel;

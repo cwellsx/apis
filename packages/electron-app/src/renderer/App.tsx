@@ -166,6 +166,7 @@ const App: React.FunctionComponent = () => {
         areas={image.areas}
         now={image.now}
         zoomPercent={zoomPercent}
+        onWheelZoomPercent={onWheelZoomPercent}
         onGraphEvent={onGraphEvent}
       />
     );

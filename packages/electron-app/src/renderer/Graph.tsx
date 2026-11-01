@@ -5,12 +5,14 @@ import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party"; // copied 
 import "./Graph.css";
 import { log } from "./log";
 import { OnGraphEvent } from "./onEvent";
+import { OnWheel } from "./useZoomPercent";
 
 type GraphProps = {
   imagePath: string;
   areas: MyArea[];
   now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
   zoomPercent: number;
+  onWheelZoomPercent: OnWheel;
   onGraphEvent: OnGraphEvent;
 };
 
@@ -163,18 +165,20 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
 
   return (
     <>
-      <ImageMapper
-        src={src}
-        map={map}
-        strokeColor="red"
-        lineWidth={1}
-        active={true}
-        onClick={onClick}
-        imgWidth={imgWidth}
-        width={width}
-        height={height}
-        className={className}
-      />
+      <div onWheel={props.onWheelZoomPercent}>
+        <ImageMapper
+          src={src}
+          map={map}
+          strokeColor="red"
+          lineWidth={1}
+          active={true}
+          onClick={onClick}
+          imgWidth={imgWidth}
+          width={width}
+          height={height}
+          className={className}
+        />
+      </div>
       <div className="zoom bottom">{`${zoomPercent}%`}</div>
     </>
   );
