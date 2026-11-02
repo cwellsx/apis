@@ -1,0 +1,36 @@
+/* Inspection styles for assemblies-mapped.svg */
+
+/* These rules apply when the SVG is inline in the HTML document.
+   If the SVG is loaded via &lt;object&gt;, the stylesheet must be moved
+   inside the SVG file itself for the rules to take effect. */
+
+/* The padded hit-area around each edge: green border on hover */
+polygon.hit-edge {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 1;
+}
+
+polygon.hit-edge:hover {
+  stroke: green;
+  stroke-width: 2;
+  fill: rgba(0, 128, 0, 0.15);
+}
+
+/* The edge path itself — thin black by default */
+g.edge path {
+  stroke: black;
+  stroke-width: 1;
+  fill: none;
+}
+
+/* NOTE: making the edge path red on hit-edge hover is not possible with pure
+   CSS given the current SVG structure. The hit-edge polygons are siblings of
+   the edge groups inside &lt;g id="graph0"&gt; — CSS has no parent selector
+   and cannot match "the g.edge whose id equals this polygon's data-from-id".
+   
+   Workarounds:
+   1. Move each polygon.hit-edge inside its edge's g.edge group, then:
+        g.edge:hover path { stroke: red; }
+   2. Use JavaScript to read data-from-id and set stroke: red on the match.
+*/

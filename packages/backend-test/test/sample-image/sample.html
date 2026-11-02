@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Graphviz SVG with hit-edge polygons</title>
+<link rel="stylesheet" href="sample.css" />
+</head>
+<body>
+<h1>assemblies-mapped.svg — hit-edge inspection</h1>
+<p>
+  Move the mouse over the graph. Edges have padded <code>polygon.hit-edge</code>
+  areas around them — they are easier to hit than the thin black line, and they
+  scale with the SVG because they are part of the SVG itself.
+</p>
+
+<!--
+  Load the mapped SVG. Note: CSS rules in this document only penetrate into the
+  SVG if the SVG is inline. When loaded via &lt;object&gt; the SVG is a separate
+  document, so the hover styles below are documented here but won't take effect
+  unless you either inline the SVG or move sample.css into a &lt;style&gt; block
+  inside assemblies-mapped.svg.
+-->
+<object type="image/svg+xml" data="assemblies-mapped.svg" style="width:100%; height:600px; border:1px solid #ccc;">
+  <p>Failed to load SVG.</p>
+</object>
+
+<h2>What to look for</h2>
+<ul>
+  <li>Each edge has a <code>polygon.hit-edge</code> drawn around it — wider than
+      the black line, so it is easier to click or hover.</li>
+  <li>Hovering a hit-edge polygon draws a green border around it
+      (<code>sample.css</code>).</li>
+  <li>The polygon carries <code>data-from-id</code> matching the edge's id, e.g.
+      <code>1073741825||1073741829</code>, so JavaScript could highlight the
+      matching edge path on hover.</li>
+</ul>
+
+<h2>Why the edge path can't turn red from pure CSS</h2>
+<p>
+  The hit-edge polygons are siblings of the edge groups inside
+  <code>&lt;g id="graph0"&gt;</code>. CSS has no parent selector and no way to
+  match "the <code>g.edge</code> whose id equals this polygon's
+  <code>data-from-id</code>". So making the edge path red on hit-edge hover
+  requires either:
+</p>
+<ul>
+  <li>moving each hit-edge polygon inside its edge's <code>g.edge</code> group,
+      then <code>g.edge:hover path { stroke: red; }</code> works, or</li>
+  <li>a small JavaScript handler that reads <code>data-from-id</code> and sets
+      <code>stroke: red</code> on the matching path.</li>
+</ul>
+
+</body>
+</html>
