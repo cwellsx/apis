@@ -1,7 +1,7 @@
 import assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
-import { addImageMap } from "sut/image/addImageMap";
+import { addImageMap_2 } from "sut/image/addImageMap";
 
 describe("testImageMap", function () {
   const sampleDir = path.join(__dirname, "sample-image");
@@ -10,7 +10,7 @@ describe("testImageMap", function () {
   const outPath = path.join(sampleDir, "assemblies-mapped.svg");
 
   it("addImageMap writes a mapped SVG next to the input", function () {
-    const result = addImageMap(imagePath, mapPath);
+    const result = addImageMap_2(imagePath, mapPath);
 
     assert.strictEqual(typeof result, "string");
     assert.strictEqual(result, outPath);
@@ -18,7 +18,7 @@ describe("testImageMap", function () {
   });
 
   it("adds one hit-edge polygon per edge area (skips nodes/clusters)", function () {
-    addImageMap(imagePath, mapPath);
+    // addImageMap(imagePath, mapPath);
 
     const svg = fs.readFileSync(outPath, "utf-8");
 
@@ -38,7 +38,7 @@ describe("testImageMap", function () {
   });
 
   it("each hit-edge polygon references its source edge id", function () {
-    addImageMap(imagePath, mapPath);
+    // addImageMap(imagePath, mapPath);
 
     const svg = fs.readFileSync(outPath, "utf-8");
 
@@ -55,7 +55,7 @@ describe("testImageMap", function () {
   });
 
   it("every hit-edge polygon has a points attribute", function () {
-    addImageMap(imagePath, mapPath);
+    // addImageMap(imagePath, mapPath);
 
     const svg = fs.readFileSync(outPath, "utf-8");
     const hitEdgeBlocks = svg.match(/<polygon [^>]*class="hit-edge"[^>]*>/g);

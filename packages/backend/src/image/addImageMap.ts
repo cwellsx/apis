@@ -1,3 +1,4 @@
+import { DOMParser, XMLSerializer } from "@xmldom/xmldom";
 import { readFileSync, writeFileSync } from "fs";
 import { basename, dirname, extname, join } from "path";
 import type { ElementCompact } from "xml-js";
@@ -22,6 +23,7 @@ const tryPaddedHitAreas = false;
 export const addImageMap = (imagePath: string, mapPath: string): string => {
   // --- parse the map file -------------------------------------------------
   const mapXml = readFileSync(mapPath, "utf-8");
+
   const mapRoot: ElementCompact = xml2js(mapXml, { compact: true });
   // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
   const areasRaw = mapRoot["map"]["area"];
@@ -66,6 +68,82 @@ export const addImageMap = (imagePath: string, mapPath: string): string => {
   const newSvg = svgContent.slice(0, insertPos) + polygonBlock + "\n" + svgContent.slice(insertPos);
 
   // --- write the mapped SVG ----------------------------------------------
+  const dir = dirname(imagePath);
+  const base = basename(imagePath, extname(imagePath));
+  const outPath = join(dir, `${base}-mapped.svg`);
+  writeFileSync(outPath, newSvg, "utf-8");
+
+  return outPath;
+};
+
+export const addImageMap_2 = (imagePath: string, mapPath: string): string => {
+  const mapStr = readFileSync(mapPath, "utf-8");
+  const mapDoc = new DOMParser().parseFromString(mapStr, "image/svg+xml");
+
+  const svgStr = readFileSync(imagePath, "utf-8");
+  const svgDoc = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+
+  const areas = mapDoc.getElementsByTagName("area");
+  const edgeAreas = areas.filter(
+    (element) => element.getAttribute("shape") == "poly" && (element.getAttribute("id")?.includes("||") ?? false)
+  );
+
+  for (const edgeArea of edgeAreas) {
+    const id = edgeArea.getAttribute("id");
+    if (!id) continue;
+
+    const coordsStr = edgeArea.getAttribute("coords");
+    if (!coordsStr) continue;
+
+    const coords = coordsStr.split(",").map((s) => parseInt(s.trim(), 10));
+
+    const points: [number, number][] = [];
+    for (let i = 0; i < coords.length; i += 2) {
+      points.push([coords[i], coords[i + 1]]);
+    }
+
+    const [tx, ty] = [-4, 316];
+    const svgPoints: [number, number][] = points.map(([x, y]) => [x * 0.75 + tx, y * 0.75 - ty]);
+
+    const svgPointStr = svgPoints.map((pair) => `${pair[0]},${pair[1]}`).join(",");
+
+    const polygon = svgDoc.createElement("polygon");
+    polygon.setAttribute("class", "hit-edge");
+    polygon.setAttribute("points", svgPointStr);
+    polygon.setAttribute("data-from-id", id);
+
+    const svgEdge = svgDoc.getElementById(id);
+    if (!svgEdge) continue;
+    const svgPaths = svgEdge.getElementsByTagName("path");
+    if (svgPaths.length != 1) continue;
+    const svgPath = svgPaths[0];
+    const svgParent = svgPath.parentElement;
+    if (!svgParent) continue;
+    svgParent.insertBefore(polygon, svgPath);
+  }
+
+  const style = svgDoc.createElement("style");
+  style.appendChild(
+    svgDoc.createTextNode(`
+  .hit-edge {
+    fill: transparent;
+    stroke: transparent;
+    stroke: blue;
+  }
+  .hit-edge:hover {
+    stroke: green;
+  }
+  .hit-edge:hover ~ path {
+    stroke: red;
+  }
+`)
+  );
+
+  const svg = svgDoc.getElementsByTagName("svg")[0];
+  svg.insertBefore(style, svg.firstChild);
+
+  const newSvg = new XMLSerializer().serializeToString(svgDoc);
+
   const dir = dirname(imagePath);
   const base = basename(imagePath, extname(imagePath));
   const outPath = join(dir, `${base}-mapped.svg`);

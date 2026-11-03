@@ -2,69 +2,119 @@
 
 ## Now
 
-- Implement and test the appOptions round-trip -- font size and zoom
-- Fix useEffect
-- Depend on Electron `invoke` to return updates in response to events.
-- When that's complete, replace Electron `invoke` with a platform-neutral layer e.g. as follows
+Fix the handling of graphs
+
+- Edit addImageMap -- use xmldom to insert synthetic polygons within the a of an edge
+- Copy event-handler from VS Code extension into Electron
+- In React use
+
+xmldom
 
 ```ts
-class RpcClient {
-  private pending = new Map<string, { resolve; reject; timer }>();
+const { DOMParser, XMLSerializer } = require("xmldom");
 
-  constructor(
-    private transport: Transport,
-    private timeoutMs = 10000
-  ) {}
+const doc = new DOMParser().parseFromString(svgString, "image/svg+xml");
 
-  request(method: string, params: unknown): Promise<unknown> {
-    const id = crypto.randomUUID();
-    return new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.pending.delete(id);
-        reject(new Error(`RPC timeout: ${method}`));
-      }, this.timeoutMs);
+const edgeGroup = doc.getElementById(edgeId);
+const aElement = edgeGroup.getElementsByTagName("a")[0];
 
-      this.pending.set(id, { resolve, reject, timer });
-      this.transport.send({ kind: "request", id, method, params });
-    });
-  }
+const polygon = doc.createElement("polygon");
+polygon.setAttribute("class", "hit-edge");
+polygon.setAttribute("points", pointsStr);
 
-  handleIncoming(message: Response) {
-    const pending = this.pending.get(message.id);
-    if (!pending) return;
-    clearTimeout(pending.timer);
-    this.pending.delete(message.id);
-    if (message.error) pending.reject(new Error(message.error.message));
-    else pending.resolve(message.result);
-  }
+aElement.appendChild(polygon);
+
+const output = new XMLSerializer().serializeToString(doc);
+```
+
+CSS
+
+```css
+.hit-edge:hover ~ path {
+  stroke: red;
 }
+```
 
-class RpcServer {
-  private handlers = new Map<string, (params: unknown) => Promise<unknown>>();
+.NET
 
-  register(method: string, handler: (params: unknown) => Promise<unknown>) {
-    this.handlers.set(method, handler);
-  }
+```c#
+var doc = XDocument.Load("graph.svg");
 
-  async handleIncoming(message: Request, transport: Transport) {
-    const handler = this.handlers.get(message.method);
-    try {
-      const result = await handler?.(message.params);
-      transport.send({ kind: "response", id: message.id, result });
-    } catch (error) {
-      transport.send({ kind: "response", id: message.id, error: { message: String(error) } });
-    }
-  }
-}
+XNamespace svg = "http://www.w3.org/2000/svg";
+XNamespace xlink = "http://www.w3.org/1999/xlink";
+
+var edgeGroup = doc.Descendants(svg + "g")
+    .FirstOrDefault(g => (string)g.Attribute("id") == edgeId);
+
+var aElement = edgeGroup.Descendants(svg + "a").First();
+
+var pathElement = aElement.Element(svg + "path");
+
+var polygon = new XElement(svg + "polygon",
+    new XAttribute("class", "hit-edge"),
+    new XAttribute("points", pointsStr),
+    new XAttribute("data-edge-id", edgeId)
+);
+
+// Insert polygon *after* the path
+pathElement.AddAfterSelf(polygon);
+
+doc.Save("graph-with-hitareas.svg");
 ```
 
 ## Near term
 
-- Delete Panes.tsx and SplitPane and split-pane-react
+- Remove xml-js
+- Implement and test the appOptions round-trip -- font size and zoom
+- Fix useEffect- Delete Panes.tsx and SplitPane and split-pane-react
 - Debug - hourglass and prevent overlapping input events from user
 - Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
 - Implement - assembly details and call graphs for Core data -- see e.g. MORE/DETAILS.md
+
+### Tooltips
+
+Put the tooltip in a data-tooltip attribute of the hit-edge polygon in addImageMap.ts
+
+Take this from the anchor in the SVG
+or simplify the SVG by removing the tooltip and href attributes
+and instead pass a tooltip dictionary into the addImageMap function.
+
+Display the tooltip with an event handler like this
+
+```ts
+const tooltip = document.getElementById("tooltip");
+
+svg.addEventListener("mousemove", (evt) => {
+  const target = evt.target;
+
+  if (target.classList.contains("hit-edge")) {
+    const text = target.getAttribute("data-tooltip");
+    tooltip.textContent = text;
+    tooltip.style.left = evt.pageX + 10 + "px";
+    tooltip.style.top = evt.pageY + 10 + "px";
+    tooltip.style.display = "block";
+  } else {
+    tooltip.style.display = "none";
+  }
+});
+```
+
+```html
+<div
+  id="tooltip"
+  style="
+  position: absolute;
+  background: #222;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  pointer-events: none;
+  display: none;
+"
+></div>
+```
 
 ### Graph options
 
