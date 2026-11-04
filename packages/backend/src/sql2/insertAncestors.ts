@@ -1,6 +1,12 @@
 import * as Id from "../id2";
+import { SqlCommon } from "../sqlCommon";
 import { assert } from "../utils";
 import { Ancestor, Tables } from "./schema";
+
+const True = SqlCommon.fromBoolean(true);
+const False = SqlCommon.fromBoolean(false);
+
+type AncestorIds = Omit<Ancestor, "isParent">;
 
 export const insertAncestors = (tables: Tables): void => {
   // cleaner syntax would be INSERT INTO table SELECT field FROM table alias
@@ -9,59 +15,82 @@ export const insertAncestors = (tables: Tables): void => {
   // do SELECT rows into memory and then bulk insert
   // because that is type-safe and still fast enough
 
-  // methods => types
-  const types: Ancestor[] = tables.methodNames
+  // types <= methods
+  const methodTypes: Ancestor[] = tables.methodNames
     .selectAll()
-    .map((methodName) => ({ ancestorId: methodName.typeId, descendentId: methodName.id }));
-  assert(types.length > 0);
-  tables.ancestors.insertMany(types);
+    .map((methodName) => ({ ancestorId: methodName.typeId, descendentId: methodName.id, isParent: True }));
+  assert(methodTypes.length > 0);
+  tables.ancestors.insertMany(methodTypes);
 
-  // types => namespaces
-  const namespaces: Ancestor[] = tables.typeNames
+  // namespaces <= types
+  const typeNamespaces: Ancestor[] = tables.typeNames
     .selectAll()
     .filter((typeName) => !!typeName.namespaceId)
-    .map((typeName) => ({ ancestorId: typeName.namespaceId!, descendentId: typeName.id }));
-  assert(namespaces.length > 0);
-  tables.ancestors.insertMany(namespaces);
+    .map((typeName) => ({ ancestorId: typeName.namespaceId!, descendentId: typeName.id, isParent: True }));
+  assert(typeNamespaces.length > 0);
+  tables.ancestors.insertMany(typeNamespaces);
 
+  // assemblies <= namespaces
+  const namespaceAssemblies: Ancestor[] = tables.namespaces
+    .selectAll()
+    .map((namespace) => ({
+      ancestorId: Id.toBigAssemblyId(namespace.assemblyId),
+      descendentId: namespace.id,
+      isParent: True,
+    }));
+  assert(namespaceAssemblies.length > 0);
+  tables.ancestors.insertMany(namespaceAssemblies);
+
+  // namespace <= join via types <= methods
   const namespacesJoined = tables.ancestors
     .join(tables.typeNames, "id", "ancestorId")
-    .selectAll<Ancestor>({ ancestorId: "typeNames.namespaceId", descendentId: "ancestors.descendentId" })
-    .filter((ancestor) => !!ancestor.ancestorId);
+    .selectAll<AncestorIds>({ ancestorId: "typeNames.namespaceId", descendentId: "ancestors.descendentId" })
+    .filter((ancestor) => !!ancestor.ancestorId)
+    .map((ancestorId) => ({ ...ancestorId, isParent: False }));
   assert(namespacesJoined.length > 0);
   tables.ancestors.insertMany(namespacesJoined);
 
-  // types => assemblies
-  const assemblies: Ancestor[] = tables.typeNames
+  // assemblies <= types
+  const typeAssemblies: Ancestor[] = tables.typeNames
     .selectAll()
-    .map((typeName) => ({ ancestorId: Id.toBigAssemblyId(typeName.assemblyId), descendentId: typeName.id }));
-  assert(assemblies.length > 0);
-  tables.ancestors.insertMany(assemblies);
+    .map((typeName) => ({
+      ancestorId: Id.toBigAssemblyId(typeName.assemblyId),
+      descendentId: typeName.id,
+      isParent: SqlCommon.fromBoolean(!typeName.namespaceId),
+    }));
+  assert(typeAssemblies.length > 0);
+  tables.ancestors.insertMany(typeAssemblies);
 
+  // assemblies <= join via tyoes <= methods
   const assembliesJoined = tables.ancestors
     .join(tables.typeNames, "id", "ancestorId")
-    .selectAll<Ancestor>({ ancestorId: "typeNames.assemblyId", descendentId: "ancestors.descendentId" });
+    .selectAll<AncestorIds>({ ancestorId: "typeNames.assemblyId", descendentId: "ancestors.descendentId" })
+    .map((ancestorIds) => ({ ...ancestorIds, isParent: False }));
   assert(assembliesJoined.length > 0);
   tables.ancestors.insertMany(assembliesJoined);
 
-  // groups => groups
-  const groups2: Ancestor[] = tables.groups
+  // groups <= groups
+  const groupGroups: Ancestor[] = tables.groups
     .join(tables.groups, "name", "name", { operand: "startsWithNotEquals", leftAlias: "Left", rightAlias: "Right" })
-    .selectAll<Ancestor>({ ancestorId: "Right.id", descendentId: "Left.id" });
-  assert(groups2.length > 0);
-  tables.ancestors.insertMany(groups2);
+    .selectAll<AncestorIds>({ ancestorId: "Right.id", descendentId: "Left.id" })
+    .map((ancestorIds) => ({ ...ancestorIds, isParent: False }));
+  assert(groupGroups.length > 0);
+  tables.ancestors.insertMany(groupGroups);
 
-  // assemblies => groups
-  const groups: Ancestor[] = tables.assemblies
+  //groups <= assemblies
+  const assemblyGroups: Ancestor[] = tables.assemblies
     .join(tables.groups, "name", "name", { operand: "startsWith" })
-    .selectAll<Ancestor>({ ancestorId: "groups.id", descendentId: "assemblies.id" });
-  assert(groups.length > 0);
-  tables.ancestors.insertMany(groups);
+    .selectAll<AncestorIds>({ ancestorId: "groups.id", descendentId: "assemblies.id" })
+    .map((ancestorIds) => ({ ...ancestorIds, isParent: False }));
+  assert(assemblyGroups.length > 0);
+  tables.ancestors.insertMany(assemblyGroups);
 
+  // groups <= join via assemblies <= types and methods
   const groupsJoined = tables.ancestors
     .join(tables.assemblies, "id", "ancestorId")
     .join(tables.groups, "name", tables.assemblies, "name", { operand: "startsWith" })
-    .selectAll<Ancestor>({ ancestorId: "groups.id", descendentId: "ancestors.descendentId" });
+    .selectAll<AncestorIds>({ ancestorId: "groups.id", descendentId: "ancestors.descendentId" })
+    .map((ancestorIds) => ({ ...ancestorIds, isParent: False }));
   assert(groupsJoined.length > 0);
   tables.ancestors.insertMany(groupsJoined);
 };

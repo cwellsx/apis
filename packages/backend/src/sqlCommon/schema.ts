@@ -2,10 +2,11 @@ import { SqlDatabase, SqlTable } from "sqlio";
 import * as Id from "../id2";
 import { ConfigKvpT, ConfigT } from "./config";
 import { GetSetNodeStatesT, nodeStateTablesT } from "./nodeStates";
+import { Boolean, fromBoolean } from "./sqlBoolean";
 export { Boolean, fromBoolean, toBoolean } from "./sqlBoolean"; // Boolean is a keyword so export it in the SqlCommon namespace
 
 export type GroupT<TGroupId extends Id.GroupId | Id.CustomGroupId> = { id: TGroupId; name: string };
-export type AncestorT<T extends Id.AnyBigId | Id.AnyCustomId> = { ancestorId: T; descendentId: T };
+export type AncestorT<T extends Id.AnyBigId | Id.AnyCustomId> = { ancestorId: T; descendentId: T; isParent: Boolean };
 
 export const tableNames = ["groups", "ancestors", "configKvps"] as const;
 export type TableName = (typeof tableNames)[number];
@@ -44,7 +45,7 @@ export const newTables = <
 ): CommonTypesT<T, TGroupId, TConfigKeys, TConfig, TGroup>["Tables"] => {
   // zero exemplars
   //const zeroGroup: GroupT<TGroupId> = { id: zeroGroupId, name: "foo" };
-  const zeroAncestor: AncestorT<T> = { ancestorId: zeroId, descendentId: zeroId };
+  const zeroAncestor: AncestorT<T> = { ancestorId: zeroId, descendentId: zeroId, isParent: fromBoolean(false) };
   const zeroConfig: ConfigKvpT<TConfigKeys> = { key: "when", value: "foo" };
 
   const groups = db.newSqlTable("groups", "id", zeroGroup);

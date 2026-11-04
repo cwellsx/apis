@@ -7,7 +7,7 @@ import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = 4;
+const schemaVersion = 5;
 
 // config
 
@@ -103,8 +103,12 @@ type DotNetTableRowMap = {
 };
 
 type Group = { id: Id.GroupId; name: string; isMicrosoft: SqlCommon.Boolean };
-const zeroGroup: Group = { id: zero.groupId, name: "foo", isMicrosoft: 0 as SqlCommon.Boolean };
-export const netFrameworkGroup: Group = { id: Id.makeGroupId(0), name: ".NET Framework", isMicrosoft: 1 };
+const zeroGroup: Group = { id: zero.groupId, name: "foo", isMicrosoft: SqlCommon.fromBoolean(false) };
+export const netFrameworkGroup: Group = {
+  id: Id.makeGroupId(0),
+  name: ".NET Framework",
+  isMicrosoft: SqlCommon.fromBoolean(true),
+};
 
 type CommonType = SqlCommon.CommonTypesT<Id.AnyBigId, Id.GroupId, ConfigKeys, Config, Group>;
 

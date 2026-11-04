@@ -2,65 +2,12 @@
 
 ## Now
 
-Fix the handling of graphs
+Implement tooltips:
 
-- Edit addImageMap -- use xmldom to insert synthetic polygons within the a of an edge
-- Copy event-handler from VS Code extension into Electron
-- In React use
-
-xmldom
-
-```ts
-const { DOMParser, XMLSerializer } = require("xmldom");
-
-const doc = new DOMParser().parseFromString(svgString, "image/svg+xml");
-
-const edgeGroup = doc.getElementById(edgeId);
-const aElement = edgeGroup.getElementsByTagName("a")[0];
-
-const polygon = doc.createElement("polygon");
-polygon.setAttribute("class", "hit-edge");
-polygon.setAttribute("points", pointsStr);
-
-aElement.appendChild(polygon);
-
-const output = new XMLSerializer().serializeToString(doc);
-```
-
-CSS
-
-```css
-.hit-edge:hover ~ path {
-  stroke: red;
-}
-```
-
-.NET
-
-```c#
-var doc = XDocument.Load("graph.svg");
-
-XNamespace svg = "http://www.w3.org/2000/svg";
-XNamespace xlink = "http://www.w3.org/1999/xlink";
-
-var edgeGroup = doc.Descendants(svg + "g")
-    .FirstOrDefault(g => (string)g.Attribute("id") == edgeId);
-
-var aElement = edgeGroup.Descendants(svg + "a").First();
-
-var pathElement = aElement.Element(svg + "path");
-
-var polygon = new XElement(svg + "polygon",
-    new XAttribute("class", "hit-edge"),
-    new XAttribute("points", pointsStr),
-    new XAttribute("data-edge-id", edgeId)
-);
-
-// Insert polygon *after* the path
-pathElement.AddAfterSelf(polygon);
-
-doc.Save("graph-with-hitareas.svg");
-```
+- SQL to get children of given edge
+- Unit-test
+- write the tooltips into the front end with the SVG
+- Display the tooltip -- on hover and on click
 
 ## Near term
 

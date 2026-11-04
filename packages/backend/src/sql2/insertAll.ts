@@ -461,6 +461,7 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
       .map((group) => ({
         descendentId: Id.toBigGroupId(group.id),
         ancestorId: Id.toBigGroupId(Schema.netFrameworkGroup.id),
+        isParent: SqlCommon.fromBoolean(false),
       }))
   );
 };
