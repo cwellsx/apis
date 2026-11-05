@@ -1,7 +1,9 @@
 import assert from "assert";
 import * as fs from "fs";
 import * as path from "path";
-import { addImageMap_2 } from "sut/image/addImageMap";
+import { insertSvgMap } from "sut/image/insertSvgMap";
+
+const readFileSync = (path: string): string => fs.readFileSync(path, "utf-8");
 
 describe("testImageMap", function () {
   const sampleDir = path.join(__dirname, "sample-image");
@@ -10,20 +12,17 @@ describe("testImageMap", function () {
   const outPath = path.join(sampleDir, "assemblies-mapped.svg");
 
   it("addImageMap writes a mapped SVG next to the input", function () {
-    const result = addImageMap_2(imagePath, mapPath);
-
-    assert.strictEqual(typeof result, "string");
-    assert.strictEqual(result, outPath);
-    assert.ok(fs.existsSync(outPath), `mapped SVG should be written: ${outPath}`);
+    const result = insertSvgMap(readFileSync(imagePath), readFileSync(mapPath));
+    fs.writeFileSync(outPath, result);
   });
 
   it("adds one hit-edge polygon per edge area (skips nodes/clusters)", function () {
     // addImageMap(imagePath, mapPath);
 
-    const svg = fs.readFileSync(outPath, "utf-8");
+    const svg = readFileSync(outPath);
 
     // Count edge areas in the map: shape="poly" and id contains "||"
-    const mapXml = fs.readFileSync(mapPath, "utf-8");
+    const mapXml = readFileSync(mapPath);
     const edgeAreaMatches = mapXml.match(/<area shape="poly" id="[^"]*\|\|[^"]*"/g);
     const expectedEdgeCount = edgeAreaMatches?.length ?? 0;
     assert.ok(expectedEdgeCount > 0, "sample map should contain edge areas");
@@ -40,10 +39,10 @@ describe("testImageMap", function () {
   it("each hit-edge polygon references its source edge id", function () {
     // addImageMap(imagePath, mapPath);
 
-    const svg = fs.readFileSync(outPath, "utf-8");
+    const svg = readFileSync(outPath);
 
     // Every edge id from the map should appear as a data-from-id attribute.
-    const mapXml = fs.readFileSync(mapPath, "utf-8");
+    const mapXml = readFileSync(mapPath);
     const edgeIds = mapXml.match(/<area shape="poly" id="([^"]*\|\|[^"]*)"/g);
     assert.ok(edgeIds, "sample map should contain edge areas");
 

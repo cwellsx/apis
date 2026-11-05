@@ -1,108 +1,45 @@
-import type { Area as MyArea } from "backend-ui";
 import { textToNodeOrEdgeId } from "backend-ui";
 import * as React from "react";
-import { Area, AreaMouseEvent, ImageMapper, Map } from "./3rd-party"; // copied from "react-image-mapper2"
+import { Area, AreaMouseEvent } from "./3rd-party"; // copied from "react-image-mapper2"
 import "./Graph.css";
 import { log } from "./log";
 import { OnGraphEvent } from "./onEvent";
 import { OnWheel } from "./useZoomPercent";
 
-type GraphProps = {
-  imagePath: string;
-  areas: MyArea[];
-  now: number; // https://stackoverflow.com/questions/47922687/force-react-to-reload-an-image-file
-  zoomPercent: number;
-  onWheelZoomPercent: OnWheel;
-  onGraphEvent: OnGraphEvent;
-};
-
-type State = {
-  src: string;
-  map: Map;
-  size?: {
-    // natural size
-    imgWidth: number;
-    imgHeight: number;
-    // current zoomed size
-    width: number;
-    height: number;
-  };
-  zoomPercent: number;
-};
-
-interface ActionNewImage {
-  type: "NewImage";
-  props: GraphProps;
-}
-
-interface ActionImageLoaded {
-  type: "ImageLoaded";
-  naturalWidth: number;
-  naturalHeight: number;
-}
-
-interface ActionMouseWheel {
-  type: "ZoomPercent";
-  zoomPercent: number;
-}
-
-type Action = ActionNewImage | ActionImageLoaded | ActionMouseWheel;
-
-const srcFromProps = (props: GraphProps): string => (props.imagePath ? `${props.imagePath}?${props.now}` : "");
-
-const initialState = (props: GraphProps): State => {
-  return {
-    src: srcFromProps(props),
-    map: {
-      name: "foo",
-      // convert from MyArea (defined in "../shared-types") to Area (defined in "./ImageMapper")
-      areas: props.areas.map((area) => {
-        return {
-          shape: area.shape,
-          coords: area.coords,
-          _id: area.id,
-          strokeColor: area.className === "leaf-details" || area.className === "edge-details" ? "green" : "red",
-          className: area.className,
-          tooltip: area.tooltip,
-        };
-      }),
-    },
-    // size undefined until ActionImageLoaded
-    // zoomPercent unchanged from previous image
-    zoomPercent: props.zoomPercent,
-  };
-};
-
-const size = (imgWidth: number, imgHeight: number, zoomPercent: number) => {
-  return { imgWidth, imgHeight, width: (imgWidth * zoomPercent) / 100, height: (imgHeight * zoomPercent) / 100 };
-};
-
-const reducer = (state: State, action: Action): State => {
-  switch (action.type) {
-    case "NewImage":
-      return initialState(action.props);
-    case "ImageLoaded":
-      return { ...state, size: size(action.naturalWidth, action.naturalHeight, state.zoomPercent) };
-    case "ZoomPercent":
-      if (!state.size) return { ...state };
-      return {
-        ...state,
-        zoomPercent: action.zoomPercent,
-        size: size(state.size.imgWidth, state.size.imgHeight, action.zoomPercent),
-      };
-  }
-};
+type GraphProps = { svg: string; zoomPercent: number; onWheelZoomPercent: OnWheel; onGraphEvent: OnGraphEvent };
 
 export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) => {
-  const [state, dispatch] = React.useReducer(reducer, initialState(props));
-  const [className, setClassName] = React.useState<string | undefined>(undefined);
-
-  const { src, map, size, zoomPercent } = state;
+  const divRef = React.useRef<HTMLDivElement>(null);
+  const zoomPercent = props.zoomPercent;
 
   React.useEffect(() => {
-    if (src !== srcFromProps(props)) dispatch({ type: "NewImage", props });
-    else if (zoomPercent !== props.zoomPercent) dispatch({ type: "ZoomPercent", zoomPercent: props.zoomPercent });
-  }, [props, src, zoomPercent]);
+    const svg = divRef.current?.querySelector("svg");
+
+    if (svg) {
+      // Remember the SVG's original (100%) width/height once, so repeated
+      // zoom changes scale from the original size instead of compounding.
+      if (!svg.dataset.originalWidth) {
+        svg.dataset.originalWidth = svg.getAttribute("width") ?? "";
+      }
+      if (!svg.dataset.originalHeight) {
+        svg.dataset.originalHeight = svg.getAttribute("height") ?? "";
+      }
+
+      const scale = zoomPercent / 100;
+
+      const setScaled = (attr: "width" | "height", original: string | undefined) => {
+        if (!original) return;
+        const value = Number.parseFloat(original);
+        if (Number.isNaN(value)) return;
+        // Keep the unit (e.g. "pt", "px") that Graphviz emitted.
+        const unit = original.replace(/^[\d.]+/, "");
+        svg.setAttribute(attr, `${value * scale}${unit}`);
+      };
+
+      setScaled("width", svg.dataset.originalWidth);
+      setScaled("height", svg.dataset.originalHeight);
+    }
+  }, [zoomPercent, props.svg]);
 
   React.useEffect(() => {
     // like https://github.com/donavon/use-event-listener
@@ -118,7 +55,6 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
         : ctrlKey
           ? "ctrlKey"
           : undefined;
-      setClassName(newClassName);
       log(`setClassName(${newClassName})`);
     };
     document.addEventListener("keydown", keyboardEvent);
@@ -129,23 +65,6 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
       document.removeEventListener("keyup", keyboardEvent);
     };
   });
-
-  if (!src) return <>Loading...</>;
-
-  // if we don't yet know the size of the image then display the naked image first
-  if (!size) {
-    const onLoad = (arg: React.SyntheticEvent<HTMLImageElement>) => {
-      const { currentTarget } = arg;
-      dispatch({
-        type: "ImageLoaded",
-        naturalWidth: currentTarget.naturalWidth,
-        naturalHeight: currentTarget.naturalHeight,
-      });
-    };
-    return <img onLoad={onLoad} src={src} />;
-  }
-
-  const { imgWidth, width, height } = size;
 
   const onClick = (area: Area, index: number, event: AreaMouseEvent): void => {
     console.log(`Clicked area ${area._id} ${area.className}`);
@@ -163,23 +82,11 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
       });
   };
 
+  // TODO add onClick
   return (
     <>
-      <div onWheel={props.onWheelZoomPercent}>
-        <ImageMapper
-          src={src}
-          map={map}
-          strokeColor="red"
-          lineWidth={1}
-          active={true}
-          onClick={onClick}
-          imgWidth={imgWidth}
-          width={width}
-          height={height}
-          className={className}
-        />
-      </div>
-      <div className="zoom bottom">{`${zoomPercent}%`}</div>
+      <div onWheel={props.onWheelZoomPercent} ref={divRef} dangerouslySetInnerHTML={{ __html: props.svg }}></div>
+      <div className="zoom bottom">{`${props.zoomPercent}%`}</div>
     </>
   );
 };

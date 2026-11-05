@@ -2,12 +2,12 @@ export type { AnyEvent, FilterEvent, GraphEvent, NewNodeState } from "./anyEvent
 export type { AnyView, ImageView, NodeView, TextView } from "./anyView";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, DetailsType } from "./appOptions";
-export type { Area, AreaClass, Image } from "./image";
+export type { Image } from "./image";
 export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isMixed, isParent } from "./node";
 export type { Closed, Collapsible, Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
-export type { EdgeLabel, EdgePopup, NodeLabel } from "./nodeLabel";
+export type { Edge, EdgePopup, NodeLabel } from "./nodeLabel";
 export type { NodeState } from "./nodeState";
 export { NodeType } from "./nodeType";
 export type * from "./nodeTypes";

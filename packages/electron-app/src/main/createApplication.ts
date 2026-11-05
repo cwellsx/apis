@@ -1,7 +1,6 @@
 import { createSqlAppConfig, existsSync, hello, log, setPaths } from "backend-api";
 import { BrowserWindow } from "electron";
 import path from "node:path";
-import { registerFileProtocol } from "./convertPathToUrl";
 import { loadRenderer } from "./createBrowserWindow";
 import { createOpen } from "./createOpen";
 import { bindIpcMain } from "./onEvents";
@@ -28,8 +27,6 @@ export const createApplication = async (mainWindow: BrowserWindow, appDataPath: 
   const helloMessage = hello();
   log(helloMessage);
   log(`electron version is ${process.versions.electron}`);
-
-  registerFileProtocol();
 
   // instantiate the Config SQL early in order to bind it into the onEvent function
   const appConfig = createSqlAppConfig("config.db");

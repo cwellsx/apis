@@ -1,25 +1,13 @@
-import { AnyNodeType, AreaClass, Collapsible, Node, nodeIdToText } from "../contracts-ui";
+import { AnyNodeType, Node, nodeIdToText } from "../contracts-ui";
 
 export type DotNode = {
   id: string;
   label: string;
-  className: AreaClass;
   // if the label is shortened the tooltip is still longer
   tooltip: string;
   nodeType: AnyNodeType;
   attributes: { [key: string]: string };
   node: Node;
-};
-
-const getAreaClass = (collapsible: Collapsible): AreaClass => {
-  switch (collapsible) {
-    case "expanded":
-      return "expanded";
-    case "collapsed":
-      return "closed";
-    case "none":
-      return "leaf-details";
-  }
 };
 
 const getShortLabel = (label: string, parentLabel: string | undefined): string =>
@@ -28,7 +16,7 @@ const getShortLabel = (label: string, parentLabel: string | undefined): string =
 export const getDotNode = (node: Node): DotNode => {
   const id = nodeIdToText(node.nodeId);
   const tooltip = node.label;
-  const className = getAreaClass(node.collapsible);
+  // const className = getAreaClass(node.collapsible);
   const label = getShortLabel(node.label, node.parent?.label);
   const nodeType = node.type;
 
@@ -46,5 +34,5 @@ export const getDotNode = (node: Node): DotNode => {
       break;
   }
 
-  return { id, label, className, tooltip, nodeType, attributes, node };
+  return { id, label, tooltip, nodeType, attributes, node };
 };

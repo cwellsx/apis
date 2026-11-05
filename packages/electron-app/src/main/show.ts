@@ -3,18 +3,12 @@ import { AppView } from "backend-app";
 import { AnyView } from "backend-ui";
 import type { BrowserWindow } from "electron";
 import { IPC_CHANNELS } from "../shared";
-import { convertPathToUrl } from "./convertPathToUrl";
 import { WindowContext } from "./types";
 
 const show = (browserWindow: BrowserWindow, views: AnyView[]) => {
   // intercept title which is set in main using browserWindow API
   const title = views.find((view) => view.type == "title")?.payload;
   if (title) browserWindow.setTitle(title);
-
-  // convert image path to URL
-  const imageView = views.find((view) => view.type == "image")?.payload;
-  if (imageView && !(typeof imageView.image === "string"))
-    imageView.image.imagePath = convertPathToUrl(imageView.image.imagePath);
 
   browserWindow.webContents.send(IPC_CHANNELS.show, views);
 };

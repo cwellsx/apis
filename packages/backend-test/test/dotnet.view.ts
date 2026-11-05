@@ -1,5 +1,5 @@
 import { assert, log } from "backend-api";
-import { renameSync } from "fs";
+import * as fs from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import { createImage } from "sut/image";
 import { Sql, ViewType } from "sut/sql2";
@@ -72,7 +72,7 @@ describe("testViewStates", function () {
         const image = await createImage(imageData, false);
         assert(typeof image === "object");
         const filename = `${filenameRoot}.svg`;
-        renameSync(image.imagePath, fileViewState(filename));
+        fs.writeFileSync(fileViewState(filename), image.svg);
         log(filename);
       };
 

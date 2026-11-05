@@ -99,7 +99,7 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
 
       assert(typeof image === "object");
       const filename = `${filenameRoot}.svg`;
-      fs.renameSync(image.imagePath, fileViewState(filename));
+      fs.writeFileSync(fileViewState(filename), image.svg);
 
       sqlCustom.close();
     });
@@ -140,7 +140,7 @@ describe("testViewStates", function () {
     const image = await createImage(imageData, true);
     assert(typeof image === "object");
     const filename = `${filenameRoot}.svg`;
-    fs.renameSync(image.imagePath, fileViewState(filename));
+    fs.writeFileSync(fileViewState(filename), image.svg);
     log(filename);
   };
 

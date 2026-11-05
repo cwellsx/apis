@@ -162,9 +162,7 @@ const App: React.FunctionComponent = () => {
       <Message message={image} />
     ) : (
       <Graph
-        imagePath={image.imagePath}
-        areas={image.areas}
-        now={image.now}
+        svg={image.svg}
         zoomPercent={zoomPercent}
         onWheelZoomPercent={onWheelZoomPercent}
         onGraphEvent={onGraphEvent}
