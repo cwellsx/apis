@@ -4,11 +4,11 @@ import * as Id from "../id2";
 import { toCustomCallId } from "../id2";
 import { CustomNodeStates } from "../sqlCommon";
 import { SqlCustom } from "../sqlCustom";
+import type { Call, GraphNodes, ViewState } from "../types";
 import { assert, getOrThrow } from "../utils";
 import { CustomTop, Forest, Item, Numeric } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeSetNodeState } from "./makeSetNodeState";
-import type { Call, GraphNodes, ViewState } from "./types";
 
 export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.ViewId): ViewState => {
   const getSetNodeStates = sqlTables.viewNodeStates(viewId);

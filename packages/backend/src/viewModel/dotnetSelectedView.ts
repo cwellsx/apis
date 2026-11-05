@@ -2,8 +2,9 @@ import { MenuItem } from "../contracts-app";
 import * as Id from "../id2";
 import { minViewId } from "../id2";
 import { Sql } from "../sql2";
+import type { ViewState } from "../types";
 import { assert } from "../utils";
-import { createViewState, ViewState } from "../viewState";
+import { createViewState } from "../viewState";
 import { SelectedView } from "./selectedView";
 
 export class DotnetSelectedView implements SelectedView {

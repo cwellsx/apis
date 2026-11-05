@@ -1,8 +1,9 @@
 import { MenuItem } from "../contracts-app";
 import { minViewId } from "../id2";
 import { SqlCustom } from "../sqlCustom";
+import type { ViewState } from "../types";
 import { assert } from "../utils";
-import { createCustomViewState, ViewState } from "../viewState";
+import { createCustomViewState } from "../viewState";
 import { SelectedView } from "./selectedView";
 
 export class CustomSelectedView implements SelectedView {

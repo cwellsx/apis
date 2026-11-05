@@ -1,5 +1,5 @@
 import { MenuItem } from "../contracts-app";
-import { ViewState } from "../viewState";
+import { ViewState } from "../types";
 
 export type SelectedView = {
   viewState: ViewState;

@@ -1,11 +1,11 @@
 import os from "os";
 import type { Image } from "../contracts-ui";
 import { textIsEdgeId } from "../contracts-ui";
+import type { ImageData } from "../types";
 import { getAppFilename, getOrThrow, log, options, readFileSync, writeFileSync } from "../utils";
 import { ExtraAttributes, convertXmlMapToAreas } from "./convertXmlMapToAreas";
 import { getDotFormat } from "./getDotFormat";
 import { runDotExe } from "./graphviz";
-import type { CreateImage, ImageData } from "./imageDataTypes";
 import { runVizJs } from "./viz-js";
 
 /*
@@ -96,7 +96,7 @@ const usingExe = (dotText: string, getAreaAttributes: (id: string) => ExtraAttri
   };
 };
 
-export const createImage: CreateImage = async (imageData: ImageData): Promise<Image | string> => {
+export const createImage = async (imageData: ImageData): Promise<Image | string> => {
   log("createImage");
 
   if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";

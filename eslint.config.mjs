@@ -50,7 +50,7 @@ export default defineConfig([
           ],
         },
       ],
-      "import/no-cycle": ["error", { maxDepth: 2 }],
+      "import/no-cycle": ["error", { maxDepth: 5 }],
     },
 
     // make eslint-plugin-import resolve using your tsconfig paths

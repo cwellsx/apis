@@ -7,6 +7,7 @@ export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isMixed, isParent } from "./node";
 export type { Closed, Collapsible, Leaf, Node, Parent } from "./node";
 export * from "./nodeId";
+export type { EdgeLabel, EdgePopup, NodeLabel } from "./nodeLabel";
 export type { NodeState } from "./nodeState";
 export { NodeType } from "./nodeType";
 export type * from "./nodeTypes";

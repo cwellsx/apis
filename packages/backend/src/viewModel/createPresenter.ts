@@ -2,7 +2,7 @@ import { AppEvent, AppView, OpenDataSource, PresenterApi } from "../contracts-ap
 import type { FilterEvent, GraphEvent, Node } from "../contracts-ui";
 import { isClosed, isEdgeId } from "../contracts-ui";
 import { createImage } from "../image";
-import { GraphNodes } from "../viewState";
+import { GraphNodes } from "../types";
 import { createImageData } from "./createImageData";
 import { SelectedView } from "./selectedView";
 

@@ -1,6 +1,6 @@
+import type { ImageData } from "../types";
 import { assert, getOrThrow, options } from "../utils";
 import { getNodeAttributes, NodeAttributes } from "./getNodeAttributes";
-import type { ImageData } from "./imageDataTypes";
 
 export const getDotFormat = (
   imageData: ImageData

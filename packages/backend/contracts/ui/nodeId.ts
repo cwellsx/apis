@@ -9,21 +9,18 @@
 // - https://www.electronjs.org/docs/latest/tutorial/ipc says Electron uses the "Structured Clone Algorithm "
 // - https://developer.mozilla.org/en-US/docs/Web/API/Web_Workers_API/Structured_clone_algorithm says "except symbol"
 
-const key = "nodeId"; // instead of `declare const key: unique symbol;`
+const keyNodeId = "nodeId"; // instead of `declare const key: unique symbol;`
 
-export type NodeId = { readonly [key]: string };
-
-export const nodeIdToText = (nodeId: NodeId): string => nodeId[key];
-export const textToNodeId = (text: string): NodeId => ({ [key]: text });
-
+export type NodeId = { readonly [keyNodeId]: string };
+export const nodeIdToText = (nodeId: NodeId): string => nodeId[keyNodeId];
+export const textToNodeId = (text: string): NodeId => ({ [keyNodeId]: text });
 export const nodeIdEquals = (x: NodeId, y: NodeId): boolean => nodeIdToText(x) == nodeIdToText(y);
 
-// these string values correspond to other strings defined in the nodeIds module
-export type ClusterBy = "namespace" | "assembly";
+const keyEdgeId = "edgeId";
 
 export type EdgeId = { readonly edgeId: string };
-export const edgeIdToText = (edgeId: EdgeId): string => edgeId["edgeId"];
-export const textToEdgeId = (text: string): EdgeId => ({ ["edgeId"]: text });
+export const edgeIdToText = (edgeId: EdgeId): string => edgeId[keyEdgeId];
+export const textToEdgeId = (text: string): EdgeId => ({ [keyEdgeId]: text });
 
 // want to distinguish the string from a NodeId versus the string from an EdgeId
 // could do this by adding a unique prefix e.g. `$` or `!` to the string value

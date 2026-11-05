@@ -1,6 +1,5 @@
 import { NodeType, isMixed, makeEdgeId, nodeIdToText } from "../contracts-ui";
-import type { ImageData, ImageEdge } from "../image";
-import { Call, GraphNodes } from "../viewState";
+import type { Call, GraphNodes, ImageData, ImageEdge } from "../types";
 
 export const createImageData = (graphNodes: GraphNodes): ImageData => {
   const toImageEdge = (call: Call): ImageEdge => {

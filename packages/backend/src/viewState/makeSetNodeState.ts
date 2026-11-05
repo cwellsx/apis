@@ -1,11 +1,10 @@
 import type { AnyGroupType, AnyNodeType, NodeId, NodeState } from "../contracts-ui";
 import * as Id from "../id2";
 import { GetSetNodeStatesT } from "../sqlCommon";
+import type { GraphNodes, SetNodeState } from "../types";
 import { Numeric, RootItem } from "./forest";
 import { toNodeId } from "./toNodeId";
 import { ToT } from "./toT";
-import type { GraphNodes } from "./types";
-import { SetNodeState } from "./types";
 
 type RootDefault = { isVisible: boolean; isExpanded: boolean };
 
