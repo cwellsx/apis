@@ -15,6 +15,5 @@ export const createImageData = (graphNodes: GraphNodes): ImageData => {
     nodes: graphNodes.roots,
     edges: graphNodes.edges.map(toImageEdge),
     edgeDetails: graphNodes.leafType == NodeType.Method,
-    hasParentEdges: false,
   };
 };

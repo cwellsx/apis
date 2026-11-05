@@ -11,6 +11,7 @@ export class CustomSelectedView implements SelectedView {
   viewState: ViewState;
   getMenuItems: () => MenuItem[];
   onMenuItem: (menuItemId: string) => boolean;
+  hasParentEdges: boolean;
 
   constructor(sqlTables: SqlCustom.Tables) {
     const initialView = (): SqlCustom.View => {
@@ -37,5 +38,6 @@ export class CustomSelectedView implements SelectedView {
     this.viewState = createCustomViewState(sqlTables, this.view.id);
     this.getMenuItems = () => [{ type: "normal", label: "Reset", menuItemId: "reset" }];
     this.onMenuItem = onMenuItem;
+    this.hasParentEdges = true;
   }
 }

@@ -6,4 +6,5 @@ export type SelectedView = {
   getMenuItems: () => MenuItem[];
   // return code true means to refresh the menu items
   onMenuItem: (menuItemId: string) => boolean;
+  hasParentEdges: boolean;
 };

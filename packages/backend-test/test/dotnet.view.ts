@@ -69,7 +69,7 @@ describe("testViewStates", function () {
         assert(graphNodes.edges.length != 0);
 
         const imageData = createImageData(graphNodes);
-        const image = await createImage(imageData);
+        const image = await createImage(imageData, false);
         assert(typeof image === "object");
         const filename = `${filenameRoot}.svg`;
         renameSync(image.imagePath, fileViewState(filename));

@@ -95,7 +95,7 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
       printLines(`${filenameRoot}.txt`, printed);
 
       const imageData = createImageData(graphNodes);
-      const image = await createImage(imageData);
+      const image = await createImage(imageData, true);
 
       assert(typeof image === "object");
       const filename = `${filenameRoot}.svg`;
@@ -137,7 +137,7 @@ describe("testViewStates", function () {
     assert(graphNodes.edges.length != 0);
 
     const imageData = createImageData(graphNodes);
-    const image = await createImage(imageData);
+    const image = await createImage(imageData, true);
     assert(typeof image === "object");
     const filename = `${filenameRoot}.svg`;
     fs.renameSync(image.imagePath, fileViewState(filename));

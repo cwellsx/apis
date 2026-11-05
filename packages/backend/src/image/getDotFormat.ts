@@ -4,7 +4,8 @@ import { assert, getOrThrow, options } from "../utils";
 import { DotNode, getDotNode } from "./getDotNode";
 
 export const getDotFormat = (
-  imageData: ImageData
+  imageData: ImageData,
+  hasParentEdges: boolean
 ): { lines: string[]; dotNodeMap: Map<string, DotNode>; edgeTooltips: { [edgeId: string]: string } } => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
@@ -14,7 +15,7 @@ export const getDotFormat = (
   lines.push(`  node [fontname="Segoe UI", fontsize=10, margin="0.07,0.01"];`); // not sure whether margin makes a difference
 
   // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
-  if (imageData.hasParentEdges) lines.push("  compound=true");
+  if (hasParentEdges) lines.push("  compound=true");
 
   const dotNodeMap = new Map<string, DotNode>();
   const getNode = (nodeId: string): DotNode => getOrThrow(dotNodeMap, nodeId);
@@ -81,7 +82,7 @@ export const getDotFormat = (
       assert(!!dotNode, "Edge to undefined node");
       let node = dotNode.node;
       if (node.collapsible !== "expanded") return nodeId;
-      assert(imageData.hasParentEdges, "Unexpected edge to cluster");
+      assert(hasParentEdges, "Unexpected edge to cluster");
       // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
       edgeAttributes.push({ key, value: `cluster_${nodeId}` });
       while (node.collapsible === "expanded") {

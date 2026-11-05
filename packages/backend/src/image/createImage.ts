@@ -96,13 +96,13 @@ const usingExe = (dotText: string, getAreaAttributes: (id: string) => ExtraAttri
   };
 };
 
-export const createImage = async (imageData: ImageData): Promise<Image | string> => {
+export const createImage = async (imageData: ImageData, hasParentEdges: boolean): Promise<Image | string> => {
   log("createImage");
 
   if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";
 
   // convert to *.dot file format lines
-  const { lines, dotNodeMap, edgeTooltips } = getDotFormat(imageData);
+  const { lines, dotNodeMap, edgeTooltips } = getDotFormat(imageData, hasParentEdges);
   const dotText = lines.join(os.EOL);
 
   const countImageNodes = dotNodeMap.size;

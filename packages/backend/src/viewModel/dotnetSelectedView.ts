@@ -12,6 +12,7 @@ export class DotnetSelectedView implements SelectedView {
   viewState: ViewState;
   getMenuItems: () => MenuItem[];
   onMenuItem: (menuItemId: string) => boolean;
+  hasParentEdges: boolean;
 
   constructor(sqlTables: Sql.Tables) {
     const initialView = (): Sql.View => {
@@ -62,5 +63,6 @@ export class DotnetSelectedView implements SelectedView {
     this.viewState = selectedViewState();
     this.getMenuItems = getMenuItems;
     this.onMenuItem = onMenuItem;
+    this.hasParentEdges = false;
   }
 }
