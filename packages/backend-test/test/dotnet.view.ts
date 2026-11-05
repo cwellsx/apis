@@ -66,7 +66,7 @@ describe("testViewStates", function () {
         const filenameRoot = `${viewType}-${suffix++}`;
         printLines(`${filenameRoot}.txt`, printed);
 
-        assert(graphNodes.calls.length != 0);
+        assert(graphNodes.edges.length != 0);
 
         const imageData = createImageData(graphNodes);
         const image = await createImage(imageData);

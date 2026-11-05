@@ -4,7 +4,7 @@ export type Call = { fromId: NodeId; toId: NodeId };
 
 export type GraphNodes = {
   roots: Node[];
-  calls: Call[];
+  edges: Call[];
   leafType: AnyLeafType;
   getNode: (nodeId: NodeId) => Node;
   findNode: (predicate: (node: Node) => boolean) => Node | undefined;

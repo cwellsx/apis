@@ -102,10 +102,10 @@ export const createImage = async (imageData: ImageData): Promise<Image | string>
   if (!imageData.edges.length && !imageData.nodes.length) return "Empty graph, no nodes to display";
 
   // convert to *.dot file format lines
-  const { lines, nodeMap, edgeTooltips } = getDotFormat(imageData);
+  const { lines, dotNodeMap, edgeTooltips } = getDotFormat(imageData);
   const dotText = lines.join(os.EOL);
 
-  const countImageNodes = nodeMap.size;
+  const countImageNodes = dotNodeMap.size;
 
   const tooBig: string[] = [];
   if (imageData.edges.length > options.maxImageSize.edges)
@@ -121,7 +121,7 @@ export const createImage = async (imageData: ImageData): Promise<Image | string>
 
       return { className: imageData.edgeDetails ? "edge-details" : "edge-none", edgeLabelTooltip };
     } else {
-      const node = getOrThrow(nodeMap, id);
+      const node = getOrThrow(dotNodeMap, id);
       return { className: node.className };
     }
   };

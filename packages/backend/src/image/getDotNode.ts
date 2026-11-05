@@ -1,6 +1,6 @@
-import { AnyNodeType, AreaClass, Closed, Collapsible, Leaf, Node, nodeIdToText, Parent } from "../contracts-ui";
+import { AnyNodeType, AreaClass, Collapsible, Node, nodeIdToText } from "../contracts-ui";
 
-type Attributes = {
+export type DotNode = {
   id: string;
   label: string;
   className: AreaClass;
@@ -8,12 +8,8 @@ type Attributes = {
   tooltip: string;
   nodeType: AnyNodeType;
   attributes: { [key: string]: string };
+  node: Node;
 };
-
-type NonClusterAttributes = Attributes & { type: (Leaf | Closed)["collapsible"] };
-type ClusterAttributes = Attributes & { type: Parent["collapsible"]; children: NodeAttributes[] };
-
-export type NodeAttributes = ClusterAttributes | NonClusterAttributes;
 
 const getAreaClass = (collapsible: Collapsible): AreaClass => {
   switch (collapsible) {
@@ -29,11 +25,10 @@ const getAreaClass = (collapsible: Collapsible): AreaClass => {
 const getShortLabel = (label: string, parentLabel: string | undefined): string =>
   !parentLabel || !label.startsWith(parentLabel) ? label : "(*)" + label.substring(parentLabel.length);
 
-export const getNodeAttributes = (node: Node): NodeAttributes => {
+export const getDotNode = (node: Node): DotNode => {
   const id = nodeIdToText(node.nodeId);
   const tooltip = node.label;
-  const type = node.collapsible;
-  const className = getAreaClass(type);
+  const className = getAreaClass(node.collapsible);
   const label = getShortLabel(node.label, node.parent?.label);
   const nodeType = node.type;
 
@@ -51,9 +46,5 @@ export const getNodeAttributes = (node: Node): NodeAttributes => {
       break;
   }
 
-  if (type != "expanded") return { id, label, className, tooltip, type, nodeType, attributes };
-
-  const children = node.children.map(getNodeAttributes);
-
-  return { id, label, className, tooltip, type, nodeType, attributes, children };
+  return { id, label, className, tooltip, nodeType, attributes, node };
 };

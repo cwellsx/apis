@@ -1,4 +1,4 @@
-import { NodeType, isMixed, makeEdgeId, nodeIdToText } from "../contracts-ui";
+import { NodeType, makeEdgeId, nodeIdToText } from "../contracts-ui";
 import type { Call, GraphNodes, ImageData, ImageEdge } from "../types";
 
 export const createImageData = (graphNodes: GraphNodes): ImageData => {
@@ -12,8 +12,8 @@ export const createImageData = (graphNodes: GraphNodes): ImageData => {
   };
 
   return {
-    nodes: graphNodes.roots.filter((node) => node.isVisible || isMixed(node)),
-    edges: graphNodes.calls.map(toImageEdge),
+    nodes: graphNodes.roots,
+    edges: graphNodes.edges.map(toImageEdge),
     edgeDetails: graphNodes.leafType == NodeType.Method,
     hasParentEdges: false,
   };

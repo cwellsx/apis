@@ -136,12 +136,12 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    const popups = new Map<string, Sql.Call>();
-    for (const call of calls) {
-      const result = getPopup(call);
-    }
+    // const popups = new Map<string, Sql.Call>();
+    // for (const call of calls) {
+    //   const result = getPopup(call);
+    // }
 
-    return { roots: forest.roots, calls, leafType, getNode, findNode };
+    return { roots: forest.roots, edges: calls, leafType, getNode, findNode };
   };
 
   return { getGraphNodes, setNodeState, resetNodeStates };

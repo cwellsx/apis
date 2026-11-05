@@ -1,10 +1,11 @@
+import { isMixed, nodeIdToText, type Node } from "../contracts-ui";
 import type { ImageData } from "../types";
 import { assert, getOrThrow, options } from "../utils";
-import { getNodeAttributes, NodeAttributes } from "./getNodeAttributes";
+import { DotNode, getDotNode } from "./getDotNode";
 
 export const getDotFormat = (
   imageData: ImageData
-): { lines: string[]; nodeMap: Map<string, NodeAttributes>; edgeTooltips: { [edgeId: string]: string } } => {
+): { lines: string[]; dotNodeMap: Map<string, DotNode>; edgeTooltips: { [edgeId: string]: string } } => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   lines.push("  labeljust=l");
@@ -15,44 +16,49 @@ export const getDotFormat = (
   // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
   if (imageData.hasParentEdges) lines.push("  compound=true");
 
-  const nodeMap = new Map<string, NodeAttributes>();
-  const getNode = (nodeId: string): NodeAttributes => getOrThrow(nodeMap, nodeId);
+  const dotNodeMap = new Map<string, DotNode>();
+  const getNode = (nodeId: string): DotNode => getOrThrow(dotNodeMap, nodeId);
 
   // push the tree of nodes -- use subgraphs for exapanded groups
-  const pushLayer = (layer: NodeAttributes[], level: number): void => {
+  const pushLayer = (layer: Node[], level: number): void => {
     const prefix = " ".repeat(2 * (level + 1));
 
     for (const node of layer) {
-      nodeMap.set(node.id, node);
+      if (!node.isVisible && !isMixed(node)) continue;
+
+      const dotNode = getDotNode(node);
+      dotNodeMap.set(dotNode.id, dotNode);
 
       const shape = "rect";
-      const label = node.label.replace("\\", "\\\\");
+      const label = dotNode.label.replace("\\", "\\\\");
 
-      let inline = Object.entries(node.attributes)
+      let inline = Object.entries(dotNode.attributes)
         .map(([key, value]) => `${key}="${value}"`)
         .join(", ");
       inline = inline ? `, ${inline}` : "";
 
-      switch (node.type) {
+      switch (node.collapsible) {
         case "none":
         case "collapsed":
-          lines.push(`${prefix}"${node.id}" [shape=${shape}, id="${node.id}", label="${label}", href=foo${inline}];`);
+          lines.push(
+            `${prefix}"${dotNode.id}" [shape=${shape}, id="${dotNode.id}", label="${label}", href=foo${inline}];`
+          );
           break;
         case "expanded":
-          lines.push(`${prefix}subgraph "cluster_${node.id}" {`);
-          for (const [key, value] of Object.entries(node.attributes)) lines.push(`${prefix}  ${key}="${value}"`);
+          lines.push(`${prefix}subgraph "cluster_${dotNode.id}" {`);
+          for (const [key, value] of Object.entries(dotNode.attributes)) lines.push(`${prefix}  ${key}="${value}"`);
           lines.push(`${prefix}  label="${label}"`);
-          lines.push(`${prefix}  id="${node.id}"`);
+          lines.push(`${prefix}  id="${dotNode.id}"`);
           lines.push(`${prefix}  href=foo`);
           pushLayer(node.children, level + 1);
           if (options.verticalClusters) {
             // invisible edges between nodes to they're aligned vertically
             // https://forum.graphviz.org/t/positioning-nodes-in-a-subgraph/1065/18
-            const children = node.children.filter((child) => child.type !== "expanded");
+            const children = node.children.filter((child) => child.collapsible !== "expanded");
             for (let i = 0; i < children.length - 1; ++i) {
-              const first = children[i];
-              const second = children[i + 1];
-              lines.push(`${prefix} "${first.id}" -> "${second.id}" [style=invis]`);
+              const first = nodeIdToText(children[i].nodeId);
+              const second = nodeIdToText(children[i + 1].nodeId);
+              lines.push(`${prefix} "${first}" -> "${second}" [style=invis]`);
             }
           }
           lines.push(`}`);
@@ -60,7 +66,7 @@ export const getDotFormat = (
     }
   };
 
-  pushLayer(imageData.nodes.map(getNodeAttributes), 0);
+  pushLayer(imageData.nodes, 0);
 
   // used to override the title assigned to edge labels
   const edgeTooltips: { [edgeId: string]: string } = {};
@@ -71,16 +77,17 @@ export const getDotFormat = (
     const edgeAttributes: EdgeAttribute[] = [];
 
     const adjust = (nodeId: string, key: string): string => {
-      let node = nodeMap.get(nodeId);
-      assert(!!node, "Edge to undefined node");
-      if (node.type !== "expanded") return nodeId;
+      const dotNode = dotNodeMap.get(nodeId);
+      assert(!!dotNode, "Edge to undefined node");
+      let node = dotNode.node;
+      if (node.collapsible !== "expanded") return nodeId;
       assert(imageData.hasParentEdges, "Unexpected edge to cluster");
       // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
       edgeAttributes.push({ key, value: `cluster_${nodeId}` });
-      while (node.type === "expanded") {
+      while (node.collapsible === "expanded") {
         node = node.children[0];
       }
-      return node.id;
+      return nodeIdToText(node.nodeId);
     };
 
     clientId = adjust(clientId, "ltail");
@@ -112,5 +119,5 @@ export const getDotFormat = (
   });
 
   lines.push("}");
-  return { lines, nodeMap, edgeTooltips };
+  return { lines, dotNodeMap, edgeTooltips };
 };

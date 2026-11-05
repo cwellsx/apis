@@ -76,7 +76,7 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    return { roots: forest.roots, calls, leafType: NodeType.CustomLeaf, getNode, findNode };
+    return { roots: forest.roots, edges: calls, leafType: NodeType.CustomLeaf, getNode, findNode };
   };
 
   return { getGraphNodes, setNodeState, resetNodeStates };
