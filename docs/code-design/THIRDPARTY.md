@@ -59,7 +59,7 @@ The main (i.e. backend) code uses these:
 - `@viz-js/viz`
 - `better-sqlite3`
 - `electron-cgi`
-- `xml-js`
+- `@xmldom/xmldom`
 
 ## Icons
 

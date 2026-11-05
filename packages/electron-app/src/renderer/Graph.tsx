@@ -1,6 +1,5 @@
 import { textToNodeOrEdgeId } from "backend-ui";
 import * as React from "react";
-import { Area, AreaMouseEvent } from "./3rd-party"; // copied from "react-image-mapper2"
 import "./Graph.css";
 import { log } from "./log";
 import { OnGraphEvent } from "./onEvent";
@@ -66,26 +65,33 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     };
   });
 
-  const onClick = (area: Area, index: number, event: AreaMouseEvent): void => {
-    console.log(`Clicked area ${area._id} ${area.className}`);
-    if (area._id)
-      props.onGraphEvent({
-        id: textToNodeOrEdgeId(area._id),
-        event: {
-          altKey: event.altKey,
-          button: event.button,
-          buttons: event.buttons,
-          ctrlKey: event.ctrlKey,
-          metaKey: event.metaKey,
-          shiftKey: event.shiftKey,
-        },
-      });
+  const onClick = (e: React.MouseEvent) => {
+    const target = e.target as SVGElement;
+    const id = target.getAttribute("id") ?? target.closest("[id]")?.getAttribute("id");
+    if (!id) return;
+    console.log(`Clicked id ${id}`);
+    props.onGraphEvent({
+      id: textToNodeOrEdgeId(id),
+      event: {
+        altKey: e.altKey,
+        button: e.button,
+        buttons: e.buttons,
+        ctrlKey: e.ctrlKey,
+        metaKey: e.metaKey,
+        shiftKey: e.shiftKey,
+      },
+    });
   };
 
   // TODO add onClick
   return (
     <>
-      <div onWheel={props.onWheelZoomPercent} ref={divRef} dangerouslySetInnerHTML={{ __html: props.svg }}></div>
+      <div
+        onWheel={props.onWheelZoomPercent}
+        ref={divRef}
+        dangerouslySetInnerHTML={{ __html: props.svg }}
+        onClick={onClick}
+      ></div>
       <div className="zoom bottom">{`${props.zoomPercent}%`}</div>
     </>
   );

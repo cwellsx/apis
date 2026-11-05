@@ -183,20 +183,6 @@ const App: React.FunctionComponent = () => {
   })();
 
   return <Layout left={left} center={center} right={right} appOptions={chooseAppOptions} viewVersion={viewVersion} />;
-  // return (
-  //   <React.StrictMode>
-  //     <Panes
-  //       left={getLeft(view, onViewOptions, onFilterEvent, appOptions, onAppOptions)}
-  //       center={getCenter(view, onGraphEvent, zoomPercent)}
-  //       right={getRight(details, onDetailEvent)}
-  //       appOptions={chooseAppOptions}
-  //       fontSize={fontSize}
-  //       onWheelZoomPercent={onWheelZoomPercent}
-  //       onWheelFontSize={onWheelFontSize}
-  //       rightWidthMaxContent={rightWidthMaxContent}
-  //     />
-  //   </React.StrictMode>
-  // );
 };
 
 export const createApp = () => <App />;
