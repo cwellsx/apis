@@ -1,4 +1,4 @@
-import { DOMParser, Element, Node, XMLSerializer } from "@xmldom/xmldom";
+import { Document, DOMParser, Element, Node, XMLSerializer } from "@xmldom/xmldom";
 import { assert, getOrThrow } from "../utils";
 import { computePaddedHitArea } from "./computePaddedHitArea";
 
@@ -8,8 +8,8 @@ export const insertSvgMap = (
   nodeLabels: Map<string, string>,
   edgeLabels: Map<string, string>
 ): string => {
-  const mapDoc = new DOMParser().parseFromString(mapStr, "image/svg+xml");
-  const svgDoc = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+  const mapDoc = new DOMParser().parseFromString(mapStr.replace(/<!--[\s\S]*?-->\n?/g, ""), "image/svg+xml");
+  const svgDoc = new DOMParser().parseFromString(svgStr.replace(/<!--[\s\S]*?-->\n?/g, ""), "image/svg+xml");
 
   const svg = svgDoc.getElementsByTagName("svg")[0];
 
@@ -53,13 +53,13 @@ export const insertSvgMap = (
     svgParent.insertBefore(svgDoc.createTextNode("\n"), svgPath);
 
     const label = getOrThrow(edgeLabels, id);
-    svgEdge.setAttribute("aria-label", label);
+    addLabel(svgDoc, svgEdge, label);
   }
 
   for (const [id, label] of nodeLabels.entries()) {
     const svgNode = svgDoc.getElementById(id);
     assert(!!svgNode);
-    svgNode.setAttribute("aria-label", label);
+    addLabel(svgDoc, svgNode, label);
   }
 
   const style = svgDoc.createElement("style");
@@ -130,4 +130,13 @@ const transformPoints = (coordsStr: string, translation: [number, number]): stri
   const padded = tryPaddedHitAreas ? computePaddedHitArea(svgPoints, PADDING) : svgPoints;
   const svgPointStr = padded.map((p) => `${p[0]},${p[1]}`).join(" ");
   return svgPointStr;
+};
+
+const addLabel = (svgDoc: Document, element: Element, label: string): void => {
+  element.setAttribute("aria-label", label);
+  const parent = element.parentNode;
+  if (parent) {
+    parent.insertBefore(svgDoc.createComment(label), element);
+    parent.insertBefore(svgDoc.createTextNode("\n"), element);
+  }
 };
