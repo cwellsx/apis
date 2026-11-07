@@ -1,6 +1,6 @@
 import { isMixed, nodeIdToText, type Node } from "../contracts-ui";
 import { edgeIdToNodeIdText, nodeIdTextToEdgeIdText, type ImageData } from "../types";
-import { assert, getOrThrow, options } from "../utils";
+import { assert, getOrSet, getOrThrow, options } from "../utils";
 import { DotNode, toDotNode } from "./toDotNode";
 import { EdgeAttributes, escapeDotString, toEdgeAttributes } from "./toEdgeAttributes";
 
@@ -24,6 +24,15 @@ export const toDotFormat = (
 
   const dotNodeMap = new Map<string, DotNode>();
   const getDotNode = (nodeId: string): DotNode => getOrThrow(dotNodeMap, nodeId);
+
+  // get a map of all edges to avoid adding duplicate invisible edges
+  const allEdges = new Map<string, Set<string>>();
+  const addEdge = (key: string, value: string) => getOrSet(allEdges, key, () => new Set<string>()).add(value);
+  imageData.edges.forEach((edge) => {
+    const { clientId, serverId } = edgeIdToNodeIdText(edge);
+    addEdge(clientId, serverId);
+    addEdge(serverId, clientId);
+  });
 
   // push the tree of nodes -- use subgraphs for exapanded groups
   const pushLayer = (layer: Node[], level: number): void => {
@@ -65,7 +74,10 @@ export const toDotFormat = (
             for (let i = 0; i < children.length - 1; ++i) {
               const first = nodeIdToText(children[i].nodeId);
               const second = nodeIdToText(children[i + 1].nodeId);
-              lines.push(`${prefix} "${first}" -> "${second}" [style=invis]`);
+
+              if (allEdges.get(first)?.has(second) ?? false) continue;
+
+              if (allEdges.get(first)) lines.push(`${prefix} "${first}" -> "${second}" [style=invis]`);
             }
           }
           lines.push(`}`);
