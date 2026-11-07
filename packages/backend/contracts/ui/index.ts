@@ -2,13 +2,14 @@ export type { AnyEvent, FilterEvent, GraphEvent, NewNodeState } from "./anyEvent
 export type { AnyView, ImageView, NodeView, TextView } from "./anyView";
 export { defaultAppOptions } from "./appOptions";
 export type { AppOptions, DetailsType } from "./appOptions";
+export type { EdgePopup, EdgeT, Label, LabelWithType } from "./edge";
 export type { Image } from "./image";
 export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isMixed, isParent } from "./node";
 export type { Closed, Collapsible, Leaf, Node, Parent } from "./node";
-export * from "./nodeId";
-export type { Edge, EdgePopup, NodeLabel } from "./nodeLabel";
+export { edgeIdToText, isEdgeId, nodeIdToText, textToEdgeId, textToNodeId } from "./nodeId";
+export type { EdgeId, NodeId } from "./nodeId";
 export type { NodeState } from "./nodeState";
 export { NodeType } from "./nodeType";
-export type * from "./nodeTypes";
+export type { AnyGroupType, AnyLeafType, AnyNodeType, MethodNodeType, RootNodeType } from "./nodeTypes";
 export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./types";

@@ -5,7 +5,7 @@ import { toAnyBigId } from "../id2";
 import type { Sql, ViewType } from "../sql2";
 import { netFrameworkGroup } from "../sql2";
 import { NodeStates, SqlCommon } from "../sqlCommon";
-import type { Call, GraphNodes, ViewState } from "../types";
+import { nodeIdsToEdgeId, type Call, type GraphNodes, type ImageData, type ViewState } from "../types";
 import { assert, getOrThrow } from "../utils";
 import type { Forest, RootItem, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
@@ -141,7 +141,12 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
     //   const result = getPopup(call);
     // }
 
-    return { roots: forest.roots, edges: calls, leafType, getNode, findNode };
+    const imageData: ImageData = {
+      roots: forest.roots,
+      edges: calls.map((call) => nodeIdsToEdgeId(call.fromId, call.toId)),
+    };
+
+    return { imageData, leafType, getNode, findNode };
   };
 
   return { getGraphNodes, setNodeState, resetNodeStates };

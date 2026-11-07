@@ -8,6 +8,7 @@ Implement tooltips:
 - Unit-test
 - write the tooltips into the front end with the SVG
 - Display the tooltip -- on hover and on click
+- Improve or remove the titles
 
 ## Near term
 

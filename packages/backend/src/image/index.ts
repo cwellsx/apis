@@ -1,1 +1,1 @@
-export { createImage } from "./createImage";
+export { renderImage } from "./renderImage";

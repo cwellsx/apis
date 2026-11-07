@@ -14,7 +14,7 @@ const keyNodeId = "nodeId"; // instead of `declare const key: unique symbol;`
 export type NodeId = { readonly [keyNodeId]: string };
 export const nodeIdToText = (nodeId: NodeId): string => nodeId[keyNodeId];
 export const textToNodeId = (text: string): NodeId => ({ [keyNodeId]: text });
-export const nodeIdEquals = (x: NodeId, y: NodeId): boolean => nodeIdToText(x) == nodeIdToText(y);
+// export const nodeIdEquals = (x: NodeId, y: NodeId): boolean => nodeIdToText(x) == nodeIdToText(y);
 
 const keyEdgeId = "edgeId";
 
@@ -22,31 +22,4 @@ export type EdgeId = { readonly edgeId: string };
 export const edgeIdToText = (edgeId: EdgeId): string => edgeId[keyEdgeId];
 export const textToEdgeId = (text: string): EdgeId => ({ [keyEdgeId]: text });
 
-// want to distinguish the string from a NodeId versus the string from an EdgeId
-// could do this by adding a unique prefix e.g. `$` or `!` to the string value
-// instead look inside the string:
-// - NodeId strings contain `|`
-// - EdgeId strings are two NodeId strings joined by `||`
-
-export const edgeIdSeparator = "||";
-
-export const textIsEdgeId = (id: string): boolean => id.includes(edgeIdSeparator);
-
-export const textToNodeOrEdgeId = (text: string): NodeId | EdgeId =>
-  textIsEdgeId(text) ? textToEdgeId(text) : textToNodeId(text);
-
-export const makeEdgeId = (clientId: NodeId, serverId: NodeId): string =>
-  `${nodeIdToText(clientId)}${edgeIdSeparator}${nodeIdToText(serverId)}`;
-
-export const makeUniqueEdgeId = (edgeId: string, index: number): string => `${edgeId}-${index}`;
-
-export const edgeIdToNodeIds = (edgeId: EdgeId): { clientId: NodeId; serverId: NodeId } => {
-  const split = edgeIdToText(edgeId).split(edgeIdSeparator);
-  return { clientId: textToNodeId(split[0]), serverId: textToNodeId(split[1]) };
-};
-
 export const isEdgeId = (id: NodeId | EdgeId): id is EdgeId => (id as EdgeId).edgeId !== undefined;
-
-// TODO some of these e.g. related to edge ID are opaque to the front end
-// they're used to construct the image map
-// they could be removed from contracts-ui

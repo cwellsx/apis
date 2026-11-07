@@ -1,9 +1,8 @@
 import { AppEvent, AppView, OpenDataSource, PresenterApi } from "../contracts-app";
 import type { FilterEvent, GraphEvent, Node } from "../contracts-ui";
 import { isClosed, isEdgeId } from "../contracts-ui";
-import { createImage } from "../image";
+import { renderImage } from "../image";
 import { GraphNodes } from "../types";
-import { createImageData } from "./createImageData";
 import { SelectedView } from "./selectedView";
 
 export const createPresenter = async (selectedView: SelectedView): Promise<OpenDataSource> => {
@@ -11,9 +10,8 @@ export const createPresenter = async (selectedView: SelectedView): Promise<OpenD
 
   const showViews = async (needMenuItems: boolean): Promise<AppView[]> => {
     graphNodes = selectedView.viewState.getGraphNodes();
-    const imageData = createImageData(graphNodes);
-    const image = await createImage(imageData, selectedView.hasParentEdges);
-    const nodes: Node[] = graphNodes.roots;
+    const image = await renderImage(graphNodes.imageData, selectedView.hasParentEdges);
+    const nodes: Node[] = graphNodes.imageData.roots;
     const views: AppView[] = [
       { type: "nodes", payload: { nodes } },
       { type: "image", payload: { image } },

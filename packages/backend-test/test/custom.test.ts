@@ -2,7 +2,7 @@ import { DataSource } from "backend-app";
 import { AnyNodeType, Node, NodeType } from "backend-ui";
 import * as fs from "fs";
 import path from "path";
-import { createImage } from "sut/image";
+import { renderImage } from "sut/image";
 import { createSqlCustom } from "sut/openDataSource/createSqlCustom";
 import { getDbFilename } from "sut/openDataSource/getDbFilename";
 import { SqlCustom } from "sut/sqlCustom";
@@ -10,7 +10,6 @@ import { assertCustomJson, validateCustomJson } from "sut/sqlCustom/validateCust
 import type { GraphNodes, ViewState } from "sut/types";
 import { assert, deleteFileSync, log, readJsonT } from "sut/utils";
 import { CustomSelectedView } from "sut/viewModel";
-import { createImageData } from "sut/viewModel/createImageData";
 import { createCustomViewState } from "sut/viewState/createCustomViewState";
 import { printForest } from "sut/viewState/printForest";
 import { fileWrite, pathMkdir } from "./utils/file";
@@ -90,12 +89,11 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
       const viewState = createCustomViewState(sqlCustom, view.id);
       viewState.resetNodeStates();
       const graphNodes = viewState.getGraphNodes();
-      const printed = printForest(graphNodes.roots);
+      const printed = printForest(graphNodes.imageData.roots);
       const filenameRoot = `viewState-initial`;
       printLines(`${filenameRoot}.txt`, printed);
 
-      const imageData = createImageData(graphNodes);
-      const image = await createImage(imageData, true);
+      const image = await renderImage(graphNodes.imageData, true);
 
       assert(typeof image === "object");
       const filename = `${filenameRoot}.svg`;
@@ -130,14 +128,13 @@ describe("testViewStates", function () {
 
   const printViewState = async () => {
     const graphNodes = viewState.getGraphNodes();
-    const printed = printForest(graphNodes.roots);
+    const printed = printForest(graphNodes.imageData.roots);
     const filenameRoot = `viewState-${suffix++}`;
     printLines(`${filenameRoot}.txt`, printed);
 
-    assert(graphNodes.edges.length != 0);
+    assert(graphNodes.imageData.edges.length != 0);
 
-    const imageData = createImageData(graphNodes);
-    const image = await createImage(imageData, true);
+    const image = await renderImage(graphNodes.imageData, true);
     assert(typeof image === "object");
     const filename = `${filenameRoot}.svg`;
     fs.writeFileSync(fileViewState(filename), image.svg);

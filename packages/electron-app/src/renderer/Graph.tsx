@@ -1,4 +1,4 @@
-import { textToNodeOrEdgeId } from "backend-ui";
+import { EdgeId, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
 import * as React from "react";
 import "./Graph.css";
 import { log } from "./log";
@@ -65,13 +65,29 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     };
   });
 
+  const textToNodeOrEdgeId = (id: string, className: string): NodeId | EdgeId | undefined => {
+    switch (className) {
+      case "edge":
+        return textToEdgeId(id);
+      case "node":
+        return textToNodeId(id);
+      default:
+        return undefined;
+    }
+  };
+
   const onClick = (e: React.MouseEvent) => {
-    const target = e.target as SVGElement;
-    const id = target.getAttribute("id") ?? target.closest("[id]")?.getAttribute("id");
-    if (!id) return;
-    console.log(`Clicked id ${id}`);
+    const target = e.target;
+    if (!(target instanceof SVGElement)) return;
+    const element = target.closest("[id][class]");
+    if (!element) return;
+    const { id, className } = element;
+    console.log(`Clicked id="${id}" class="${className}"`);
+    const nodeOrEdgeId = textToNodeOrEdgeId(id, className);
+    if (!nodeOrEdgeId) return;
+
     props.onGraphEvent({
-      id: textToNodeOrEdgeId(id),
+      id: nodeOrEdgeId,
       event: {
         altKey: e.altKey,
         button: e.button,

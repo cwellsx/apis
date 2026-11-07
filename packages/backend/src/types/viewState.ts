@@ -1,10 +1,10 @@
 import type { AnyLeafType, AnyNodeType, Node, NodeId, NodeState } from "../contracts-ui";
+import { ImageData } from "./image";
 
 export type Call = { fromId: NodeId; toId: NodeId };
 
 export type GraphNodes = {
-  roots: Node[];
-  edges: Call[];
+  imageData: ImageData;
   leafType: AnyLeafType;
   getNode: (nodeId: NodeId) => Node;
   findNode: (predicate: (node: Node) => boolean) => Node | undefined;

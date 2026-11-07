@@ -4,7 +4,7 @@ import * as Id from "../id2";
 import { toCustomCallId } from "../id2";
 import { CustomNodeStates } from "../sqlCommon";
 import { SqlCustom } from "../sqlCustom";
-import type { Call, GraphNodes, ViewState } from "../types";
+import { nodeIdsToEdgeId, type Call, type GraphNodes, type ImageData, type ViewState } from "../types";
 import { assert, getOrThrow } from "../utils";
 import { CustomTop, Forest, Item, Numeric } from "./forest";
 import { makeNodes } from "./makeNodes";
@@ -76,7 +76,11 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    return { roots: forest.roots, edges: calls, leafType: NodeType.CustomLeaf, getNode, findNode };
+    const imageData: ImageData = {
+      roots: forest.roots,
+      edges: calls.map((call) => nodeIdsToEdgeId(call.fromId, call.toId)),
+    };
+    return { imageData, leafType: NodeType.CustomLeaf, getNode, findNode };
   };
 
   return { getGraphNodes, setNodeState, resetNodeStates };

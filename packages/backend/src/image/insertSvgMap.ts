@@ -1,5 +1,5 @@
 import { DOMParser, Element, Node, XMLSerializer } from "@xmldom/xmldom";
-import { assert } from "console";
+import { assert } from "../utils";
 import { computePaddedHitArea } from "./computePaddedHitArea";
 
 // Thickness (in px) of the padded hit area around each GraphViz spline.
@@ -16,30 +16,31 @@ const getTranslateIntegers = (transform: string): [number, number] => {
   return [parseInt(match[1], 10), parseInt(match[2], 10)];
 };
 
-function getFirstChildElement(element: Element): Element | null {
+const getFirstChildElement = (element: Element): Element | null => {
   let child = element.firstChild;
-
   while (child) {
-    if (child.nodeType === Node.ELEMENT_NODE) {
-      return child as Element;
-    }
-
+    if (child.nodeType === Node.ELEMENT_NODE) return child as Element;
     child = child.nextSibling;
   }
-
   return null;
-}
+};
+
+export const getTranslation = (svg: Element): [number, number] => {
+  // first child *element* (skips text nodes)
+  const transform = getFirstChildElement(svg)?.getAttribute("transform") ?? "";
+  assert(!!transform);
+  const translate = getTranslateIntegers(transform);
+  return [-translate[0], translate[1]];
+};
 
 export const insertSvgMap = (svgStr: string, mapStr: string): string => {
   const mapDoc = new DOMParser().parseFromString(mapStr, "image/svg+xml");
   const svgDoc = new DOMParser().parseFromString(svgStr, "image/svg+xml");
 
   const svg = svgDoc.getElementsByTagName("svg")[0];
-  // first child *element* (skips text nodes)
-  const transform = getFirstChildElement(svg)?.getAttribute("transform") ?? "";
-  assert(transform);
-  const translate = getTranslateIntegers(transform);
-  const [tx, ty] = [-translate[0], translate[1]];
+
+  //const [tx, ty] = [-4, 316];
+  const [tx, ty] = getTranslation(svg);
 
   const areas = mapDoc.getElementsByTagName("area");
   const edgeAreas = areas.filter(
@@ -48,7 +49,7 @@ export const insertSvgMap = (svgStr: string, mapStr: string): string => {
 
   for (const edgeArea of edgeAreas) {
     const id = edgeArea.getAttribute("id");
-    if (!id) continue;
+    assert(!!id);
 
     const coordsStr = edgeArea.getAttribute("coords");
     if (!coordsStr) continue;
@@ -60,7 +61,6 @@ export const insertSvgMap = (svgStr: string, mapStr: string): string => {
       points.push([coords[i], coords[i + 1]]);
     }
 
-    //const [tx, ty] = [-4, 316];
     const svgPoints: [number, number][] = points.map(([x, y]) => [x * 0.75 + tx, y * 0.75 - ty]);
 
     const padded = tryPaddedHitAreas ? computePaddedHitArea(svgPoints, PADDING) : svgPoints;

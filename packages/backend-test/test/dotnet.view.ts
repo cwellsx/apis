@@ -1,10 +1,9 @@
 import { assert, log } from "backend-api";
 import * as fs from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
-import { createImage } from "sut/image";
+import { renderImage } from "sut/image";
 import { Sql, ViewType } from "sut/sql2";
 import type { GraphNodes, ViewState } from "sut/types";
-import { createImageData } from "sut/viewModel/createImageData";
 import { createViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
 import { createDotNetTables } from "./utils/createDotNetTables";
@@ -62,14 +61,13 @@ describe("testViewStates", function () {
 
       const printViewState = async () => {
         const graphNodes = viewState.getGraphNodes();
-        const printed = printForest(graphNodes.roots);
+        const printed = printForest(graphNodes.imageData.roots);
         const filenameRoot = `${viewType}-${suffix++}`;
         printLines(`${filenameRoot}.txt`, printed);
 
-        assert(graphNodes.edges.length != 0);
+        assert(graphNodes.imageData.edges.length != 0);
 
-        const imageData = createImageData(graphNodes);
-        const image = await createImage(imageData, false);
+        const image = await renderImage(graphNodes.imageData, false);
         assert(typeof image === "object");
         const filename = `${filenameRoot}.svg`;
         fs.writeFileSync(fileViewState(filename), image.svg);

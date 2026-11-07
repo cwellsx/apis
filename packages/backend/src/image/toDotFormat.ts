@@ -1,12 +1,13 @@
 import { isMixed, nodeIdToText, type Node } from "../contracts-ui";
-import type { ImageData } from "../types";
+import { edgeIdToNodeIdText, nodeIdTextToEdgeIdText, type ImageData } from "../types";
 import { assert, getOrThrow, options } from "../utils";
-import { DotNode, getDotNode } from "./getDotNode";
+import { DotNode, toDotNode } from "./toDotNode";
+import { EdgeAttributes, escapeDotString, toEdgeAttributes } from "./toEdgeAttributes";
 
-export const getDotFormat = (
+export const toDotFormat = (
   imageData: ImageData,
   hasParentEdges: boolean
-): { lines: string[]; dotNodeMap: Map<string, DotNode>; edgeTooltips: { [edgeId: string]: string } } => {
+): { lines: string[]; dotNodeMap: Map<string, DotNode>; edgeLabels: Map<string, string> } => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   lines.push("  labeljust=l");
@@ -18,7 +19,7 @@ export const getDotFormat = (
   if (hasParentEdges) lines.push("  compound=true");
 
   const dotNodeMap = new Map<string, DotNode>();
-  const getNode = (nodeId: string): DotNode => getOrThrow(dotNodeMap, nodeId);
+  const getDotNode = (nodeId: string): DotNode => getOrThrow(dotNodeMap, nodeId);
 
   // push the tree of nodes -- use subgraphs for exapanded groups
   const pushLayer = (layer: Node[], level: number): void => {
@@ -27,11 +28,11 @@ export const getDotFormat = (
     for (const node of layer) {
       if (!node.isVisible && !isMixed(node)) continue;
 
-      const dotNode = getDotNode(node);
+      const dotNode = toDotNode(node);
       dotNodeMap.set(dotNode.id, dotNode);
 
       const shape = "rect";
-      const label = dotNode.label.replace("\\", "\\\\");
+      const shortLabel = escapeDotString(dotNode.shortLabel);
 
       let inline = Object.entries(dotNode.attributes)
         .map(([key, value]) => `${key}="${value}"`)
@@ -42,13 +43,13 @@ export const getDotFormat = (
         case "none":
         case "collapsed":
           lines.push(
-            `${prefix}"${dotNode.id}" [shape=${shape}, id="${dotNode.id}", label="${label}", href=foo${inline}];`
+            `${prefix}"${dotNode.id}" [shape=${shape}, id="${dotNode.id}", label="${shortLabel}", href=foo${inline}];`
           );
           break;
         case "expanded":
           lines.push(`${prefix}subgraph "cluster_${dotNode.id}" {`);
           for (const [key, value] of Object.entries(dotNode.attributes)) lines.push(`${prefix}  ${key}="${value}"`);
-          lines.push(`${prefix}  label="${label}"`);
+          lines.push(`${prefix}  label="${shortLabel}"`);
           lines.push(`${prefix}  id="${dotNode.id}"`);
           lines.push(`${prefix}  href=foo`);
           pushLayer(node.children, level + 1);
@@ -67,58 +68,65 @@ export const getDotFormat = (
     }
   };
 
-  pushLayer(imageData.nodes, 0);
+  pushLayer(imageData.roots, 0);
 
-  // used to override the title assigned to edge labels
-  const edgeTooltips: { [edgeId: string]: string } = {};
+  // used to write aria-label instead of title into the SVG
+  const edgeLabels = new Map<string, string>();
 
   // push the map of grouped edges
-  imageData.edges.forEach(({ clientId, serverId, edgeId, labels, titles }) => {
-    type EdgeAttribute = { key: string; value: string };
-    const edgeAttributes: EdgeAttribute[] = [];
+  imageData.edges.forEach((edge) => {
+    // accumulate attributes to be written as string
+    const attributeValues: Record<string, string> = {};
+
+    // currently don't want extra edge attributes for reasons explained in comments, but could add them here
+    const edgeAttributes: EdgeAttributes = {};
+    toEdgeAttributes(edgeAttributes, attributeValues);
+
+    // GraphViz supports edges to clusters but in a hacky way as follows
 
     const adjust = (nodeId: string, key: string): string => {
       const dotNode = dotNodeMap.get(nodeId);
       assert(!!dotNode, "Edge to undefined node");
       let node = dotNode.node;
+      // normal case is that node is not a cluster
       if (node.collapsible !== "expanded") return nodeId;
       assert(hasParentEdges, "Unexpected edge to cluster");
+      // else add "ltail" or "lhead" attribute and return NodeId of non-clustered child
       // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
-      edgeAttributes.push({ key, value: `cluster_${nodeId}` });
+      attributeValues[key] = `cluster_${nodeId}`;
       while (node.collapsible === "expanded") {
         node = node.children[0];
       }
       return nodeIdToText(node.nodeId);
     };
 
+    let { clientId, serverId } = edgeIdToNodeIdText(edge);
     clientId = adjust(clientId, "ltail");
     serverId = adjust(serverId, "lhead");
 
-    // use \l instead of \r\n to left-justify labels
-    // https://stackoverflow.com/questions/13103584/graphviz-how-do-i-make-the-text-in-labels-left-aligned
-    const edgeLabel = labels.map((s) => s + "\\l").join("");
-    // use \r\b in tooltips, that's OK in the XML
-    const edgeTitle = `${getNode(clientId).label} → ${getNode(serverId)?.label ?? "?"}`;
-    const edgeTooltip = [edgeTitle, ...titles].join("\r\n");
+    // write the altered EdgeId
 
-    edgeAttributes.push(
-      ...[
-        { key: "label", value: edgeLabel },
-        { key: "tooltip", value: edgeTooltip },
-        { key: "id", value: edgeId },
-        { key: "href", value: "foo" },
-      ]
-    );
+    const edgeId = nodeIdTextToEdgeIdText(clientId, serverId);
+    attributeValues.id = edgeId;
 
-    const attributes = edgeAttributes.map((attribute) => `${attribute.key}="${attribute.value}"`).join(", ");
+    // need href otherwise we won't get area in cmapx -- then remove the <a> in post-processing
 
-    // const labelAttributes = `, label="${edgeLabel}", tooltip="${edgeTooltip}"`;
-    // lines.push(`  "${clientId}" -> "${serverId}" [id="${edgeId}", href=foo${labelAttributes}]`);
+    attributeValues.href = "foo";
+
+    // get label to write as aria-label
+
+    const label = `${getDotNode(clientId).label} → ${getDotNode(serverId).label}`;
+    edgeLabels.set(edgeId, label);
+
+    // get attributes as string and add to the dot file
+
+    const attributes = Object.entries(attributeValues)
+      .map(([key, value]) => `${key}="${value}"`)
+      .join(", ");
+
     lines.push(`  "${clientId}" -> "${serverId}" [${attributes}]`);
-
-    edgeTooltips[edgeId] = edgeTooltip;
   });
 
   lines.push("}");
-  return { lines, dotNodeMap, edgeTooltips };
+  return { lines, dotNodeMap, edgeLabels };
 };

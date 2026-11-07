@@ -3,8 +3,7 @@ import { AnyNodeType, Node, nodeIdToText } from "../contracts-ui";
 export type DotNode = {
   id: string;
   label: string;
-  // if the label is shortened the tooltip is still longer
-  tooltip: string;
+  shortLabel: string;
   nodeType: AnyNodeType;
   attributes: { [key: string]: string };
   node: Node;
@@ -13,11 +12,11 @@ export type DotNode = {
 const getShortLabel = (label: string, parentLabel: string | undefined): string =>
   !parentLabel || !label.startsWith(parentLabel) ? label : "(*)" + label.substring(parentLabel.length);
 
-export const getDotNode = (node: Node): DotNode => {
+export const toDotNode = (node: Node): DotNode => {
   const id = nodeIdToText(node.nodeId);
-  const tooltip = node.label;
+  const label = node.label;
   // const className = getAreaClass(node.collapsible);
-  const label = getShortLabel(node.label, node.parent?.label);
+  const shortLabel = getShortLabel(node.label, node.parent?.label);
   const nodeType = node.type;
 
   const attributes: { [key: string]: string } = {};
@@ -34,5 +33,5 @@ export const getDotNode = (node: Node): DotNode => {
       break;
   }
 
-  return { id, label, tooltip, nodeType, attributes, node };
+  return { id, label, shortLabel, nodeType, attributes, node };
 };
