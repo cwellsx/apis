@@ -1,5 +1,6 @@
 import { appendFileSync, getLogFilename } from "./fs";
 import { log } from "./log";
+import { stringify } from "./stringify";
 
 type Event = "on" | "send";
 
@@ -21,12 +22,8 @@ const logMethodName = (event: Event, methodName: string, args: unknown[]): void 
   const dateString = `${now.getFullYear()}${pad2(now.getMonth())}${pad2(now.getDate())}`;
   const timeString = `${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}${pad3(now.getMilliseconds())}`;
   const logFilePath = getLogFilename(`${dateString}-${timeString}-${event}-${methodName}.json`);
-
-  const replacer: (this: unknown, key: string, value: unknown) => unknown = (key, value) =>
-    key === "parent" ? "(circular)" : value;
-
   const value = args.length == 1 ? args[0] : args;
-  const json = JSON.stringify(value, replacer, " ");
+  const json = stringify(value);
   appendFileSync(logFilePath, json);
 };
 

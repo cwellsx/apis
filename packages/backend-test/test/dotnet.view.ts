@@ -1,9 +1,10 @@
 import { assert, log } from "backend-api";
 import * as fs from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
-import { renderImage } from "sut/image";
+import { createImage } from "sut/image/renderImage";
 import { Sql, ViewType } from "sut/sql2";
 import type { GraphNodes, ViewState } from "sut/types";
+import { stringify } from "sut/utils";
 import { createViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
 import { createDotNetTables } from "./utils/createDotNetTables";
@@ -67,11 +68,15 @@ describe("testViewStates", function () {
 
         assert(graphNodes.imageData.edges.length != 0);
 
-        const image = await renderImage(graphNodes.imageData, false);
-        assert(typeof image === "object");
-        const filename = `${filenameRoot}.svg`;
-        fs.writeFileSync(fileViewState(filename), image.svg);
-        log(filename);
+        const result = await createImage(graphNodes.imageData, false);
+        assert(typeof result === "object");
+
+        fs.writeFileSync(fileViewState(`${filenameRoot}.svg`), result.svg);
+        fs.writeFileSync(fileViewState(`${filenameRoot}.dot`), result.dotText);
+        fs.writeFileSync(fileViewState(`${filenameRoot}.map`), result.mapXml);
+        fs.writeFileSync(fileViewState(`${filenameRoot}.json`), stringify(graphNodes.imageData));
+
+        log(`${filenameRoot}.svg`);
       };
 
       it("initial state", async function () {

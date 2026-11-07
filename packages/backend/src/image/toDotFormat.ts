@@ -7,7 +7,7 @@ import { EdgeAttributes, escapeDotString, toEdgeAttributes } from "./toEdgeAttri
 export const toDotFormat = (
   imageData: ImageData,
   hasParentEdges: boolean
-): { lines: string[]; dotNodeMap: Map<string, DotNode>; edgeLabels: Map<string, string> } => {
+): { lines: string[]; countImageNodes: number; nodeLabels: Map<string, string>; edgeLabels: Map<string, string> } => {
   const lines: string[] = [];
   lines.push("digraph SRC {");
   lines.push("  labeljust=l");
@@ -17,6 +17,10 @@ export const toDotFormat = (
 
   // https://stackoverflow.com/questions/2012036/graphviz-how-to-connect-subgraphs
   if (hasParentEdges) lines.push("  compound=true");
+
+  // used to write aria-label instead of title into the SVG
+  const nodeLabels = new Map<string, string>();
+  const edgeLabels = new Map<string, string>();
 
   const dotNodeMap = new Map<string, DotNode>();
   const getDotNode = (nodeId: string): DotNode => getOrThrow(dotNodeMap, nodeId);
@@ -30,6 +34,7 @@ export const toDotFormat = (
 
       const dotNode = toDotNode(node);
       dotNodeMap.set(dotNode.id, dotNode);
+      nodeLabels.set(dotNode.id, dotNode.label);
 
       const shape = "rect";
       const shortLabel = escapeDotString(dotNode.shortLabel);
@@ -69,9 +74,6 @@ export const toDotFormat = (
   };
 
   pushLayer(imageData.roots, 0);
-
-  // used to write aria-label instead of title into the SVG
-  const edgeLabels = new Map<string, string>();
 
   // push the map of grouped edges
   imageData.edges.forEach((edge) => {
@@ -128,5 +130,5 @@ export const toDotFormat = (
   });
 
   lines.push("}");
-  return { lines, dotNodeMap, edgeLabels };
+  return { lines, countImageNodes: dotNodeMap.size, nodeLabels, edgeLabels };
 };

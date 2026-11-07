@@ -1,6 +1,89 @@
 import { DOMParser, Element, Node, XMLSerializer } from "@xmldom/xmldom";
-import { assert } from "../utils";
+import { assert, getOrThrow } from "../utils";
 import { computePaddedHitArea } from "./computePaddedHitArea";
+
+export const insertSvgMap = (
+  svgStr: string,
+  mapStr: string,
+  nodeLabels: Map<string, string>,
+  edgeLabels: Map<string, string>
+): string => {
+  const mapDoc = new DOMParser().parseFromString(mapStr, "image/svg+xml");
+  const svgDoc = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+
+  const svg = svgDoc.getElementsByTagName("svg")[0];
+
+  //const [tx, ty] = [-4, 316];
+  const translation = getTranslation(svg);
+
+  const areas = mapDoc.getElementsByTagName("area");
+
+  // get edges from the area elements in the map
+  const areaEdges = areas
+    .filter((a) => a.getAttribute("shape") === "poly")
+    .map((a) => ({ id: a.getAttribute("id")!, coords: a.getAttribute("coords")! }));
+
+  assert(
+    areaEdges.every((ae) => ae.id.includes("||")),
+    "every areaEdge.id must contain ||"
+  );
+  assert(
+    Array.from(areas).every((a) => !a.getAttribute("id")?.includes("||") || a.getAttribute("shape") === "poly"),
+    "every map element with || in its id must be a polygon"
+  );
+
+  for (const { id, coords } of areaEdges) {
+    // create a new polygon with class hit-edge whose points are translated from the area into SVG coordinates
+    const polygon = svgDoc.createElement("polygon");
+    polygon.setAttribute("class", "hit-edge");
+    polygon.setAttribute("points", transformPoints(coords, translation));
+    polygon.setAttribute("data-from-id", id);
+
+    // find the SVG group for this edge
+    const svgEdge = svgDoc.getElementById(id);
+    assert(!!svgEdge);
+
+    // find the path element within this group and insert the hit-edge polygon before it
+    const svgPaths = svgEdge.getElementsByTagName("path");
+    assert(svgPaths.length == 1);
+    const svgPath = svgPaths[0];
+    const svgParent = svgPath.parentElement;
+    assert(!!svgParent);
+    svgParent.insertBefore(polygon, svgPath);
+    svgParent.insertBefore(svgDoc.createTextNode("\n"), svgPath);
+
+    const label = getOrThrow(edgeLabels, id);
+    svgEdge.setAttribute("aria-label", label);
+  }
+
+  for (const [id, label] of nodeLabels.entries()) {
+    const svgNode = svgDoc.getElementById(id);
+    assert(!!svgNode);
+    svgNode.setAttribute("aria-label", label);
+  }
+
+  const style = svgDoc.createElement("style");
+  style.appendChild(
+    svgDoc.createTextNode(`
+  .hit-edge {
+    fill: transparent;
+    stroke: transparent;
+    stroke: blue;
+  }
+  .hit-edge:hover {
+    stroke: green;
+  }
+  .hit-edge:hover ~ path {
+    stroke: red;
+  }
+`)
+  );
+
+  svg.insertBefore(style, svg.firstChild);
+
+  const newSvg = new XMLSerializer().serializeToString(svgDoc);
+  return newSvg;
+};
 
 // Thickness (in px) of the padded hit area around each GraphViz spline.
 const PADDING = 5;
@@ -25,7 +108,7 @@ const getFirstChildElement = (element: Element): Element | null => {
   return null;
 };
 
-export const getTranslation = (svg: Element): [number, number] => {
+const getTranslation = (svg: Element): [number, number] => {
   // first child *element* (skips text nodes)
   const transform = getFirstChildElement(svg)?.getAttribute("transform") ?? "";
   assert(!!transform);
@@ -33,73 +116,18 @@ export const getTranslation = (svg: Element): [number, number] => {
   return [-translate[0], translate[1]];
 };
 
-export const insertSvgMap = (svgStr: string, mapStr: string): string => {
-  const mapDoc = new DOMParser().parseFromString(mapStr, "image/svg+xml");
-  const svgDoc = new DOMParser().parseFromString(svgStr, "image/svg+xml");
+const transformPoints = (coordsStr: string, translation: [number, number]): string => {
+  const coords = coordsStr.split(",").map((s) => parseInt(s.trim(), 10));
 
-  const svg = svgDoc.getElementsByTagName("svg")[0];
-
-  //const [tx, ty] = [-4, 316];
-  const [tx, ty] = getTranslation(svg);
-
-  const areas = mapDoc.getElementsByTagName("area");
-  const edgeAreas = areas.filter(
-    (element) => element.getAttribute("shape") == "poly" && (element.getAttribute("id")?.includes("||") ?? false)
-  );
-
-  for (const edgeArea of edgeAreas) {
-    const id = edgeArea.getAttribute("id");
-    assert(!!id);
-
-    const coordsStr = edgeArea.getAttribute("coords");
-    if (!coordsStr) continue;
-
-    const coords = coordsStr.split(",").map((s) => parseInt(s.trim(), 10));
-
-    const points: [number, number][] = [];
-    for (let i = 0; i < coords.length; i += 2) {
-      points.push([coords[i], coords[i + 1]]);
-    }
-
-    const svgPoints: [number, number][] = points.map(([x, y]) => [x * 0.75 + tx, y * 0.75 - ty]);
-
-    const padded = tryPaddedHitAreas ? computePaddedHitArea(svgPoints, PADDING) : svgPoints;
-    const svgPointStr = padded.map((p) => `${p[0]},${p[1]}`).join(" ");
-
-    const polygon = svgDoc.createElement("polygon");
-    polygon.setAttribute("class", "hit-edge");
-    polygon.setAttribute("points", svgPointStr);
-    polygon.setAttribute("data-from-id", id);
-
-    const svgEdge = svgDoc.getElementById(id);
-    if (!svgEdge) continue;
-    const svgPaths = svgEdge.getElementsByTagName("path");
-    if (svgPaths.length != 1) continue;
-    const svgPath = svgPaths[0];
-    const svgParent = svgPath.parentElement;
-    if (!svgParent) continue;
-    svgParent.insertBefore(polygon, svgPath);
+  const points: [number, number][] = [];
+  for (let i = 0; i < coords.length; i += 2) {
+    points.push([coords[i], coords[i + 1]]);
   }
 
-  const style = svgDoc.createElement("style");
-  style.appendChild(
-    svgDoc.createTextNode(`
-  .hit-edge {
-    fill: transparent;
-    stroke: transparent;
-    stroke: blue;
-  }
-  .hit-edge:hover {
-    stroke: green;
-  }
-  .hit-edge:hover ~ path {
-    stroke: red;
-  }
-`)
-  );
+  const [tx, ty] = translation;
+  const svgPoints: [number, number][] = points.map(([x, y]) => [x * 0.75 + tx, y * 0.75 - ty]);
 
-  svg.insertBefore(style, svg.firstChild);
-
-  const newSvg = new XMLSerializer().serializeToString(svgDoc);
-  return newSvg;
+  const padded = tryPaddedHitAreas ? computePaddedHitArea(svgPoints, PADDING) : svgPoints;
+  const svgPointStr = padded.map((p) => `${p[0]},${p[1]}`).join(" ");
+  return svgPointStr;
 };

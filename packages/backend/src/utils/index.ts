@@ -9,4 +9,5 @@ export { options } from "./options";
 export * from "./paths";
 export * from "./remove";
 export { distinctor, getMapped, getOrSet, last, mapOfMaps, remove, replace, uniqueStrings } from "./remove";
+export { stringify } from "./stringify";
 export { hookMethod, wrapApi } from "./wrapApi";

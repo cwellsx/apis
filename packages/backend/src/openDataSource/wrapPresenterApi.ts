@@ -1,5 +1,5 @@
 import { AppEvent, PresenterApi } from "../contracts-app";
-import { log, options } from "../utils";
+import { log, options, stringify } from "../utils";
 
 const logTimeStamp = (): void => {
   const now = new Date(Date.now());
@@ -12,11 +12,8 @@ const logTimeStamp = (): void => {
 
 const logData = (args: unknown[]): void => {
   logTimeStamp();
-  const replacer: (this: unknown, key: string, value: unknown) => unknown = (key, value) =>
-    key === "parent" ? "(circular)" : value;
-
   const value = args.length == 1 ? args[0] : args;
-  const json = JSON.stringify(value, replacer, " ");
+  const json = stringify(value);
   log(json);
 };
 

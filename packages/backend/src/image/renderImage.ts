@@ -6,16 +6,15 @@ import { insertSvgMap } from "./insertSvgMap";
 import { toDotFormat } from "./toDotFormat";
 import { runVizJs } from "./viz-js";
 
-export const renderImage = async (imageData: ImageData, hasParentEdges: boolean): Promise<Image | string> => {
+export const createImage = async (
+  imageData: ImageData,
+  hasParentEdges: boolean
+): Promise<{ dotText: string; mapXml: string; svg: string } | string> => {
   log("createImage");
-
   if (!imageData.edges.length && !imageData.roots.length) return "Empty graph, no nodes to display";
 
-  // convert to *.dot file format lines
-  const { lines, dotNodeMap, edgeLabels } = toDotFormat(imageData, hasParentEdges);
+  const { lines, countImageNodes, nodeLabels, edgeLabels } = toDotFormat(imageData, hasParentEdges);
   const dotText = lines.join(os.EOL);
-
-  const countImageNodes = dotNodeMap.size;
 
   const tooBig: string[] = [];
   if (imageData.edges.length > options.maxImageSize.edges)
@@ -24,8 +23,15 @@ export const renderImage = async (imageData: ImageData, hasParentEdges: boolean)
     tooBig.push(`nodes (actually ${countImageNodes} maximum is ${options.maxImageSize.nodes})`);
   if (tooBig.length) return `Too many ${tooBig.join(", and ")}.`;
 
-  const svg = await runVizJs(dotText, "svg");
-  const xml = await runVizJs(dotText, "cmapx");
+  const svgRaw = await runVizJs(dotText, "svg");
+  const mapXml = await runVizJs(dotText, "cmapx");
 
-  return { svg: insertSvgMap(svg, xml) };
+  const svg = insertSvgMap(svgRaw, mapXml, nodeLabels, edgeLabels);
+  return { dotText, mapXml, svg };
+};
+
+export const renderImage = async (imageData: ImageData, hasParentEdges: boolean): Promise<Image | string> => {
+  const result = await createImage(imageData, hasParentEdges);
+  if (typeof result === "string") return result;
+  return { svg: result.svg };
 };
