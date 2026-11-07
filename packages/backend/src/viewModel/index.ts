@@ -1,4 +1,4 @@
+export { createCustomSelectedView } from "./createCustomSelectedView";
+export { createDotnetSelectedView } from "./createDotnetSelectedView";
 export { createPresenter } from "./createPresenter";
-export { CustomSelectedView } from "./customSelectedView";
-export { DotnetSelectedView } from "./dotnetSelectedView";
 export type { SelectedView } from "./selectedView";

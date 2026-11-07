@@ -9,7 +9,7 @@ import { SqlCustom } from "sut/sqlCustom";
 import { assertCustomJson, validateCustomJson } from "sut/sqlCustom/validateCustomJson";
 import type { GraphNodes, ViewState } from "sut/types";
 import { assert, deleteFileSync, log, readJsonT } from "sut/utils";
-import { CustomSelectedView } from "sut/viewModel";
+import { createCustomSelectedView } from "sut/viewModel";
 import { createCustomViewState } from "sut/viewState/createCustomViewState";
 import { printForest } from "sut/viewState/printForest";
 import { fileWrite, pathMkdir } from "./utils/file";
@@ -118,7 +118,7 @@ describe("testViewStates", function () {
     const fullPath = path.join(dirCustom, "Coclasses.json");
     const dataSource: DataSource = { path: fullPath, type: "customJson" };
     tables = await createSqlCustom(dataSource); // runs once
-    viewState = new CustomSelectedView(tables).viewState;
+    viewState = createCustomSelectedView(tables).viewState;
     viewState.resetNodeStates();
   });
 
