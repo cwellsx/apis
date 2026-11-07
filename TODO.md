@@ -12,7 +12,6 @@ Implement tooltips:
 
 ## Near term
 
-- Remove xml-js
 - Implement and test the appOptions round-trip -- font size and zoom
 - Fix useEffect- Delete Panes.tsx and SplitPane and split-pane-react
 - Debug - hourglass and prevent overlapping input events from user
