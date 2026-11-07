@@ -32,6 +32,10 @@ export const insertSvgMap = (
     "every map element with || in its id must be a polygon"
   );
 
+  // The only polygons GraphViz emits inside an edge group are arrow-heads; mark them
+  // before the hit-test polygons are inserted below.
+  addArrowClasses(svgDoc);
+
   for (const { id, coords } of areaEdges) {
     // create a new polygon with class hit-edge whose points are translated from the area into SVG coordinates
     const polygon = svgDoc.createElement("polygon");
@@ -73,7 +77,14 @@ export const insertSvgMap = (
   .hit-edge:hover {
     stroke: green;
   }
-  .hit-edge:hover ~ path {
+  .edge:hover path {
+    stroke: red;
+  }
+  .edge:hover .arrow {
+    fill: red;
+    stroke: red;
+  }
+  .node:hover polygon {
     stroke: red;
   }
 `)
@@ -81,8 +92,11 @@ export const insertSvgMap = (
 
   svg.insertBefore(style, svg.firstChild);
 
+  removeAnchorWrappers(svgDoc);
+
   const newSvg = new XMLSerializer().serializeToString(svgDoc);
-  return newSvg;
+  // removing the <title>/<g>/<a> wrappers leaves blank lines; collapse them
+  return newSvg.replace(/\n{2,}/g, "\n");
 };
 
 // Thickness (in px) of the padded hit area around each GraphViz spline.
@@ -138,5 +152,94 @@ const addLabel = (svgDoc: Document, element: Element, label: string): void => {
   if (parent) {
     parent.insertBefore(svgDoc.createComment(label), element);
     parent.insertBefore(svgDoc.createTextNode("\n"), element);
+  }
+};
+
+/*
+
+SVG looks like this when removeAnchorWrappers is run
+
+```
+<!--Mono.Cecil-->
+<g id="1073741828" class="node" aria-label="Mono.Cecil">
+<title>1073741828</title>
+<g id="a_1073741828"><a xlink:href="foo" xlink:title="Mono.Cecil">
+<polygon fill="#fbfbfb" stroke="black" points="439.79,-204 382.21,-204 382.21,-168 439.79,-168 439.79,-204"/>
+<text xml:space="preserve" text-anchor="middle" x="411" y="-183" font-family="Segoe UI" font-size="10.00">Mono.Cecil</text>
+</a>
+</g>
+</g>
+
+<!--Core → Mono.Cecil-->
+<g id="1073741825||1073741828" class="edge" aria-label="Core → Mono.Cecil">
+<title>1073741825-&gt;1073741828</title>
+<g id="a_1073741825||1073741828"><a xlink:href="foo">
+<polygon class="hit-edge" points="70.25,-256.75 198.5,-242.5 283.25,-227.5 373.25,-205 369.5,-203.5 282.5,-223.75 197.75,-238.75 71,-253" data-from-id="1073741825||1073741828"/>
+<path fill="none" stroke="black" d="M70.49,-255.02C126.05,-250.52 255.58,-237.43 371.06,-204.14"/>
+<polygon fill="black" stroke="black" points="371.78,-207.57 380.38,-201.39 369.8,-200.86 371.78,-207.57"/>
+</a>
+</g>
+</g>
+```
+
+Effect on the output -- for each node/edge/cluster, this:
+
+```javascript
+<g id="X" class="node|edge|cluster">
+  <title>...</title>            <-- removed
+  <g id="a_X">                  <-- removed
+    <a ...>                     <-- removed
+      polygon / path / text     <-- reparented under the class <g>
+    </a>
+  </g>
+</g>
+```
+
+becomes:
+
+```javascript
+<g id="X" class="node|edge|cluster">
+  polygon / path / text
+</g>
+```
+
+
+*/
+
+// GraphViz wraps the body of each node/edge/cluster as <g id="a_..."><a>...</a></g>,
+// with a sibling <title> emitted before it. Remove those wrappers, reparenting the
+// children of <a> (polygon/path/text) directly under the enclosing class <g>.
+const removeAnchorWrappers = (svgDoc: Document): void => {
+  for (const anchor of Array.from(svgDoc.getElementsByTagName("a"))) {
+    const wrapper = anchor.parentElement; // <g id="a_...">
+    assert(!!wrapper);
+    const group = wrapper.parentElement; // <g class="node|edge|cluster">
+    assert(!!group);
+
+    // reparent the children of <a> under the enclosing <g>, in place of the wrapper
+    for (const child of Array.from(anchor.childNodes)) {
+      group.insertBefore(child, wrapper);
+    }
+
+    // remove the now-empty wrapper (which still contains the empty <a>)
+    group.removeChild(wrapper);
+
+    // remove the <title> that GraphViz emitted before the wrapper
+    const title = Array.from(group.childNodes).find(
+      (child) => child.nodeType === Node.ELEMENT_NODE && (child as Element).tagName === "title"
+    );
+    if (title) group.removeChild(title);
+  }
+};
+
+// The only polygons GraphViz emits inside an edge group are the arrow-heads. Mark every
+// such polygon with class="arrow". This must run before the hit-test polygons are
+// inserted, so that only the original polygons are matched.
+const addArrowClasses = (svgDoc: Document): void => {
+  for (const group of Array.from(svgDoc.getElementsByTagName("g"))) {
+    if (group.getAttribute("class") !== "edge") continue;
+    for (const polygon of Array.from(group.getElementsByTagName("polygon"))) {
+      polygon.setAttribute("class", "arrow");
+    }
   }
 };

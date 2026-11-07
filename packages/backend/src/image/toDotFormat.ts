@@ -9,7 +9,7 @@ export const toDotFormat = (
   hasParentEdges: boolean
 ): { lines: string[]; countImageNodes: number; nodeLabels: Map<string, string>; edgeLabels: Map<string, string> } => {
   const lines: string[] = [];
-  lines.push("digraph SRC {");
+  lines.push("digraph {");
   lines.push("  labeljust=l");
   lines.push(`  graph [fontname="Segoe UI", fontsize=10];`);
   lines.push(`  edge [fontname="Segoe UI", fontsize=10];`);
