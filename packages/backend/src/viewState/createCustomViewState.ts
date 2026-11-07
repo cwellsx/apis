@@ -1,10 +1,11 @@
-import type { Node, NodeId } from "../contracts-ui";
+import type { EdgeId, Node, NodeId } from "../contracts-ui";
 import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
 import * as Id from "../id2";
 import { toCustomCallId } from "../id2";
 import { CustomNodeStates } from "../sqlCommon";
 import { SqlCustom } from "../sqlCustom";
-import { nodeIdsToEdgeId, type Call, type GraphNodes, type ImageData, type ViewState } from "../types";
+import type { GraphNodes, ImageData, ViewState } from "../types";
+import { nodeIdsToEdgeId } from "../types";
 import { assert, getOrThrow } from "../utils";
 import { CustomTop, Forest, Item, Numeric } from "./forest";
 import { makeNodes } from "./makeNodes";
@@ -20,13 +21,13 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
     return textToNodeId(text);
   };
 
-  const getCalls = (forest: Forest): Call[] => {
+  const getCalls = (forest: Forest): EdgeId[] => {
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && node.isVisible && node.type != NodeType.CustomGroup)
       .map((node) => toCustomCallId(node.nodeId, node.type));
     const calls = sqlTables.edges.selectWhereIn(["fromId", "toId"], leafIds);
-    return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
+    return calls.map((call) => nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId)));
   };
 
   const groupToItem = (row: SqlCustom.Group): Item<string> => ({ id: row.id, name: row.name });
@@ -76,10 +77,7 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    const imageData: ImageData = {
-      roots: forest.roots,
-      edges: calls.map((call) => nodeIdsToEdgeId(call.fromId, call.toId)),
-    };
+    const imageData: ImageData = { roots: forest.roots, edges: calls };
     return { imageData, leafType: NodeType.CustomLeaf, getNode, findNode };
   };
 

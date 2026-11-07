@@ -18,6 +18,7 @@ Implement tooltips:
 - Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
 - Implement - assembly details and call graphs for Core data -- see e.g. MORE/DETAILS.md
+- Make the display of namespace optional -- requires changing isParent
 
 ### Tooltips
 

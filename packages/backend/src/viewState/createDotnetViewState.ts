@@ -1,18 +1,19 @@
 import type { AnyLeafType, Node, NodeId } from "../contracts-ui";
-import { isParent, nodeIdToText, NodeType } from "../contracts-ui";
+import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
 import * as Id from "../id2";
 import { toAnyBigId } from "../id2";
 import type { Sql, ViewType } from "../sql2";
 import { netFrameworkGroup } from "../sql2";
 import { NodeStates, SqlCommon } from "../sqlCommon";
-import { nodeIdsToEdgeId, type Call, type GraphNodes, type ImageData, type ViewState } from "../types";
+import type { GraphNodes, ImageData, ViewState } from "../types";
+import { nodeIdsToEdgeId } from "../types";
 import { assert, getOrThrow } from "../utils";
 import type { Forest, RootItem, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
 import { toNodeId } from "./toNodeId";
 
-export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
+export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
   const netFrameworkItem: RootItem<number> = {
     item: { id: netFrameworkGroup.id, name: netFrameworkGroup.name },
     type: NodeType.Group,
@@ -98,16 +99,16 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
     assert(false);
   };
 
-  const getCalls = (forest: Forest): Call[] => {
+  const getCalls = (forest: Forest): Sql.Call[] => {
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && node.isVisible)
       .map((node) => toAnyBigId(node.nodeId, node.type));
     const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
-    return calls.map((call) => ({ fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) }));
+    return calls;
   };
 
-  const getPopup = (call: Call): Sql.Call[] => {
+  const getPopup = (call: Sql.Call): Sql.Call[] => {
     /*
       SELECT calls.fromId, calls.toId
       FROM calls
@@ -116,13 +117,17 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
       JOIN ancestors AS toAncestor
         ON calls.toId = toAncestor.descendentId
       WHERE fromAncestor.ancestorId = ?
-        AND toAncestor.ancestorId = ?;
+        AND toAncestor.ancestorId = ?
+        AND fromAncestor.isParent = 1
+        AND toAncestor.isParent = 1;
     */
     const descendantCalls: Sql.Call[] = sqlTables.calls
       .join(sqlTables.ancestors, "descendentId", "fromId", { rightAlias: "fromAncestor" })
       .join(sqlTables.ancestors, "descendentId", sqlTables.calls, "toId", { rightAlias: "toAncestor" })
       .where("fromAncestor.ancestorId = ?", call.fromId)
       .where("toAncestor.ancestorId = ?", call.toId)
+      .where("fromAncestor.isParent = 1")
+      .where("toAncestor.isParent = 1")
       .selectAll<Sql.Call>({ fromId: "calls.fromId", toId: "calls.toId" });
 
     return descendantCalls;
@@ -136,14 +141,16 @@ export const createViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewI
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    // const popups = new Map<string, Sql.Call>();
-    // for (const call of calls) {
-    //   const result = getPopup(call);
-    // }
+    const popups = new Map<string, Sql.Call[]>();
+    for (const call of calls) {
+      const result = getPopup(call);
+      const edgeId = nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId));
+      popups.set(edgeIdToText(edgeId), result);
+    }
 
     const imageData: ImageData = {
       roots: forest.roots,
-      edges: calls.map((call) => nodeIdsToEdgeId(call.fromId, call.toId)),
+      edges: calls.map((call) => nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId))),
     };
 
     return { imageData, leafType, getNode, findNode };

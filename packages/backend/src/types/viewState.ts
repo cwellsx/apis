@@ -1,8 +1,6 @@
 import type { AnyLeafType, AnyNodeType, Node, NodeId, NodeState } from "../contracts-ui";
 import { ImageData } from "./image";
 
-export type Call = { fromId: NodeId; toId: NodeId };
-
 export type GraphNodes = {
   imageData: ImageData;
   leafType: AnyLeafType;

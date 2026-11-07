@@ -1,2 +1,2 @@
 export { createCustomViewState } from "./createCustomViewState";
-export { createViewState } from "./createViewState";
+export { createDotnetViewState as createViewState } from "./createDotnetViewState";

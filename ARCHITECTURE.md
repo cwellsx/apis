@@ -123,6 +123,25 @@ SQLite, and re-render.
   signatures of referenced members are read.
 - **Custom data.** A second data-source kind (`customJson`) renders hand- or tool-authored graphs
   alongside the reflected ones.
+- **Calls are rolled up to every level.** `Core.exe` emits method→method calls; `insertCalls` then rolls
+  each side up through type, namespace and assembly, so a row exists for any pair of ids at the same
+  granularity. Rows stop at assemblies: a _group_ of assemblies exists only to add and remove assemblies
+  from the graph, and never has edges of its own.
+- **A drawn edge is a bundle; the popup shows one level down.** The graph draws only the `calls` rows at
+  the level of the visible leaves, so one drawn edge stands for every call beneath it. `getPopup`
+  resolves the layer directly below it via `ancestors` (`isParent = 1`), which links method→type,
+  type→namespace (or type→assembly for a type with no namespace) and namespace→assembly. So an
+  assembly-level edge shows the calls between its _namespaces_, a namespace-level edge those between its
+  types, a type-level edge those between its methods — and a method-level edge has nothing below it.
+- **Hover is local; only clicks round-trip.** Mouse-move fires far too often to query the backend per
+  event, so everything a popup needs is preloaded with the render that produced the SVG. Popup data is
+  part of the image snapshot, keyed the same way as the SVG's edge hit areas — never a fetch. Clicks are
+  the only events that go back to the backend.
+- **Assumption: the user keeps the graph small.** Because popups are eager, both the queries (one
+  `getPopup` per visible edge) and the payload (edges × their children) grow with the number of visible
+  edges. That is affordable only because the user is trusted not to expand many nodes at once (observed
+  order of magnitude: ~17 visible edges → ~90 children, too fast to notice). An "expand everything"
+  affordance would break it — as it would also break GraphViz (§10).
 
 ## 9. Front ends
 

@@ -4,6 +4,19 @@ Guidance for AI coding agents (and humans) working in this repository. For _what
 [`README.md`](./README.md); for _how_ it is built see [`ARCHITECTURE.md`](./ARCHITECTURE.md) and
 [`TESTING.md`](./TESTING.md).
 
+## How this agent is used
+
+This repo is developed **interactively** with Cline inside a VS Code extension — a programmer's
+assistant used in **Plan** and **Act** mode, with the maintainer in the loop. It is **not** an
+unattended ("lights-off") runner. In practice:
+
+- **Testing is the maintainer's job.** Don't run the test suite or the app. After an edit, a
+  **type-check** (or at least confirming it compiles) is welcome; deeper verification is not expected.
+- **Keep changes small.** Most tasks edit a **single file**. Don't write large amounts of code, and
+  don't read broadly from the repo or git history on spec — the maintainer will say when a task needs a
+  wider search.
+- **Stay in scope** and ask when the intent is unclear, rather than assuming.
+
 ## Project
 
 **API Viewer** (Electron product `apis`; VS Code extension `sys-view`) is a pre-alpha tool that
