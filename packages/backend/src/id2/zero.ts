@@ -1,4 +1,4 @@
-import * as IdCast from "./idCast";
+import * as IdCast from "./cast";
 
 // zero values with the right brands, used as the sample row when creating a table
 export const zero = {

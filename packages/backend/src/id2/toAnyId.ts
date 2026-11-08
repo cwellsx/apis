@@ -1,7 +1,7 @@
 import { AnyNodeType, NodeId, nodeIdToText, NodeType } from "../contracts-ui";
 import { assert } from "../utils";
-import * as IdCast from "./idCast";
-import type { AnyBigId, AnyCustomId, CustomCallId } from "./idTypes";
+import * as IdCast from "./cast";
+import type { AnyBigId, AnyCustomId, CustomCallId } from "./types";
 
 export const toAnyBigId = (nodeId: NodeId, nodeType: AnyNodeType): AnyBigId => {
   const text = nodeIdToText(nodeId);

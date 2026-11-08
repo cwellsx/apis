@@ -7,20 +7,20 @@ export * as IdBig from "./big";
 // makeTypeDefId, makeMethodDefId, makeFieldMemberId, makeEventMemberId, makePropertyMemberId,
 // makeMethodMemberId, makeTypeSpecId, makeMethodSpecId, makeGenericParamId, makeNamespaceId,
 // makeAssemblyId, makeGroupId, makeCustomLeafId, makeCustomNodeId, makeCustomGroupId
-export * as IdMake from "./idMake";
+export * as IdMake from "./make";
 
 // isTypeDefId, isGenericParamId, isMethodDefId, isMethodSpecId, isBaseTypeId, isTypeSpecId,
 // isOwnerTypeSpecId, isOwnerMethodSpecId, isOwnerMethodDefId, isCallToId, describeId
-export * as IdTest from "./idTest";
+export * as IdTest from "./test";
+
+// toAnyBigId, toAnyCustomId, toCustomCallId
+export * as IdAny from "./toAnyId";
 
 // AssemblyId, GroupId, ViewId, CustomLeafId, CustomNodeId, CustomGroupId, NamespaceId, TypeDefId,
 // TypeSpecId, GenericParamId, MethodDefId, MethodSpecId, MemberId, BigAssemblyId, BigGroupId,
 // CallFromId, CallToId, CustomCallId, BaseTypeId, TypeId, MethodId, AnyDefId, AnyOwnerId, AnyCoreId,
 // AnyId, AnyBigId, AnyCustomId
-export type * as Id from "./idTypes";
-
-// toAnyBigId, toAnyCustomId, toCustomCallId
-export * as IdAny from "./toAnyId";
+export type * as Id from "./types";
 
 // textToViewId, viewIdToText, minViewId
 export * as IdView from "./view";

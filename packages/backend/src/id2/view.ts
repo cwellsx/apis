@@ -1,6 +1,6 @@
 // a view id is stored as text in the UI and as a number in SQLite
-import { castViewId } from "./idCast";
-import type * as Id from "./idTypes";
+import { castViewId } from "./cast";
+import type * as Id from "./types";
 
 export const textToViewId = (id: string | undefined): Id.ViewId | undefined =>
   id ? castViewId(Number(id)) : undefined;

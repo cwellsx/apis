@@ -1,4 +1,4 @@
-import * as Id from "./idTypes";
+import * as Id from "./types";
 
 export const castAssemblyId = (id: number): Id.AssemblyId => id as Id.AssemblyId;
 export const castGroupId = (id: number): Id.GroupId => id as Id.GroupId;

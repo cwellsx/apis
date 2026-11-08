@@ -1,4 +1,6 @@
+import { AnyNodeType, NodeType } from "../contracts-ui";
 import { assert } from "../utils";
+import { BoxedId, isTableId, TableId } from "./tables";
 import {
   AnyBigId,
   AnyOwnerId,
@@ -9,8 +11,7 @@ import {
   TypeDefId,
   TypeId,
   TypeSpecId,
-} from "./idTypes";
-import { BoxedId, isTableId, TableId } from "./tables";
+} from "./types";
 
 const strip = (id: bigint): number => Number(id & 0xffffffffn);
 
@@ -49,4 +50,17 @@ export const describeId = (id: bigint): string => {
   if (isTableId(token, TableId.GenericParam)) return "genericParam";
   if (isTableId(token, BoxedId.Group)) return "group";
   return `unknown(0x${token.toString(16)})`;
+};
+
+export const toNodeType = (id: bigint): AnyNodeType => {
+  const token = strip(id);
+  if (isTableId(token, BoxedId.Assembly)) return NodeType.Assembly;
+  if (isTableId(token, BoxedId.Namespace)) return NodeType.Namespace;
+  if (isTableId(token, TableId.TypeDef)) return NodeType.Type;
+  if (isTableId(token, TableId.TypeSpec)) return NodeType.Type;
+  if (isTableId(token, TableId.MethodDef)) return NodeType.Method;
+  if (isTableId(token, TableId.MethodSpec)) return NodeType.Method;
+  if (isTableId(token, BoxedId.Group)) return NodeType.Group;
+  // a generic parameter cannot be a node
+  assert(false, `unknown(0x${token.toString(16)})`);
 };
