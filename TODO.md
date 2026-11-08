@@ -10,12 +10,17 @@ Implement tooltips:
 - Display the tooltip -- on hover and on click
 - Improve or remove the titles
 
+Reduce density of graphs:
+
+- Hide self-self edges -- could make this optional, but I don't see no use for it
+- Progressive reveal of namespaces e.g. initially Foo.Bar.* for Foo.Bar.Baz and Foo.Bar.Bat
+
 ## Near term
 
 - Implement and test the appOptions round-trip -- font size and zoom
 - Fix useEffect- Delete Panes.tsx and SplitPane and split-pane-react
 - Debug - hourglass and prevent overlapping input events from user
-- Implement - webit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
+- Implement - webkit api instead of setting em size to change zoom `const { webFrame } = require('electron'); webFrame.setZoomFactor(1.2);`
 - Implement - add styles e.g. to distinguish synthetic groups from assemblies or namespaces
 - Implement - assembly details and call graphs for Core data -- see e.g. MORE/DETAILS.md
 - Make the display of namespace optional -- requires changing isParent

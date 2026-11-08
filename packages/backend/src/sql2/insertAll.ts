@@ -2,6 +2,7 @@ import * as DotNet from "../contracts-dotnet";
 import * as Id from "../id2";
 import { getGroupNames, SqlCommon } from "../sqlCommon";
 import { assert, getOrSet, getOrThrow } from "../utils";
+import { assertCallsHaveFullNames } from "./assertCallsHaveFullNames";
 import { insertAncestors } from "./insertAncestors";
 import { insertCalls } from "./insertCalls";
 import { getFullNames } from "./insertFullNames";
@@ -464,4 +465,7 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
         isParent: SqlCommon.fromBoolean(false),
       }))
   );
+
+  // both calls and fullNames are now fully populated
+  assertCallsHaveFullNames(tables);
 };

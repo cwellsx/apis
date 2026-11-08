@@ -13,6 +13,9 @@ import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
 import { toNodeId } from "./toNodeId";
 
+// one level down from an edge: the method calls which are bundled into it, with their names
+type PopupCall = Sql.Call & { fromName: string; toName: string };
+
 export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
   const netFrameworkItem: RootItem<number> = {
     item: { id: netFrameworkGroup.id, name: netFrameworkGroup.name },
@@ -108,27 +111,38 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
     return calls;
   };
 
-  const getPopup = (call: Sql.Call): Sql.Call[] => {
+  const getPopup = (call: Sql.Call): PopupCall[] => {
     /*
-      SELECT calls.fromId, calls.toId
+      SELECT calls.fromId, calls.toId, fromFullName.fullName, toFullName.fullName
       FROM calls
       JOIN ancestors AS fromAncestor
         ON calls.fromId = fromAncestor.descendentId
       JOIN ancestors AS toAncestor
         ON calls.toId = toAncestor.descendentId
+      JOIN fullNames AS fromFullName
+        ON calls.fromId = fromFullName.id
+      JOIN fullNames AS toFullName
+        ON calls.toId = toFullName.id
       WHERE fromAncestor.ancestorId = ?
         AND toAncestor.ancestorId = ?
         AND fromAncestor.isParent = 1
         AND toAncestor.isParent = 1;
     */
-    const descendantCalls: Sql.Call[] = sqlTables.calls
+    const descendantCalls: PopupCall[] = sqlTables.calls
       .join(sqlTables.ancestors, "descendentId", "fromId", { rightAlias: "fromAncestor" })
       .join(sqlTables.ancestors, "descendentId", sqlTables.calls, "toId", { rightAlias: "toAncestor" })
+      .join(sqlTables.fullNames, "id", sqlTables.calls, "fromId", { rightAlias: "fromFullName" })
+      .join(sqlTables.fullNames, "id", sqlTables.calls, "toId", { rightAlias: "toFullName" })
       .where("fromAncestor.ancestorId = ?", call.fromId)
       .where("toAncestor.ancestorId = ?", call.toId)
       .where("fromAncestor.isParent = 1")
       .where("toAncestor.isParent = 1")
-      .selectAll<Sql.Call>({ fromId: "calls.fromId", toId: "calls.toId" });
+      .selectAll<PopupCall>({
+        fromId: "calls.fromId",
+        toId: "calls.toId",
+        fromName: "fromFullName.fullName",
+        toName: "toFullName.fullName",
+      });
 
     return descendantCalls;
   };
@@ -141,7 +155,7 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    const popups = new Map<string, Sql.Call[]>();
+    const popups = new Map<string, PopupCall[]>();
     for (const call of calls) {
       const result = getPopup(call);
       const edgeId = nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId));
