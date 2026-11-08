@@ -1,4 +1,4 @@
-import * as Id from "../id2";
+import { IdBig } from "../id2";
 import { SqlCommon } from "../sqlCommon";
 import { assert } from "../utils";
 import { Ancestor, Tables } from "./schema";
@@ -34,7 +34,7 @@ export const insertAncestors = (tables: Tables): void => {
   const namespaceAssemblies: Ancestor[] = tables.namespaces
     .selectAll()
     .map((namespace) => ({
-      ancestorId: Id.toBigAssemblyId(namespace.assemblyId),
+      ancestorId: IdBig.toBigAssemblyId(namespace.assemblyId),
       descendentId: namespace.id,
       isParent: True,
     }));
@@ -54,7 +54,7 @@ export const insertAncestors = (tables: Tables): void => {
   const typeAssemblies: Ancestor[] = tables.typeNames
     .selectAll()
     .map((typeName) => ({
-      ancestorId: Id.toBigAssemblyId(typeName.assemblyId),
+      ancestorId: IdBig.toBigAssemblyId(typeName.assemblyId),
       descendentId: typeName.id,
       isParent: SqlCommon.fromBoolean(!typeName.namespaceId),
     }));

@@ -1,6 +1,6 @@
 import { assert } from "../utils";
 import * as IdCast from "./idCast";
-import { BoxedId, isTableId, TableId } from "./idTest";
+import { BoxedId, isTableId, TableId } from "./tables";
 import type * as Id from "./idTypes";
 
 const allIds = new Set<bigint>();

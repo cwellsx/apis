@@ -1,6 +1,5 @@
 import { SqlDatabase, SqlTable } from "sqlio";
-import * as Id from "../id2";
-import { zero } from "../id2";
+import { Id, IdView, zero } from "../id2";
 import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";
@@ -21,8 +20,8 @@ const newConfig = (table: SqlTable<ConfigKvps>): Config => {
   const base = configT<"viewId">(table);
   return {
     ...base,
-    getViewId: () => Id.textToViewId(base.getConfig("viewId")),
-    setViewId: (value: Id.ViewId) => base.setConfig("viewId", Id.viewIdToText(value)),
+    getViewId: () => IdView.textToViewId(base.getConfig("viewId")),
+    setViewId: (value: Id.ViewId) => base.setConfig("viewId", IdView.viewIdToText(value)),
   };
 };
 

@@ -10,22 +10,7 @@ import {
   TypeId,
   TypeSpecId,
 } from "./idTypes";
-
-export const enum TableId {
-  // TypeRef = 0x01,
-  TypeDef = 0x02,
-  Field = 0x04,
-  MethodDef = 0x06,
-  // MethodRef = 0x0a,
-  Event = 0x14,
-  Property = 0x17,
-  TypeSpec = 0x1b,
-  GenericParam = 0x2a,
-  MethodSpec = 0x2b,
-}
-
-export const isTableId = (id: number, tableId: TableId | BoxedId): boolean =>
-  (id & 0xff000000) == (tableId as number) << 24;
+import { BoxedId, isTableId, TableId } from "./tables";
 
 const strip = (id: bigint): number => Number(id & 0xffffffffn);
 
@@ -51,8 +36,17 @@ export const isCallToId = (toId: CallToId): "A" | "N" | "T" | "M" => {
   assert(false);
 };
 
-export const enum BoxedId {
-  Assembly = 0x40,
-  Namespace = 0x41,
-  Group = 0x42,
-}
+// for diagnostics, where the caller cannot assert: which kind of id is this?
+// ids are packed as (assemblyId << 32) + token, and the token's high byte identifies its table
+export const describeId = (id: bigint): string => {
+  const token = strip(id);
+  if (isTableId(token, BoxedId.Assembly)) return "assembly";
+  if (isTableId(token, BoxedId.Namespace)) return "namespace";
+  if (isTableId(token, TableId.TypeDef)) return "typeDef";
+  if (isTableId(token, TableId.TypeSpec)) return "typeSpec";
+  if (isTableId(token, TableId.MethodDef)) return "methodDef";
+  if (isTableId(token, TableId.MethodSpec)) return "methodSpec";
+  if (isTableId(token, TableId.GenericParam)) return "genericParam";
+  if (isTableId(token, BoxedId.Group)) return "group";
+  return `unknown(0x${token.toString(16)})`;
+};

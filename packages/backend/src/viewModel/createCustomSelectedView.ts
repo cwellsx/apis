@@ -1,5 +1,5 @@
 import { MenuItem } from "../contracts-app";
-import { minViewId } from "../id2";
+import { IdView } from "../id2";
 import { SqlCustom } from "../sqlCustom";
 import { assert } from "../utils";
 import { createCustomViewState } from "../viewState";
@@ -7,7 +7,7 @@ import { SelectedView } from "./selectedView";
 
 export const createCustomSelectedView = (sqlTables: SqlCustom.Tables): SelectedView => {
   const initialView = (): SqlCustom.View => {
-    const viewId = sqlTables.config.getViewId() ?? minViewId(sqlTables.views.selectAll().map((view) => view.id));
+    const viewId = sqlTables.config.getViewId() ?? IdView.minViewId(sqlTables.views.selectAll().map((view) => view.id));
     const view = sqlTables.views.selectOne({ id: viewId });
     assert(!!view);
     return view;

@@ -1,4 +1,4 @@
-import * as Id from "../id2";
+import { IdTest } from "../id2";
 import { assert, log } from "../utils";
 import { Tables } from "./schema";
 
@@ -13,22 +13,6 @@ import { Tables } from "./schema";
   rows which come back are exactly the ids which have no fullName. fromId and toId are checked
   separately because either end of a call can be missing on its own.
 */
-
-// ids are packed as (assemblyId << 32) + token, and the token's high byte identifies its table;
-// the table ids are those of id2/idTest.ts (metadata tables, plus this project's own boxed ids)
-
-const describeId = (id: bigint): string => {
-  const token = Number(id & 0xffffffffn);
-  if (Id.isTableId(token, Id.BoxedId.Assembly)) return "assembly";
-  if (Id.isTableId(token, Id.BoxedId.Namespace)) return "namespace";
-  if (Id.isTableId(token, Id.TableId.TypeDef)) return "typeDef";
-  if (Id.isTableId(token, Id.TableId.TypeSpec)) return "typeSpec";
-  if (Id.isTableId(token, Id.TableId.MethodDef)) return "methodDef";
-  if (Id.isTableId(token, Id.TableId.MethodSpec)) return "methodSpec";
-  if (Id.isTableId(token, Id.TableId.GenericParam)) return "genericParam";
-  if (Id.isTableId(token, Id.BoxedId.Group)) return "group";
-  return `unknown(0x${token.toString(16)})`;
-};
 
 const selectWithoutFullName = (tables: Tables, key: "fromId" | "toId"): bigint[] => {
   const rows = tables.calls
@@ -47,7 +31,7 @@ export const assertCallsHaveFullNames = (tables: Tables): void => {
 
   const byKind = new Map<string, bigint[]>();
   missing.forEach((id) => {
-    const kind = describeId(id);
+    const kind = IdTest.describeId(id);
     const ids = byKind.get(kind);
     if (ids) ids.push(id);
     else byKind.set(kind, [id]);

@@ -73,6 +73,10 @@ See [`TESTING.md`](./TESTING.md) for details.
 
 - **Read-only**: `git status --short`, `git --no-pager diff`, `git --no-pager log -5` are fine.
 - **Never change git state** — do not stage or commit.
+- **Staging is expected.** The maintainer stages each step as it is finished and commits once a
+  feature (or sequence of steps) is complete, so a staged/unstaged split in `git status` is normal.
+  Note that `git --no-pager diff` then shows only the *unstaged* part — use `git --no-pager diff HEAD`
+  to see the whole picture of a step in progress.
 - Always disable paging (`--no-pager`).
 
 ## Hard constraints

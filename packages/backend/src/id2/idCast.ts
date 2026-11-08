@@ -21,39 +21,5 @@ export const castMemberId = (id: bigint): Id.MemberId => id as Id.MemberId;
 
 export const castAnyBigId = (id: bigint): Id.AnyBigId => id as Id.TypeDefId;
 
-export const toBigAssemblyId = (id: Id.AssemblyId): Id.BigAssemblyId => BigInt(id) as Id.BigAssemblyId;
-export const toBigGroupId = (id: Id.GroupId): Id.BigGroupId => BigInt(id) as Id.BigGroupId;
-
 export const castBigAssemblyId = (id: bigint): Id.BigAssemblyId => id as Id.BigAssemblyId;
 export const castBigGroupId = (id: bigint): Id.BigGroupId => id as Id.BigGroupId;
-
-export const zero = {
-  // number
-  assemblyId: castAssemblyId(0),
-  groupId: castGroupId(0),
-  viewId: castViewId(0),
-  // bigint
-  namespaceId: castNamespaceId(0n),
-
-  typeDefId: castTypeDefId(0n),
-  typeSpecId: castTypeSpecId(0n),
-  genericParamId: castGenericParamId(0n),
-
-  typeId: castTypeSpecId(0n),
-  methodDefId: castMethodDefId(0n),
-  methodSpecId: castMethodSpecId(0n),
-  methodId: castMethodDefId(0n),
-  memberId: castMemberId(0n),
-
-  anyBigId: castAnyBigId(0n),
-
-  customLeafId: castCustomLeafId("foo"),
-  customNodeId: castCustomNodeId("foo"),
-  customGroupId: castCustomGroupId("foo"),
-  anyCustomId: castAnyCustomId("foo"),
-};
-
-export const textToViewId = (id: string | undefined): Id.ViewId | undefined =>
-  id ? castViewId(Number(id)) : undefined;
-export const viewIdToText = (id: Id.ViewId): string => id.toString();
-export const minViewId = (ids: Id.ViewId[]): Id.ViewId => castViewId(Math.min(...ids));

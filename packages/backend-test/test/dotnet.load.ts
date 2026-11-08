@@ -1,5 +1,5 @@
 import { assert, log } from "backend-api";
-import * as Id from "sut/id2";
+import { Id, IdBig, IdTest } from "sut/id2";
 import { Sql } from "sut/sql2";
 import { createDotNetTables } from "./utils/createDotNetTables";
 import { fileViewState } from "./utils/paths";
@@ -29,9 +29,9 @@ const printTypeRefs = (tables: Sql.Tables): void => {
         .sort()
     );
 
-  printNamedOwners("typeSpec", Id.isOwnerTypeSpecId);
-  printNamedOwners("methodSpec", Id.isOwnerMethodSpecId);
-  printNamedOwners("methodDef", Id.isOwnerMethodDefId);
+  printNamedOwners("typeSpec", IdTest.isOwnerTypeSpecId);
+  printNamedOwners("methodSpec", IdTest.isOwnerMethodSpecId);
+  printNamedOwners("methodDef", IdTest.isOwnerMethodDefId);
 };
 
 const assertCalls = (tables: Sql.Tables): void => {
@@ -47,7 +47,7 @@ const assertCalls = (tables: Sql.Tables): void => {
     assert(found.length > 0);
   };
 
-  const assemblyId = Id.toBigAssemblyId(assembly.id);
+  const assemblyId = IdBig.toBigAssemblyId(assembly.id);
   assertCalls({ fromId: assemblyId });
   assertCalls({ fromId: typeName.id });
   assertCalls({ fromId: methodName.id });

@@ -1,5 +1,5 @@
 import type { AnyGroupType, AnyNodeType, NodeId, NodeState } from "../contracts-ui";
-import * as Id from "../id2";
+import { Id } from "../id2";
 import { GetSetNodeStatesT } from "../sqlCommon";
 import type { GraphNodes, SetNodeState } from "../types";
 import { Numeric, RootItem } from "./forest";
@@ -9,7 +9,7 @@ import { ToT } from "./toT";
 type RootDefault = { isVisible: boolean; isExpanded: boolean };
 
 export const makeRootDefaults = <T extends Id.AnyBigId | Id.AnyCustomId, TId extends Numeric>(
-  toT: ToT<T>, // Id.toAnyBigId or Id.toAnyCustomId
+  toT: ToT<T>, // IdAny.toAnyBigId or IdAny.toAnyCustomId
   roots: RootItem<TId>[]
 ): Map<T, RootDefault> =>
   new Map<T, RootDefault>(
@@ -21,7 +21,7 @@ export const makeRootDefaults = <T extends Id.AnyBigId | Id.AnyCustomId, TId ext
 
 export const makeSetNodeState = <T extends Id.AnyBigId | Id.AnyCustomId>(
   getSetNodeStates: GetSetNodeStatesT<T>,
-  toT: ToT<T>, // Id.toAnyBigId or Id.toAnyCustomId
+  toT: ToT<T>, // IdAny.toAnyBigId or IdAny.toAnyCustomId
   groupType: AnyGroupType,
   rootDefaults?: Map<T, RootDefault>
 ): SetNodeState => {

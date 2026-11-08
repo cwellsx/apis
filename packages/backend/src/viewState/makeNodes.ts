@@ -1,7 +1,7 @@
 // two functions help to implement getGraphNodes
 import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
 import { isClosed, isLeaf, isParent, Node, nodeIdToText, Parent } from "../contracts-ui";
-import * as Id from "../id2";
+import { Id } from "../id2";
 import type { NodeStatesT } from "../sqlCommon";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
 import { Forest, Item, Numeric, RootItem, TopT } from "./forest";
@@ -37,7 +37,7 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
   nodeStates: NodeStatesT<T>,
   leafType: AnyLeafType,
   groupType: AnyGroupType,
-  toT: ToT<T> // Id.toAnyBigId or Id.toAnyCustomId
+  toT: ToT<T> // IdAny.toAnyBigId or IdAny.toAnyCustomId
 ): MakeNodes<TId> => {
   // private toNode
   const toNode = (item: Item<Numeric>, type: AnyNodeType, parent: Parent | null): Node => {

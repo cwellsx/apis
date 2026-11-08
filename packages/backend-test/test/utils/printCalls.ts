@@ -1,4 +1,4 @@
-import * as Id from "sut/id2";
+import { Id, IdTest } from "sut/id2";
 import { Tables } from "sut/sql2/schema";
 import { assert } from "sut/utils";
 
@@ -37,7 +37,7 @@ const groupByKeys = <T>(rows: T[], keyFns: Array<(row: T) => string>, idFn: (row
         // last one is CallsTo
         assert(isCallsTo(level));
         const id = idFn(row);
-        switch (Id.isCallToId(id)) {
+        switch (IdTest.isCallToId(id)) {
           case "A":
             level.assemblies.push(value);
             break;

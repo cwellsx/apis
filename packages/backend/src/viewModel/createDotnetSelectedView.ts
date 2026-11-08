@@ -1,6 +1,5 @@
 import { MenuItem } from "../contracts-app";
-import * as Id from "../id2";
-import { minViewId } from "../id2";
+import { IdView } from "../id2";
 import { Sql } from "../sql2";
 import type { ViewState } from "../types";
 import { assert } from "../utils";
@@ -9,7 +8,7 @@ import { SelectedView } from "./selectedView";
 
 export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView => {
   const initialView = (): Sql.View => {
-    const viewId = sqlTables.config.getViewId() ?? minViewId(sqlTables.views.selectAll().map((view) => view.id));
+    const viewId = sqlTables.config.getViewId() ?? IdView.minViewId(sqlTables.views.selectAll().map((view) => view.id));
     const view = sqlTables.views.selectOne({ id: viewId });
     assert(!!view);
     return view;
@@ -32,7 +31,7 @@ export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView =>
     }
     const prefix = "view|";
     if (menuItemId.startsWith(prefix)) {
-      const viewId = Id.textToViewId(menuItemId.slice(prefix.length));
+      const viewId = IdView.textToViewId(menuItemId.slice(prefix.length));
       assert(!!viewId);
       sqlTables.config.setViewId(viewId);
       view = initialView();

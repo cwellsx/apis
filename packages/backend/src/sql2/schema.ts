@@ -1,6 +1,5 @@
 import { SqlDatabase, SqlTable } from "sqlio";
-import * as Id from "../id2";
-import { zero } from "../id2";
+import { Id, IdMake, IdView, zero } from "../id2";
 import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";
@@ -18,8 +17,8 @@ const newConfig = (table: SqlTable<ConfigKvps>): Config => {
   const base = configT<"viewId">(table);
   return {
     ...base,
-    getViewId: () => Id.textToViewId(base.getConfig("viewId")),
-    setViewId: (value: Id.ViewId) => base.setConfig("viewId", Id.viewIdToText(value)),
+    getViewId: () => IdView.textToViewId(base.getConfig("viewId")),
+    setViewId: (value: Id.ViewId) => base.setConfig("viewId", IdView.viewIdToText(value)),
   };
 };
 
@@ -105,7 +104,7 @@ type DotNetTableRowMap = {
 type Group = { id: Id.GroupId; name: string; isMicrosoft: SqlCommon.Boolean };
 const zeroGroup: Group = { id: zero.groupId, name: "foo", isMicrosoft: SqlCommon.fromBoolean(false) };
 export const netFrameworkGroup: Group = {
-  id: Id.makeGroupId(0),
+  id: IdMake.makeGroupId(0),
   name: ".NET Framework",
   isMicrosoft: SqlCommon.fromBoolean(true),
 };

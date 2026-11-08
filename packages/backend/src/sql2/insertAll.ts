@@ -1,5 +1,5 @@
 import * as DotNet from "../contracts-dotnet";
-import * as Id from "../id2";
+import { Id, IdBig, IdMake, IdTest } from "../id2";
 import { getGroupNames, SqlCommon } from "../sqlCommon";
 import { assert, getOrSet, getOrThrow } from "../utils";
 import { assertCallsHaveFullNames } from "./assertCallsHaveFullNames";
@@ -36,7 +36,7 @@ const getAssemblies = (all: DotNet.All): Schema.Assembly[] =>
   Object.keys(all.assemblies)
     .map((value) => ({ name: value, isMicrosoft: 0 as SqlCommon.Boolean }))
     .concat(Object.keys(all.microsoftAssemblies).map((value) => ({ name: value, isMicrosoft: 1 as SqlCommon.Boolean })))
-    .map((value, index) => ({ id: Id.makeAssemblyId(index + 1), ...value }));
+    .map((value, index) => ({ id: IdMake.makeAssemblyId(index + 1), ...value }));
 
 const getAllTypeInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds): AllTypeInfo[] =>
   Object.entries(all.assemblies)
@@ -44,7 +44,7 @@ const getAllTypeInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds): AllTypeI
     .flatMap(([assemblyName, assemblyInfo]) =>
       assemblyInfo.typeInfos.map((value) => {
         const assemblyId = getOrThrow(assemblyIds, assemblyName);
-        return { assemblyId, assemblyName, typeDefId: Id.makeTypeDefId(value.id, assemblyId, true), ...value };
+        return { assemblyId, assemblyName, typeDefId: IdMake.makeTypeDefId(value.id, assemblyId, true), ...value };
       })
     );
 
@@ -55,7 +55,7 @@ const getAllMethodMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: MapAssemb
       const typeDefId = allTypeInfo.typeDefId;
       const assemblyId = getOrThrow(assemblyIds, assemblyName);
       // create: false because getMembers already created Id
-      const methodDefId = Id.makeMethodDefId(value.metadataToken, assemblyId, false);
+      const methodDefId = IdMake.makeMethodDefId(value.metadataToken, assemblyId, false);
       return { typeDefId, methodDefId, assemblyId, assemblyName, ...value };
     })
   );
@@ -64,7 +64,7 @@ const getAllMethodInfos = (all: DotNet.All, assemblyIds: MapAssemblyIds): AllMet
   Object.entries(all.assemblyMethods).flatMap(([assemblyName, tokenMap]) =>
     Object.entries(tokenMap).map(([metadataToken, methodInfo]) => {
       const assemblyId = getOrThrow(assemblyIds, assemblyName);
-      return { ...methodInfo, methodDefId: Id.makeMethodDefId(+metadataToken, assemblyId, false), assemblyId };
+      return { ...methodInfo, methodDefId: IdMake.makeMethodDefId(+metadataToken, assemblyId, false), assemblyId };
     })
   );
 
@@ -88,7 +88,7 @@ const getNamespaceMap = (assemblyAndTypeInfos: AllTypeInfo[]): NamespaceMap => {
           .sort()
           .map((name, index): [string, Schema.Namespace] => [
             name,
-            { name, assemblyId, id: Id.makeNamespaceId(index, assemblyId, true) },
+            { name, assemblyId, id: IdMake.makeNamespaceId(index, assemblyId, true) },
           ])
       )
     );
@@ -110,7 +110,7 @@ const getTypeNames = (
       : undefined,
     name: value.name,
     declaringTypeId: value.declaringType
-      ? Id.makeTypeDefId(value.declaringType, getOrThrow(assemblyIds, value.assemblyName), false)
+      ? IdMake.makeTypeDefId(value.declaringType, getOrThrow(assemblyIds, value.assemblyName), false)
       : undefined,
   }));
 
@@ -145,10 +145,10 @@ const getMembers = (allTypeInfos: AllTypeInfo[], assemblyIds: MapAssemblyIds): S
     const empty: Schema.Member[] = [];
 
     return empty
-      .concat(getMembers(value.fieldMembers, GetMemberJson.getFieldMemberJson, Id.makeFieldMemberId))
-      .concat(getMembers(value.eventMembers, GetMemberJson.getEventMemberJson, Id.makeEventMemberId))
-      .concat(getMembers(value.propertyMembers, GetMemberJson.getPropertyMemberJson, Id.makePropertyMemberId))
-      .concat(getMembers(value.methodMembers, GetMemberJson.getMethodMemberJson, Id.makeMethodMemberId));
+      .concat(getMembers(value.fieldMembers, GetMemberJson.getFieldMemberJson, IdMake.makeFieldMemberId))
+      .concat(getMembers(value.eventMembers, GetMemberJson.getEventMemberJson, IdMake.makeEventMemberId))
+      .concat(getMembers(value.propertyMembers, GetMemberJson.getPropertyMemberJson, IdMake.makePropertyMemberId))
+      .concat(getMembers(value.methodMembers, GetMemberJson.getMethodMemberJson, IdMake.makeMethodMemberId));
   });
 
 const getGenericParams = (allTypeInfos: AllTypeInfo[], allMethodMembers: AllMethodMember[]): Schema.GenericParam[] => {
@@ -171,7 +171,7 @@ const getGenericParams = (allTypeInfos: AllTypeInfo[], allMethodMembers: AllMeth
     const genericParams: Schema.GenericParam[] = owned.genericParameters.map((genericParam, seqno) => {
       assert(DotNet.isGenericParam(genericParam));
       const [name, id] = DotNet.spitGenericParam(genericParam);
-      return { id: Id.makeGenericParamId(id, owned.assemblyId, true), ownerId: owned.ownerId, seqno, name };
+      return { id: IdMake.makeGenericParamId(id, owned.assemblyId, true), ownerId: owned.ownerId, seqno, name };
     });
     return genericParams;
   });
@@ -185,14 +185,14 @@ const getAllSpecData = (all: DotNet.All, assemblyIds: MapAssemblyIds): [Id.Assem
 
       const typeSpecs = new Map<Id.TypeSpecId, DotNet.TypeSpecData>(
         Object.entries(assemblyInfo.typeSpecs).map(([key, typeSpecData]) => [
-          Id.makeTypeSpecId(Number(key), assemblyId, true),
+          IdMake.makeTypeSpecId(Number(key), assemblyId, true),
           typeSpecData,
         ])
       );
 
       const methodSpecs = new Map<Id.MethodSpecId, DotNet.MethodSpecData>(
         Object.entries(assemblyInfo.methodSpecs).map(([key, methodSpecData]) => [
-          Id.makeMethodSpecId(Number(key), assemblyId, true),
+          IdMake.makeMethodSpecId(Number(key), assemblyId, true),
           methodSpecData,
         ])
       );
@@ -259,7 +259,7 @@ const getTypeSpecs = (
       typeSpecData = { ...other, suffix: other.suffix + typeSpecData.suffix };
     }
     const resolvedId = typeSpecData.resolvedId;
-    assert(Id.isBaseTypeId(resolvedId));
+    assert(IdTest.isBaseTypeId(resolvedId));
     return { id: typeSpecId, resolvedId, suffix: typeSpecData.suffix };
   };
 
@@ -276,7 +276,7 @@ const getMethodSpecs = (
   const getTypeSpecId = (declaringType: DotNet.TypeId | undefined): Id.TypeSpecId | undefined => {
     if (!declaringType) return undefined;
     const typeId = toTypeId(declaringType, assemblyId);
-    assert(Id.isTypeSpecId(typeId));
+    assert(IdTest.isTypeSpecId(typeId));
     return typeId;
   };
 
@@ -349,35 +349,35 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
   // typeSpec and methodSpec
   const allSpecData = getAllSpecData(all, assemblyIds);
 
-  // by now we've invoked Id.Make*(.., true) on all Id instance
-  // => resolve type reference with Id.Make*(.., false)
+  // by now we've invoked IdMake.make*(.., true) on all Id instance
+  // => resolve type reference with IdMake.make*(.., false)
   const toTypeId = (id: DotNet.TypeId, assemblyId: Id.AssemblyId): Id.TypeId => {
-    if (DotNet.isMetadataToken(id)) return Id.makeTypeDefId(id, assemblyId, false);
+    if (DotNet.isMetadataToken(id)) return IdMake.makeTypeDefId(id, assemblyId, false);
     if (DotNet.isBrandedId(id)) {
       const split = DotNet.spitBrandedId(id);
-      return Id.makeTypeDefId(split[1], getOrThrow(assemblyIds, split[0]), false);
+      return IdMake.makeTypeDefId(split[1], getOrThrow(assemblyIds, split[0]), false);
     }
     if (DotNet.isGenericParam(id)) {
       const split = DotNet.spitGenericParam(id);
-      return Id.makeGenericParamId(split[1], assemblyId, false);
+      return IdMake.makeGenericParamId(split[1], assemblyId, false);
     }
-    return Id.makeTypeSpecId(id[0], assemblyId, false);
+    return IdMake.makeTypeSpecId(id[0], assemblyId, false);
   };
 
   const toMethodId = (id: DotNet.MethodId, assemblyId: Id.AssemblyId): Id.MethodId => {
-    if (DotNet.isMetadataToken(id)) return Id.makeMethodDefId(id, assemblyId, false);
+    if (DotNet.isMetadataToken(id)) return IdMake.makeMethodDefId(id, assemblyId, false);
     if (DotNet.isBrandedId(id)) {
       const split = DotNet.spitBrandedId(id);
-      return Id.makeMethodDefId(split[1], getOrThrow(assemblyIds, split[0]), false);
+      return IdMake.makeMethodDefId(split[1], getOrThrow(assemblyIds, split[0]), false);
     }
-    return Id.makeMethodSpecId(id[0], assemblyId, false);
+    return IdMake.makeMethodSpecId(id[0], assemblyId, false);
   };
 
   const toBaseMethodId = (id: DotNet.BaseMethodId, assemblyId: Id.AssemblyId): Id.MethodDefId => {
-    if (DotNet.isMetadataToken(id)) return Id.makeMethodDefId(id, assemblyId, false);
+    if (DotNet.isMetadataToken(id)) return IdMake.makeMethodDefId(id, assemblyId, false);
     if (DotNet.isBrandedId(id)) {
       const split = DotNet.spitBrandedId(id);
-      return Id.makeMethodDefId(split[1], getOrThrow(assemblyIds, split[0]), false);
+      return IdMake.makeMethodDefId(split[1], getOrThrow(assemblyIds, split[0]), false);
     }
     assert(false);
   };
@@ -439,7 +439,7 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
     const groups = getGroupNames(
       assemblies.filter((value) => value.isMicrosoft == isMicrosoft).map((value) => value.name),
       "."
-    ).map((value, index) => ({ id: Id.makeGroupId(index + nGroups + 1), name: value, isMicrosoft }));
+    ).map((value, index) => ({ id: IdMake.makeGroupId(index + nGroups + 1), name: value, isMicrosoft }));
     tables.groups.insertMany(groups);
     return groups.length;
   };
@@ -460,8 +460,8 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
       .selectWhere({ isMicrosoft: 1 })
       .filter((group) => group.id != Schema.netFrameworkGroup.id)
       .map((group) => ({
-        descendentId: Id.toBigGroupId(group.id),
-        ancestorId: Id.toBigGroupId(Schema.netFrameworkGroup.id),
+        descendentId: IdBig.toBigGroupId(group.id),
+        ancestorId: IdBig.toBigGroupId(Schema.netFrameworkGroup.id),
         isParent: SqlCommon.fromBoolean(false),
       }))
   );

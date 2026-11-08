@@ -1,6 +1,5 @@
 import { SqlDatabase } from "sqlio";
-import * as Id from "../id2";
-import { zero } from "../id2";
+import { Id, zero } from "../id2";
 import { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
 
 export type NodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {

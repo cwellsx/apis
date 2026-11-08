@@ -1,7 +1,6 @@
 import type { EdgeId, Node, NodeId } from "../contracts-ui";
 import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
-import * as Id from "../id2";
-import { toCustomCallId } from "../id2";
+import { Id, IdAny } from "../id2";
 import { CustomNodeStates } from "../sqlCommon";
 import { SqlCustom } from "../sqlCustom";
 import type { GraphNodes, ImageData, ViewState } from "../types";
@@ -14,7 +13,7 @@ import { makeSetNodeState } from "./makeSetNodeState";
 export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.ViewId): ViewState => {
   const getSetNodeStates = sqlTables.viewNodeStates(viewId);
   const { getNodeStates, resetNodeStates } = getSetNodeStates;
-  const setNodeState = makeSetNodeState(getSetNodeStates, Id.toAnyCustomId, NodeType.CustomGroup);
+  const setNodeState = makeSetNodeState(getSetNodeStates, IdAny.toAnyCustomId, NodeType.CustomGroup);
 
   const toNodeId = <TId extends Numeric>(id: TId): NodeId => {
     const text = id.toString();
@@ -25,7 +24,7 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && node.isVisible && node.type != NodeType.CustomGroup)
-      .map((node) => toCustomCallId(node.nodeId, node.type));
+      .map((node) => IdAny.toCustomCallId(node.nodeId, node.type));
     const calls = sqlTables.edges.selectWhereIn(["fromId", "toId"], leafIds);
     return calls.map((call) => nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId)));
   };
@@ -45,7 +44,7 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
       nodeStates,
       NodeType.CustomLeaf,
       NodeType.CustomGroup,
-      Id.toAnyCustomId
+      IdAny.toAnyCustomId
     );
     const trunk = toTrunk(top, NodeType.CustomNode);
 

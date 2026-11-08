@@ -1,4 +1,4 @@
-import * as Id from "../id2";
+import { Id, IdBig, IdTest } from "../id2";
 import { assert, getOrThrow } from "../utils";
 import {
   Assembly,
@@ -42,7 +42,7 @@ const mapArrays = <TKey, TValue, T extends { ownerId: TKey; seqno: number }>(
 };
 
 export const getFullNames = (tables: Tables): FullName[] => {
-  const assemblies = tables.assemblies.map((value) => ({ id: Id.toBigAssemblyId(value.id), fullName: value.name }));
+  const assemblies = tables.assemblies.map((value) => ({ id: IdBig.toBigAssemblyId(value.id), fullName: value.name }));
   const namespaces = tables.namespaces.map((value) => ({ id: value.id, fullName: value.name }));
 
   const mapNamespaces = new Map<Id.NamespaceId, string>(tables.namespaces.map((value) => [value.id, value.name]));
@@ -92,7 +92,7 @@ export const getFullNames = (tables: Tables): FullName[] => {
     const signatureTypes = ownedSignatureTypeArrays.get(id);
     if (!signatureTypes) return "";
     const joined = signatureTypes.map((value) => getTypeIdName(value)).join(",");
-    return Id.isMethodDefId(id) ? `(${joined})` : `<${joined}>`;
+    return IdTest.isMethodDefId(id) ? `(${joined})` : `<${joined}>`;
   };
 
   const mapTypeDefFullNames = makeNameResolver(
@@ -108,9 +108,9 @@ export const getFullNames = (tables: Tables): FullName[] => {
 
   const makeGetTypeIdName = (resolve: (id: Id.TypeSpecId) => string) => {
     const getTypeIdName = (id: Id.TypeId): string =>
-      Id.isTypeDefId(id)
+      IdTest.isTypeDefId(id)
         ? getOrThrow(mapTypeDefFullNames, id)
-        : Id.isGenericParamId(id)
+        : IdTest.isGenericParamId(id)
           ? getOrThrow(allGenericParameters, id)
           : resolve(id);
     return getTypeIdName;

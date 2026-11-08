@@ -1,7 +1,6 @@
 import type { AnyLeafType, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
-import * as Id from "../id2";
-import { toAnyBigId } from "../id2";
+import { Id, IdAny, IdBig } from "../id2";
 import type { Sql, ViewType } from "../sql2";
 import { netFrameworkGroup } from "../sql2";
 import { NodeStates, SqlCommon } from "../sqlCommon";
@@ -28,9 +27,9 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
   const { getNodeStates, resetNodeStates } = getSetNodeStates;
   const setNodeState = makeSetNodeState(
     getSetNodeStates,
-    Id.toAnyBigId,
+    IdAny.toAnyBigId,
     NodeType.Group,
-    makeRootDefaults(Id.toAnyBigId, [netFrameworkItem])
+    makeRootDefaults(IdAny.toAnyBigId, [netFrameworkItem])
   );
 
   const getLeafType = (): AnyLeafType => {
@@ -54,7 +53,7 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
   const leafType = getLeafType();
 
   const getForest = (nodeStates: NodeStates): Forest => {
-    const { toTrunk, addToParent, makeRootNode } = makeNodes(nodeStates, leafType, NodeType.Group, Id.toAnyBigId);
+    const { toTrunk, addToParent, makeRootNode } = makeNodes(nodeStates, leafType, NodeType.Group, IdAny.toAnyBigId);
     const trunk = toTrunk(top, rootNodeType);
 
     const netFrameworkNode = makeRootNode(netFrameworkItem, trunk);
@@ -71,7 +70,7 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
         // expanded assemblies
         const assemblyIds = assemblies
           .map((item) => item.id)
-          .filter((id) => nodeStates.isExpandedId(Id.toBigAssemblyId(id), false));
+          .filter((id) => nodeStates.isExpandedId(IdBig.toBigAssemblyId(id), false));
         // namespaces
         const namespaces = sqlTables.namespaces.selectWhereIn("assemblyId", assemblyIds);
         namespaces.forEach((namespace) =>
@@ -106,7 +105,7 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && node.isVisible)
-      .map((node) => toAnyBigId(node.nodeId, node.type));
+      .map((node) => IdAny.toAnyBigId(node.nodeId, node.type));
     const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
     return calls;
   };

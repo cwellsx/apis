@@ -1,5 +1,5 @@
 import { SqlDatabase, SqlTable } from "sqlio";
-import * as Id from "../id2";
+import { Id } from "../id2";
 import { ConfigKvpT, ConfigT } from "./config";
 import { GetSetNodeStatesT, nodeStateTablesT } from "./nodeStates";
 import { Boolean, fromBoolean } from "./sqlBoolean";
