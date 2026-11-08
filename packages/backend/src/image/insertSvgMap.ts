@@ -68,6 +68,7 @@ export const insertSvgMap = (
 
   const style = svgDoc.createElement("style");
   style.appendChild(
+    // stroke: blue is to see the lines during development -- can delete it before shipping
     svgDoc.createTextNode(`
   .hit-edge {
     fill: transparent;

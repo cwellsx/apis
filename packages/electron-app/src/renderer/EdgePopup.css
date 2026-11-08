@@ -1,0 +1,16 @@
+.edge-popup {
+  position: fixed;
+  /* positioned by setting transform to the mouse coordinates, which is why top/left are zero */
+  top: 0;
+  left: 0;
+  z-index: 10;
+  padding: 0.2em 0.4em;
+  border: 1px solid #5f6368;
+  background: white;
+  font-family: Consolas;
+  font-size: 0.85em;
+  white-space: nowrap;
+  /* the popup must not steal the hover from the graph's hit areas: when it becomes interactive this
+     needs to be auto, which the freeze-on-modifier-key behaviour makes possible */
+  pointer-events: none;
+}

@@ -1,8 +1,10 @@
-import { EdgeId, EdgePopups, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
+import { EdgeId, EdgeLabels, EdgePopups, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
 import * as React from "react";
+import { EdgePopup } from "./EdgePopup";
 import "./Graph.css";
-import { log } from "./log";
+import { toGraphElement } from "./graphElement";
 import { OnGraphEvent } from "./onEvent";
+import { useKeyboard } from "./useKeyboard";
 import { OnWheel } from "./useZoomPercent";
 
 type GraphProps = {
@@ -13,9 +15,19 @@ type GraphProps = {
   onGraphEvent: OnGraphEvent;
 };
 
+// the edge under the mouse, and the labels to eventually show in its popup (undefined if it has none)
+type HoveredEdge = { edgeId: string; labels: EdgeLabels[] | undefined };
+
+// how far the popup is kept from the mouse, so that it doesn't sit under the pointer
+const popupOffset = 12;
+
 export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) => {
   const divRef = React.useRef<HTMLDivElement>(null);
+  const popupRef = React.useRef<HTMLDivElement>(null);
   const zoomPercent = props.zoomPercent;
+  const keyboard = useKeyboard();
+  const isFrozen = keyboard.shiftKey || keyboard.ctrlKey;
+  const [hoveredEdge, setHoveredEdge] = React.useState<HoveredEdge | undefined>(undefined);
 
   React.useEffect(() => {
     const svg = divRef.current?.querySelector("svg");
@@ -46,30 +58,14 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     }
   }, [zoomPercent, props.svg]);
 
-  React.useEffect(() => {
-    // like https://github.com/donavon/use-event-listener
-
-    const keyboardEvent: (event: KeyboardEvent) => void = (event) => {
-      if (event.repeat) return; // don't spike the CPU if a key is held down
-      const shiftKey: boolean = event.shiftKey;
-      const ctrlKey: boolean = event.ctrlKey;
-      const newClassName: string | undefined = shiftKey
-        ? ctrlKey
-          ? "shiftKey ctrlKey"
-          : "shiftKey"
-        : ctrlKey
-          ? "ctrlKey"
-          : undefined;
-      log(`setClassName(${newClassName})`);
-    };
-    document.addEventListener("keydown", keyboardEvent);
-    document.addEventListener("keyup", keyboardEvent);
-
-    return () => {
-      document.removeEventListener("keydown", keyboardEvent);
-      document.removeEventListener("keyup", keyboardEvent);
-    };
-  });
+  // while a modifier key is held the graph container gets a class, which the CSS uses for cursors
+  const keyboardClassName = keyboard.shiftKey
+    ? keyboard.ctrlKey
+      ? "shiftKey ctrlKey"
+      : "shiftKey"
+    : keyboard.ctrlKey
+      ? "ctrlKey"
+      : undefined;
 
   const textToNodeOrEdgeId = (id: string, className: string): NodeId | EdgeId | undefined => {
     switch (className) {
@@ -105,16 +101,50 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     });
   };
 
+  const findHoveredEdge = (target: EventTarget): HoveredEdge | undefined => {
+    if (!(target instanceof Element)) return undefined;
+    const element = target.closest("[id]");
+    const graphElement = element ? toGraphElement(element) : undefined;
+    if (graphElement?.graphClass !== "edge") return undefined;
+    return { edgeId: graphElement.id, labels: props.edgePopups?.get(graphElement.id) };
+  };
+
+  const setPopupPosition = (clientX: number, clientY: number) => {
+    const popup = popupRef.current;
+    // the popup is positioned by writing transform, so that following the mouse doesn't re-render
+    if (popup) popup.style.transform = `translate(${clientX + popupOffset}px, ${clientY + popupOffset}px)`;
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    // while a modifier key is held an existing popup is frozen: it neither moves nor changes, so that
+    // the mouse can travel from the edge to the popup itself
+    if (isFrozen && hoveredEdge) return;
+
+    setPopupPosition(e.clientX, e.clientY);
+
+    const next = findHoveredEdge(e.target);
+    if (next?.edgeId !== hoveredEdge?.edgeId) setHoveredEdge(next);
+  };
+
+  const onMouseLeave = () => {
+    // a frozen popup outlives the mouse leaving the graph, otherwise it could never be reached
+    if (!isFrozen) setHoveredEdge(undefined);
+  };
+
   // TODO add onClick
   return (
     <>
       <div
+        className={keyboardClassName}
         onWheel={props.onWheelZoomPercent}
         ref={divRef}
+        onMouseMove={onMouseMove}
+        onMouseLeave={onMouseLeave}
         dangerouslySetInnerHTML={{ __html: props.svg }}
         onClick={onClick}
       ></div>
       <div className="zoom bottom">{`${props.zoomPercent}%`}</div>
+      <EdgePopup divRef={popupRef} edgeId={hoveredEdge?.edgeId} />
     </>
   );
 };
