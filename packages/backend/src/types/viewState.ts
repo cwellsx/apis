@@ -1,8 +1,9 @@
-import type { AnyLeafType, AnyNodeType, Node, NodeId, NodeState } from "../contracts-ui";
+import type { AnyLeafType, AnyNodeType, EdgePopups, Node, NodeId, NodeState } from "../contracts-ui";
 import { ImageData } from "./image";
 
 export type GraphNodes = {
   imageData: ImageData;
+  edgePopups?: EdgePopups;
   leafType: AnyLeafType;
   getNode: (nodeId: NodeId) => Node;
   findNode: (predicate: (node: Node) => boolean) => Node | undefined;

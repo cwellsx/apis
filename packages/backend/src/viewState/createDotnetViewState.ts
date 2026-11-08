@@ -1,4 +1,4 @@
-import type { AnyLeafType, Node, NodeId } from "../contracts-ui";
+import type { AnyLeafType, EdgeLabels, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
 import { Id, IdAny, IdBig } from "../id2";
 import type { Sql, ViewType } from "../sql2";
@@ -11,9 +11,6 @@ import type { Forest, RootItem, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
 import { toNodeId } from "./toNodeId";
-
-// one level down from an edge: the method calls which are bundled into it, with their names
-type PopupCall = Sql.Call & { fromName: string; toName: string };
 
 export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
   const netFrameworkItem: RootItem<number> = {
@@ -110,7 +107,10 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
     return calls;
   };
 
-  const getPopup = (call: Sql.Call): PopupCall[] => {
+  const getPopup = (call: Sql.Call): EdgeLabels[] => {
+    // one level down from an edge: the method calls which are bundled into it, with their names
+    type PopupCall = Sql.Call & { fromName: string; toName: string };
+
     /*
       SELECT calls.fromId, calls.toId, fromFullName.fullName, toFullName.fullName
       FROM calls
@@ -143,7 +143,10 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
         toName: "toFullName.fullName",
       });
 
-    return descendantCalls;
+    return descendantCalls.map((popupCall) => ({
+      client: { label: popupCall.fromName, nodeId: toNodeId(popupCall.fromId) },
+      server: { label: popupCall.toName, nodeId: toNodeId(popupCall.toId) },
+    }));
   };
 
   const getGraphNodes = (): GraphNodes => {
@@ -154,11 +157,11 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    const popups = new Map<string, PopupCall[]>();
+    const edgePopups = new Map<string, EdgeLabels[]>();
     for (const call of calls) {
       const result = getPopup(call);
       const edgeId = nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId));
-      popups.set(edgeIdToText(edgeId), result);
+      edgePopups.set(edgeIdToText(edgeId), result);
     }
 
     const imageData: ImageData = {
@@ -166,7 +169,7 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
       edges: calls.map((call) => nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId))),
     };
 
-    return { imageData, leafType, getNode, findNode };
+    return { imageData, edgePopups, leafType, getNode, findNode };
   };
 
   return { getGraphNodes, setNodeState, resetNodeStates };

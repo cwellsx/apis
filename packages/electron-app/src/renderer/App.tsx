@@ -163,6 +163,7 @@ const App: React.FunctionComponent = () => {
     ) : (
       <Graph
         svg={image.svg}
+        edgePopups={image.edgePopups}
         zoomPercent={zoomPercent}
         onWheelZoomPercent={onWheelZoomPercent}
         onGraphEvent={onGraphEvent}

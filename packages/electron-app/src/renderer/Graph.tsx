@@ -1,11 +1,17 @@
-import { EdgeId, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
+import { EdgeId, EdgePopups, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
 import * as React from "react";
 import "./Graph.css";
 import { log } from "./log";
 import { OnGraphEvent } from "./onEvent";
 import { OnWheel } from "./useZoomPercent";
 
-type GraphProps = { svg: string; zoomPercent: number; onWheelZoomPercent: OnWheel; onGraphEvent: OnGraphEvent };
+type GraphProps = {
+  svg: string;
+  edgePopups?: EdgePopups;
+  zoomPercent: number;
+  onWheelZoomPercent: OnWheel;
+  onGraphEvent: OnGraphEvent;
+};
 
 export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) => {
   const divRef = React.useRef<HTMLDivElement>(null);

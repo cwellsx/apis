@@ -11,6 +11,9 @@ export const createPresenter = async (selectedView: SelectedView): Promise<OpenD
   const showViews = async (needMenuItems: boolean): Promise<AppView[]> => {
     graphNodes = selectedView.viewState.getGraphNodes();
     const image = await renderImage(graphNodes.imageData, selectedView.hasParentEdges);
+
+    if (!(typeof image === "string")) image.edgePopups = graphNodes.edgePopups;
+
     const nodes: Node[] = graphNodes.imageData.roots;
     const views: AppView[] = [
       { type: "nodes", payload: { nodes } },
