@@ -7,10 +7,41 @@
   padding: 0.2em 0.4em;
   border: 1px solid #5f6368;
   background: white;
-  font-family: Consolas;
-  font-size: 0.85em;
+  /* font-family: Consolas;
+  font-size: 0.85em; */
   white-space: nowrap;
   /* the popup must not steal the hover from the graph's hit areas: when it becomes interactive this
      needs to be auto, which the freeze-on-modifier-key behaviour makes possible */
   pointer-events: none;
+}
+
+/* one row per pair of the bundle: source, arrow, destination. Grid rather than flex, because flex
+   aligns within a row and this has to align between rows -- every row uses the same three tracks */
+.edge-popup-row {
+  display: grid;
+  /* the two name columns shrink (minmax with a zero minimum) so that they can ellipsize, while the
+     arrow column is only as wide as the arrow */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  column-gap: 0.5em;
+}
+
+/* the names sit either side of the arrow: the source is right-aligned so that it ends where the arrow
+   begins, which also means a source which is too long loses its start -- keeping the distinctive tail
+   of a qualified name -- while a destination which is too long loses its tail */
+.edge-popup-source {
+  text-align: right;
+}
+
+.edge-popup-arrow {
+  text-align: center;
+}
+
+.edge-popup-destination {
+  text-align: left;
+}
+
+.edge-popup-source,
+.edge-popup-destination {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

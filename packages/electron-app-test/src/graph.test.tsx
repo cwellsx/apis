@@ -13,10 +13,16 @@ const svg = `
       <polygon class="hit-edge" points="10,10 90,40 89,41 11,11" data-from-id="1073741825||1073741828"/>
       <path d="M10,10 L90,40"/>
     </g>
+    <g id="1073741828||1073741825" class="edge">
+      <polygon class="hit-edge" points="90,40 10,10 11,11 89,41" data-from-id="1073741828||1073741825"/>
+      <path d="M90,40 L10,10"/>
+    </g>
   </svg>`;
 
 const edgeId = "1073741825||1073741828";
 const nodeId = "1073741825";
+// this edge is not in edgePopups, i.e. its bundle is unknown
+const noDataEdgeId = "1073741828||1073741825";
 
 const edgePopups: EdgePopups = new Map<string, EdgeLabels[]>([
   [
@@ -43,18 +49,35 @@ const graph = (zoomPercent: number) => (
 const renderGraph = (zoomPercent = 100) => {
   const result = render(graph(zoomPercent));
   const edge = result.container.querySelector(`[id="${edgeId}"]`) as SVGElement;
+  const noDataEdge = result.container.querySelector(`[id="${noDataEdgeId}"]`) as SVGElement;
   const node = result.container.querySelector(`[id="${nodeId}"]`) as SVGElement;
   const popup = result.container.querySelector(".edge-popup") as HTMLDivElement;
-  return { ...result, edge, node, popup };
+  return { ...result, edge, noDataEdge, node, popup };
 };
 
-test("shows the id of the hovered edge, and hides when some other element is hovered", () => {
-  const { edge, node, popup } = renderGraph();
+test("shows each pair of the hovered edge's bundle as source, arrow and destination", () => {
+  const { edge, popup } = renderGraph();
   expect(popup.style.display).toBe("none");
 
   fireEvent.mouseMove(edge, { clientX: 30, clientY: 40 });
   expect(popup.style.display).toBe("block");
-  expect(popup.textContent).toBe(edgeId);
+
+  const row = popup.querySelector(".edge-popup-row") as HTMLDivElement;
+  expect(row.children).toHaveLength(3);
+  expect(row.children[0].textContent).toBe("Core");
+  expect(row.children[1].textContent).toBe("→");
+  expect(row.children[2].textContent).toBe("Mono.Cecil");
+});
+
+test("hides when a node is hovered, and shows nothing for an edge with no bundle", () => {
+  const { edge, noDataEdge, node, popup } = renderGraph();
+
+  // its bundle is unknown, so this edge has no popup
+  fireEvent.mouseMove(noDataEdge, { clientX: 30, clientY: 40 });
+  expect(popup.style.display).toBe("none");
+
+  fireEvent.mouseMove(edge, { clientX: 30, clientY: 40 });
+  expect(popup.style.display).toBe("block");
 
   // a node is not an edge, so hovering one of those hides the popup again
   fireEvent.mouseMove(node, { clientX: 5, clientY: 5 });
@@ -85,6 +108,7 @@ test("neither moves nor hides while a modifier key is held", () => {
   const { edge, node, popup } = renderGraph();
   fireEvent.mouseMove(edge, { clientX: 30, clientY: 40 });
   const transform = popup.style.transform;
+  const text = popup.textContent;
 
   // useKeyboard listens on document, which is where a key press arrives
   fireEvent.keyDown(document, { key: "Shift", shiftKey: true });
@@ -92,7 +116,7 @@ test("neither moves nor hides while a modifier key is held", () => {
   fireEvent.mouseMove(node, { clientX: 5, clientY: 5 });
   fireEvent.mouseOut(edge, { relatedTarget: document.body });
   expect(popup.style.display).toBe("block");
-  expect(popup.textContent).toBe(edgeId);
+  expect(popup.textContent).toBe(text);
   expect(popup.style.transform).toBe(transform);
 
   // releasing the key lets the popup follow the mouse again

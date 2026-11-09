@@ -4,8 +4,6 @@
 
 Implement tooltips:
 
-- SQL to get children of given edge
-- Unit-test
 - write the tooltips into the front end with the SVG
 - Display the tooltip -- on hover and on click
 - Improve or remove the titles
@@ -14,6 +12,42 @@ Reduce density of graphs:
 
 - Hide self-self edges -- could make this optional, but I don't see no use for it
 - Progressive reveal of namespaces e.g. initially Foo.Bar.* for Foo.Bar.Baz and Foo.Bar.Bat
+
+How to format the tooltip:
+
+- Group by -- source, destination, none
+- Compress groups -- join(",") instead of join("\n")
+- Shorten identifiers -- remove prefix
+- Simplest case (no grouping) is pairs with an arrow
+- Use title= for native tooltip on shortened identifiers
+
+Comment re CSS I didn't understand
+
+> ```css
+> .edge-popup {
+>   max-width: 50ch;
+>   max-height: 40vh;
+>   overflow: auto;
+> }
+> .popup-row {
+>   display: grid;
+>   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+>   column-gap: 0.5em;
+> }
+> .popup-row .name {
+>   overflow: hidden;
+>   text-overflow: ellipsis;
+>   white-space: nowrap;
+> }
+> .popup-row .count {
+>   text-align: right;
+>   font-variant-numeric: tabular-nums;
+> }
+> ```
+>
+> `minmax(0, 1fr)` rather than `1fr` is the part people get wrong: a grid track won't shrink below its content's min-content width without it, so the ellipsis never kicks in. Monospace (`Consolas` — already the app's convention, and what `EdgePopup.css` uses) keeps columns stable without measuring.
+>
+> One interaction consequence to plan for: **scrolling requires `pointer-events: auto`**, at which point the comment in `EdgePopup.css` becomes actionable. It works cleanly precisely because of the freeze: moving onto the popup fires `mouseleave` on the graph div, so hover stops updating while the pointer is over the popup — no flicker, no extra guard needed.
 
 ## Near term
 
