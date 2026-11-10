@@ -1,4 +1,4 @@
-import type { AnyLeafType, EdgeLabels, Node, NodeId } from "../contracts-ui";
+import type { AnyLeafType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
 import { Id, IdAny, IdBig } from "../id2";
 import type { Sql, ViewType } from "../sql2";
@@ -107,7 +107,7 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
     return calls;
   };
 
-  const getPopup = (call: Sql.Call): EdgeLabels[] => {
+  const getEdgeLabels = (call: Sql.Call): EdgeLabels[] => {
     // one level down from an edge: the method calls which are bundled into it, with their names
     type PopupCall = Sql.Call & { fromName: string; toName: string };
 
@@ -157,11 +157,13 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
-    const edgePopups = new Map<string, EdgeLabels[]>();
+    const edgePopups = new Map<string, EdgeInfo>();
     for (const call of calls) {
-      const result = getPopup(call);
-      const edgeId = nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId));
-      edgePopups.set(edgeIdToText(edgeId), result);
+      const labels = getEdgeLabels(call);
+      const nodeIds = { fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) };
+      const nodes: EdgeNodes = { client: getNode(nodeIds.fromId), server: getNode(nodeIds.toId) };
+      const edgeId = nodeIdsToEdgeId(nodeIds.fromId, nodeIds.toId);
+      edgePopups.set(edgeIdToText(edgeId), { nodes, labels });
     }
 
     const imageData: ImageData = {

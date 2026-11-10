@@ -1,5 +1,5 @@
 import { fireEvent, render } from "@testing-library/react";
-import { EdgeLabels, EdgePopups, textToNodeId } from "backend-ui";
+import { EdgeInfo, EdgePopups, Node, NodeType, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { Graph } from "../../electron-app/src/renderer/Graph";
 
@@ -24,15 +24,29 @@ const nodeId = "1073741825";
 // this edge is not in edgePopups, i.e. its bundle is unknown
 const noDataEdgeId = "1073741828||1073741825";
 
-const edgePopups: EdgePopups = new Map<string, EdgeLabels[]>([
+// an assembly node, of the kind which the two ends of the edge above are
+const assemblyNode = (label: string, nodeId: string): Node => ({
+  label,
+  nodeId: textToNodeId(nodeId),
+  parent: null,
+  type: NodeType.Assembly,
+  isVisible: true,
+  collapsible: "none",
+});
+
+// the labels are one level below the edge's own nodes: namespaces inside the two assemblies
+const edgePopups: EdgePopups = new Map<string, EdgeInfo>([
   [
     edgeId,
-    [
-      {
-        client: { label: "Core", nodeId: textToNodeId(nodeId) },
-        server: { label: "Mono.Cecil", nodeId: textToNodeId("1073741828") },
-      },
-    ],
+    {
+      nodes: { client: assemblyNode("Core", nodeId), server: assemblyNode("Mono.Cecil", "1073741828") },
+      labels: [
+        {
+          client: { label: "Core.Cecil", nodeId: textToNodeId("5385486336") },
+          server: { label: "Mono.Cecil.Cil", nodeId: textToNodeId("5385486340") },
+        },
+      ],
+    },
   ],
 ]);
 
@@ -64,9 +78,9 @@ test("shows each pair of the hovered edge's bundle as source, arrow and destinat
 
   const row = popup.querySelector(".edge-popup-row") as HTMLDivElement;
   expect(row.children).toHaveLength(3);
-  expect(row.children[0].textContent).toBe("Core");
+  expect(row.children[0].textContent).toBe("Core.Cecil");
   expect(row.children[1].textContent).toBe("→");
-  expect(row.children[2].textContent).toBe("Mono.Cecil");
+  expect(row.children[2].textContent).toBe("Mono.Cecil.Cil");
 });
 
 test("hides when a node is hovered, and shows nothing for an edge with no bundle", () => {

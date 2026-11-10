@@ -1,4 +1,4 @@
-import { EdgeId, EdgeLabels, EdgePopups, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
+import { EdgeId, EdgeInfo, EdgePopups, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { EdgePopup } from "./EdgePopup";
 import "./Graph.css";
@@ -15,8 +15,8 @@ type GraphProps = {
   onGraphEvent: OnGraphEvent;
 };
 
-// the edge under the mouse, and the pairs to show in its popup
-type HoveredEdge = { edgeId: string; labels: EdgeLabels[] };
+// the edge under the mouse: its id, which is the key of edgePopups, and the info to show in its popup
+type HoveredEdge = { edgeId: string; info: EdgeInfo };
 
 // how far the popup is kept from the mouse, so that it doesn't sit under the pointer
 const popupOffset = 12;
@@ -108,8 +108,8 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     if (graphElement?.graphClass !== "edge") return undefined;
 
     // an edge whose bundle is not known shows no popup at all
-    const labels = props.edgePopups?.get(graphElement.id);
-    return labels?.length ? { edgeId: graphElement.id, labels } : undefined;
+    const info = props.edgePopups?.get(graphElement.id);
+    return info?.labels.length ? { edgeId: graphElement.id, info } : undefined;
   };
 
   const setPopupPosition = (clientX: number, clientY: number) => {
@@ -147,7 +147,7 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
         onClick={onClick}
       ></div>
       <div className="zoom bottom">{`${props.zoomPercent}%`}</div>
-      <EdgePopup divRef={popupRef} labels={hoveredEdge?.labels} />
+      <EdgePopup divRef={popupRef} info={hoveredEdge?.info} />
     </>
   );
 };
