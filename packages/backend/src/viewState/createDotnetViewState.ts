@@ -6,7 +6,7 @@ import { netFrameworkGroup } from "../sql2";
 import { NodeStates, SqlCommon } from "../sqlCommon";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
-import { assert, getOrThrow } from "../utils";
+import { assert, compareOrdinal, getOrThrow } from "../utils";
 import type { Forest, RootItem, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
@@ -143,10 +143,15 @@ export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType,
         toName: "toFullName.fullName",
       });
 
-    return descendantCalls.map((popupCall) => ({
-      client: { label: popupCall.fromName, nodeId: toNodeId(popupCall.fromId) },
-      server: { label: popupCall.toName, nodeId: toNodeId(popupCall.toId) },
-    }));
+    // sorted by client, which is the first column of the popup, so that the order is part of the model and
+    // every front end shows the rows in the same order. Ties are broken on the server, so it is a total order
+    // which doesn't depend on the order the rows came out of SQL.
+    return descendantCalls
+      .map((popupCall) => ({
+        client: { label: popupCall.fromName, nodeId: toNodeId(popupCall.fromId) },
+        server: { label: popupCall.toName, nodeId: toNodeId(popupCall.toId) },
+      }))
+      .sort((x, y) => compareOrdinal(x.client.label, y.client.label) || compareOrdinal(x.server.label, y.server.label));
   };
 
   const getGraphNodes = (): GraphNodes => {

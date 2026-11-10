@@ -126,7 +126,10 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     setPopupPosition(e.clientX, e.clientY);
 
     const next = findHoveredEdge(e.target);
-    if (next?.edgeId !== hoveredEdge?.edgeId) setHoveredEdge(next);
+    // the popup changes only when the hovered edge changes
+    if (next?.edgeId === hoveredEdge?.edgeId) return;
+
+    setHoveredEdge(next);
   };
 
   const onMouseLeave = () => {
