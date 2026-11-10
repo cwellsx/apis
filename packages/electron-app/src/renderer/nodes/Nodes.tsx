@@ -1,7 +1,7 @@
 import { isMixed, isParent, NewNodeState, type Node } from "backend-ui";
 import * as React from "react";
-import { OnToggle, TreeView } from "./components";
-import { OnFilterEvent } from "./onEvent";
+import { OnToggle, TreeView } from "./TreeView";
+import { OnFilterEvent } from "../onEvent";
 
 type TreeProps = { nodes: Node[]; onFilterEvent: OnFilterEvent };
 

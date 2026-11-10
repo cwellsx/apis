@@ -1,4 +1,4 @@
-import { GraphClass, toGraphElement } from "../../electron-app/src/renderer/graphElement";
+import { GraphClass, toGraphElement } from "../../electron-app/src/renderer/graphs/graphElement";
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 

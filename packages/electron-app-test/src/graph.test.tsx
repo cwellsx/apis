@@ -1,7 +1,7 @@
 import { fireEvent, render } from "@testing-library/react";
 import { EdgeInfo, EdgePopups, Node, NodeType, textToNodeId } from "backend-ui";
 import * as React from "react";
-import { Graph } from "../../electron-app/src/renderer/Graph";
+import { Graph } from "../../electron-app/src/renderer/graphs";
 
 // a stand-in for what GraphViz plus insertSvgMap produce: an id and a class on each <g>, where an
 // edge id is its two node ids joined by ||

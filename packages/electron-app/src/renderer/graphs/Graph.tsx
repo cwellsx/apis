@@ -3,9 +3,9 @@ import * as React from "react";
 import { EdgePopup } from "./EdgePopup";
 import "./Graph.css";
 import { toGraphElement } from "./graphElement";
-import { OnGraphEvent } from "./onEvent";
-import { useKeyboard } from "./useKeyboard";
-import { OnWheel } from "./useZoomPercent";
+import { OnGraphEvent } from "../onEvent";
+import { useKeyboard } from "../useKeyboard";
+import { OnWheel } from "../useZoomPercent";
 
 type GraphProps = {
   svg: string;
