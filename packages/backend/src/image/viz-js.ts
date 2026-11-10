@@ -30,7 +30,7 @@
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore TS1479 (see comment above)
 import { instance, Viz } from "@viz-js/viz";
-import { log } from "../utils";
+import { assert, log } from "../utils";
 
 let viz: Viz | undefined = undefined;
 
@@ -42,10 +42,19 @@ const getOrCreateViz = async (): Promise<Viz> => {
   return viz;
 };
 
-export const runVizJs = async (dotText: string, format: string): Promise<string> => {
+// GraphViz parses the input and lays out the graph once, and then renders each of the formats from that one
+// layout, so asking for several formats in one call is not several times the work: it is one layout plus one
+// cheap render per format.
+export const runVizJsFormats = async (dotText: string, formats: string[]): Promise<{ [format: string]: string }> => {
   const viz = await getOrCreateViz();
-  log("Invoke Viz.js");
-  return viz.renderString(dotText, { format });
+  log(`Invoke Viz.js for ${formats.join(",")}`);
+  const result = viz.renderFormats(dotText, formats);
+
+  // unlike renderString, this doesn't throw when the graph fails to render, so report the errors ourselves
+  const errors = result.errors.map((error) => error.message).join("; ");
+  assert(result.status === "success", `Viz.js failed to render: ${errors}`);
+
+  return result.output;
 };
 
 export const getVizJsFormats = async (): Promise<string[]> => {

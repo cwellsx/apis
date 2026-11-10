@@ -4,7 +4,7 @@ import type { ImageData } from "../types";
 import { log, options } from "../utils";
 import { insertSvgMap } from "./insertSvgMap";
 import { toDotFormat } from "./toDotFormat";
-import { runVizJs } from "./viz-js";
+import { runVizJsFormats } from "./viz-js";
 
 export const createImage = async (
   imageData: ImageData,
@@ -23,8 +23,7 @@ export const createImage = async (
     tooBig.push(`nodes (actually ${countImageNodes} maximum is ${options.maxImageSize.nodes})`);
   if (tooBig.length) return `Too many ${tooBig.join(", and ")}.`;
 
-  const svgRaw = await runVizJs(dotText, "svg");
-  const mapXml = await runVizJs(dotText, "cmapx");
+  const { svg: svgRaw, cmapx: mapXml } = await runVizJsFormats(dotText, ["svg", "cmapx"]);
 
   const svg = insertSvgMap(svgRaw, mapXml, nodeLabels, edgeLabels);
   return { dotText, mapXml, svg };
