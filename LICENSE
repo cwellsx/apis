@@ -22,4 +22,8 @@ SOFTWARE.
 
 ---
 
-Microsoft icon files are per the "Visual Studio 2022 Image Library EULA".
+See also [Image file licenses](.\packages\electron-app\src\renderer\images.org\LICENSE.md)
+
+- Microsoft icon files are per the "Visual Studio 2022 Image Library EULA".
+- Google icon files are per "Apache-2.0"
+- VS code icon files are per "CC-BY-4.0"

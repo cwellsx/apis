@@ -6,4 +6,4 @@ for this project I use the CLI to convert the `*.svg` files to TypeScript:
 
 - https://react-svgr.com/docs/cli
 
-See `build-icons.bar` in the root of this project -- it converts SVG files in `images.org` to TSX files in `images.tsx`.
+See `build-icons.bat` in the root of this project -- it converts SVG files in `images.org` to TSX files in `images.tsx`.

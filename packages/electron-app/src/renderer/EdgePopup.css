@@ -26,6 +26,14 @@
   column-gap: 0.5em;
 }
 
+/* the edge being inspected: bold, above a rule, with the pairs of its bundle below it */
+.edge-popup-header {
+  font-weight: 600;
+  border-bottom: 1px solid lightgray;
+  padding-bottom: 0.2em;
+  margin-bottom: 0.2em;
+}
+
 /* the names sit either side of the arrow: the source is right-aligned so that it ends where the arrow
    begins, which also means a source which is too long loses its start -- keeping the distinctive tail
    of a qualified name -- while a destination which is too long loses its tail */

@@ -8,18 +8,31 @@ type EdgePopupProps = { divRef: React.Ref<HTMLDivElement>; info: EdgeInfo | unde
 const pairKey = (pair: EdgeLabels): string =>
   `${nodeIdToText(pair.client.nodeId)}||${nodeIdToText(pair.server.nodeId)}`;
 
-// The popup is never unmounted: it is hidden with display instead, so that its ref is always valid and
-// Graph can position it imperatively on every mouse move (writing transform, without re-rendering).
-// Each pair of the bundle is one row of source, arrow and destination. The info also carries the two
-// nodes of the edge itself, for a header.
-export const EdgePopup: React.FunctionComponent<EdgePopupProps> = (props: EdgePopupProps) => (
-  <div className="edge-popup" ref={props.divRef} style={{ display: props.info?.labels.length ? "block" : "none" }}>
-    {props.info?.labels.map((pair) => (
-      <div className="edge-popup-row" key={pairKey(pair)}>
-        <div className="edge-popup-source">{pair.client.label}</div>
-        <div className="edge-popup-arrow">{"→"}</div>
-        <div className="edge-popup-destination">{pair.server.label}</div>
-      </div>
-    ))}
+// one row: source, arrow, destination. The header row is the edge itself, and each row below it is one
+// pair of the bundle one level down.
+type PopupRowProps = { source: string; destination: string; isHeader?: boolean };
+
+const PopupRow: React.FunctionComponent<PopupRowProps> = (props: PopupRowProps) => (
+  <div className={props.isHeader ? "edge-popup-row edge-popup-header" : "edge-popup-row"}>
+    <div className="edge-popup-source">{props.source}</div>
+    <div className="edge-popup-arrow">{"→"}</div>
+    <div className="edge-popup-destination">{props.destination}</div>
   </div>
 );
+
+// The popup is never unmounted: it is hidden with display instead, so that its ref is always valid and
+// Graph can position it imperatively on every mouse move (writing transform, without re-rendering).
+// That is why both branches below return the same div.
+export const EdgePopup: React.FunctionComponent<EdgePopupProps> = (props: EdgePopupProps) => {
+  const info = props.info;
+  if (!info) return <div className="edge-popup" ref={props.divRef} style={{ display: "none" }} />;
+
+  return (
+    <div className="edge-popup" ref={props.divRef} style={{ display: "block" }}>
+      <PopupRow source={info.nodes.client.label} destination={info.nodes.server.label} isHeader />
+      {info.labels.map((pair) => (
+        <PopupRow key={pairKey(pair)} source={pair.client.label} destination={pair.server.label} />
+      ))}
+    </div>
+  );
+};

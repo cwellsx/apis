@@ -1,3 +1,4 @@
+export { default as SvgAssembly } from "./Assembly";
 export { default as SvgAttribute } from "./Attribute";
 export { default as SvgClassInternal } from "./ClassInternal";
 export { default as SvgClassMissing } from "./ClassMissing";

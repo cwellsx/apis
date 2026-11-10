@@ -76,11 +76,24 @@ test("shows each pair of the hovered edge's bundle as source, arrow and destinat
   fireEvent.mouseMove(edge, { clientX: 30, clientY: 40 });
   expect(popup.style.display).toBe("block");
 
-  const row = popup.querySelector(".edge-popup-row") as HTMLDivElement;
+  // the first row is the header, so this is the first row of the bundle itself
+  const row = popup.querySelector(".edge-popup-row:not(.edge-popup-header)") as HTMLDivElement;
   expect(row.children).toHaveLength(3);
   expect(row.children[0].textContent).toBe("Core.Cecil");
   expect(row.children[1].textContent).toBe("→");
   expect(row.children[2].textContent).toBe("Mono.Cecil.Cil");
+});
+
+test("shows the edge's own two nodes as a header, above the pairs of its bundle", () => {
+  const { edge, popup } = renderGraph();
+  fireEvent.mouseMove(edge, { clientX: 30, clientY: 40 });
+
+  const header = popup.firstElementChild as HTMLDivElement;
+  expect(header.className).toContain("edge-popup-header");
+  expect(header.children).toHaveLength(3);
+  expect(header.children[0].textContent).toBe("Core");
+  expect(header.children[1].textContent).toBe("→");
+  expect(header.children[2].textContent).toBe("Mono.Cecil");
 });
 
 test("hides when a node is hovered, and shows nothing for an edge with no bundle", () => {
