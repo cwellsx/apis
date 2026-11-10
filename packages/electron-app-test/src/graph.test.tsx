@@ -1,5 +1,5 @@
 import { fireEvent, render, within } from "@testing-library/react";
-import { EdgeInfo, EdgePopups, Node, NodeType, textToNodeId } from "backend-ui";
+import { AnyNodeType, EdgeInfo, EdgePopups, Node, NodeType, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { Graph } from "../../electron-app/src/renderer/graphs";
 
@@ -17,19 +17,25 @@ const svg = `
       <polygon class="hit-edge" points="90,40 10,10 11,11 89,41" data-from-id="1073741828||1073741825"/>
       <path d="M90,40 L10,10"/>
     </g>
+    <g id="1073741825||1073741829" class="edge">
+      <polygon class="hit-edge" points="10,10 40,30 41,29 11,11" data-from-id="1073741825||1073741829"/>
+      <path d="M10,10 L40,30"/>
+    </g>
   </svg>`;
 
 const edgeId = "1073741825||1073741828";
 const nodeId = "1073741825";
 // this edge is not in edgePopups, i.e. its bundle is unknown
 const noDataEdgeId = "1073741828||1073741825";
+// this edge's entry has no pairs, as an edge to a method has: nothing is one level below a method
+const emptyEdgeId = "1073741825||1073741829";
 
-// an assembly node, of the kind which the two ends of the edge above are
-const assemblyNode = (label: string, nodeId: string): Node => ({
+// a node of the kind which one end of an edge can be
+const makeNode = (label: string, nodeId: string, type: AnyNodeType): Node => ({
   label,
   nodeId: textToNodeId(nodeId),
   parent: null,
-  type: NodeType.Assembly,
+  type,
   isVisible: true,
   collapsible: "none",
 });
@@ -39,13 +45,26 @@ const edgePopups: EdgePopups = new Map<string, EdgeInfo>([
   [
     edgeId,
     {
-      nodes: { client: assemblyNode("Core", nodeId), server: assemblyNode("Mono.Cecil", "1073741828") },
+      nodes: {
+        client: makeNode("Core", nodeId, NodeType.Assembly),
+        server: makeNode("Mono.Cecil", "1073741828", NodeType.Assembly),
+      },
       labels: [
         {
           client: { label: "Core.Cecil", nodeId: textToNodeId("5385486336") },
           server: { label: "Mono.Cecil.Cil", nodeId: textToNodeId("5385486340") },
         },
       ],
+    },
+  ],
+  [
+    emptyEdgeId,
+    {
+      nodes: {
+        client: makeNode("Core", nodeId, NodeType.Assembly),
+        server: makeNode("LoadAssemblies", "1073741829", NodeType.Method),
+      },
+      labels: [],
     },
   ],
 ]);
@@ -64,9 +83,10 @@ const renderGraph = (zoomPercent = 100) => {
   const result = render(graph(zoomPercent));
   const edge = result.container.querySelector(`[id="${edgeId}"]`) as SVGElement;
   const noDataEdge = result.container.querySelector(`[id="${noDataEdgeId}"]`) as SVGElement;
+  const emptyEdge = result.container.querySelector(`[id="${emptyEdgeId}"]`) as SVGElement;
   const node = result.container.querySelector(`[id="${nodeId}"]`) as SVGElement;
   const popup = result.container.querySelector(".edge-popup") as HTMLDivElement;
-  return { ...result, edge, noDataEdge, node, popup };
+  return { ...result, edge, noDataEdge, emptyEdge, node, popup };
 };
 
 test("shows each pair of the hovered edge's bundle as source, arrow and destination", () => {
@@ -122,6 +142,21 @@ test("hides when a node is hovered, and shows nothing for an edge with no bundle
   // a node is not an edge, so hovering one of those hides the popup again
   fireEvent.mouseMove(node, { clientX: 5, clientY: 5 });
   expect(popup.style.display).toBe("none");
+});
+
+test("shows a header and no pairs for an edge whose bundle is empty", () => {
+  const { emptyEdge, popup } = renderGraph();
+
+  fireEvent.mouseMove(emptyEdge, { clientX: 30, clientY: 40 });
+
+  expect(popup.style.display).toBe("block");
+  // the header is the only row: an edge to a method has nothing below it
+  expect(popup.querySelectorAll(".edge-popup-row")).toHaveLength(1);
+  const header = popup.firstElementChild as HTMLDivElement;
+  expect(header.className).toContain("edge-popup-header");
+  expect(within(header).getByText("LoadAssemblies")).toBeTruthy();
+  const destination = header.children[2] as HTMLElement;
+  expect(destination.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe("Method");
 });
 
 test("follows the mouse", () => {

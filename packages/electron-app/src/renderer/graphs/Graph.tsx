@@ -107,9 +107,12 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     const graphElement = element ? toGraphElement(element) : undefined;
     if (graphElement?.graphClass !== "edge") return undefined;
 
-    // an edge whose bundle is not known shows no popup at all
+    // an edge which has no entry here is one whose bundle is not known, so it shows no popup at all. An
+    // entry whose labels are empty is different: the header still shows the edge's own two nodes
     const info = props.edgePopups?.get(graphElement.id);
-    return info?.labels.length ? { edgeId: graphElement.id, info } : undefined;
+    if (!info) return undefined;
+
+    return { edgeId: graphElement.id, info };
   };
 
   const setPopupPosition = (clientX: number, clientY: number) => {

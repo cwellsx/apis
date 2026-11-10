@@ -26,9 +26,13 @@
   column-gap: 0.5em;
 }
 
-/* the edge being inspected: bold, above a rule, with the pairs of its bundle below it */
+/* the edge being inspected: bold, above a rule, with the pairs of its bundle below it. The rule is only
+   there to separate the header from the rows, so an edge with no pairs below it gets the bold text only */
 .edge-popup-header {
   font-weight: 600;
+}
+
+.edge-popup-header:not(:last-child) {
   border-bottom: 1px solid lightgray;
   padding-bottom: 0.2em;
   margin-bottom: 0.2em;
