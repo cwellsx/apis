@@ -54,3 +54,22 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+/* the header's node icons: sized relative to the text, and sitting on the text's baseline. The
+   ImageLibrary components have no default size, so this is where they get one. inline-block overrides
+   the css reset, which makes every svg a block and would put each icon on a line of its own */
+.edge-popup-source svg,
+.edge-popup-destination svg {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: text-bottom;
+}
+
+.edge-popup-source svg {
+  margin-right: 0.35em;
+}
+
+.edge-popup-destination svg {
+  margin-left: 0.35em;
+}

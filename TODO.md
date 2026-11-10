@@ -2,7 +2,6 @@
 
 ## Now
 
-Add header to popup
 Include icon type
 Get new Microsoft assembly icon
 Map node types to icons

@@ -1,4 +1,4 @@
-import { fireEvent, render } from "@testing-library/react";
+import { fireEvent, render, within } from "@testing-library/react";
 import { EdgeInfo, EdgePopups, Node, NodeType, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { Graph } from "../../electron-app/src/renderer/graphs";
@@ -84,16 +84,29 @@ test("shows each pair of the hovered edge's bundle as source, arrow and destinat
   expect(row.children[2].textContent).toBe("Mono.Cecil.Cil");
 });
 
-test("shows the edge's own two nodes as a header, above the pairs of its bundle", () => {
+test("shows the edge's own two nodes as a header, each named with its type's icon", () => {
   const { edge, popup } = renderGraph();
   fireEvent.mouseMove(edge, { clientX: 30, clientY: 40 });
 
   const header = popup.firstElementChild as HTMLDivElement;
   expect(header.className).toContain("edge-popup-header");
   expect(header.children).toHaveLength(3);
-  expect(header.children[0].textContent).toBe("Core");
+
+  // the client's icon comes before its label, and the server's icon after its label. Each icon names the
+  // kind of node it stands for, which the label on its own doesn't say
+  const source = header.children[0] as HTMLElement;
+  const destination = header.children[2] as HTMLElement;
+  expect(source.firstElementChild?.tagName.toLowerCase()).toBe("svg");
+  expect(source.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe("Assembly");
+  expect(within(source).getByText("Core")).toBeTruthy();
   expect(header.children[1].textContent).toBe("→");
-  expect(header.children[2].textContent).toBe("Mono.Cecil");
+  expect(within(destination).getByText("Mono.Cecil")).toBeTruthy();
+  expect(destination.lastElementChild?.tagName.toLowerCase()).toBe("svg");
+  expect(destination.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe("Assembly");
+
+  // the pairs below the header are labels only, so they have no icons
+  const row = popup.querySelector(".edge-popup-row:not(.edge-popup-header)") as HTMLDivElement;
+  expect(row.querySelector("svg")).toBeNull();
 });
 
 test("hides when a node is hovered, and shows nothing for an edge with no bundle", () => {
