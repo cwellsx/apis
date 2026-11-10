@@ -1,5 +1,7 @@
 body {
+  /* the one text size and the one text face: everything inherits these, and only .code overrides */
   font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 13px;
   margin: auto;
 }
 
@@ -19,7 +21,8 @@ body,
   position: relative;
 }
 
-.fixed {
+/* the only override of the document text: code, and anything else which has to line up like code */
+.code {
   font-family: Consolas;
 }
 

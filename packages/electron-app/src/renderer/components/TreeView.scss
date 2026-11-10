@@ -9,7 +9,7 @@ ul.tree-root {
   list-style: none;
   margin: 0;
   padding-left: 0;
-  font-size: 13px;
+  /* the text size comes from the document; the rows are taller than the text, as hit targets */
   line-height: 22px;
 
   .tree-row {
@@ -58,7 +58,6 @@ ul.tree-root {
   tree-content {
     display: flex;
     align-items: center;
-    font-size: 13px;
     line-height: 22px;
   }
 }

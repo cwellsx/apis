@@ -11,6 +11,8 @@ export const toDotFormat = (
   const lines: string[] = [];
   lines.push("digraph {");
   lines.push("  labeljust=l");
+  // the same face and about the same size as the document text (see the renderer's index.css): 10pt is
+  // about 13px. This can't be a CSS variable, because GraphViz measures this text to lay out the graph
   lines.push(`  graph [fontname="Segoe UI", fontsize=10];`);
   lines.push(`  edge [fontname="Segoe UI", fontsize=10];`);
   lines.push(`  node [fontname="Segoe UI", fontsize=10, margin="0.07,0.01"];`); // not sure whether margin makes a difference
