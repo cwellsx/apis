@@ -1,0 +1,45 @@
+digraph {
+  labeljust=l
+  graph [fontname="Segoe UI", fontsize=10];
+  edge [fontname="Segoe UI", fontsize=10];
+  node [fontname="Segoe UI", fontsize=10, margin="0.07,0.01"];
+  subgraph "cluster_1107296257" {
+    class="collapsible"
+    label="Core"
+    id="1107296257"
+    href=foo
+    "1073741825" [shape=rect, id="1073741825", label="(*)", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+    "1073741829" [shape=rect, id="1073741829", label="(*).Test", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+}
+  "1073741830" [shape=rect, id="1073741830", label="ElectronCgi.DotNet", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+  "1073741826" [shape=rect, id="1073741826", label="ICSharpCode.Decompiler", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+  "1073741828" [shape=rect, id="1073741828", label="Mono.Cecil", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+  "1073741832" [shape=rect, id="1073741832", label="Newtonsoft.Json", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+  subgraph "cluster_1107296258" {
+    class="collapsible"
+    label="Serilog"
+    id="1107296258"
+    href=foo
+    "1073741831" [shape=rect, id="1073741831", label="(*)", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+    "1073741833" [shape=rect, id="1073741833", label="(*).Sinks.File", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+}
+  "1073741827" [shape=rect, id="1073741827", label="YamlDotNet", href=foo, class="collapsible", style="filled", fillcolor="#fbfbfb"];
+  "1073741825" -> "1073741825" [id="1073741825||1073741825", href="foo"]
+  "1073741825" -> "1073741826" [id="1073741825||1073741826", href="foo"]
+  "1073741825" -> "1073741827" [id="1073741825||1073741827", href="foo"]
+  "1073741825" -> "1073741828" [id="1073741825||1073741828", href="foo"]
+  "1073741825" -> "1073741829" [id="1073741825||1073741829", href="foo"]
+  "1073741825" -> "1073741830" [id="1073741825||1073741830", href="foo"]
+  "1073741826" -> "1073741826" [id="1073741826||1073741826", href="foo"]
+  "1073741827" -> "1073741827" [id="1073741827||1073741827", href="foo"]
+  "1073741828" -> "1073741828" [id="1073741828||1073741828", href="foo"]
+  "1073741829" -> "1073741829" [id="1073741829||1073741829", href="foo"]
+  "1073741830" -> "1073741830" [id="1073741830||1073741830", href="foo"]
+  "1073741830" -> "1073741831" [id="1073741830||1073741831", href="foo"]
+  "1073741830" -> "1073741832" [id="1073741830||1073741832", href="foo"]
+  "1073741830" -> "1073741833" [id="1073741830||1073741833", href="foo"]
+  "1073741831" -> "1073741831" [id="1073741831||1073741831", href="foo"]
+  "1073741832" -> "1073741832" [id="1073741832||1073741832", href="foo"]
+  "1073741833" -> "1073741831" [id="1073741833||1073741831", href="foo"]
+  "1073741833" -> "1073741833" [id="1073741833||1073741833", href="foo"]
+}

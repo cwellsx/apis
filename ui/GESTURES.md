@@ -40,9 +40,10 @@ it describes leaves the graph — which is what a state change that hides it doe
 
 ## Clickability
 
-Nothing in the graph changes the pointer: no non-standard cursors, and no `pointer` either. The previous
-design's data-URI cursors were an early attempt and are being deleted, along with the dead `<area>` rules
-they lived in. Instead, hovering colours an element to say what a click would do.
+Nothing in the graph changes the pointer: no non-standard cursors, no `pointer`, and the browser's text
+cursor over the labels is suppressed as well, so the pointer is always the plain arrow. The previous design's
+data-URI cursors were an early attempt and have been deleted, along with the dead `<area>` rules they lived
+in. Instead, hovering colours an element to say what a click would do.
 
 | Hovered element                    | Colour | Meaning                        |
 | ---------------------------------- | ------ | ------------------------------ |
@@ -58,6 +59,13 @@ The colours belong in the style `insertSvgMap` injects into the SVG, which alrea
 and a hovered edge, and which also strokes the edge hit areas blue for development: that debug stroke should
 go. Colour is the only channel, so a second one — a dashed stroke, say — belongs in the same style if colour
 alone proves too subtle.
+
+Two things about that style are not obvious, and both are needed for the hover to work at all. A node's box
+is normally **unfilled**, and an unpainted interior is not hit-tested, so the style makes the box a target
+whether it is painted or not — without that, hovering inside a node hits whatever is behind it, which is
+usually the box of the node it is inside. And the stroke is **widened** while hovered, because a hairline of
+colour is too easily read as the node's own black border. Both can be seen at work in
+[example-calls.svg](./example-calls.svg).
 
 ## Graph — hover widget (deferred)
 

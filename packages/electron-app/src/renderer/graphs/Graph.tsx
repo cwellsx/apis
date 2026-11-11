@@ -1,8 +1,8 @@
-import { EdgeId, EdgeInfo, EdgePopups, NodeId, textToEdgeId, textToNodeId } from "backend-ui";
+import { EdgeInfo, EdgePopups, NodeId, textToNodeId } from "backend-ui";
 import * as React from "react";
 import { EdgePopup } from "./EdgePopup";
-import "./Graph.css";
-import { toGraphElement } from "./graphElement";
+import { GraphElement, toGraphElement } from "./graphElement";
+import { log } from "../log";
 import { OnGraphEvent } from "../onEvent";
 import { useKeyboard } from "../useKeyboard";
 import { OnWheel } from "../useZoomPercent";
@@ -67,29 +67,27 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
       ? "ctrlKey"
       : undefined;
 
-  const textToNodeOrEdgeId = (id: string, className: string): NodeId | EdgeId | undefined => {
-    switch (className) {
-      case "edge":
-        return textToEdgeId(id);
-      case "node":
-        return textToNodeId(id);
-      default:
-        return undefined;
-    }
-  };
+  // A node which can be opened or closed carries this class, whether it is closed -- emitted as a node -- or
+  // open -- emitted as a cluster. It is the same marker the injected style colours green. A leaf and an edge
+  // do not carry it, and are not clickable yet, so clicking one sends nothing at all.
+  const getClickableNodeId = (graphElement: GraphElement): NodeId | undefined =>
+    graphElement.classNames.includes("collapsible") ? textToNodeId(graphElement.id) : undefined;
 
   const onClick = (e: React.MouseEvent) => {
     const target = e.target;
-    if (!(target instanceof SVGElement)) return;
-    const element = target.closest("[id][class]");
-    if (!element) return;
-    const { id, className } = element;
-    console.log(`Clicked id="${id}" class="${className}"`);
-    const nodeOrEdgeId = textToNodeOrEdgeId(id, className);
-    if (!nodeOrEdgeId) return;
+    if (!(target instanceof Element)) return;
+    // the innermost element with an id, so that a node inside an open node is the one which is clicked
+    const element = target.closest("[id]");
+    const graphElement = element ? toGraphElement(element) : undefined;
+    if (!graphElement) return;
+
+    const nodeId = getClickableNodeId(graphElement);
+    if (!nodeId) return;
+
+    log("clicked", { id: graphElement.id, graphClass: graphElement.graphClass });
 
     props.onGraphEvent({
-      id: nodeOrEdgeId,
+      id: nodeId,
       event: {
         altKey: e.altKey,
         button: e.button,
@@ -140,7 +138,6 @@ export const Graph: React.FunctionComponent<GraphProps> = (props: GraphProps) =>
     if (!isFrozen) setHoveredEdge(undefined);
   };
 
-  // TODO add onClick
   return (
     <>
       <div

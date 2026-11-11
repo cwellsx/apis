@@ -11,7 +11,7 @@ const svgElement = (tagName: string, attributes: { [key: string]: string }): SVG
 describe("toGraphElement", () => {
   test("reads the id and the class of a graph element", () => {
     const element = svgElement("g", { id: "1073741825||1073741828", class: "edge" });
-    expect(toGraphElement(element)).toEqual({ id: "1073741825||1073741828", graphClass: "edge" });
+    expect(toGraphElement(element)).toEqual({ id: "1073741825||1073741828", graphClass: "edge", classNames: ["edge"] });
   });
 
   test("recognises every class GraphViz emits", () => {
@@ -22,21 +22,34 @@ describe("toGraphElement", () => {
       ["graph", "graph"],
     ];
     cases.forEach(([className, graphClass]) =>
-      expect(toGraphElement(svgElement("g", { id: "x", class: className }))).toEqual({ id: "x", graphClass })
+      expect(toGraphElement(svgElement("g", { id: "x", class: className }))).toEqual({
+        id: "x",
+        graphClass,
+        classNames: [className],
+      })
     );
   });
 
-  test("ignores classes which are not graph classes", () => {
-    // other classes are possible: they mark up the elements inside a graph element, and may be added
-    expect(toGraphElement(svgElement("g", { id: "x", class: "node leaf-details" }))).toEqual({
+  test("keeps the classes which are not graph classes, without being confused by them", () => {
+    // The renderer adds its own markers to the nodes it makes clickable, and they must not be mistaken for
+    // GraphViz's classes, which are what says which kind of element this is. This is also the pair of
+    // classes the click handler tells apart: only the first is clickable.
+    expect(toGraphElement(svgElement("g", { id: "x", class: "node collapsible" }))).toEqual({
       id: "x",
       graphClass: "node",
+      classNames: ["node", "collapsible"],
+    });
+    expect(toGraphElement(svgElement("g", { id: "x", class: "node leaf" }))).toEqual({
+      id: "x",
+      graphClass: "node",
+      classNames: ["node", "leaf"],
     });
     expect(toGraphElement(svgElement("polygon", { id: "x", class: "hit-edge" }))).toEqual({
       id: "x",
       graphClass: undefined,
+      classNames: ["hit-edge"],
     });
-    expect(toGraphElement(svgElement("g", { id: "x" }))).toEqual({ id: "x", graphClass: undefined });
+    expect(toGraphElement(svgElement("g", { id: "x" }))).toEqual({ id: "x", graphClass: undefined, classNames: [] });
   });
 
   test("returns undefined for elements without an id", () => {
@@ -54,6 +67,6 @@ describe("toGraphElement", () => {
     // makes the tests above meaningful -- if jsdom ever stopped modelling it, they would pass for an
     // implementation which used the property, and so would stop guarding anything.
     expect(typeof element.className).toBe("object");
-    expect(toGraphElement(element)).toEqual({ id: "x", graphClass: "edge" });
+    expect(toGraphElement(element)).toEqual({ id: "x", graphClass: "edge", classNames: ["edge"] });
   });
 });

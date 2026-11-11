@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="564pt" height="320pt" viewBox="0.00 0.00 564.00 320.00" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"><style>
+  /* The graph is not a document to select. The labels are text, so the browser offers a text cursor over
+     them and lets them be dragged over; this is the only place the graph would change the pointer, and it
+     should not: the pointer is always the plain arrow. */
+  svg {
+    cursor: default;
+    user-select: none;
+  }
+  /* A node's box is usually unfilled, and an unpainted interior is not hit-tested, so hovering inside a node
+     would hit whatever is behind it -- the box of the node it is inside, or the graph's background. This
+     makes the box a target whether it is painted or not. A node inside an open node is emitted after it, so
+     it still wins over the open node's box. */
+  .node &gt; polygon,
+  .cluster &gt; polygon {
+    pointer-events: all;
+  }
+  /* the hit-test polygons are invisible: they exist only to widen the target */
+  .hit-edge {
+    fill: transparent;
+    stroke: transparent;
+  }
+  /* Hovering a node which can be opened or closed says so in green, whether it is closed or open, because an
+     open one is emitted as a cluster. :has is what keeps a cluster's own box from matching when the mouse is
+     over one of the nodes inside it, which is why the box and the label are matched, not the cluster itself.
+     The stroke is widened, because a hairline of colour is too easily read as the node's own black border. */
+  .collapsible:has(&gt; polygon:hover) &gt; polygon,
+  .collapsible:has(&gt; text:hover) &gt; polygon {
+    stroke: green;
+    stroke-width: 3;
+  }
+  /* a leaf node is not clickable yet, and neither is an edge */
+  .leaf:hover &gt; polygon {
+    stroke: red;
+    stroke-width: 3;
+  }
+  .edge:hover path {
+    stroke: red;
+    stroke-width: 3;
+  }
+  .edge:hover .arrow {
+    fill: red;
+    stroke: red;
+  }
+</style>
+<g id="graph0" class="graph" transform="scale(1 1) rotate(0) translate(4 316)">
+<polygon fill="white" stroke="none" points="-4,4 -4,-316 559.87,-316 559.87,4 -4,4"/>
+<!--Core-->
+<g id="1107296257" class="cluster collapsible" aria-label="Core">
+<polygon fill="none" stroke="black" points="8,-160 8,-304 96,-304 96,-160 8,-160"/>
+<text xml:space="preserve" text-anchor="middle" x="25.72" y="-291" font-family="Segoe UI" font-size="10.00">Core</text>
+</g>
+<!--Serilog-->
+<g id="1107296258" class="cluster collapsible" aria-label="Serilog">
+<polygon fill="none" stroke="black" points="171,-8 171,-152 269,-152 269,-8 171,-8"/>
+<text xml:space="preserve" text-anchor="middle" x="193.44" y="-139" font-family="Segoe UI" font-size="10.00">Serilog</text>
+</g>
+<!--Core-->
+<g id="1073741825" class="node collapsible" aria-label="Core">
+<polygon fill="#fbfbfb" stroke="black" points="70,-276 16,-276 16,-240 70,-240 70,-276"/>
+<text xml:space="preserve" text-anchor="middle" x="43" y="-255" font-family="Segoe UI" font-size="10.00">(*)</text>
+</g>
+<!--Core → Core-->
+<g id="1073741825||1073741825" class="edge" aria-label="Core → Core">
+<polygon class="hit-edge" points="69.5,-273.25 83.75,-270.25 88.25,-265 89.75,-258.25 87.5,-250 83,-245.5 79.25,-247.75 84.5,-252.25 86,-258.25 84.5,-263.5 81.5,-266.5 71,-269.5" data-from-id="1073741825||1073741825"/>
+<path fill="none" stroke="black" d="M70.24,-271.49C80.02,-271.78 88,-267.28 88,-258 88,-252.63 85.33,-248.87 81.19,-246.7"/>
+<polygon fill="black" stroke="black" points="82.22,-243.34 71.72,-244.81 80.85,-250.2 82.22,-243.34" class="arrow"/>
+</g>
+<!--Core.Test-->
+<g id="1073741829" class="node collapsible" aria-label="Core.Test">
+<polygon fill="#fbfbfb" stroke="black" points="70,-204 16,-204 16,-168 70,-168 70,-204"/>
+<text xml:space="preserve" text-anchor="middle" x="43" y="-183" font-family="Segoe UI" font-size="10.00">(*).Test</text>
+</g>
+<!--Core → Core.Test-->
+<g id="1073741825||1073741829" class="edge" aria-label="Core → Core.Test">
+<polygon class="hit-edge" points="43.25,-241.75 44.75,-215.5 41,-215.5 42.5,-238" data-from-id="1073741825||1073741829"/>
+<path fill="none" stroke="black" d="M43,-239.7C43,-232.41 43,-223.73 43,-215.54"/>
+<polygon fill="black" stroke="black" points="46.5,-215.62 43,-205.62 39.5,-215.62 46.5,-215.62" class="arrow"/>
+</g>
+<!--ElectronCgi.DotNet-->
+<g id="1073741830" class="node collapsible" aria-label="ElectronCgi.DotNet">
+<polygon fill="#fbfbfb" stroke="black" points="196.17,-204 105.83,-204 105.83,-168 196.17,-168 196.17,-204"/>
+<text xml:space="preserve" text-anchor="middle" x="151" y="-183" font-family="Segoe UI" font-size="10.00">ElectronCgi.DotNet</text>
+</g>
+<!--Core → ElectronCgi.DotNet-->
+<g id="1073741825||1073741830" class="edge" aria-label="Core → ElectronCgi.DotNet">
+<polygon class="hit-edge" points="69.5,-241.75 116.75,-211 113,-209.5 70.25,-237.25" data-from-id="1073741825||1073741830"/>
+<path fill="none" stroke="black" d="M69.97,-239.52C83.61,-230.68 100.34,-219.84 115.05,-210.3"/>
+<polygon fill="black" stroke="black" points="116.61,-213.46 123.1,-205.08 112.8,-207.59 116.61,-213.46" class="arrow"/>
+</g>
+<!--ICSharpCode.Decompiler-->
+<g id="1073741826" class="node collapsible" aria-label="ICSharpCode.Decompiler">
+<polygon fill="#fbfbfb" stroke="black" points="346.11,-204 231.89,-204 231.89,-168 346.11,-168 346.11,-204"/>
+<text xml:space="preserve" text-anchor="middle" x="289" y="-183" font-family="Segoe UI" font-size="10.00">ICSharpCode.Decompiler</text>
+</g>
+<!--Core → ICSharpCode.Decompiler-->
+<g id="1073741825||1073741826" class="edge" aria-label="Core → ICSharpCode.Decompiler">
+<polygon class="hit-edge" points="70.25,-251.5 222.5,-208 219.5,-205 70.25,-247" data-from-id="1073741825||1073741826"/>
+<path fill="none" stroke="black" d="M70.27,-249.24C106.32,-238.98 171.09,-220.55 220.83,-206.4"/>
+<polygon fill="black" stroke="black" points="221.72,-209.78 230.38,-203.68 219.8,-203.05 221.72,-209.78" class="arrow"/>
+</g>
+<!--Mono.Cecil-->
+<g id="1073741828" class="node collapsible" aria-label="Mono.Cecil">
+<polygon fill="#fbfbfb" stroke="black" points="439.79,-204 382.21,-204 382.21,-168 439.79,-168 439.79,-204"/>
+<text xml:space="preserve" text-anchor="middle" x="411" y="-183" font-family="Segoe UI" font-size="10.00">Mono.Cecil</text>
+</g>
+<!--Core → Mono.Cecil-->
+<g id="1073741825||1073741828" class="edge" aria-label="Core → Mono.Cecil">
+<polygon class="hit-edge" points="70.25,-256.75 198.5,-242.5 283.25,-227.5 373.25,-205 369.5,-203.5 282.5,-223.75 197.75,-238.75 71,-253" data-from-id="1073741825||1073741828"/>
+<path fill="none" stroke="black" d="M70.49,-255.02C126.05,-250.52 255.58,-237.43 371.06,-204.14"/>
+<polygon fill="black" stroke="black" points="371.78,-207.57 380.38,-201.39 369.8,-200.86 371.78,-207.57" class="arrow"/>
+</g>
+<!--YamlDotNet-->
+<g id="1073741827" class="node collapsible" aria-label="YamlDotNet">
+<polygon fill="#fbfbfb" stroke="black" points="537.87,-204 476.13,-204 476.13,-168 537.87,-168 537.87,-204"/>
+<text xml:space="preserve" text-anchor="middle" x="507" y="-183" font-family="Segoe UI" font-size="10.00">YamlDotNet</text>
+</g>
+<!--Core → YamlDotNet-->
+<g id="1073741825||1073741827" class="edge" aria-label="Core → YamlDotNet">
+<polygon class="hit-edge" points="69.5,-258.25 138.5,-254.5 235.25,-246.25 348.5,-230.5 467,-205 463.25,-203.5 347.75,-226.75 235.25,-242.5 138.5,-250.75 71,-254.5" data-from-id="1073741825||1073741827"/>
+<path fill="none" stroke="black" d="M70.29,-256.2C136.8,-253.71 312.38,-243.84 464.91,-204.12"/>
+<polygon fill="black" stroke="black" points="465.62,-207.55 474.39,-201.6 463.82,-200.79 465.62,-207.55" class="arrow"/>
+</g>
+<!--Core.Test → Core.Test-->
+<g id="1073741829||1073741829" class="edge" aria-label="Core.Test → Core.Test">
+<polygon class="hit-edge" points="69.5,-201.25 83.75,-198.25 88.25,-193 89.75,-186.25 87.5,-178 83,-173.5 79.25,-175.75 84.5,-180.25 86,-186.25 84.5,-191.5 81.5,-194.5 71,-197.5" data-from-id="1073741829||1073741829"/>
+<path fill="none" stroke="black" d="M70.24,-199.49C80.02,-199.78 88,-195.28 88,-186 88,-180.63 85.33,-176.87 81.19,-174.7"/>
+<polygon fill="black" stroke="black" points="82.22,-171.34 71.72,-172.81 80.85,-178.2 82.22,-171.34" class="arrow"/>
+</g>
+<!--ElectronCgi.DotNet → ElectronCgi.DotNet-->
+<g id="1073741830||1073741830" class="edge" aria-label="ElectronCgi.DotNet → ElectronCgi.DotNet">
+<polygon class="hit-edge" points="196.25,-201.25 210.5,-196.75 216.5,-186.25 214.25,-178.75 208.25,-174.25 206,-177.25 210.5,-181 212,-185.5 207.5,-193.75 197,-197.5" data-from-id="1073741830||1073741830"/>
+<path fill="none" stroke="black" d="M196.43,-199.17C206.67,-197.98 214.17,-193.59 214.17,-186 214.17,-181.49 211.53,-178.11 207.24,-175.86"/>
+<polygon fill="black" stroke="black" points="208.46,-172.57 197.88,-173.24 206.57,-179.31 208.46,-172.57" class="arrow"/>
+</g>
+<!--Newtonsoft.Json-->
+<g id="1073741832" class="node collapsible" aria-label="Newtonsoft.Json">
+<polygon fill="#fbfbfb" stroke="black" points="104.51,-124 27.49,-124 27.49,-88 104.51,-88 104.51,-124"/>
+<text xml:space="preserve" text-anchor="middle" x="66" y="-103" font-family="Segoe UI" font-size="10.00">Newtonsoft.Json</text>
+</g>
+<!--ElectronCgi.DotNet → Newtonsoft.Json-->
+<g id="1073741830||1073741832" class="edge" aria-label="ElectronCgi.DotNet → Newtonsoft.Json">
+<polygon class="hit-edge" points="131,-166 95,-130.75 92,-133 133.25,-169" data-from-id="1073741830||1073741832"/>
+<path fill="none" stroke="black" d="M132.14,-167.69C120.69,-157.19 105.89,-143.61 93.2,-131.96"/>
+<polygon fill="black" stroke="black" points="95.66,-129.47 85.93,-125.29 90.93,-134.63 95.66,-129.47" class="arrow"/>
+</g>
+<!--Serilog-->
+<g id="1073741831" class="node collapsible" aria-label="Serilog">
+<polygon fill="#fbfbfb" stroke="black" points="235,-52 181,-52 181,-16 235,-16 235,-52"/>
+<text xml:space="preserve" text-anchor="middle" x="208" y="-31" font-family="Segoe UI" font-size="10.00">(*)</text>
+</g>
+<!--ElectronCgi.DotNet → Serilog-->
+<g id="1073741830||1073741831" class="edge" aria-label="ElectronCgi.DotNet → Serilog">
+<polygon class="hit-edge" points="152.75,-169 159.5,-130.75 171.5,-88.75 188,-61 183.5,-61.75 168.5,-87.25 155.75,-130 151.25,-166" data-from-id="1073741830||1073741831"/>
+<path fill="none" stroke="black" d="M152.17,-167.52C154.01,-147.57 158.64,-114.31 170,-88 174,-78.74 179.82,-69.5 185.71,-61.39"/>
+<polygon fill="black" stroke="black" points="188.33,-63.73 191.63,-53.66 182.77,-59.48 188.33,-63.73" class="arrow"/>
+</g>
+<!--Serilog.Sinks.File-->
+<g id="1073741833" class="node collapsible" aria-label="Serilog.Sinks.File">
+<polygon fill="#fbfbfb" stroke="black" points="243.26,-124 178.74,-124 178.74,-88 243.26,-88 243.26,-124"/>
+<text xml:space="preserve" text-anchor="middle" x="211" y="-103" font-family="Segoe UI" font-size="10.00">(*).Sinks.File</text>
+</g>
+<!--ElectronCgi.DotNet → Serilog.Sinks.File-->
+<g id="1073741830||1073741833" class="edge" aria-label="ElectronCgi.DotNet → Serilog.Sinks.File">
+<polygon class="hit-edge" points="164.75,-169.75 192.5,-133 188.75,-133 164,-166" data-from-id="1073741830||1073741833"/>
+<path fill="none" stroke="black" d="M164.32,-167.69C172.08,-157.59 182.04,-144.65 190.76,-133.31"/>
+<polygon fill="black" stroke="black" points="193.48,-135.52 196.8,-125.46 187.93,-131.25 193.48,-135.52" class="arrow"/>
+</g>
+<!--ICSharpCode.Decompiler → ICSharpCode.Decompiler-->
+<g id="1073741826||1073741826" class="edge" aria-label="ICSharpCode.Decompiler → ICSharpCode.Decompiler">
+<polygon class="hit-edge" points="346.25,-200.5 360.5,-196 365.75,-186.25 364.25,-179.5 358.25,-175 356,-178 360.5,-181.75 362,-185.5 357.5,-193 346.25,-196.75" data-from-id="1073741826||1073741826"/>
+<path fill="none" stroke="black" d="M346.31,-198.76C356.77,-197.14 364.11,-192.89 364.11,-186 364.11,-181.91 361.52,-178.75 357.23,-176.52"/>
+<polygon fill="black" stroke="black" points="358.34,-173.2 347.76,-173.68 356.33,-179.9 358.34,-173.2" class="arrow"/>
+</g>
+<!--Mono.Cecil → Mono.Cecil-->
+<g id="1073741828||1073741828" class="edge" aria-label="Mono.Cecil → Mono.Cecil">
+<polygon class="hit-edge" points="440,-201.25 453.5,-197.5 458,-193 459.5,-186.25 458,-178.75 452.75,-173.5 450.5,-176.5 454.25,-180.25 455.75,-186.25 455,-190.75 451.25,-194.5 440,-197.5" data-from-id="1073741828||1073741828"/>
+<path fill="none" stroke="black" d="M440.24,-199.5C449.99,-199.5 457.79,-195 457.79,-186 457.79,-180.94 455.32,-177.3 451.43,-175.08"/>
+<polygon fill="black" stroke="black" points="452.25,-171.68 441.72,-172.84 450.67,-178.5 452.25,-171.68" class="arrow"/>
+</g>
+<!--Newtonsoft.Json → Newtonsoft.Json-->
+<g id="1073741832||1073741832" class="edge" aria-label="Newtonsoft.Json → Newtonsoft.Json">
+<polygon class="hit-edge" points="104.75,-121 119,-117.25 124.25,-106 122.75,-98.5 117.5,-94 114.5,-97 119,-100.75 120.5,-106 116,-113.5 105.5,-117.25" data-from-id="1073741832||1073741832"/>
+<path fill="none" stroke="black" d="M104.83,-119.36C114.91,-118.54 122.51,-114.09 122.51,-106 122.51,-101.33 119.97,-97.86 115.88,-95.62"/>
+<polygon fill="black" stroke="black" points="116.85,-92.26 106.29,-93.03 115.03,-99.02 116.85,-92.26" class="arrow"/>
+</g>
+<!--Serilog → Serilog-->
+<g id="1073741831||1073741831" class="edge" aria-label="Serilog → Serilog">
+<polygon class="hit-edge" points="235.25,-49.75 248.75,-46 253.25,-40.75 254.75,-34 252.5,-25.75 247.25,-21.25 245,-24.25 249.5,-28 251,-34 249.5,-39.25 246.5,-42.25 235.25,-45.25" data-from-id="1073741831||1073741831"/>
+<path fill="none" stroke="black" d="M235.24,-47.49C245.02,-47.78 253,-43.28 253,-34 253,-28.63 250.33,-24.87 246.19,-22.7"/>
+<polygon fill="black" stroke="black" points="247.22,-19.34 236.72,-20.81 245.85,-26.2 247.22,-19.34" class="arrow"/>
+</g>
+<!--Serilog.Sinks.File → Serilog-->
+<g id="1073741833||1073741831" class="edge" aria-label="Serilog.Sinks.File → Serilog">
+<polygon class="hit-edge" points="211.25,-89.5 211.25,-62.5 207.5,-64.75 209,-86.5" data-from-id="1073741833||1073741831"/>
+<path fill="none" stroke="black" d="M210.26,-87.7C209.95,-80.41 209.57,-71.73 209.22,-63.54"/>
+<polygon fill="black" stroke="black" points="212.72,-63.46 208.8,-53.62 205.73,-63.76 212.72,-63.46" class="arrow"/>
+</g>
+<!--Serilog.Sinks.File → Serilog.Sinks.File-->
+<g id="1073741833||1073741833" class="edge" aria-label="Serilog.Sinks.File → Serilog.Sinks.File">
+<polygon class="hit-edge" points="243.5,-121.75 257,-117.25 261.5,-112.75 263,-106 261.5,-98.5 255.5,-93.25 253.25,-97 257.75,-100.75 259.25,-106 257.75,-110.5 254.75,-114.25 243.5,-117.25" data-from-id="1073741833||1073741833"/>
+<path fill="none" stroke="black" d="M243.39,-119.49C253.4,-119.21 261.26,-114.72 261.26,-106 261.26,-100.96 258.64,-97.33 254.48,-95.11"/>
+<polygon fill="black" stroke="black" points="255.4,-91.73 244.86,-92.86 253.8,-98.55 255.4,-91.73" class="arrow"/>
+</g>
+<!--YamlDotNet → YamlDotNet-->
+<g id="1073741827||1073741827" class="edge" aria-label="YamlDotNet → YamlDotNet">
+<polygon class="hit-edge" points="538.25,-201.25 551.75,-197.5 556.25,-193 557.75,-186.25 555.5,-178 550.25,-173.5 548,-176.5 552.5,-180.25 554,-186.25 552.5,-190.75 549.5,-194.5 538.25,-197.5" data-from-id="1073741827||1073741827"/>
+<path fill="none" stroke="black" d="M538.02,-199.5C547.98,-199.36 555.87,-194.86 555.87,-186 555.87,-180.88 553.23,-177.21 549.08,-175.01"/>
+<polygon fill="black" stroke="black" points="550.02,-171.63 539.49,-172.84 548.48,-178.46 550.02,-171.63" class="arrow"/>
+</g>
+</g>
+</svg>

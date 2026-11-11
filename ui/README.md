@@ -16,6 +16,25 @@ to change to make it so.
 | [GESTURES.md](./GESTURES.md)   | Every gesture, on every surface, and the result it produces. |
 | [INSPECTOR.md](./INSPECTOR.md) | The deferred details pane, and what details exist per node.  |
 
+## Example files
+
+`example-calls.dot`, `example-calls.svg` and `example-calls.txt` are one view of the tool's own source. The
+test which prints the view state (`npm run test-dotnet-view -w backend-test`) writes them and then copies
+them here, so running it is also how they are regenerated.
+
+They are the **initial state of the calls view** of the Core2 test data — a graph with both open and closed
+nodes, small enough to read end to end.
+
+| File                | Contents                                                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `example-calls.dot` | what the model is turned into, before GraphViz lays it out: the clusters, the nodes, and the attributes which carry the node classes |
+| `example-calls.svg` | what GraphViz returned, after `insertSvgMap` post-processed it — the injected style, the hit areas and the classes are all in here   |
+| `example-calls.txt` | the node tree the popups and the left-hand tree are built from, as `printForest` prints it                                           |
+
+They are a **snapshot**, replaced whenever the printer is run, and not kept in step with the code in between:
+GraphViz coordinates shift on almost any change, so a diff here is expected rather than alarming. Read them
+for the shape of the data, not as a promise about the current output.
+
 ## Surfaces
 
 **Graph** — the SVG in the Graph tab, and the primary surface. It is not React: GraphViz generates the SVG

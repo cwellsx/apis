@@ -68,24 +68,47 @@ export const insertSvgMap = (
 
   const style = svgDoc.createElement("style");
   style.appendChild(
-    // stroke: blue is to see the lines during development -- can delete it before shipping
     svgDoc.createTextNode(`
+  /* The graph is not a document to select. The labels are text, so the browser offers a text cursor over
+     them and lets them be dragged over; this is the only place the graph would change the pointer, and it
+     should not: the pointer is always the plain arrow. */
+  svg {
+    cursor: default;
+    user-select: none;
+  }
+  /* A node's box is usually unfilled, and an unpainted interior is not hit-tested, so hovering inside a node
+     would hit whatever is behind it -- the box of the node it is inside, or the graph's background. This
+     makes the box a target whether it is painted or not. A node inside an open node is emitted after it, so
+     it still wins over the open node's box. */
+  .node > polygon,
+  .cluster > polygon {
+    pointer-events: all;
+  }
+  /* the hit-test polygons are invisible: they exist only to widen the target */
   .hit-edge {
     fill: transparent;
     stroke: transparent;
-    stroke: blue;
   }
-  .hit-edge:hover {
+  /* Hovering a node which can be opened or closed says so in green, whether it is closed or open, because an
+     open one is emitted as a cluster. :has is what keeps a cluster's own box from matching when the mouse is
+     over one of the nodes inside it, which is why the box and the label are matched, not the cluster itself.
+     The stroke is widened, because a hairline of colour is too easily read as the node's own black border. */
+  .collapsible:has(> polygon:hover) > polygon,
+  .collapsible:has(> text:hover) > polygon {
     stroke: green;
+    stroke-width: 2;
+  }
+  /* a leaf node is not clickable yet, and neither is an edge */
+  .leaf:hover > polygon {
+    stroke: red;
+    stroke-width: 2;
   }
   .edge:hover path {
     stroke: red;
+    stroke-width: 2;
   }
   .edge:hover .arrow {
     fill: red;
-    stroke: red;
-  }
-  .node:hover polygon {
     stroke: red;
   }
 `)

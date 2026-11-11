@@ -1,4 +1,4 @@
-import { AnyNodeType, Node, nodeIdToText } from "../contracts-ui";
+import { AnyNodeType, isLeaf, Node, nodeIdToText } from "../contracts-ui";
 
 export type DotNode = {
   id: string;
@@ -15,11 +15,13 @@ const getShortLabel = (label: string, parentLabel: string | undefined): string =
 export const toDotNode = (node: Node): DotNode => {
   const id = nodeIdToText(node.nodeId);
   const label = node.label;
-  // const className = getAreaClass(node.collapsible);
+  // A node which can be opened or closed is clickable, and the renderer colours it differently from a leaf.
+  // GraphViz merges this with its own class, so the element ends up as e.g. class="node collapsible"
+  const className = isLeaf(node) ? "leaf" : "collapsible";
   const shortLabel = getShortLabel(node.label, node.parent?.label);
   const nodeType = node.type;
 
-  const attributes: { [key: string]: string } = {};
+  const attributes: { [key: string]: string } = { class: className };
   switch (node.type) {
     case "t":
       attributes["style"] = "dotted";

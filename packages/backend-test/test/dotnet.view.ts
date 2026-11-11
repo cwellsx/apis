@@ -8,10 +8,21 @@ import { stringify } from "sut/utils";
 import { createViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
 import { createDotNetTables } from "./utils/createDotNetTables";
-import { fileViewState } from "./utils/paths";
+import { fileExample, fileViewState } from "./utils/paths";
 import { printTestLines } from "./utils/printTestLines";
 
 const printLines = (filename: string, printed: string[]) => printTestLines(fileViewState, filename, printed);
+
+// The example files are copied into the repository, so that what the renderer is given is versioned and can
+// be read without running anything -- see ui/README.md. Only the first view of a type is copied: it is the
+// initial state, which has both open and closed nodes, and it is small enough to read end to end.
+const copyExample = (viewType: ViewType): void => {
+  const from = `${viewType}-0`;
+  const extensions = ["dot", "svg", "txt"];
+  extensions.forEach((extension) =>
+    fs.copyFileSync(fileViewState(`${from}.${extension}`), fileExample(`example-${viewType}.${extension}`))
+  );
+};
 
 const getRootNodeType = (viewType: ViewType): RootNodeType => {
   switch (viewType) {
@@ -77,6 +88,8 @@ describe("testViewStates", function () {
         fs.writeFileSync(fileViewState(`${filenameRoot}.json`), stringify(graphNodes.imageData));
 
         log(`${filenameRoot}.svg`);
+
+        if (filenameRoot === `${viewType}-0`) copyExample(viewType);
       };
 
       it("initial state", async function () {

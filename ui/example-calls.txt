@@ -1,0 +1,12 @@
+g Core
+├── a Core
+└── a Core.Test
+a ElectronCgi.DotNet
+a ICSharpCode.Decompiler
+a Mono.Cecil
+a Newtonsoft.Json
+g Serilog
+├── a Serilog
+└── a Serilog.Sinks.File
+a YamlDotNet
+g .NET Framework
