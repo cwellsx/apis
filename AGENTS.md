@@ -75,7 +75,7 @@ See [`TESTING.md`](./TESTING.md) for details.
 - **Never change git state** — do not stage or commit.
 - **Staging is expected.** The maintainer stages each step as it is finished and commits once a
   feature (or sequence of steps) is complete, so a staged/unstaged split in `git status` is normal.
-  Note that `git --no-pager diff` then shows only the *unstaged* part — use `git --no-pager diff HEAD`
+  Note that `git --no-pager diff` then shows only the _unstaged_ part — use `git --no-pager diff HEAD`
   to see the whole picture of a step in progress.
 - Always disable paging (`--no-pager`).
 
@@ -91,6 +91,7 @@ See [`TESTING.md`](./TESTING.md) for details.
 
 | File              | Contents                                              |
 | ----------------- | ----------------------------------------------------- |
+| `ui/*.md`         | UI design.                                            |
 | `README.md`       | What the project is (for humans).                     |
 | `ARCHITECTURE.md` | Structure, layering, data flow, key modules.          |
 | `TESTING.md`      | How to build, run and validate.                       |
