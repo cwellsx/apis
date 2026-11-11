@@ -1,0 +1,7 @@
+# The repository stores LF, and checks LF out: .prettierrc.json asks for the same, and a working tree which is
+# mostly CRLF means a formatting run rewrites the line endings of files nobody asked it to touch.
+* text=auto eol=lf
+
+# except batch files, which cmd.exe can mis-read without CRLF
+*.cmd text eol=crlf
+*.bat text eol=crlf

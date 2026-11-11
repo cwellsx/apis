@@ -1,1 +1,12 @@
 docs/**/*.md
+
+# generated, not source: a format run must not rewrite build output
+.webpack
+dist
+out
+media
+
+# generated or vendored, but inside a source directory, so the script above does reach them
+**/images.tsx/**
+**/images.org/**
+**/3rd-party/**

@@ -1,5 +1,8 @@
 {
   "private": true,
+  "scripts": {
+    "format": "prettier --write \"packages/*/src*\" packages/backend/contracts packages/backend-dotnet packages/backend-test"
+  },
   "workspaces": [
     "packages/*"
   ],
