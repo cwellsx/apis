@@ -5,12 +5,7 @@ export type AppOptions = {
   zoomPercent: number;
   fontSize: number;
 
-  // these determine which <details> elements are expanded
-  detailsClosed?: DetailsType[];
-
-  // these will be obsolete in the newer version,
-  // so there won't yet be any app options to display
-  showCompilerGeneratedTypes?: boolean;
-  showCompilerGeneratedMethod?: boolean;
+  // when enabled, a namespace which extends another is a node inside it -- Foo.Bar.Baz inside Foo.Bar
+  clusterNamespaces: boolean;
 };
-export const defaultAppOptions: AppOptions = { zoomPercent: 100, fontSize: 13 };
+export const defaultAppOptions: AppOptions = { zoomPercent: 100, fontSize: 13, clusterNamespaces: true };

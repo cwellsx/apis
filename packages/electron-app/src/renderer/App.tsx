@@ -9,10 +9,12 @@
 //   ViewDetails,
 //   ViewGreeting,
 // } from "backend-ui";
-import { AnyEvent, AnyView, defaultAppOptions, Image, Node, TextView as TextViewData } from "backend-ui";
+import { AnyEvent, AnyView, AppOptions, defaultAppOptions, Image, Node, TextView as TextViewData } from "backend-ui";
 import * as React from "react";
 import { PRELOAD_API_KEY, PreloadApis, RendererApi } from "../shared";
+import { appOptionsSchemas, appOptionsSection } from "./appOptionsSchema";
 import { beep } from "./components";
+import { ConfigurationView } from "./configuration";
 // import { AssemblyDetails } from "./details/AssemblyDetails";
 // import { CustomDetails } from "./details/CustomDetails";
 // import { MethodDetails } from "./details/MethodDetails";
@@ -51,6 +53,30 @@ const App: React.FunctionComponent = () => {
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
 
   const [isBusy, setIsBusy] = React.useState(false);
+
+  // Which option groups are open, which is worth nothing to the backend and so is not stored there: it lasts
+  // as long as the window does, and until then a group is closed. A hook, so it belongs up here with the rest:
+  // the text view returns early below, and a hook after that return is a hook called on some renders only.
+  const [openGroups, setOpenGroups] = React.useState<string[]>([]);
+
+  const toggleGroup = (group: string, isOpen: boolean): void =>
+    setOpenGroups((current) => (isOpen ? [...new Set([...current, group])] : current.filter((it) => it !== group)));
+
+  // the one way out of the renderer: every event goes through here, and the app sends the new state back
+  const on = (event: AnyEvent) => {
+    if (isBusy) {
+      beep();
+      return;
+    }
+    setIsBusy(true);
+    mainApi.onEvent([event]);
+  };
+
+  // these are declared before the handlers which use them, so that each one reads in terms of what is above it
+  const onAppOptions: OnAppOptions = (appOptions) => on({ type: "appOptions", payload: appOptions });
+  const onGraphEvent: OnGraphEvent = (graphEvent) => on({ type: "graph", payload: graphEvent });
+  const onFilterEvent: OnFilterEvent = (filterEvent) => on({ type: "filter", payload: filterEvent });
+  // const onDetailEvent: OnDetailEvent = (nodeId) => on(nodeId, mainApi.onDetailEvent);
 
   const zoomPercent = appOptions.zoomPercent;
   const setZoomPercent = (zoomPercent: number): void => onAppOptions({ ...appOptions, zoomPercent });
@@ -107,20 +133,6 @@ const App: React.FunctionComponent = () => {
     document.body.classList.toggle("busy", isBusy);
   }, [isBusy]);
 
-  const on = (event: AnyEvent) => {
-    if (isBusy) {
-      beep();
-      return;
-    }
-    setIsBusy(true);
-    mainApi.onEvent([event]);
-  };
-
-  const onAppOptions: OnAppOptions = (appOptions) => on({ type: "appOptions", payload: appOptions });
-  const onGraphEvent: OnGraphEvent = (graphEvent) => on({ type: "graph", payload: graphEvent });
-  const onFilterEvent: OnFilterEvent = (filterEvent) => on({ type: "filter", payload: filterEvent });
-  // const onDetailEvent: OnDetailEvent = (nodeId) => on(nodeId, mainApi.onDetailEvent);
-
   if (textView) {
     return (
       <React.StrictMode>
@@ -149,7 +161,18 @@ const App: React.FunctionComponent = () => {
     // }
   })();
 
-  const chooseAppOptions = <>App options placeholder</>;
+  const chooseAppOptions = (
+    <ConfigurationView
+      section={appOptionsSection}
+      schema={appOptionsSchemas}
+      data={appOptions}
+      openGroups={openGroups}
+      onToggleGroup={toggleGroup}
+      // The panel reports the options as edited and does not apply them: the state changes when the app sends
+      // them back, which is also what stores them, so the panel always shows what was last stored.
+      onChange={(values) => onAppOptions(values as AppOptions)}
+    />
+  );
 
   const left = (
     <>

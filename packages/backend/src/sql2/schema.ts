@@ -6,7 +6,7 @@ import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = 5;
+const schemaVersion = 6;
 
 // config
 

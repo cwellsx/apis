@@ -1,5 +1,6 @@
 import eslint from "@eslint/js";
 import importPlugin from "eslint-plugin-import";
+import reactHooks from "eslint-plugin-react-hooks";
 import { defineConfig } from "eslint/config";
 import tseslint from "typescript-eslint";
 
@@ -74,5 +75,20 @@ export default defineConfig([
   {
     files: ["packages/backend-test/**/*", "packages/electron-app-test/**/*", "packages/backend/src/contracts-*.ts"],
     rules: { "import/no-internal-modules": "off" },
+  },
+  // React's rules of hooks, whole: this is the plugin's `recommended-latest` preset, which in v7 is the
+  // compiler-era set rather than the two rules it used to be. The rules look at calls named like hooks, so
+  // they apply to the files which use React -- the renderer and its tests -- and not to the backend.
+  {
+    files: ["packages/electron-app/src/renderer/**/*.{ts,tsx}", "packages/electron-app-test/**/*.{ts,tsx}"],
+    ...reactHooks.configs["recommended-latest"],
+    plugins: { "react-hooks": reactHooks },
+    rules: {
+      ...reactHooks.configs["recommended-latest"].rules,
+      // A ref handed down as an ordinary prop is this code's design, not a mistake: React 19 treats `ref` as a
+      // normal prop, and this rule then reports every read of that props object during render -- in EdgePopup
+      // it reports seven, six of which are not about refs at all.
+      "react-hooks/refs": "off",
+    },
   },
 ]);

@@ -49,6 +49,7 @@ export const runVizJsFormats = async (dotText: string, formats: string[]): Promi
   const viz = await getOrCreateViz();
   log(`Invoke Viz.js for ${formats.join(",")}`);
   const result = viz.renderFormats(dotText, formats);
+  log(`Viz.js returned ${result.status}`);
 
   // unlike renderString, this doesn't throw when the graph fails to render, so report the errors ourselves
   const errors = result.errors.map((error) => error.message).join("; ");

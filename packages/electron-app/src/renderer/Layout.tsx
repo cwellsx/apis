@@ -37,6 +37,14 @@ const model: Flex.Model = Flex.Model.fromJson(jsonModel);
 
 const scrollbarWidth = getScrollbarWidth();
 
+const isDebugging = true;
+
+// outside the component, so that it is the same value on every render: the effect below uses it, and making it
+// a dependency of that effect would be wrong while it were a new function each time
+const debugLog = (s: string) => {
+  if (isDebugging) console.log(s);
+};
+
 type LayoutProps = {
   left: React.ReactNode;
   center: React.ReactNode;
@@ -50,11 +58,6 @@ export const Layout: React.FunctionComponent<LayoutProps> = (props: LayoutProps)
 
   const layoutContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const isDebugging = true;
-  const debugLog = (s: string) => {
-    if (isDebugging) console.log(s);
-  };
-
   debugLog(`viewVersion ${viewVersion}`);
 
   React.useEffect(() => {
@@ -62,6 +65,16 @@ export const Layout: React.FunctionComponent<LayoutProps> = (props: LayoutProps)
     // This executes EXACTLY once per backend tree update cycle
     const timer = setTimeout(() => {
       debugLog(`on Timeout`);
+      // Only the selected tab of a tabset is laid out, so with the Options tab on display the Explorer's tree
+      // is either absent or measured as nothing. Snapping to that would resize the panes under whatever is
+      // being looked at, so the snap happens only while the Explorer tab is the one being displayed.
+      const tabset = model.getNodeById("tsExplorer");
+      const selectedTab = tabset instanceof Flex.TabSetNode ? tabset.getSelectedNode() : undefined;
+      if (selectedTab?.getId() !== "tExplorer") {
+        debugLog(`!explorerTab`);
+        return;
+      }
+
       const layoutEl = layoutContainerRef.current;
       if (!layoutEl) {
         debugLog(`!layoutEl`);
@@ -75,7 +88,14 @@ export const Layout: React.FunctionComponent<LayoutProps> = (props: LayoutProps)
         return;
       }
 
-      const neededWidth = treeContent.getBoundingClientRect().width + scrollbarWidth;
+      // A collapsed tabset still has a selected tab, but nothing to measure
+      const treeWidth = treeContent.getBoundingClientRect().width;
+      if (treeWidth <= 0) {
+        debugLog(`!treeWidth`);
+        return;
+      }
+
+      const neededWidth = treeWidth + scrollbarWidth;
 
       const totalWidth = layoutEl.getBoundingClientRect().width;
 

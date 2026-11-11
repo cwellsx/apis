@@ -66,17 +66,6 @@
       "timeout": 120000,
       "sourceMapPathOverrides": { "webpack://apis/*": "${workspaceFolder}/packages/electron-app/*" }
     },
-    // This was the unit-tests of the Electron app,
-    // not currently supported
-    // and not yet converted to monorepo paths
-    {
-      "name": "Electron Unit Tests",
-      "type": "node",
-      "request": "launch",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run-script", "unit-test-1"],
-      "skipFiles": ["<node_internals>/**"]
-    },
     {
       "name": "Debug electron-mocha (launch)",
       "type": "pwa-node",

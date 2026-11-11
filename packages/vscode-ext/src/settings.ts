@@ -5,13 +5,6 @@ export const getAppSettings = () => {
 
   const zoomPercent = config.get<number>("zoomPercent");
   const fontSize = config.get<number>("fontSize");
-  const showCompilerGeneratedTypes = config.get<boolean>("showCompilerGeneratedTypes");
-  const showCompilerGeneratedMethod = config.get<number>("showCompilerGeneratedMethod");
 
-  return {
-    zoomPercent,
-    fontSize,
-    showCompilerGeneratedTypes,
-    showCompilerGeneratedMethod,
-  };
+  return { zoomPercent, fontSize };
 };

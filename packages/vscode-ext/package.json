@@ -97,35 +97,6 @@
             "type": "number",
             "default": 12,
             "description": "Font size used in the application."
-          },
-          "sysView.detailsClosed": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "enum": [
-                "viewTypeA",
-                "viewTypeB",
-                "detailTypeA",
-                "detailTypeB",
-                "app"
-              ]
-            },
-            "description": "List of views or details that should be initially closed."
-          },
-          "sysView.showCompilerGeneratedTypes": {
-            "type": "boolean",
-            "default": false,
-            "description": "Show compiler-generated types in the view."
-          },
-          "sysView.showCompilerGeneratedMethod": {
-            "type": "boolean",
-            "default": false,
-            "description": "Show compiler-generated methods in the view."
-          },
-          "sysView.showCompilerGeneratedMenuItem": {
-            "type": "boolean",
-            "default": false,
-            "description": "Show compiler-generated menu items in the view."
           }
         }
       }
