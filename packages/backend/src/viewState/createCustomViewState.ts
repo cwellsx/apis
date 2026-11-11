@@ -44,7 +44,8 @@ export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.Vi
       nodeStates,
       NodeType.CustomLeaf,
       NodeType.CustomGroup,
-      IdAny.toAnyCustomId
+      IdAny.toAnyCustomId,
+      "/"
     );
     const trunk = toTrunk(top, NodeType.CustomNode);
 

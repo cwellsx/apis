@@ -28,16 +28,16 @@
   .collapsible:has(&gt; polygon:hover) &gt; polygon,
   .collapsible:has(&gt; text:hover) &gt; polygon {
     stroke: green;
-    stroke-width: 3;
+    stroke-width: 2;
   }
   /* a leaf node is not clickable yet, and neither is an edge */
   .leaf:hover &gt; polygon {
     stroke: red;
-    stroke-width: 3;
+    stroke-width: 2;
   }
   .edge:hover path {
     stroke: red;
-    stroke-width: 3;
+    stroke-width: 2;
   }
   .edge:hover .arrow {
     fill: red;

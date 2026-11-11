@@ -1,4 +1,3 @@
-import os from "os";
 import type { Image } from "../contracts-ui";
 import type { ImageData } from "../types";
 import { log, options } from "../utils";
@@ -14,7 +13,7 @@ export const createImage = async (
   if (!imageData.edges.length && !imageData.roots.length) return "Empty graph, no nodes to display";
 
   const { lines, countImageNodes, nodeLabels, edgeLabels } = toDotFormat(imageData, hasParentEdges);
-  const dotText = lines.join(os.EOL);
+  const dotText = lines.join("\n"); // not os.EOL
 
   const tooBig: string[] = [];
   if (imageData.edges.length > options.maxImageSize.edges)

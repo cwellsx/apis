@@ -11,7 +11,7 @@ const getLogFilePath = (() => {
 
 const logMessage = (message: string): void => {
   console.log(message);
-  appendFileSync(getLogFilePath(), message + "\r\n");
+  appendFileSync(getLogFilePath(), message + "\n");
 };
 
 export function log(message: string) {

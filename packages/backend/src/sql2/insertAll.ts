@@ -1,7 +1,7 @@
 import * as DotNet from "../contracts-dotnet";
 import { Id, IdBig, IdMake, IdTest } from "../id2";
 import { getGroupNames, SqlCommon } from "../sqlCommon";
-import { assert, getOrSet, getOrThrow } from "../utils";
+import { assert, findLongestPrefix, getOrSet, getOrThrow } from "../utils";
 import { assertCallsHaveFullNames } from "./assertCallsHaveFullNames";
 import { insertAncestors } from "./insertAncestors";
 import { insertCalls } from "./insertCalls";
@@ -81,17 +81,27 @@ const getNamespaceMap = (assemblyAndTypeInfos: AllTypeInfo[]): NamespaceMap => {
 
   const namespaces = new Map<Id.AssemblyId, Map<string, Schema.Namespace>>();
   [...map].forEach(([assemblyId, set]) => {
-    namespaces.set(
-      assemblyId,
-      new Map<string, Schema.Namespace>(
-        [...set]
-          .sort()
-          .map((name, index): [string, Schema.Namespace] => [
-            name,
-            { name, assemblyId, id: IdMake.makeNamespaceId(index, assemblyId, true) },
-          ])
-      )
+    const records = new Map<string, Schema.Namespace>(
+      [...set]
+        .sort()
+        .map((name, index): [string, Schema.Namespace] => [
+          name,
+          { name, assemblyId, id: IdMake.makeNamespaceId(index, assemblyId, true), declaringNamespaceId: undefined },
+        ])
     );
+
+    // the longest name which is a prefix of this one, excluding this namespace itself
+    const values = [...records.values()];
+    records.forEach((value, name) => {
+      const declaring = findLongestPrefix(
+        name,
+        values.filter((candidate) => candidate !== value),
+        (candidate) => candidate.name
+      );
+      value.declaringNamespaceId = declaring?.id;
+    });
+
+    namespaces.set(assemblyId, records);
   });
 
   return namespaces;

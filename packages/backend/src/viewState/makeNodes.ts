@@ -3,7 +3,7 @@ import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeTy
 import { isClosed, isLeaf, isParent, Node, nodeIdToText, Parent } from "../contracts-ui";
 import { Id } from "../id2";
 import type { NodeStatesT } from "../sqlCommon";
-import { assert, compareOrdinal, getOrThrow } from "../utils";
+import { assert, compareOrdinal, findLongestPrefix, getOrThrow } from "../utils";
 import { Forest, Item, Numeric, RootItem, TopT } from "./forest";
 import { toNodeId } from "./toNodeId";
 import { ToT } from "./toT";
@@ -37,7 +37,8 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
   nodeStates: NodeStatesT<T>,
   leafType: AnyLeafType,
   groupType: AnyGroupType,
-  toT: ToT<T> // IdAny.toAnyBigId or IdAny.toAnyCustomId
+  toT: ToT<T>, // IdAny.toAnyBigId or IdAny.toAnyCustomId
+  separator = "." // the delimiter within this tree's names -- "." for dotnet, "/" for custom
 ): MakeNodes<TId> => {
   // private toNode
   const toNode = (item: Item<Numeric>, type: AnyNodeType, parent: Parent | null): Node => {
@@ -73,14 +74,9 @@ export const makeNodes = <TId extends Numeric, T extends Id.AnyBigId | Id.AnyCus
     };
 
     const findParent = (node: Item<TId>): Parent | Closed | null => {
-      const callbackfn = (previous: Node | null, current: Node): Node | null => {
-        if (!node.name.startsWith(current.label)) return previous;
-        if (previous && previous.label.length > current.label.length) return previous;
-        return current;
-      };
-      const result = allNodes.reduce(callbackfn, null);
+      const result = findLongestPrefix(node.name, allNodes, (value) => value.label, separator);
       assert(!result || !isLeaf(result));
-      return result;
+      return result ?? null;
     };
 
     const findParents = (layer: Item<TId>[], type: AnyNodeType): void => {

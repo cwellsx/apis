@@ -6,7 +6,7 @@ import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = 6;
+const schemaVersion = 7;
 
 // config
 
@@ -29,7 +29,13 @@ export type Ancestor = SqlCommon.AncestorT<Id.AnyBigId>;
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
 export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: SqlCommon.Boolean };
-export type Namespace = { id: Id.NamespaceId; assemblyId: Id.AssemblyId; name: string };
+export type Namespace = {
+  id: Id.NamespaceId;
+  assemblyId: Id.AssemblyId;
+  name: string;
+  // the namespace, in the same assembly, whose name is the longest prefix of this one -- Foo.Bar for Foo.Bar.Baz
+  declaringNamespaceId: Id.NamespaceId | undefined;
+};
 export type TypeName = {
   id: Id.TypeDefId;
   assemblyId: Id.AssemblyId;
@@ -125,7 +131,12 @@ const zeroViewType: ViewType = "calls";
 
 const row: DotNetTableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as SqlCommon.Boolean },
-  namespaces: { id: zero.namespaceId, assemblyId: zero.assemblyId, name: "foo" },
+  namespaces: {
+    id: zero.namespaceId,
+    assemblyId: zero.assemblyId,
+    name: "foo",
+    declaringNamespaceId: zero.namespaceId,
+  },
   typeNames: {
     id: zero.typeDefId,
     name: "foo",
@@ -165,7 +176,7 @@ export const createTables = (db: SqlDatabase): Tables => {
 
 const newTables = (db: SqlDatabase): Tables => {
   const assemblies = db.newSqlTable("assemblies", "id", row.assemblies);
-  const namespaces = db.newSqlTable("namespaces", "id", row.namespaces);
+  const namespaces = db.newSqlTable("namespaces", "id", row.namespaces, { nullable: ["declaringNamespaceId"] });
   const typeNames = db.newSqlTable("typeNames", "id", row.typeNames, { nullable: ["namespaceId", "declaringTypeId"] });
   const members = db.newSqlTable("members", "id", row.members);
 

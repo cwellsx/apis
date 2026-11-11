@@ -16,7 +16,7 @@ export const toEdgeAttributes = (edgeAttributes: EdgeAttributes, attributeValues
 
   // currently don't want tooltips because instead using richer popups using a div
   if (tooltip) {
-    const edgeTooltip = tooltip.map((s) => escapeDotString(s)).join("\r\n");
+    const edgeTooltip = tooltip.map((s) => escapeDotString(s)).join("\n");
     attributeValues.tooltip = edgeTooltip;
   }
 };

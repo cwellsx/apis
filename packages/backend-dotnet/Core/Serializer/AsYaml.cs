@@ -51,7 +51,7 @@ namespace Core.Serializer
                 lines.Insert(i + 1, line1);
             }
 
-            yaml = string.Join("\r\n", lines);
+            yaml = string.Join("\n", lines);
 
             return yaml;
         }
