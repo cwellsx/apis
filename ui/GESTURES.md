@@ -38,18 +38,62 @@ it describes leaves the graph — which is what a state change that hides it doe
 | Click the **background**                               | Nothing.                                                                                                            | built                                                                      |
 | **Double-click**                                       | Not used, deliberately.                                                                                             | —                                                                          |
 
-**Cursors** are the affordance which makes the click discoverable:
+## Clickability
 
-| Element                     | Cursor                                                                                                          |
-| --------------------------- | --------------------------------------------------------------------------------------------------------------- |
-| closed node                 | `zoom-in`                                                                                                       |
-| open node                   | `zoom-out`                                                                                                      |
-| leaf                        | `default`, or `help` once there are details to show                                                             |
-| edge                        | `default`                                                                                                       |
-| while Shift or Ctrl is held | the same, with the modifier's own cursor — the custom cursors the previous design used are still in `Graph.css` |
+Nothing in the graph changes the pointer: no non-standard cursors, and no `pointer` either. The previous
+design's data-URI cursors were an early attempt and are being deleted, along with the dead `<area>` rules
+they lived in. Instead, hovering colours an element to say what a click would do.
 
-Hovering already highlights: the style injected into the SVG strokes a hovered node's shape and a hovered
-edge's path in red. It also strokes the hit areas in blue for development, which should go.
+| Hovered element                    | Colour | Meaning                        |
+| ---------------------------------- | ------ | ------------------------------ |
+| a node which can be open or closed | green  | clicking it opens or closes it |
+| an edge, or a leaf node            | red    | clicking it does nothing yet   |
+
+Every node and edge is coloured on hover, so the graph says what a click would do before it is made. Green
+means the click acts; red means it does not. The assignment is provisional — edges and leaves are _meant_ to
+become clickable, for their details, and will turn green when they do — so the rule is stable while the
+assignment is not.
+
+The colours belong in the style `insertSvgMap` injects into the SVG, which already strokes a hovered node
+and a hovered edge, and which also strokes the edge hit areas blue for development: that debug stroke should
+go. Colour is the only channel, so a second one — a dashed stroke, say — belongs in the same style if colour
+alone proves too subtle.
+
+## Graph — hover widget (deferred)
+
+Not needed yet: the existing gestures cover every action, so this is recorded rather than built. It is the
+inline home of the actions which do not deserve a primary gesture, and it borrows the window-control
+metaphor, which is about the most widely understood set of glyphs there is.
+
+| Glyph | Window meaning | Node meaning                                   |
+| ----- | -------------- | ---------------------------------------------- |
+| `—`   | minimize       | collapse — offered only while the node is open |
+| `□`   | maximize       | expand — offered only while the node is closed |
+| `X`   | close          | hide, and conventionally red on hover          |
+| `…`   | more actions   | details, peek, expand or collapse subtree      |
+
+Minimize and maximize are one button, not two: like a window, it shows the action it will perform, so the
+glyph also reports whether the node is open. A leaf has nothing to open, so its row is `…` and `X` only.
+
+**Placement.** The row straddles the node's top border at its right-hand end, half inside and half out. That
+fits because GraphViz's default node is 0.5in tall and 0.75in wide and the DOT does not override it: every
+box is about 48px tall whatever its label, with the label centred, so the space above and below the label is
+clear. Edges attach at the middle of a node's top and bottom sides, so the top-right corner is free of them;
+the one thing to watch is a self-loop, which bulges to the right of its node.
+
+**Reaching it.** The row appears after a short dwell — of the order of 150ms, as VS Code does for its inline
+hover actions — so that sweeping the pointer across the graph does not flash rows everywhere. The glyphs are
+small, so their hit areas are padded, the way the edge hit areas already are. The row persists while the
+pointer is over the node, the popup or the widget itself, so no modifier is needed to reach it.
+
+**Not on edges.** An edge is a path with no rectangle to anchor to, so a widget on an edge would have to
+follow the cursor — the one form of this which would be genuinely intrusive. Edges keep the popup and the
+context menu.
+
+It would be a renderer overlay anchored to the node's rectangle, the same mechanism as the popup, so it
+needs no backend change. Generating it into the SVG instead — GraphViz HTML-like labels with the space
+reserved so nothing shifts — is possible, but it would widen every node on an already dense graph. The icons
+are standard ones from the libraries already vendored, copied in on demand.
 
 ## Graph — right-click
 

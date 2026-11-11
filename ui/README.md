@@ -34,6 +34,9 @@ hide, subtree operations, details.
 
 **Inspector** — deferred. The persistent surface for details, including a method's source.
 
+**Hover widget** — deferred. The inline home of the actions which do not deserve a primary gesture: hide,
+peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry which makes it fit.
+
 ## Invariants
 
 1. **Hover is local.** Everything a popup shows arrives preloaded with the image. No hover ever
@@ -53,6 +56,9 @@ hide, subtree operations, details.
 7. **One level at a time.** A popup shows one level below its subject: an edge's bundled calls, a node's
    children, a leaf's calls. That is the granularity of the expansion model, and it keeps the payload
    proportional to what is on the graph.
+8. **What a click does is visible before the click.** Hovering colours a graph element: green if a click
+   acts on it, red if it does not. Nothing changes the pointer, so colour carries the whole signal — and
+   the graph is the only surface which needs it, because the tree's affordances are already labelled.
 
 ## State and data rules
 
@@ -69,8 +75,9 @@ hide, subtree operations, details.
 
 ## Non-goals, for now
 
-- **Hover toolbars or widgets.** They flicker on a dense graph, they compete with the node's own hit area,
-  and GraphViz's nodes are too small to hold legible controls.
+- **Hover widgets and toolbars, for now.** The geometry works — a GraphViz node has room in its top-right
+  corner — but the existing gestures already cover the actions, so it stays a recorded design rather than a
+  built one. See [GESTURES.md](./GESTURES.md).
 - **Double-click gestures.** Slow, and disliked in every graph tool which has tried them.
 - **Keyboard navigation on the graph.** The tree is the accessible path to the same state.
 - **Source file and line.** Not in the model; it needs Core to emit it, and it belongs with the VS Code
@@ -87,9 +94,10 @@ The gestures assume these are done first. They are small and independent.
 2. **Clusters count as nodes.** An open node is emitted as `<g id="<nodeId>" class="cluster">`, so a click
    on its border or its label has to map to the same node id as a click on a closed one. The current
    mapping accepts only `edge` and `node`.
-3. **The collapsible state is visible in the SVG.** The DOT no longer writes a class for it, and
-   `Graph.css` still selects the obsolete `<area>` elements, so the cursors above do nothing. Reinstate the
-   class in the DOT and select `g.node.*`.
+3. **The dead cursor rules go.** `Graph.css` still selects the obsolete `<area>` elements and carries two
+   data-URI cursors, which exist only as a workaround for an electron-forge asset-loading bug that custom
+   image cursors hit. Nothing changes the pointer any more, so all of it can be deleted — and with it the
+   need for the DOT to write a class for the collapsible state.
 4. **Popups can be entered.** `EdgePopup.css` sets `pointer-events: none`, with a comment saying it has to
    become `auto` once the popup is interactive — which the freeze-on-modifier-key behaviour makes possible.
 
