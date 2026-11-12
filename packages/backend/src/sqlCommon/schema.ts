@@ -1,14 +1,17 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import { Id } from "../id2";
 import { ConfigKvpT, ConfigT } from "./config";
-import { GetSetNodeStatesT, nodeStateTablesT } from "./nodeStates";
+import type { BooleanStateT } from "./nodeStates";
+import { GetSetNodeStatesT, nodeStateTableNames, nodeStateTablesT } from "./nodeStates";
 import { Boolean, fromBoolean } from "./sqlBoolean";
 export { Boolean, fromBoolean, toBoolean } from "./sqlBoolean"; // Boolean is a keyword so export it in the SqlCommon namespace
 
 export type GroupT<TGroupId extends Id.GroupId | Id.CustomGroupId> = { id: TGroupId; name: string };
 export type AncestorT<T extends Id.AnyBigId | Id.AnyCustomId> = { ancestorId: T; descendentId: T; isParent: Boolean };
 
-export const tableNames = ["groups", "ancestors", "configKvps"] as const;
+// the node state tables are among these: they are reached through viewNodeStates as well, but they are part of the
+// database, so they are dropped and emptied along with the rest of it
+export const tableNames = ["groups", "ancestors", "configKvps", ...nodeStateTableNames] as const;
 export type TableName = (typeof tableNames)[number];
 
 export interface CommonTypesT<
@@ -23,6 +26,8 @@ export interface CommonTypesT<
     groups: TGroup;
     ancestors: AncestorT<T>;
     configKvps: ConfigKvpT<TConfigKeys>;
+    nodeHiddenStates: BooleanStateT<T>;
+    nodeExpandedStates: BooleanStateT<T>;
   };
 
   ExtraApis: { config: TConfig; viewNodeStates: (viewId: Id.ViewId) => GetSetNodeStatesT<T> };
@@ -58,7 +63,15 @@ export const newTables = <
   const config = newConfig(configKvps);
 
   const nodeStateTables = nodeStateTablesT(db, zeroId);
-  const viewNodeStates = (viewId: Id.ViewId): GetSetNodeStatesT<T> => nodeStateTables(viewId);
+  const viewNodeStates = (viewId: Id.ViewId): GetSetNodeStatesT<T> => nodeStateTables.viewNodeStates(viewId);
 
-  return { groups, ancestors, configKvps, config, viewNodeStates };
+  return {
+    groups,
+    ancestors,
+    configKvps,
+    config,
+    viewNodeStates,
+    nodeHiddenStates: nodeStateTables.nodeHiddenStates,
+    nodeExpandedStates: nodeStateTables.nodeExpandedStates,
+  };
 };

@@ -4,7 +4,7 @@ import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";
 
-const schemaVersion = 2;
+const schemaVersion = 3;
 
 // config
 

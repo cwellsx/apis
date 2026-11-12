@@ -1,4 +1,4 @@
-import { SqlDatabase } from "sqlio";
+import { SqlDatabase, SqlTable } from "sqlio";
 import { Id, zero } from "../id2";
 import { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
 
@@ -19,16 +19,28 @@ export type GetSetNodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {
 
 export type ViewNodeStates<T extends Id.AnyBigId | Id.AnyCustomId> = (viewId: Id.ViewId) => GetSetNodeStatesT<T>;
 
-type BooleanStateT<T extends Id.AnyBigId | Id.AnyCustomId> = { viewId: Id.ViewId; id: T; isTrue: Boolean };
+export type BooleanStateT<T extends Id.AnyBigId | Id.AnyCustomId> = { viewId: Id.ViewId; id: T; isTrue: Boolean };
+
+// The tables the node states are kept in. They are reached through viewNodeStates, so they are named here and
+// listed among the tables of the database, which is what makes a database that is dropped or emptied lose its
+// view state as well as its data.
+export const nodeStateTableNames = ["nodeHiddenStates", "nodeExpandedStates"] as const;
+
+export type NodeStateTablesT<T extends Id.AnyBigId | Id.AnyCustomId> = {
+  nodeHiddenStates: SqlTable<BooleanStateT<T>>;
+  nodeExpandedStates: SqlTable<BooleanStateT<T>>;
+  viewNodeStates: ViewNodeStates<T>;
+};
 
 export const nodeStateTablesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
   db: SqlDatabase,
   zeroId: T
-): ViewNodeStates<T> => {
+): NodeStateTablesT<T> => {
   const zeroBoolean: BooleanStateT<T> = { viewId: zero.viewId, id: zeroId, isTrue: 0 as Boolean };
 
-  const nodeHiddenStates = db.newSqlTable("nodeHiddenStates", ["viewId", "id"], zeroBoolean);
-  const nodeExpandedStates = db.newSqlTable("nodeExpandedStates", ["viewId", "id"], zeroBoolean);
+  const [hiddenStatesTable, expandedStatesTable] = nodeStateTableNames;
+  const nodeHiddenStates = db.newSqlTable(hiddenStatesTable, ["viewId", "id"], zeroBoolean);
+  const nodeExpandedStates = db.newSqlTable(expandedStatesTable, ["viewId", "id"], zeroBoolean);
 
   const viewNodeStates = (viewId: Id.ViewId): GetSetNodeStatesT<T> => {
     const getNodeStates = (): NodeStatesT<T> => {
@@ -73,7 +85,7 @@ export const nodeStateTablesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
     return { getNodeStates, setIsExpanded, setIsVisible, resetNodeStates };
   };
 
-  return viewNodeStates;
+  return { nodeHiddenStates, nodeExpandedStates, viewNodeStates };
 };
 
 export const getNodeStatesT = <T extends Id.AnyBigId | Id.AnyCustomId>(
