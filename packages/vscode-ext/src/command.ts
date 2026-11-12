@@ -14,8 +14,7 @@ export const selectFolder = async () => {
   }
 };
 
-export const helloWorld = async () =>
-  vscode.window.showInformationMessage("Hello World from SysView!");
+export const helloWorld = async () => vscode.window.showInformationMessage("Hello World from SysView!");
 
 export const openSettings = async () => {
   await vscode.commands.executeCommand("workbench.action.openSettings", "sysView");

@@ -47,4 +47,3 @@ Cause: helpers structs for pattern matching, tuples, or switch expressions
 Example: → compiler emits names like `MyClass.<>f__Switch`
 
 Method has `newobj`
-

@@ -25,16 +25,7 @@
   };
 
   const enableSvgHoverInteractivity = (svgElement: SVGSVGElement) => {
-    const interactiveTags = [
-      "path",
-      "polygon",
-      "rect",
-      "circle",
-      "ellipse",
-      "line",
-      "polyline",
-      "g",
-    ];
+    const interactiveTags = ["path", "polygon", "rect", "circle", "ellipse", "line", "polyline", "g"];
 
     svgElement.querySelectorAll(interactiveTags.join(",")).forEach((el) => {
       if (!(el instanceof SVGElement)) return;

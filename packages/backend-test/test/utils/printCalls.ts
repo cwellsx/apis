@@ -235,12 +235,12 @@ export const listCallSizes = (
     .join(tables.assemblies, "id", tables.typeNames, "assemblyId")
     .join(tables.fullNames, "id", tables.calls, "toId")
     .where("assemblies.name = ?", assemblyName)
-    .selectAll<{
-      namespaceName: string | null;
-      typeName: string;
-      methodName: string;
-      called: string;
-    }>({ namespaceName: "namespaces.name", typeName: "typeNames.name", methodName: "methodNames.name", called: "fullnames.fullName" });
+    .selectAll<{ namespaceName: string | null; typeName: string; methodName: string; called: string }>({
+      namespaceName: "namespaces.name",
+      typeName: "typeNames.name",
+      methodName: "methodNames.name",
+      called: "fullnames.fullName",
+    });
 
   const fromTypes = tables.calls
     .join(tables.typeNames, "id", "fromId")
@@ -248,11 +248,11 @@ export const listCallSizes = (
     .join(tables.assemblies, "id", tables.typeNames, "assemblyId")
     .join(tables.fullNames, "id", tables.calls, "toId")
     .where("assemblies.name = ?", assemblyName)
-    .selectAll<{
-      namespaceName: string | null;
-      typeName: string;
-      called: string;
-    }>({ namespaceName: "namespaces.name", typeName: "typeNames.name", called: "fullnames.fullName" });
+    .selectAll<{ namespaceName: string | null; typeName: string; called: string }>({
+      namespaceName: "namespaces.name",
+      typeName: "typeNames.name",
+      called: "fullnames.fullName",
+    });
 
   const fromNamespaces = tables.calls
     .join(tables.namespaces, "id", "fromId")
@@ -267,10 +267,10 @@ export const listCallSizes = (
     .join(tables.assemblies, "id", "fromId")
     .join(tables.fullNames, "id", tables.calls, "toId")
     .where("assemblies.name = ?", assemblyName)
-    .selectAll<{
-      assemblyName: string;
-      called: string;
-    }>({ assemblyName: "assemblies.name", called: "fullnames.fullName" });
+    .selectAll<{ assemblyName: string; called: string }>({
+      assemblyName: "assemblies.name",
+      called: "fullnames.fullName",
+    });
 
   const format = <T>(rows: T[], keyFns: Array<(row: T) => string>, setDistinct: Set<string>): string[] => {
     const isDistinct = (value: string): boolean => {

@@ -5,10 +5,7 @@ export type KeyboardState = { shiftKey: boolean; ctrlKey: boolean };
 
 const noKeys: KeyboardState = { shiftKey: false, ctrlKey: false };
 
-const toKeyboardState = (event: KeyboardEvent): KeyboardState => ({
-  shiftKey: event.shiftKey,
-  ctrlKey: event.ctrlKey,
-});
+const toKeyboardState = (event: KeyboardEvent): KeyboardState => ({ shiftKey: event.shiftKey, ctrlKey: event.ctrlKey });
 
 // 'keydown' repeats while a key is held, so return the current state unchanged when nothing changed:
 // React then bails out of the re-render and the repeats cost nothing

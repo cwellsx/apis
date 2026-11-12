@@ -1,4 +1,5 @@
 ﻿## 1. Async state machine (`<Foo>d__N`)
+
 ```csharp
 using System;
 using System.Threading.Tasks;
@@ -12,11 +13,13 @@ class AsyncExample
     }
 }
 ```
+
 👉 Produces a nested type like `AsyncExample+<ComputeAsync>d__0` with `[AsyncStateMachine]`.
 
 ---
 
 ## 2. Iterator state machine (`<Foo>d__N`)
+
 ```csharp
 using System;
 using System.Collections.Generic;
@@ -31,11 +34,13 @@ class IteratorExample
     }
 }
 ```
+
 👉 Produces `IteratorExample+<GetNumbers>d__0` with `[IteratorStateMachine]`.
 
 ---
 
 ## 3. Anonymous type (`<>f__AnonymousType…`)
+
 ```csharp
 class AnonymousExample
 {
@@ -46,11 +51,13 @@ class AnonymousExample
     }
 }
 ```
+
 👉 Produces a compiler‑generated type like `<>f__AnonymousType0` with properties `Name` and `Age`.
 
 ---
 
 ## 4. Display/closure class (`<>c__DisplayClass…`)
+
 ```csharp
 using System;
 
@@ -64,11 +71,13 @@ class DisplayClassExample
     }
 }
 ```
+
 👉 Produces `DisplayClassExample+<>c__DisplayClass0_0` to hold the captured variable.
 
 ---
 
 ## 5. Lambda cache (`<>c`, `<>c__N`)
+
 ```csharp
 using System;
 using System.Linq;
@@ -84,11 +93,13 @@ class LambdaCacheExample
     }
 }
 ```
+
 👉 Produces `LambdaCacheExample+<>c` with a static `Instance` and a method `<Run>b__0_0`.
 
 ---
 
 ## 6. Hoisted locals / pattern matching helpers
+
 ```csharp
 class HoistedLocalsExample
 {
@@ -101,12 +112,13 @@ class HoistedLocalsExample
     }
 }
 ```
-👉 Produces helper structs like `HoistedLocalsExample+<>f__Switch…` or similar, depending on compiler version.
 
+👉 Produces helper structs like `HoistedLocalsExample+<>f__Switch…` or similar, depending on compiler version.
 
 ---
 
 ## 1. Async state machine using a cached lambda
+
 ```csharp
 using System;
 using System.Threading.Tasks;
@@ -125,11 +137,13 @@ class AsyncCacheExample
     }
 }
 ```
+
 - The async state machine type `<RunAsync>d__0.MoveNext` will reference the cached delegate in `AsyncCacheExample.<>c`.
 
 ---
 
 ## 2. Iterator state machine using a cached lambda
+
 ```csharp
 using System;
 using System.Collections.Generic;
@@ -149,11 +163,13 @@ class IteratorCacheExample
     }
 }
 ```
+
 - The iterator state machine `<GetNumbers>d__0.MoveNext` will load the cached delegate from `<>c`.
 
 ---
 
 ## 3. Display class calling a cached lambda
+
 ```csharp
 using System;
 using System.Linq;
@@ -172,12 +188,14 @@ class DisplayCacheExample
     }
 }
 ```
+
 - The closure class `<>c__DisplayClass0_0` is generated to hold `captured`.
 - Its generated method will invoke the cached delegate from `<>c`.
 
 ---
 
 ## Interator state mechine inside local function
+
 ```csharp
 internal class IteratorInsideLocalExample
 {
@@ -191,4 +209,5 @@ internal class IteratorInsideLocalExample
     }
 }
 ```
-- `IteratorInsideLocalExample/<Foo>g__Local|0_0>d` 
+
+- `IteratorInsideLocalExample/<Foo>g__Local|0_0>d`

@@ -81,10 +81,7 @@ export const showWebview = async (context: vscode.ExtensionContext, uris: Uris) 
     "sys-view.svg", // Identifies the type of the webview
     "Image Map Viewer", // Title of the panel
     vscode.ViewColumn.One, // Editor column to show the new webview panel
-    {
-      enableScripts: true,
-      localResourceRoots: [uris.mediaUri],
-    }
+    { enableScripts: true, localResourceRoots: [uris.mediaUri] }
   );
 
   panel.webview.html = await getWebviewContent(panel.webview, uris);

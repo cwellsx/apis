@@ -1,5 +1,1 @@
-export type MethodName = {
-  methodMember: string;
-  declaringType: string;
-  assemblyName: string;
-};
+export type MethodName = { methodMember: string; declaringType: string; assemblyName: string };

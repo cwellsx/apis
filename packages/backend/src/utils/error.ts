@@ -1,10 +1,6 @@
 import { logError } from "./log";
 
-type Exception = {
-  ClassName: string;
-  Message: string;
-  StackTraceString: string;
-};
+type Exception = { ClassName: string; Message: string; StackTraceString: string };
 const isDotNetException = (error: unknown): error is Exception => {
   return (error as Exception).ClassName !== undefined;
 };

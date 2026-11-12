@@ -5,7 +5,7 @@
 There are two output formats: JSON and YAML.
 
 ### JSON
-   
+
 - machine-readable
 - sent to the host process via stdout
 - normalized to be optimum for storing in a database
@@ -45,4 +45,3 @@ There are two output formats: JSON and YAML.
 ### CoreJsonConverter
 
 - Serializes only the Id value from any TypeId
-
