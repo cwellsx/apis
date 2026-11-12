@@ -1,6 +1,7 @@
+import { ConfigurationSchema } from "backend-config";
+import { ConfigurationView } from "../../electron-app/src/renderer/configuration";
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ConfigurationSchema, ConfigurationView } from "../../electron-app/src/renderer/configuration";
 
 const exampleSchema: ConfigurationSchema = {
   title: "My Extension Options",

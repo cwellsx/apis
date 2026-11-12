@@ -9,10 +9,10 @@
 //   ViewDetails,
 //   ViewGreeting,
 // } from "backend-ui";
-import { AnyEvent, AnyView, AppOptions, defaultAppOptions, Image, Node, TextView as TextViewData } from "backend-ui";
+import { AppOptions, appOptionsSchemas, appOptionsSection, defaultAppOptions } from "backend-config";
+import { AnyEvent, AnyView, Image, Node, TextView as TextViewData } from "backend-ui";
 import * as React from "react";
 import { PRELOAD_API_KEY, PreloadApis, RendererApi } from "../shared";
-import { appOptionsSchemas, appOptionsSection } from "./appOptionsSchema";
 import { beep } from "./components";
 import { ConfigurationView } from "./configuration";
 // import { AssemblyDetails } from "./details/AssemblyDetails";

@@ -1,4 +1,4 @@
-import { AppOptions } from "./appOptions";
+import { AppOptions } from "../config";
 import { EdgeId, NodeId } from "./nodeId";
 import { NodeState } from "./nodeState";
 import { AnyNodeType } from "./nodeTypes";

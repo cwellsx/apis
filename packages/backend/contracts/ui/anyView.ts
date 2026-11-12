@@ -1,4 +1,4 @@
-import { AppOptions } from "./appOptions";
+import { AppOptions } from "../config";
 import { Image } from "./image";
 import { Node } from "./node";
 

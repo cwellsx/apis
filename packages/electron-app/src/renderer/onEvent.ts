@@ -1,4 +1,5 @@
-import { AppOptions, FilterEvent, GraphEvent } from "backend-ui";
+import { AppOptions } from "backend-config";
+import { FilterEvent, GraphEvent } from "backend-ui";
 
 type OnUserEvent<T> = (event: T) => void;
 

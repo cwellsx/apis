@@ -11,6 +11,7 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
+      "backend-config": ["../backend/contracts/config/index.ts"],
       "backend-ui": ["../backend/contracts/ui/index.ts"]
     },
     "types": ["vitest/globals", "react", "react-dom"]

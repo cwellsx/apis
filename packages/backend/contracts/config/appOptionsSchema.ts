@@ -1,6 +1,5 @@
-import { AppOptions, defaultAppOptions } from "backend-ui";
-import type { ConfigurationProperty, ConfigurationSchema } from "./configuration";
-import { zooms } from "./useZoomPercent";
+import { AppOptions, defaultAppOptions, zooms } from "./appOptions";
+import type { ConfigurationProperty, ConfigurationSchema } from "./schema";
 
 // The app's own options, described the way VS Code describes an extension's settings, so that the panel which
 // shows them is the same one a VS Code extension would drive from its contributes.configuration. The section

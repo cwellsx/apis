@@ -1,4 +1,5 @@
-import { AppOptions, TextView as TextViewData } from "backend-ui";
+import { AppOptions } from "backend-config";
+import { TextView as TextViewData } from "backend-ui";
 import * as React from "react";
 import { Message } from "./elements";
 import { OnAppOptions } from "./onEvent";

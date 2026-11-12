@@ -1,7 +1,5 @@
 export type { AnyEvent, FilterEvent, GraphEvent, NewNodeState } from "./anyEvent";
 export type { AnyView, ImageView, NodeView, TextView } from "./anyView";
-export { defaultAppOptions } from "./appOptions";
-export type { AppOptions, DetailsType } from "./appOptions";
 export type { EdgeInfo, EdgeLabels, EdgeNodes, EdgePopups, Label } from "./edgePopup";
 export type { Image } from "./image";
 export type { MethodName } from "./methodName";

@@ -1,4 +1,4 @@
-import { AppOptions } from "../ui";
+import { AppOptions } from "../config";
 import { DataSource } from "./dataSource";
 
 export type RecentColumns = DataSource & { when: number };

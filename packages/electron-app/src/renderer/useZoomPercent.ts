@@ -1,10 +1,6 @@
+import { zooms } from "backend-config";
 import * as React from "react";
 import { log } from "./log";
-
-// divisor is set to halve after 6 clicks i.e. 1.122462
-export const zooms = [
-  20, 22, 25, 28, 31, 35, 40, 45, 50, 56, 63, 75, 80, 90, 100, 110, 125, 140, 160, 180, 200, 225, 250, 280,
-];
 
 export type OnWheel = (event: React.WheelEvent) => void;
 

@@ -1,6 +1,6 @@
 import { SqlDatabase } from "sqlio";
 import type { AppConfig, DataSource, RecentColumns } from "../contracts-app";
-import { AppOptions, defaultAppOptions } from "../contracts-ui";
+import { AppOptions, defaultAppOptions } from "../contracts-config";
 import { jsonParse, log } from "../utils";
 import { ConfigCache } from "./configCache";
 

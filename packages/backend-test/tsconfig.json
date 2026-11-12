@@ -10,6 +10,7 @@
     "paths": {
       "backend-api": ["../backend/src/index.ts"],
       "backend-app": ["../backend/contracts/app/index.ts"],
+      "backend-config": ["../backend/contracts/config/index.ts"],
       "backend-ui": ["../backend/contracts/ui/index.ts"],
       "backend-custom": ["../backend/contracts/customJson.ts"],
       "sut/*": ["../backend/src/*"]

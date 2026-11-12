@@ -1,8 +1,6 @@
+import { appOptionsSchemas, appOptionsSection, defaultAppOptions, zooms } from "backend-config";
 import { render, screen } from "@testing-library/react";
-import { defaultAppOptions } from "backend-ui";
-import { appOptionsSchemas, appOptionsSection } from "../../electron-app/src/renderer/appOptionsSchema";
 import { ConfigurationView } from "../../electron-app/src/renderer/configuration";
-import { zooms } from "../../electron-app/src/renderer/useZoomPercent";
 
 test("describes every option of the app, grouped, using the same zoom steps as the mouse wheel", () => {
   const { container } = render(

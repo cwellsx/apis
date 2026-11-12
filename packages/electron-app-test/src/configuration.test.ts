@@ -1,5 +1,5 @@
+import type { ConfigurationSchema } from "backend-config";
 import { getConfiguration } from "../../electron-app/src/renderer/configuration/Configuration";
-import type { ConfigurationSchema } from "../../electron-app/src/renderer/configuration";
 
 // The store behind ConfigurationView. The view itself is tested in config.test.tsx; this is the half which holds
 // values, validates them and reports them, which is reached through it but can be used without it.

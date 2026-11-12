@@ -1,5 +1,5 @@
 ﻿import * as React from "react";
-import type { ConfigurationProperty, ConfigurationSchema } from "./ConfigurationSchema";
+import type { ConfigurationProperty, ConfigurationSchema } from "backend-config";
 
 // --- Helpers ---
 
