@@ -3,3 +3,8 @@
   flex-direction: column;
   width: max-content;
 }
+
+// the options panel is inset from the edge of its tab, which the graph is not: a graph fills its tab
+#options {
+  padding: 8px;
+}

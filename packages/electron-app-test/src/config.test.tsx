@@ -21,11 +21,8 @@ const exampleSchema: ConfigurationSchema = {
 // which in the app is the window's own state, not the component's.
 const view = (data: Record<string, unknown>, onChange: (values: Record<string, unknown>) => void) => (
   <ConfigurationView
-    section="myExtension"
-    schema={exampleSchema}
-    data={data}
+    sources={[{ section: "myExtension", schema: exampleSchema, data, onChange }]}
     openGroups={["My Extension Options"]}
-    onChange={onChange}
   />
 );
 
@@ -115,11 +112,8 @@ test("shows a schema as a group, closed until the caller opens it", async () => 
   // no openGroups, which is what a group which has never been opened looks like
   render(
     <ConfigurationView
-      section="myExtension"
-      schema={exampleSchema}
-      data={data}
+      sources={[{ section: "myExtension", schema: exampleSchema, data, onChange: vi.fn() }]}
       onToggleGroup={onToggleGroup}
-      onChange={vi.fn()}
     />
   );
 
@@ -129,4 +123,45 @@ test("shows a schema as a group, closed until the caller opens it", async () => 
   // opening it is reported rather than done: the caller is what remembers that it is open
   await user.click(summary);
   expect(onToggleGroup).toHaveBeenCalledWith("My Extension Options", true);
+});
+
+test("shows several sources at once, and reports each edit to the source it came from", async () => {
+  const appSchema: ConfigurationSchema = {
+    title: "Size",
+    properties: { "apis.showEdges": { type: "boolean", default: true } },
+  };
+  const dotnetSchema: ConfigurationSchema = {
+    title: "Progressive Reveal",
+    properties: { "dotnet.clusterNamespaces": { type: "boolean", default: true } },
+  };
+  const onAppChange = vi.fn();
+  const onDotnetChange = vi.fn();
+  const user = userEvent.setup();
+
+  render(
+    <ConfigurationView
+      sources={[
+        { section: "apis", schema: appSchema, data: { showEdges: true }, onChange: onAppChange },
+        { section: "dotnet", schema: dotnetSchema, data: {}, onChange: onDotnetChange },
+      ]}
+      openGroups={["Size", "Progressive Reveal"]}
+    />
+  );
+
+  // both sources are shown, each group under its own title, and the second source's value comes from its schema
+  // default because it was given no values at all
+  expect(screen.getByText("Size")).toBeTruthy();
+  expect(screen.getByText("Progressive Reveal")).toBeTruthy();
+  expect(screen.getByLabelText<HTMLInputElement>("showEdges").checked).toBe(true);
+  expect(screen.getByLabelText<HTMLInputElement>("clusterNamespaces").checked).toBe(true);
+
+  // an edit goes to its own source, and carries that source's values alone: the two sets are never mixed, even
+  // though both sources are on screen
+  await user.click(screen.getByLabelText("clusterNamespaces"));
+  expect(onDotnetChange).toHaveBeenCalledWith({ clusterNamespaces: false });
+  expect(onAppChange).not.toHaveBeenCalled();
+
+  await user.click(screen.getByLabelText("showEdges"));
+  expect(onAppChange).toHaveBeenCalledWith({ showEdges: false });
+  expect(onDotnetChange).toHaveBeenCalledTimes(1);
 });

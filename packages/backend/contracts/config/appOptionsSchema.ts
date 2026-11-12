@@ -27,12 +27,6 @@ const appOptionProperties: { [K in keyof AppOptions]: ConfigurationProperty } = 
     default: defaultAppOptions.fontSize,
     description: "Text size, in pixels, of a text view.",
   },
-  clusterNamespaces: {
-    type: "boolean",
-    default: defaultAppOptions.clusterNamespaces,
-    markdownDescription:
-      "When enabled, the `Foo.Bar.Baz` namespace is a node within `Foo.Bar`. When disabled, all are revealed when the assembly is opened.",
-  },
 };
 
 // Which group each option belongs to: exhaustive over the fields of AppOptions, like the properties above, so
@@ -41,11 +35,7 @@ const appOptionProperties: { [K in keyof AppOptions]: ConfigurationProperty } = 
 // VS Code also allows an optional `order` on a group and on a setting, which the settings editor sorts by
 // before falling back to lexicographical order. That is not implemented here yet: the panel sorts
 // lexicographically, which is that same fallback, so adding `order` later would only change the exceptions.
-const appOptionGroups: { [K in keyof AppOptions]: string } = {
-  zoomPercent: "Size",
-  fontSize: "Size",
-  clusterNamespaces: "Progressive Reveal",
-};
+const appOptionGroups: { [K in keyof AppOptions]: string } = { zoomPercent: "Size", fontSize: "Size" };
 
 // The groups, in the order in which their first option appears above
 export const appOptionsSchemas: ConfigurationSchema[] = [...new Set(Object.values(appOptionGroups))].map((title) => ({

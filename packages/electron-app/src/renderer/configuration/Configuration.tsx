@@ -1,5 +1,6 @@
 ﻿import * as React from "react";
 import type { ConfigurationProperty, ConfigurationSchema } from "backend-config";
+import "./Configuration.scss";
 
 // --- Helpers ---
 
@@ -178,54 +179,65 @@ export const getConfiguration = <T extends Record<string, unknown> = Record<stri
 
 // --- React component ---
 
-type ConfigurationViewProps = {
+// One source of options: the section they belong to, the schema or schemas which describe them, the values they
+// currently have, and where an edit is reported. Several are shown at once -- the app's options and a view's --
+// and this is what tells one from another.
+type ConfigurationSource = {
   section?: string;
   // one schema, or several: several are shown as groups, each under its own title, which is how the settings
   // editor shows the configuration of an extension
   schema: ConfigurationSchema | ConfigurationSchema[];
   data?: Record<string, unknown>;
-  className?: string;
   onChange?: (values: Record<string, unknown>) => void;
+};
+
+// One group of one source, with everything needed to render it: a group belongs to a source, so it reads that
+// source's values and reports through that source's listener.
+type ConfigurationGroup = {
+  key: string;
+  title: string;
+  section: string;
+  configuration: Configuration;
+  values: Record<string, unknown>;
+  onChange?: (values: Record<string, unknown>) => void;
+};
+
+type ConfigurationViewProps = {
+  sources: ConfigurationSource[];
   // which groups are open. Where that is kept is the caller's business: here it is the window's state, so a
   // group stays open until the window closes, and is closed until it is opened.
   openGroups?: string[];
   onToggleGroup?: (group: string, isOpen: boolean) => void;
 };
 
-export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
-  section = "configuration",
-  schema,
-  data,
-  className,
-  onChange: onChangeProp,
-  openGroups,
-  onToggleGroup,
-}) => {
+export const ConfigurationView: React.FC<ConfigurationViewProps> = ({ sources, openGroups, onToggleGroup }) => {
   // One configuration object per group, here for the schema and not for the values: the keys, the properties
   // and the validation. They are not stores, so an edit cannot be written into one -- see `report` below.
-  const schemas = React.useMemo(() => (Array.isArray(schema) ? schema : [schema]), [schema]);
-  const configurations = React.useMemo(
-    () => schemas.map((group) => getConfiguration<Record<string, unknown>>(section, group)),
-    [schemas, section]
+  const groups = React.useMemo(
+    () =>
+      sources.flatMap((source) => {
+        const section = source.section ?? "configuration";
+        const schemas = Array.isArray(source.schema) ? source.schema : [source.schema];
+
+        // What this source displays: the values it was given, with a schema default for any key they don't
+        // mention. Keys no schema describes are kept as they are, so editing one option cannot lose another.
+        const values: Record<string, unknown> = { ...source.data };
+
+        return schemas.map((schema) => {
+          const configuration = getConfiguration<Record<string, unknown>>(section, schema);
+          configuration.keys().forEach((key) => {
+            if (values[key] === undefined) {
+              const defaultValue = configuration.getProperty(key)?.default;
+              if (defaultValue !== undefined) values[key] = defaultValue;
+            }
+          });
+          const title = configuration.getTitle() || "Options";
+          // the key of a group is qualified by its section, so that two sources may use the same title
+          return { key: `${section}.${title}`, title, section, configuration, values, onChange: source.onChange };
+        });
+      }),
+    [sources]
   );
-
-  const getProperty = (key: string): ConfigurationProperty | undefined =>
-    configurations.map((group) => group.getProperty(key)).find((property) => property !== undefined);
-
-  // What is displayed: the values which were passed in, with a schema default for any key they don't mention.
-  // Keys the schema doesn't describe are kept as they are, so that editing one option cannot lose another.
-  const values: Record<string, unknown> = React.useMemo(() => {
-    const result: Record<string, unknown> = { ...data };
-    configurations.forEach((group) =>
-      group.keys().forEach((key) => {
-        if (result[key] === undefined) {
-          const defaultValue = group.getProperty(key)?.default;
-          if (defaultValue !== undefined) result[key] = defaultValue;
-        }
-      })
-    );
-    return result;
-  }, [configurations, data]);
 
   // A value which is typed rather than chosen is committed when the edit ends -- on blur, or on Enter -- and
   // not on each keystroke: every commit is a round trip, and a round trip re-renders the graph. The draft is
@@ -239,16 +251,17 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
       return next;
     });
 
-  // Report an edit rather than applying it. The value is validated here, so that one the schema refuses is
-  // never sent, and the input falls back to the displayed value, which comes from outside this component.
-  const report = (key: string, value: unknown): void => {
-    const prop = getProperty(key);
+  // Report an edit rather than applying it, to the source the group belongs to. The value is validated here, so
+  // that one the schema refuses is never sent, and the input falls back to the displayed value, which comes from
+  // outside this component.
+  const report = (group: ConfigurationGroup, key: string, value: unknown): void => {
+    const prop = group.configuration.getProperty(key);
     const error = prop ? validateValue(prop, value) : `unknown key`;
     if (error) {
       console.warn(`Configuration: invalid value for "${key}": ${error}.`);
       return;
     }
-    if (onChangeProp) onChangeProp({ ...values, [key]: value });
+    group.onChange?.({ ...group.values, [key]: value });
   };
 
   // The options of a select are strings, so a number has to be found again by its text, to keep its type
@@ -262,6 +275,7 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
   // A select for a value which must be one of a list, whether the values are strings or numbers. A value which
   // is not in the list is shown anyway, rather than leaving the select blank: it is what is displayed.
   const renderSelect = (
+    group: ConfigurationGroup,
     key: string,
     options: (string | number)[],
     value: unknown,
@@ -277,9 +291,9 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
     return (
       <select
         aria-label={key}
-        style={{ width: "100%" }}
+        className="configuration-control"
         value={String(value)}
-        onChange={(e) => report(key, toOptionValue(options, e.target.value))}
+        onChange={(e) => report(group, key, toOptionValue(options, e.target.value))}
       >
         {all.map((option) => (
           <option key={String(option)} value={String(option)}>
@@ -293,29 +307,31 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
   // An input for a value which is typed: it shows the draft while it is being edited, and reports the value
   // when the edit ends, so that typing does not cause a round trip for every keystroke.
   const renderTypedInput = (
+    group: ConfigurationGroup,
     key: string,
     prop: ConfigurationProperty,
     value: unknown,
     toValue: (text: string) => unknown
   ): React.ReactNode => {
+    // a draft belongs to one control of one group, so it is keyed by the section as well as the key
+    const draftKey = `${group.section}.${key}`;
     const commit = (text: string): void => {
-      clearDraft(key);
-      report(key, toValue(text));
+      clearDraft(draftKey);
+      report(group, key, toValue(text));
     };
     return (
       <input
         type={prop.type === "number" ? "number" : "text"}
         aria-label={key}
-        // every control is full width in the settings editor, so this is too
-        style={{ width: "100%" }}
-        value={draft[key] ?? toInputText(value)}
+        className="configuration-control"
+        value={draft[draftKey] ?? toInputText(value)}
         min={prop.minimum}
         max={prop.maximum}
-        onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
+        onChange={(e) => setDraft({ ...draft, [draftKey]: e.target.value })}
         onBlur={(e) => commit(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === "Enter") commit(e.currentTarget.value);
-          if (e.key === "Escape") clearDraft(key);
+          if (e.key === "Escape") clearDraft(draftKey);
         }}
       />
     );
@@ -323,11 +339,11 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
 
   // A description, in place of the markdown one where there is one. The markdown is not rendered as such:
   // `code spans` are marked up, which is as much of it as these descriptions use.
-  const renderDescription = (prop: ConfigurationProperty, style?: React.CSSProperties): React.ReactNode => {
+  const renderDescription = (prop: ConfigurationProperty): React.ReactNode => {
     const text = prop.markdownDescription ?? prop.description;
     if (!text) return null;
     return (
-      <div style={style}>
+      <div className="configuration-description">
         {text
           .split("`")
           .map((part, index) =>
@@ -340,31 +356,31 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
   // A setting is laid out the way the settings editor this schema is written for lays one out: a bold name, the
   // description under it in the same size but muted, and the control under both. A checkbox is the exception:
   // there the description is the control's own label, as it is there. Both front ends use this schema, so the
-  // closer the two renderings, the less there is to explain.
+  // closer the two renderings, the less there is to explain. The classes are in Configuration.scss.
   const renderRow = (key: string, prop: ConfigurationProperty, control: React.ReactNode): React.ReactNode => (
-    <div key={key} style={{ marginBottom: 12 }}>
-      <div style={{ fontWeight: 600 }}>{toName(key)}</div>
+    <div key={key} className="configuration-row">
+      <div className="configuration-name">{toName(key)}</div>
       {prop.type === "boolean" ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <div className="configuration-inline">
           {control}
-          {renderDescription(prop, { color: "#666" })}
+          {renderDescription(prop)}
         </div>
       ) : (
         <>
-          {renderDescription(prop, { color: "#666", margin: "2px 0" })}
+          {renderDescription(prop)}
           <div>{control}</div>
         </>
       )}
     </div>
   );
 
-  const renderControl = (key: string): React.ReactNode => {
-    const prop = getProperty(key);
+  const renderControl = (group: ConfigurationGroup, key: string): React.ReactNode => {
+    const prop = group.configuration.getProperty(key);
     if (!prop) return null;
-    const value = values[key];
+    const value = group.values[key];
     const onChange = (newValue: unknown) => {
       try {
-        report(key, newValue);
+        report(group, key, newValue);
       } catch (e) {
         console.error(e);
       }
@@ -382,16 +398,16 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
           key,
           prop,
           prop.enum && prop.enum.length
-            ? renderSelect(key, prop.enum, value, prop.enumItemLabels)
-            : renderTypedInput(key, prop, value, Number)
+            ? renderSelect(group, key, prop.enum, value, prop.enumItemLabels)
+            : renderTypedInput(group, key, prop, value, Number)
         );
       case "string":
         return renderRow(
           key,
           prop,
           prop.enum && prop.enum.length
-            ? renderSelect(key, prop.enum, value, prop.enumItemLabels)
-            : renderTypedInput(key, prop, value, (text) => text)
+            ? renderSelect(group, key, prop.enum, value, prop.enumItemLabels)
+            : renderTypedInput(group, key, prop, value, (text) => text)
         );
       default:
         return renderRow(key, prop, <code>{JSON.stringify(value)}</code>);
@@ -399,20 +415,19 @@ export const ConfigurationView: React.FC<ConfigurationViewProps> = ({
   };
 
   return (
-    <div className={className}>
-      {configurations.map((group) => {
-        const title = group.getTitle() || "Options";
-        return (
-          <details
-            key={title}
-            open={openGroups?.includes(title) ?? false}
-            onToggle={(e) => onToggleGroup?.(title, e.currentTarget.open)}
-          >
-            <summary>{title}</summary>
-            <div style={{ paddingLeft: 8 }}>{sortKeys(group.keys()).map(renderControl)}</div>
-          </details>
-        );
-      })}
+    <div id="options">
+      {groups.map((group) => (
+        <details
+          key={group.key}
+          open={openGroups?.includes(group.title) ?? false}
+          onToggle={(e) => onToggleGroup?.(group.title, e.currentTarget.open)}
+        >
+          <summary>{group.title}</summary>
+          <div className="configuration-group">
+            {sortKeys(group.configuration.keys()).map((key) => renderControl(group, key))}
+          </div>
+        </details>
+      ))}
     </div>
   );
 };

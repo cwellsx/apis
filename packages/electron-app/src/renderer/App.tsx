@@ -9,7 +9,13 @@
 //   ViewDetails,
 //   ViewGreeting,
 // } from "backend-ui";
-import { AppOptions, appOptionsSchemas, appOptionsSection, defaultAppOptions } from "backend-config";
+import {
+  AppOptions,
+  appOptionsSchemas,
+  appOptionsSection,
+  defaultAppOptions,
+  defaultDotnetOptions,
+} from "backend-config";
 import { AnyEvent, AnyView, Image, Node, TextView as TextViewData } from "backend-ui";
 import * as React from "react";
 import { PRELOAD_API_KEY, PreloadApis, RendererApi } from "../shared";
@@ -51,6 +57,10 @@ const App: React.FunctionComponent = () => {
 
   //  const [details, setDetails] = React.useState<ViewDetails | undefined>(undefined);
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
+
+  // the dotnet view's options, which the app owns as it owns appOptions: the app sends them and this holds them
+  // until something reads them, and the panel which will read them -- the only thing which will -- is not built
+  const [dotnetOptions, setDotnetOptions] = React.useState(defaultDotnetOptions);
 
   const [isBusy, setIsBusy] = React.useState(false);
 
@@ -105,6 +115,9 @@ const App: React.FunctionComponent = () => {
         switch (view.type) {
           case "appOptions":
             setAppOptions(view.payload);
+            return;
+          case "dotnetOptions":
+            setDotnetOptions(view.payload);
             return;
           case "nodes":
             setNodes(view.payload.nodes);
@@ -163,14 +176,18 @@ const App: React.FunctionComponent = () => {
 
   const chooseAppOptions = (
     <ConfigurationView
-      section={appOptionsSection}
-      schema={appOptionsSchemas}
-      data={appOptions}
+      sources={[
+        {
+          section: appOptionsSection,
+          schema: appOptionsSchemas,
+          data: appOptions,
+          // The panel reports the options as edited and does not apply them: the state changes when the app sends
+          // them back, which is also what stores them, so the panel always shows what was last stored.
+          onChange: (values) => onAppOptions(values as AppOptions),
+        },
+      ]}
       openGroups={openGroups}
       onToggleGroup={toggleGroup}
-      // The panel reports the options as edited and does not apply them: the state changes when the app sends
-      // them back, which is also what stores them, so the panel always shows what was last stored.
-      onChange={(values) => onAppOptions(values as AppOptions)}
     />
   );
 

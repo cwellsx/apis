@@ -1,0 +1,37 @@
+// How a setting is laid out, the way the settings editor this schema is written for lays one out. Where the
+// panel sits is not here: the tab it is shown in insets it -- see #options in Layout.scss.
+
+.configuration-row {
+  margin-bottom: 12px;
+
+  // A description is the control's own label when the setting is a checkbox, and sits above the control when it
+  // is not -- which is where it needs the margin, and the reason this is a child selector
+  > .configuration-description {
+    margin: 2px 0;
+  }
+}
+
+.configuration-name {
+  font-weight: 600;
+}
+
+// a checkbox and its description are on one line
+.configuration-inline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+// every control is full width in the settings editor, so these are too
+.configuration-control {
+  width: 100%;
+}
+
+.configuration-description {
+  color: #666;
+}
+
+// the settings within a group, indented under its summary
+.configuration-group {
+  padding-left: 8px;
+}
