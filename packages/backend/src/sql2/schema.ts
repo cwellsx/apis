@@ -1,4 +1,6 @@
 import { SqlDatabase, SqlTable } from "sqlio";
+import type { DotnetOptions } from "../contracts-config";
+import { defaultDotnetOptions } from "../contracts-config";
 import { Id, IdMake, IdView, zero } from "../id2";
 import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
@@ -115,7 +117,7 @@ export const netFrameworkGroup: Group = {
   isMicrosoft: SqlCommon.fromBoolean(true),
 };
 
-type CommonType = SqlCommon.CommonTypesT<Id.AnyBigId, Id.GroupId, ConfigKeys, Config, Group>;
+type CommonType = SqlCommon.CommonTypesT<Id.AnyBigId, Id.GroupId, ConfigKeys, Config, Group, DotnetOptions>;
 
 type TableRowMap = CommonType["TableRowMap"] & DotNetTableRowMap;
 
@@ -201,7 +203,7 @@ const newTables = (db: SqlDatabase): Tables => {
   };
 
   return {
-    ...SqlCommon.newTables(db, zero.anyBigId, zeroGroup, newConfig),
+    ...SqlCommon.newTables(db, zero.anyBigId, zeroGroup, newConfig, defaultDotnetOptions),
     assemblies,
     namespaces,
     typeNames,

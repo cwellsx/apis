@@ -45,6 +45,12 @@ GraphViz's own `class` is what identifies an element; extra classes may be added
 **Tree** — the Explorer tab. The precise control surface: it mirrors the graph's expansion, it shows and
 hides nodes, and it is the only place a hidden node remains reachable.
 
+**Options** — the Options tab. The settings which belong to no node: the app's own (zoom, font size), and
+those of the view which is selected (the dotnet view's `clusterNamespaces`, so far). The panel is given a
+schema per source — the shape VS Code describes an extension's settings in — and reports an edit rather
+than applying it: the app stores it and sends it back, so the panel always shows what was last stored.
+Which groups are open is the window's own state, and is not stored.
+
 **Popups** — transient, read-only read-outs of what is _inside_ a hovered graph element: the bundle of a
 hovered edge, the children of a hovered node, the calls of a hovered leaf.
 
@@ -81,8 +87,8 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
 
 ## State and data rules
 
-- `NodeState` is `{ isHidden }` or `{ isExpanded }`. The tree already sends both, and the backend's
-  `makeSetNodeState` applies them.
+- `NodeState` is `{ isHidden }` or `{ isExpanded }`. The tree already sends both, and the backend applies
+  them through `SetNodeState` (the presenter's `onFilterEvent`).
 - Visibility is inherited: a child is visible if its parent is, unless it has its own state. Hiding a child
   marks every ancestor `isMixed`, which is what the tree's tri-state checkbox displays.
 - A **closed** node carries no children — `makeNodes` skips the children of a closed parent, so `Closed`
@@ -104,20 +110,11 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
 
 ## Prerequisites
 
-The gestures assume these are done first. They are small and independent.
+The first three are done: clicks reach the backend (`toGraphElement` reads the `class` attribute, and
+accepts `cluster` as well as `node` and `edge`), and `Graph.css` is gone — the style `insertSvgMap` injects
+now sets `cursor: default` and `pointer-events` instead.
 
-1. **Clicks actually reach the backend.** `Graph.tsx` reads `element.className`, which for an element in
-   the SVG namespace is an `SVGAnimatedString` rather than the string `Element.className` is declared to
-   be, so no click is ever sent. Read the `class` attribute instead — `toGraphElement` already does, and
-   already tolerates whatever extra classes GraphViz is given.
-2. **Clusters count as nodes.** An open node is emitted as `<g id="<nodeId>" class="cluster">`, so a click
-   on its border or its label has to map to the same node id as a click on a closed one. The current
-   mapping accepts only `edge` and `node`.
-3. **The dead cursor rules go.** `Graph.css` still selects the obsolete `<area>` elements and carries two
-   data-URI cursors, which exist only as a workaround for an electron-forge asset-loading bug that custom
-   image cursors hit. Nothing changes the pointer any more, so all of it can be deleted — and with it the
-   need for the DOT to write a class for the collapsible state.
-4. **Popups can be entered.** `EdgePopup.css` sets `pointer-events: none`, with a comment saying it has to
+1. **Popups can be entered.** `EdgePopup.css` sets `pointer-events: none`, with a comment saying it has to
    become `auto` once the popup is interactive — which the freeze-on-modifier-key behaviour makes possible.
 
 ## Open items

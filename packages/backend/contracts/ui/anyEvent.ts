@@ -1,4 +1,4 @@
-import { AppOptions } from "../config";
+import { AnyOptions, AppOptions } from "../config";
 import { EdgeId, NodeId } from "./nodeId";
 import { NodeState } from "./nodeState";
 import { AnyNodeType } from "./nodeTypes";
@@ -24,5 +24,6 @@ export type FilterEvent = NewNodeState[];
 
 export type AnyEvent =
   | { type: "appOptions"; payload: AppOptions }
+  | { type: "options"; payload: AnyOptions }
   | { type: "graph"; payload: GraphEvent }
   | { type: "filter"; payload: FilterEvent };

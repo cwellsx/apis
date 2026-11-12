@@ -1,4 +1,6 @@
 import { MenuItem } from "../contracts-app";
+import type { AnyOptions } from "../contracts-config";
+import { isDotnetOptions } from "../contracts-config";
 import { IdView } from "../id2";
 import { Sql } from "../sql2";
 import type { ViewState } from "../types";
@@ -60,6 +62,13 @@ export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView =>
     },
     set viewState(next: ViewState) {
       viewState = next;
+    },
+    get options(): AnyOptions {
+      return sqlTables.getOptions();
+    },
+    set options(value: AnyOptions) {
+      assert(isDotnetOptions(value), "the dotnet view's options are the dotnet options");
+      sqlTables.setOptions(value);
     },
     getMenuItems,
     onMenuItem,

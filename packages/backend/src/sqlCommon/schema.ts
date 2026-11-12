@@ -1,6 +1,6 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import { Id } from "../id2";
-import { ConfigKvpT, ConfigT } from "./config";
+import { ConfigKvpT, ConfigT, optionsT } from "./config";
 import type { BooleanStateT } from "./nodeStates";
 import { GetSetNodeStatesT, nodeStateTableNames, nodeStateTablesT } from "./nodeStates";
 import { Boolean, fromBoolean } from "./sqlBoolean";
@@ -20,6 +20,7 @@ export interface CommonTypesT<
   TConfigKeys extends string,
   TConfig extends ConfigT<TConfigKeys>,
   TGroup extends GroupT<TGroupId>,
+  TOptions extends object,
 > {
   TableRowMap: {
     //  row types of the common tables
@@ -30,7 +31,13 @@ export interface CommonTypesT<
     nodeExpandedStates: BooleanStateT<T>;
   };
 
-  ExtraApis: { config: TConfig; viewNodeStates: (viewId: Id.ViewId) => GetSetNodeStatesT<T> };
+  ExtraApis: {
+    config: TConfig;
+    viewNodeStates: (viewId: Id.ViewId) => GetSetNodeStatesT<T>;
+    // the options of this database -- the dotnet view's, and one day the custom view's -- kept in configKvps
+    getOptions: () => TOptions;
+    setOptions: (value: TOptions) => void;
+  };
 
   Tables: { [K in TableName]: SqlTable<this["TableRowMap"][K]> } & this["ExtraApis"];
 }
@@ -41,13 +48,15 @@ export const newTables = <
   TConfigKeys extends string,
   TConfig extends ConfigT<TConfigKeys>,
   TGroup extends GroupT<TGroupId>,
+  TOptions extends object,
 >(
   db: SqlDatabase,
   zeroId: T,
   //zeroGroupId: TGroupId,
   zeroGroup: TGroup,
-  newConfig: (table: SqlTable<ConfigKvpT<TConfigKeys>>) => TConfig
-): CommonTypesT<T, TGroupId, TConfigKeys, TConfig, TGroup>["Tables"] => {
+  newConfig: (table: SqlTable<ConfigKvpT<TConfigKeys>>) => TConfig,
+  defaultOptions: TOptions
+): CommonTypesT<T, TGroupId, TConfigKeys, TConfig, TGroup, TOptions>["Tables"] => {
   // zero exemplars
   //const zeroGroup: GroupT<TGroupId> = { id: zeroGroupId, name: "foo" };
   const zeroAncestor: AncestorT<T> = { ancestorId: zeroId, descendentId: zeroId, isParent: fromBoolean(false) };
@@ -61,6 +70,7 @@ export const newTables = <
   const configKvps = db.newSqlTable("configKvps", "key", zeroConfig);
 
   const config = newConfig(configKvps);
+  const { getOptions, setOptions } = optionsT(configKvps, defaultOptions);
 
   const nodeStateTables = nodeStateTablesT(db, zeroId);
   const viewNodeStates = (viewId: Id.ViewId): GetSetNodeStatesT<T> => nodeStateTables.viewNodeStates(viewId);
@@ -73,5 +83,7 @@ export const newTables = <
     viewNodeStates,
     nodeHiddenStates: nodeStateTables.nodeHiddenStates,
     nodeExpandedStates: nodeStateTables.nodeExpandedStates,
+    getOptions,
+    setOptions,
   };
 };

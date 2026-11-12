@@ -10,11 +10,15 @@
 //   ViewGreeting,
 // } from "backend-ui";
 import {
+  AnyOptions,
   AppOptions,
   appOptionsSchemas,
   appOptionsSection,
   defaultAppOptions,
-  defaultDotnetOptions,
+  DotnetOptions,
+  dotnetOptionsSchemas,
+  dotnetOptionsSection,
+  isDotnetOptions,
 } from "backend-config";
 import { AnyEvent, AnyView, Image, Node, TextView as TextViewData } from "backend-ui";
 import * as React from "react";
@@ -58,9 +62,9 @@ const App: React.FunctionComponent = () => {
   //  const [details, setDetails] = React.useState<ViewDetails | undefined>(undefined);
   const [appOptions, setAppOptions] = React.useState(defaultAppOptions);
 
-  // the dotnet view's options, which the app owns as it owns appOptions: the app sends them and this holds them
-  // until something reads them, and the panel which will read them -- the only thing which will -- is not built
-  const [dotnetOptions, setDotnetOptions] = React.useState(defaultDotnetOptions);
+  // the options of the view which is selected, which the backend sends: which kind they are is what the panel asks
+  // before it shows them, and until they arrive there is nothing to show
+  const [options, setOptions] = React.useState<AnyOptions | undefined>(undefined);
 
   const [isBusy, setIsBusy] = React.useState(false);
 
@@ -84,6 +88,7 @@ const App: React.FunctionComponent = () => {
 
   // these are declared before the handlers which use them, so that each one reads in terms of what is above it
   const onAppOptions: OnAppOptions = (appOptions) => on({ type: "appOptions", payload: appOptions });
+  const onOptions = (value: AnyOptions): void => on({ type: "options", payload: value });
   const onGraphEvent: OnGraphEvent = (graphEvent) => on({ type: "graph", payload: graphEvent });
   const onFilterEvent: OnFilterEvent = (filterEvent) => on({ type: "filter", payload: filterEvent });
   // const onDetailEvent: OnDetailEvent = (nodeId) => on(nodeId, mainApi.onDetailEvent);
@@ -116,8 +121,8 @@ const App: React.FunctionComponent = () => {
           case "appOptions":
             setAppOptions(view.payload);
             return;
-          case "dotnetOptions":
-            setDotnetOptions(view.payload);
+          case "options":
+            setOptions(view.payload);
             return;
           case "nodes":
             setNodes(view.payload.nodes);
@@ -174,6 +179,20 @@ const App: React.FunctionComponent = () => {
     // }
   })();
 
+  // The options of the view which is selected, as a source for the panel: the type predicate is what says which
+  // schema they belong to. The custom view has no options of its own yet, so it contributes no source.
+  const optionsSources = () => {
+    if (!options || !isDotnetOptions(options)) return [];
+    return [
+      {
+        section: dotnetOptionsSection,
+        schema: dotnetOptionsSchemas,
+        data: options,
+        onChange: (values: Record<string, unknown>) => onOptions(values as DotnetOptions),
+      },
+    ];
+  };
+
   const chooseAppOptions = (
     <ConfigurationView
       sources={[
@@ -185,6 +204,7 @@ const App: React.FunctionComponent = () => {
           // them back, which is also what stores them, so the panel always shows what was last stored.
           onChange: (values) => onAppOptions(values as AppOptions),
         },
+        ...optionsSources(),
       ]}
       openGroups={openGroups}
       onToggleGroup={toggleGroup}

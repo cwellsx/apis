@@ -5,10 +5,15 @@ import { renderImage } from "../image";
 import { GraphNodes } from "../types";
 import { SelectedView } from "./selectedView";
 
+// The types of view, of which showViews is asked to add the ones which are not the graph: the menu items, when the
+// menu has changed, and the options, when they have been edited and so have to be shown back. Derived from AppView,
+// so that a view type added to the contract does not mean editing a list here.
+type AppViewType = AppView["type"];
+
 export const createPresenter = async (selectedView: SelectedView): Promise<OpenDataSource> => {
   let graphNodes: GraphNodes;
 
-  const showViews = async (needMenuItems: boolean): Promise<AppView[]> => {
+  const showViews = async (appViewTypes?: AppViewType[]): Promise<AppView[]> => {
     graphNodes = selectedView.viewState.getGraphNodes();
     const image = await renderImage(graphNodes.imageData, selectedView.hasParentEdges);
 
@@ -19,15 +24,18 @@ export const createPresenter = async (selectedView: SelectedView): Promise<OpenD
       { type: "nodes", payload: { nodes } },
       { type: "image", payload: { image } },
     ];
-    if (needMenuItems) {
+    if (appViewTypes?.includes("menuItems")) {
       const menuItems = selectedView.getMenuItems();
       views.push({ type: "menuItems", payload: menuItems });
+    }
+    if (appViewTypes?.includes("options")) {
+      views.push({ type: "options", payload: selectedView.options });
     }
     return views;
   };
 
   const presenterApi: PresenterApi = async (events: AppEvent[]) => {
-    let needMenuItems = false;
+    const appViewTypes: AppViewType[] = [];
 
     for (const event of events) {
       switch (event.type) {
@@ -38,12 +46,16 @@ export const createPresenter = async (selectedView: SelectedView): Promise<OpenD
           onFilterEvent(event.payload);
           break;
         case "menuItem":
-          needMenuItems ||= selectedView.onMenuItem(event.payload.menuItemId);
+          if (selectedView.onMenuItem(event.payload.menuItemId)) appViewTypes.push("menuItems");
+          break;
+        case "options":
+          selectedView.options = event.payload;
+          appViewTypes.push("options");
           break;
       }
     }
 
-    const result = await showViews(needMenuItems);
+    const result = await showViews(appViewTypes);
     return result;
   };
 
@@ -70,6 +82,7 @@ export const createPresenter = async (selectedView: SelectedView): Promise<OpenD
     });
   };
 
-  const views = await showViews(true);
+  // the start-up sends the menu, and the options so that the panel can show them
+  const views = await showViews(["menuItems", "options"]);
   return { presenterApi, views };
 };

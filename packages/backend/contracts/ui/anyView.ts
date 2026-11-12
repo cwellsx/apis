@@ -1,4 +1,4 @@
-import { AppOptions, DotnetOptions } from "../config";
+import { AnyOptions, AppOptions } from "../config";
 import { Image } from "./image";
 import { Node } from "./node";
 
@@ -13,7 +13,7 @@ export type TextView = { text: string };
 
 export type AnyView =
   | { type: "appOptions"; payload: AppOptions }
-  | { type: "dotnetOptions"; payload: DotnetOptions }
+  | { type: "options"; payload: AnyOptions }
   | { type: "nodes"; payload: NodeView }
   | { type: "image"; payload: ImageView }
   | { type: "text"; payload: TextView }

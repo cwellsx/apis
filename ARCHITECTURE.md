@@ -43,21 +43,28 @@ up debugging emitted JavaScript instead of the backend `.ts` sources.
 
 ## 4. Contracts
 
-`packages/backend/contracts` defines the types shared between the backend and the front ends, in three
+`packages/backend/contracts` defines the types shared between the backend and the front ends, in four
 layers with **no cyclic dependencies**:
 
 ```
-dotnet  →  ui  →  app
+dotnet  no dependencies
+config  no dependencies
+ui      depends on dotnet and config
+app     depends on ui and config
 ```
 
 - **`contracts/dotnet`** — no dependencies. The shapes produced by `Core.exe` (reflected data, ids).
-- **`contracts/ui`** — depends on `dotnet`. The view-model types the UI displays: nodes, edges, image,
-  node ids, node state, app options.
-- **`contracts/app`** — depends on `ui`. The application API: `DataSource`, `OpenDataSource`,
+- **`contracts/config`** — no dependencies. The settings model: `AppOptions`, `DotnetOptions` and
+  `CustomOptions`, their union `AnyOptions`, and a schema per kind — the shape VS Code describes an
+  extension's settings in — which is what the options panel renders.
+- **`contracts/ui`** — depends on `dotnet` and `config`, because an event carries the options. The
+  view-model types the UI displays: nodes, edges, image, node ids, node state.
+- **`contracts/app`** — depends on `ui` and `config`. The application API: `DataSource`, `OpenDataSource`,
   `AppConfig`, `Paths`, `PresenterApi`, `ShowProgress`, menu.
 
-`packages/backend/src` re-exports these through barrels (`contracts-app.ts`, `contracts-ui.ts`,
-`contracts-dotnet.ts`, `contracts-custom.ts`), so backend code imports from `../contracts-app`, etc.
+`packages/backend/src` re-exports these through barrels (`contracts-app.ts`, `contracts-config.ts`,
+`contracts-ui.ts`, `contracts-dotnet.ts`, `contracts-custom.ts`), so backend code imports from
+`../contracts-app`, etc. The front ends import them through the `backend-*` path aliases.
 
 ## 5. Backend layering
 
@@ -67,7 +74,8 @@ Within `packages/backend/src`, responsibilities stack top-down:
 SQLite (normalized schema, sql2)
   ↓  SQL core     — thin domain API over the tables
   ↓  GraphQuery   — UI-oriented read model
-  ↓  View state   — persisted per-node UI state (expanded / closed / selected)
+  ↓  View state   — persisted per-node UI state (hidden / expanded)
+  ↓  Options      — the selected view's own settings, persisted with the data source
   ↓  View model   — selected view → image + nodes (createPresenter)
   ↓  Renderer     — GraphViz SVG + tree view
 ```
@@ -81,7 +89,7 @@ assemblies folder
   → backend-dotnet (Core.exe): System.Reflection + ICSharpCode.Decompiler
   → JSON (Reflected / All)
   → dotNetApi (TypeScript ↔ .NET bridge)
-  → sql2 inserters (SqlLoaded.save) → SQLite
+  → sql2 (createTables, insertAll) → SQLite
 ```
 
 **Render — show a view:**
@@ -92,20 +100,22 @@ selected view (dotnet / custom)
   → viewModel (createPresenter → imageData)
   → image (toDotFormat → GraphViz via @viz-js/viz)
   → SVG (with hit areas merged from the cmapx image map)
-  → DisplayApi / RendererApi  →  Electron window or VS Code webview
+  → IPC  →  RendererApi.show  →  Electron window or VS Code webview
 ```
 
-UI events (expand/collapse, filter, menu) flow back through `PresenterApi`, update view state in
-SQLite, and re-render.
+UI events (expand/collapse, filter, menu, options) flow back through `PresenterApi`. Each is applied where
+it belongs — node state, or the view's options, both in SQLite — and the views are then re-rendered and
+sent. A batch of events may ask `showViews` for the menu items or the options as extra views, which is how
+the options panel is told what was stored.
 
 ## 7. Key modules (`packages/backend/src`)
 
 | Module                       | Responsibility                                                                                        |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `contracts-*.ts`             | Barrels re-exporting `contracts/{dotnet,ui,app}`.                                                     |
+| `contracts-*.ts`             | Barrels re-exporting `contracts/{dotnet,config,ui,app}`.                                              |
 | `id2`                        | Branded id types (`TypeId`, `MethodId`, …) and their factories.                                       |
 | `sql2`                       | Normalized schema + inserters: assemblies, namespaces, types, members, calls, ancestors, view states. |
-| `sqlCommon`                  | Shared schema/state helpers (node states, config).                                                    |
+| `sqlCommon`                  | Shared schema/state helpers: node states, and the config KVPs, which hold the view's options.         |
 | `sqlAppConfig` / `sqlCustom` | Persistence for app config and custom data sources.                                                   |
 | `openDataSource`             | Entry point: `openDataSource(dataSource, showProgress)` → `openFromDotNet` / `openFromCustom`.        |
 | `viewState`                  | The node forest and per-node state.                                                                   |

@@ -4,4 +4,8 @@ export type { AppOptions } from "./appOptions";
 export { dotnetOptionsSchemas, dotnetOptionsSection } from "./dotnetOptionsSchema";
 export { defaultDotnetOptions } from "./dotnetOptions";
 export type { DotnetOptions } from "./dotnetOptions";
+export { defaultCustomOptions } from "./customOptions";
+export type { CustomOptions } from "./customOptions";
+export { isDotnetOptions } from "./anyOptions";
+export type { AnyOptions } from "./anyOptions";
 export type { ConfigurationProperty, ConfigurationSchema } from "./schema";

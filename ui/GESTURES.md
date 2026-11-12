@@ -31,8 +31,8 @@ it describes leaves the graph — which is what a state change that hides it doe
 
 | Gesture                                                | Result                                                                                                              | Status                                                                     |
 | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Click a **node which can be open or closed**           | Toggle it: a closed node opens, an open node closes. One round trip, then the graph is re-rendered.                 | partial — `createPresenter` already does this, but the click never arrives |
-| Click an **open node's cluster** — its border or label | The same as clicking the node, because an open node is emitted as a cluster rather than as a node.                  | planned                                                                    |
+| Click a **node which can be open or closed**           | Toggle it: a closed node opens, an open node closes. One round trip, then the graph is re-rendered.                 | built                                                                      |
+| Click an **open node's cluster** — its border or label | The same as clicking the node, because an open node is emitted as a cluster rather than as a node.                  | built                                                                      |
 | Click a **leaf**                                       | Show its details. It currently raises instead of doing nothing, which is acceptable while the feature is developed. | planned                                                                    |
 | Click an **edge**                                      | Show the edge's details. Not implemented, likewise.                                                                 | planned                                                                    |
 | Click the **background**                               | Nothing.                                                                                                            | built                                                                      |
@@ -55,10 +55,10 @@ means the click acts; red means it does not. The assignment is provisional — e
 become clickable, for their details, and will turn green when they do — so the rule is stable while the
 assignment is not.
 
-The colours belong in the style `insertSvgMap` injects into the SVG, which already strokes a hovered node
-and a hovered edge, and which also strokes the edge hit areas blue for development: that debug stroke should
-go. Colour is the only channel, so a second one — a dashed stroke, say — belongs in the same style if colour
-alone proves too subtle.
+The colours are in the style `insertSvgMap` injects into the SVG, which strokes a hovered node green and a
+hovered edge or leaf red, and which makes the edge hit areas targets with a transparent stroke. Colour is
+the only channel, so a second one — a dashed stroke, say — belongs in the same style if colour alone proves
+too subtle.
 
 Two things about that style are not obvious, and both are needed for the hover to work at all. A node's box
 is normally **unfilled**, and an unpainted interior is not hit-tested, so the style makes the box a target

@@ -1,4 +1,6 @@
 import { SqlDatabase, SqlTable } from "sqlio";
+import type { CustomOptions } from "../contracts-config";
+import { defaultCustomOptions } from "../contracts-config";
 import { Id, IdView, zero } from "../id2";
 import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
@@ -67,7 +69,7 @@ type CustomTableRowMap = {
 export type Group = { id: Id.CustomGroupId; name: string };
 const zeroGroup: Group = { id: zero.customGroupId, name: "foo" };
 
-type CommonType = SqlCommon.CommonTypesT<Id.AnyCustomId, Id.CustomGroupId, ConfigKeys, Config, Group>;
+type CommonType = SqlCommon.CommonTypesT<Id.AnyCustomId, Id.CustomGroupId, ConfigKeys, Config, Group, CustomOptions>;
 
 type TableRowMap = CommonType["TableRowMap"] & CustomTableRowMap;
 
@@ -117,7 +119,7 @@ const newTables = (db: SqlDatabase): Tables => {
   };
 
   return {
-    ...SqlCommon.newTables(db, zero.anyCustomId, zeroGroup, newConfig),
+    ...SqlCommon.newTables(db, zero.anyCustomId, zeroGroup, newConfig, defaultCustomOptions),
     items,
     edges,
     itemAttrs,

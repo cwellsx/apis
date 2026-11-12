@@ -11,8 +11,9 @@ stops being the answer — once you are reading a method body, it should stay pu
 
 The traces of this intent are already in the code: `Layout` accepts a `right` pane which the layout model
 never creates; `App` has a commented-out `right` section and a dead `rightWidthMaxContent`, which sized
-that pane to its content; and `AppOptions.detailsClosed` with `DetailsType = "app" | "graph"` describes
-collapsible sections, one of which is the graph's own.
+that pane to its content; and `DetailsType = "app" | "graph"` is kept, commented out, in
+`contracts/config/appOptions.ts` — the option it would become says which details tab is selected, and
+which option `<details>` are open, which today is the window's own state rather than a stored option.
 
 ## What details exist per node type
 
