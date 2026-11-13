@@ -39,6 +39,8 @@ export type MethodId = MethodDefId | MethodSpecId;
 export type AnyDefId = TypeDefId | MethodDefId; // ownerId of a GenericParam
 export type AnyOwnerId = TypeSpecId | MethodSpecId | MethodDefId; // ownerId of a SignatureType
 
+export type AnyRootId = AssemblyId | NamespaceId;
+
 export type AnyCoreId = AssemblyId | NamespaceId | TypeId | MethodId;
 
 export type AnyId = GroupId | AnyCoreId | AnyCustomId;

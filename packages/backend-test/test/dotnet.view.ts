@@ -54,93 +54,105 @@ describe("testViewStates", function () {
     tables.close();
   });
 
+  // The vanilla run is the one the example files in the repository are copied from, so it is pinned to the option
+  // which makes every namespace a node of its assembly. The clustered run writes a second set of files, to compare
+  // against it.
+  const variants = [
+    { name: "", clusterNamespaces: false },
+    { name: "-clustered", clusterNamespaces: true },
+  ];
+
   const viewTypes: ViewType[] = ["calls"];
   for (const viewType of viewTypes) {
     //continue;
-    describe(`viewType: ${viewType}`, function () {
-      let viewState: ViewState;
-      //let forest: Forest;
-      let suffix = 0;
+    for (const variant of variants) {
+      describe(`viewType: ${viewType}${variant.name}`, function () {
+        let viewState: ViewState;
+        //let forest: Forest;
+        let suffix = 0;
 
-      before(function () {
-        // safe: runs after tables is assigned
-        const view = tables.views.selectOne({ viewType });
-        assert(!!view);
-        viewState = createDotnetViewState(tables, view.viewType, view.id, tables.getOptions());
-        viewState.resetNodeStates();
-        //forest = viewState.getGraphNodes().forest;
+        before(function () {
+          // safe: runs after tables is assigned
+          const view = tables.views.selectOne({ viewType });
+          assert(!!view);
+          viewState = createDotnetViewState(tables, view.viewType, view.id, {
+            clusterNamespaces: variant.clusterNamespaces,
+          });
+          viewState.resetNodeStates();
+          //forest = viewState.getGraphNodes().forest;
+        });
+
+        const printViewState = async () => {
+          const graphNodes = viewState.getGraphNodes();
+          const printed = printForest(graphNodes.imageData.roots);
+          const filenameRoot = `${viewType}${variant.name}-${suffix++}`;
+          printLines(`${filenameRoot}.txt`, printed);
+
+          assert(graphNodes.imageData.edges.length != 0);
+
+          const result = await createImage(graphNodes.imageData, false);
+          assert(typeof result === "object");
+
+          fs.writeFileSync(fileViewState(`${filenameRoot}.svg`), result.svg);
+          fs.writeFileSync(fileViewState(`${filenameRoot}.dot`), result.dotText);
+          fs.writeFileSync(fileViewState(`${filenameRoot}.map`), result.mapXml);
+          fs.writeFileSync(fileViewState(`${filenameRoot}.json`), stringify(graphNodes.imageData));
+
+          log(`${filenameRoot}.svg`);
+
+          if (filenameRoot === `${viewType}-0`) copyExample(viewType);
+        };
+
+        it("initial state", async function () {
+          await printViewState();
+        });
+
+        it("expand Core node", async function () {
+          const [graphNodes, node] = getForestNode(viewState, "Core", getRootNodeType(viewType));
+          assert(!!node);
+          viewState.setNodeState(node.nodeId, node.type, { isExpanded: true }, graphNodes);
+          await printViewState();
+          // close it again before the next test, because it's expensive to show so many
+          // viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
+        });
+
+        it("export .NET Framework node", async function () {
+          const [graphNodes, node] = getForestNode(viewState, ".NET Framework", NodeType.Group);
+          assert(!!node);
+          viewState.setNodeState(node.nodeId, node.type, { isExpanded: true }, graphNodes);
+          await printViewState();
+        });
+
+        it("collapse Microsoft nodes", async function () {
+          const [graphNodes, node] = getForestNode(viewState, "Microsoft", NodeType.Group);
+          assert(!!node);
+          viewState.setNodeState(node.nodeId, node.type, { isExpanded: false }, graphNodes);
+          await printViewState();
+        });
+
+        it("hide System.Collections node", async function () {
+          const [graphNodes, node] = getForestNode(viewState, "System.Collections", NodeType.Group);
+          assert(!!node);
+          viewState.setNodeState(node.nodeId, node.type, { isHidden: true }, graphNodes);
+          await printViewState();
+        });
+
+        it("expand Core namespace", async function () {
+          // choose a type which exists in the Core assembly and in the Core namespace
+          const [graphNodes, node] = getForestNode(viewState, "Core", NodeType.Namespace);
+          assert(!!node);
+          viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
+          await printViewState();
+        });
+
+        it("expand Program node", async function () {
+          // choose a type which exists in the Core assembly and in the Core namespace
+          const [graphNodes, node] = getForestNode(viewState, "Program", NodeType.Type);
+          assert(!!node);
+          viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
+          await printViewState();
+        });
       });
-
-      const printViewState = async () => {
-        const graphNodes = viewState.getGraphNodes();
-        const printed = printForest(graphNodes.imageData.roots);
-        const filenameRoot = `${viewType}-${suffix++}`;
-        printLines(`${filenameRoot}.txt`, printed);
-
-        assert(graphNodes.imageData.edges.length != 0);
-
-        const result = await createImage(graphNodes.imageData, false);
-        assert(typeof result === "object");
-
-        fs.writeFileSync(fileViewState(`${filenameRoot}.svg`), result.svg);
-        fs.writeFileSync(fileViewState(`${filenameRoot}.dot`), result.dotText);
-        fs.writeFileSync(fileViewState(`${filenameRoot}.map`), result.mapXml);
-        fs.writeFileSync(fileViewState(`${filenameRoot}.json`), stringify(graphNodes.imageData));
-
-        log(`${filenameRoot}.svg`);
-
-        if (filenameRoot === `${viewType}-0`) copyExample(viewType);
-      };
-
-      it("initial state", async function () {
-        await printViewState();
-      });
-
-      it("expand Core node", async function () {
-        const [graphNodes, node] = getForestNode(viewState, "Core", getRootNodeType(viewType));
-        assert(!!node);
-        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true }, graphNodes);
-        await printViewState();
-        // close it again before the next test, because it's expensive to show so many
-        // viewState.setNodeState(node.nodeId, node.type, { isExpanded: false, isHidden: false });
-      });
-
-      it("export .NET Framework node", async function () {
-        const [graphNodes, node] = getForestNode(viewState, ".NET Framework", NodeType.Group);
-        assert(!!node);
-        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true }, graphNodes);
-        await printViewState();
-      });
-
-      it("collapse Microsoft nodes", async function () {
-        const [graphNodes, node] = getForestNode(viewState, "Microsoft", NodeType.Group);
-        assert(!!node);
-        viewState.setNodeState(node.nodeId, node.type, { isExpanded: false }, graphNodes);
-        await printViewState();
-      });
-
-      it("hide System.Collections node", async function () {
-        const [graphNodes, node] = getForestNode(viewState, "System.Collections", NodeType.Group);
-        assert(!!node);
-        viewState.setNodeState(node.nodeId, node.type, { isHidden: true }, graphNodes);
-        await printViewState();
-      });
-
-      it("expand Core namespace", async function () {
-        // choose a type which exists in the Core assembly and in the Core namespace
-        const [graphNodes, node] = getForestNode(viewState, "Core", NodeType.Namespace);
-        assert(!!node);
-        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
-        await printViewState();
-      });
-
-      it("expand Program node", async function () {
-        // choose a type which exists in the Core assembly and in the Core namespace
-        const [graphNodes, node] = getForestNode(viewState, "Program", NodeType.Type);
-        assert(!!node);
-        viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
-        await printViewState();
-      });
-    });
+    }
   }
 });

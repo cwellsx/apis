@@ -33,6 +33,40 @@ Unit/regression tests for `backend` and `backend-dotnet`. It compiles `backend` 
 
 **Prerequisite:** after changing .NET source, run `build-dotnet` before the .NET tests.
 
+### Test output
+
+Tests write outside the repository, beside it, under `apis.testdata\Core2`. The paths are chosen in
+`test/utils/paths.ts`, which is the only place to change them.
+
+| Path        | Contents                                                                                                          |
+| ----------- | ----------------------------------------------------------------------------------------------------------------- |
+| `appData`   | the reflection data (`core.json`, and `core.pretty.json` from `test-dotnet-slow`) and the databases built from it |
+| `viewState` | one snapshot per step of `test-dotnet-view`                                                                       |
+
+`test-dotnet-view` writes one set of files per step of the calls view — `calls-0`, `calls-1`, … — and a second
+set from the run with `clusterNamespaces` on — `calls-clustered-0`, … — so that either variant can be compared
+with the other, and with a previous run. Each set holds the same five files:
+
+| File    | Contents                                                          |
+| ------- | ----------------------------------------------------------------- |
+| `.txt`  | the node tree, as `printForest` prints it — the model's structure |
+| `.json` | `imageData`: the roots and the edges                              |
+| `.map`  | the SVG hit areas                                                 |
+| `.dot`  | what the model is turned into before GraphViz lays it out         |
+| `.svg`  | the laid out graph                                                |
+
+The output is not versioned, deliberately. `.dot`, `.svg` and `.map` change whenever GraphViz moves a box, so
+committing them would mean a diff nobody can review, and one that every regeneration rewrites. To see what a
+change did, keep a copy of `viewState` from a run you trust and compare a later run with it — WinMerge on the
+two folders — rather than with git.
+
+The exception is `ui/example-calls.*`: the first snapshot of the calls view, which the test copies into the
+repository because the UI documentation refers to it. It is a snapshot rather than a promise — see
+[`ui/README.md`](./ui/README.md).
+
+Not covered yet: the copied example is the initial state, which is a simple tree. A sequence of node state
+updates which produced a complicated one would be better coverage.
+
 ## `electron-app-test`
 
 Renderer component tests (Vitest + Testing Library + jsdom), for example `ConfigurationView`.

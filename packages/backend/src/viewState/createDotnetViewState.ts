@@ -4,14 +4,19 @@ import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui"
 import { Id, IdAny, IdBig } from "../id2";
 import type { Sql, ViewType } from "../sql2";
 import { netFrameworkGroup } from "../sql2";
-import { NodeStates, SqlCommon } from "../sqlCommon";
+import { GetSetNodeStatesT, NodeStates, SqlCommon } from "../sqlCommon";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
+import { clusterNamespaces, defaultExpandedNamespaces } from "./clusterNamespaces";
 import type { Forest, RootItem, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
+import { remapCalls } from "./remapCalls";
 import { toNodeId } from "./toNodeId";
+
+// the tree, and for each namespace hidden inside one of its namespace nodes, the id of the node it is hidden in
+type DotnetForest = { forest: Forest; hiddenIn: Map<Id.NamespaceId, Id.NamespaceId> };
 
 export const createDotnetViewState = (
   sqlTables: Sql.Tables,
@@ -26,8 +31,30 @@ export const createDotnetViewState = (
     isExpanded: false,
   };
 
-  const getSetNodeStates = sqlTables.viewNodeStates(viewId);
-  const { getNodeStates, resetNodeStates } = getSetNodeStates;
+  const sqlNodeStates = sqlTables.viewNodeStates(viewId);
+  const { resetNodeStates } = sqlNodeStates;
+
+  // a namespace which is alone in the first layer of its assembly is expanded by default, as a group is, so that
+  // the assembly reveals what is inside it rather than a single node which is closed. It is still a namespace: it
+  // can be collapsed, and that is stored like any other state, against the same default.
+  const defaultExpanded = defaultExpandedNamespaces(sqlTables.namespaces.selectAll(), options.clusterNamespaces);
+  const isDefaultExpanded = (id: Id.AnyBigId): boolean => defaultExpanded.has(id as Id.NamespaceId);
+
+  const getNodeStates = (): NodeStates => {
+    const nodeStates = sqlNodeStates.getNodeStates();
+    return {
+      isVisibleId: nodeStates.isVisibleId,
+      isExpandedId: (id, isGroup) => nodeStates.isExpandedId(id, isGroup || isDefaultExpanded(id)),
+    };
+  };
+
+  const getSetNodeStates: GetSetNodeStatesT<Id.AnyBigId> = {
+    ...sqlNodeStates,
+    getNodeStates,
+    setIsExpanded: (id, isGroup, isExpanded) =>
+      sqlNodeStates.setIsExpanded(id, isGroup || isDefaultExpanded(id), isExpanded),
+  };
+
   const setNodeState = makeSetNodeState(
     getSetNodeStates,
     IdAny.toAnyBigId,
@@ -55,9 +82,11 @@ export const createDotnetViewState = (
   const rootNodeType = NodeType.Assembly;
   const leafType = getLeafType();
 
-  const getForest = (nodeStates: NodeStates): Forest => {
+  const getForest = (nodeStates: NodeStates): DotnetForest => {
     const { toTrunk, addToParent, makeRootNode } = makeNodes(nodeStates, leafType, NodeType.Group, IdAny.toAnyBigId);
     const trunk = toTrunk(top, rootNodeType);
+    // nodeStates already encapsulates defaultExpandedNamespaces
+    const isExpandedId = (id: Id.AnyBigId): boolean => nodeStates.isExpandedId(id, false);
 
     const netFrameworkNode = makeRootNode(netFrameworkItem, trunk);
 
@@ -68,21 +97,33 @@ export const createDotnetViewState = (
 
     switch (leafType) {
       case NodeType.Assembly:
-        return trunk;
+        return { forest: trunk, hiddenIn: new Map() };
       case NodeType.Method: {
         // expanded assemblies
-        const assemblyIds = assemblies
-          .map((item) => item.id)
-          .filter((id) => nodeStates.isExpandedId(IdBig.toBigAssemblyId(id), false));
-        // namespaces
+        const assemblyIds = assemblies.map((item) => item.id).filter((id) => isExpandedId(IdBig.toBigAssemblyId(id)));
+
+        // namespaces -- when they are clustered, the ones which are hidden inside another are not nodes
         const namespaces = sqlTables.namespaces.selectWhereIn("assemblyId", assemblyIds);
-        namespaces.forEach((namespace) =>
-          addToParent(trunk, namespace, NodeType.Namespace, namespace.assemblyId.toString())
+        const { visible, hiddenByVisible } = clusterNamespaces(namespaces, options.clusterNamespaces, isExpandedId);
+        visible.forEach(({ namespace, parentId }) =>
+          addToParent(trunk, namespace, NodeType.Namespace, parentId.toString())
         );
-        // type names
+        // find namespace which are visible but enclosed by clusterNamespaces because their calls contribute to their parents'
+        const hiddenIn = new Map<Id.NamespaceId, Id.NamespaceId>();
+        hiddenByVisible.forEach((hiddenIds, visibleId) => {
+          const node = getOrThrow(trunk.allNodes, nodeIdToText(toNodeId(visibleId)));
+          if (node.isVisible) hiddenIds.forEach((hiddenId) => hiddenIn.set(hiddenId, visibleId));
+        });
+
+        // type names -- a type is a node when its namespace is a node which is expanded. A namespace which is hidden
+        // inside another is not a node even when its stored state says it is expanded, and has no node to add to.
+        const namespaceNodes = new Set(visible.map(({ namespace }) => namespace.id));
         const typeNames = sqlTables.typeNames
           .selectWhereIn("assemblyId", assemblyIds)
-          .filter((typeName) => !typeName.namespaceId || nodeStates.isExpandedId(typeName.namespaceId, false));
+          .filter(
+            (typeName) =>
+              !typeName.namespaceId || (namespaceNodes.has(typeName.namespaceId) && isExpandedId(typeName.namespaceId))
+          );
         typeNames.forEach((typeName) =>
           addToParent(
             trunk,
@@ -92,29 +133,38 @@ export const createDotnetViewState = (
           )
         );
         // expanded types
-        const typeIds = typeNames.map((typeName) => typeName.id).filter((id) => nodeStates.isExpandedId(id, false));
+        const typeIds = typeNames.map((typeName) => typeName.id).filter(isExpandedId);
+
         // method names
         const methodNames = sqlTables.methodNames.selectWhereIn("typeId", typeIds);
         methodNames.forEach((methodName) =>
           addToParent(trunk, methodName, NodeType.Method, methodName.typeId.toString())
         );
-        return trunk;
+        return { forest: trunk, hiddenIn };
       }
     }
     assert(false);
   };
 
-  const getCalls = (forest: Forest): Sql.Call[] => {
+  const getCalls = (forest: Forest, hiddenIn: Map<Id.NamespaceId, Id.NamespaceId>): Sql.Call[] => {
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && node.isVisible)
       .map((node) => IdAny.toAnyBigId(node.nodeId, node.type));
-    const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], leafIds as Id.CallFromId[]);
-    return calls;
+
+    // the calls of the namespaces which are hidden inside a node are selected with the calls of the nodes, and
+    // then attributed to the node each one is hidden in
+    const ids = [...leafIds, ...hiddenIn.keys()] as Id.CallFromId[];
+    const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], ids);
+    return remapCalls(calls, hiddenIn);
   };
 
   const getEdgeLabels = (call: Sql.Call): EdgeLabels[] => {
     // one level down from an edge: the method calls which are bundled into it, with their names
+    //
+    // Not included yet: the calls bundled from a namespace which is clustered into one of the edge's nodes. The
+    // ancestors table has no namespace to namespace rows, so searching for the node does not find them -- the
+    // namespaces clustered into it would have to be searched for as well.
     type PopupCall = Sql.Call & { fromName: string; toName: string };
 
     /*
@@ -162,9 +212,9 @@ export const createDotnetViewState = (
 
   const getGraphNodes = (): GraphNodes => {
     const nodeStates = getNodeStates();
-    const forest = getForest(nodeStates);
+    const { forest, hiddenIn } = getForest(nodeStates);
 
-    const calls = getCalls(forest);
+    const calls = getCalls(forest, hiddenIn);
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
