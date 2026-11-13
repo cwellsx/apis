@@ -5,7 +5,7 @@ import { createImage } from "sut/image/renderImage";
 import { Sql, ViewType } from "sut/sql2";
 import type { GraphNodes, ViewState } from "sut/types";
 import { stringify } from "sut/utils";
-import { createViewState } from "sut/viewState";
+import { createDotnetViewState } from "sut/viewState";
 import { printForest } from "sut/viewState/printForest";
 import { createDotNetTables } from "./utils/createDotNetTables";
 import { fileExample, fileViewState } from "./utils/paths";
@@ -66,7 +66,7 @@ describe("testViewStates", function () {
         // safe: runs after tables is assigned
         const view = tables.views.selectOne({ viewType });
         assert(!!view);
-        viewState = createViewState(tables, view.viewType, view.id);
+        viewState = createDotnetViewState(tables, view.viewType, view.id, tables.getOptions());
         viewState.resetNodeStates();
         //forest = viewState.getGraphNodes().forest;
       });

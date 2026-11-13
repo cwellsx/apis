@@ -1,3 +1,4 @@
+import type { CustomOptions } from "../contracts-config";
 import type { EdgeId, Node, NodeId } from "../contracts-ui";
 import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
 import { Id, IdAny } from "../id2";
@@ -10,7 +11,11 @@ import { CustomTop, Forest, Item, Numeric } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeSetNodeState } from "./makeSetNodeState";
 
-export const createCustomViewState = (sqlTables: SqlCustom.Tables, viewId: Id.ViewId): ViewState => {
+export const createCustomViewState = (
+  sqlTables: SqlCustom.Tables,
+  viewId: Id.ViewId,
+  options: CustomOptions
+): ViewState => {
   const getSetNodeStates = sqlTables.viewNodeStates(viewId);
   const { getNodeStates, resetNodeStates } = getSetNodeStates;
   const setNodeState = makeSetNodeState(getSetNodeStates, IdAny.toAnyCustomId, NodeType.CustomGroup);

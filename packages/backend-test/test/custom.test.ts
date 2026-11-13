@@ -86,7 +86,7 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
       const sqlCustom = await createSqlCustom(dataSource);
       const view = sqlCustom.views.selectOne({ viewName: "Custom" });
       assert(!!view);
-      const viewState = createCustomViewState(sqlCustom, view.id);
+      const viewState = createCustomViewState(sqlCustom, view.id, sqlCustom.getOptions());
       viewState.resetNodeStates();
       const graphNodes = viewState.getGraphNodes();
       const printed = printForest(graphNodes.imageData.roots);

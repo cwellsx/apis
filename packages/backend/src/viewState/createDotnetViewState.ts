@@ -1,3 +1,4 @@
+import type { DotnetOptions } from "../contracts-config";
 import type { AnyLeafType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
 import { Id, IdAny, IdBig } from "../id2";
@@ -12,7 +13,12 @@ import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
 import { toNodeId } from "./toNodeId";
 
-export const createDotnetViewState = (sqlTables: Sql.Tables, viewType: ViewType, viewId: Id.ViewId): ViewState => {
+export const createDotnetViewState = (
+  sqlTables: Sql.Tables,
+  viewType: ViewType,
+  viewId: Id.ViewId,
+  options: DotnetOptions
+): ViewState => {
   const netFrameworkItem: RootItem<number> = {
     item: { id: netFrameworkGroup.id, name: netFrameworkGroup.name },
     type: NodeType.Group,

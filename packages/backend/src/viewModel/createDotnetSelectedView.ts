@@ -1,11 +1,11 @@
 import { MenuItem } from "../contracts-app";
-import type { AnyOptions } from "../contracts-config";
+import type { AnyOptions, DotnetOptions } from "../contracts-config";
 import { isDotnetOptions } from "../contracts-config";
 import { IdView } from "../id2";
 import { Sql } from "../sql2";
 import type { ViewState } from "../types";
 import { assert } from "../utils";
-import { createViewState } from "../viewState";
+import { createDotnetViewState } from "../viewState";
 import { SelectedView } from "./selectedView";
 
 export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView => {
@@ -16,10 +16,15 @@ export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView =>
     return view;
   };
 
-  const selectedViewState = (): ViewState => createViewState(sqlTables, view.viewType, view.id);
+  // the options are held here as the view state is, and not read again for every get
+  let options: DotnetOptions = sqlTables.getOptions();
+
+  // Called again whenever the view state has to be rebuilt: when the options change, and when a different
+  // view.id is selected from the menu.
+  const createViewState = (): ViewState => createDotnetViewState(sqlTables, view.viewType, view.id, options);
 
   let view = initialView();
-  let viewState = selectedViewState();
+  let viewState = createViewState();
 
   const onReset = (): void => {
     viewState.resetNodeStates();
@@ -37,7 +42,7 @@ export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView =>
       assert(!!viewId);
       sqlTables.config.setViewId(viewId);
       view = initialView();
-      viewState = selectedViewState();
+      viewState = createViewState();
     }
     return true;
   };
@@ -64,11 +69,14 @@ export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView =>
       viewState = next;
     },
     get options(): AnyOptions {
-      return sqlTables.getOptions();
+      return options;
     },
     set options(value: AnyOptions) {
       assert(isDotnetOptions(value), "the dotnet view's options are the dotnet options");
       sqlTables.setOptions(value);
+      // read back what was stored, then rebuild the view state, which is where the options are used
+      options = sqlTables.getOptions();
+      viewState = createViewState();
     },
     getMenuItems,
     onMenuItem,
