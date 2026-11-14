@@ -90,6 +90,11 @@ describe("testViewStates", function () {
 
           assert(graphNodes.imageData.edges.length != 0);
 
+          // a view which has no popups has none to check
+          const popups = graphNodes.edgePopups?.values() ?? [];
+          const emptyPopups = [...popups].filter((info) => !info.labels.length);
+          assert(emptyPopups.length === 0, `${emptyPopups.length} edges have no calls one level down`);
+
           const result = await createImage(graphNodes.imageData, false);
           assert(typeof result === "object");
 

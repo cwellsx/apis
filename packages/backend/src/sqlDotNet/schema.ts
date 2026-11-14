@@ -8,7 +8,7 @@ import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = 8;
+const schemaVersion = 9;
 
 // config
 
@@ -27,6 +27,17 @@ const newConfig = (table: SqlTable<ConfigKvps>): Config => {
 // Ancestor
 
 export type Ancestor = SqlCommon.AncestorT<Id.AnyBigId>;
+
+// Parent
+
+// The kinds are bits, so that a query can ask for one kind or for several with a single parameter: the popup asks
+// for the direct children of a node, and for the namespaces clustered into it as well when the option is on.
+export const ParentKind = { Direct: 1n, Clustered: 2n } as const;
+export type ParentKind = (typeof ParentKind)[keyof typeof ParentKind];
+
+// a node and one of the things inside it, one level down: a namespace's types, a type's methods, an assembly's
+// namespaces, and -- when the namespaces are clustered -- a namespace's declaring namespace
+export type Parent = { parentId: Id.AnyBigId; childId: Id.AnyBigId; kind: ParentKind };
 
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
@@ -89,6 +100,8 @@ const tableNames = [
 
   "fullNames",
 
+  "parents",
+
   "views",
 ] as const;
 
@@ -108,6 +121,7 @@ type DotNetTableRowMap = {
   decompiled: Decompiled;
   calls: Call;
   fullNames: FullName;
+  parents: Parent;
   views: View;
 };
 
@@ -163,6 +177,7 @@ const row: DotNetTableRowMap = {
   calls: { fromId: zero.methodDefId, toId: zero.methodId },
 
   fullNames: { id: zero.anyBigId, fullName: "foo" },
+  parents: { parentId: zero.anyBigId, childId: zero.anyBigId, kind: ParentKind.Direct },
   views: { id: zero.viewId, viewType: zeroViewType, viewName: "foo" },
 };
 
@@ -197,6 +212,10 @@ const newTables = (db: SqlDatabase): Tables => {
   const calls = db.newSqlTable("calls", ["fromId", "toId"], row.calls, { index: ["fromId"] });
 
   const fullNames = db.newSqlTable("fullNames", "id", row.fullNames);
+  const parents = db.newSqlTable("parents", ["parentId", "childId"], row.parents, {
+    index: ["parentId"],
+    check: "kind & 3 <> 0",
+  });
   const views = db.newSqlTable("views", "id", row.views);
 
   const close = () => {
@@ -219,6 +238,7 @@ const newTables = (db: SqlDatabase): Tables => {
     decompiled,
     calls,
     fullNames,
+    parents,
     views,
     close,
   };

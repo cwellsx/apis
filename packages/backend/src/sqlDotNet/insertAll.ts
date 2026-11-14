@@ -7,6 +7,7 @@ import { insertAncestors } from "./insertAncestors";
 import { insertCalls } from "./insertCalls";
 import { getFullNames } from "./insertFullNames";
 import * as GetMemberJson from "./insertMemberJson";
+import { insertParents } from "./insertParents";
 import * as Schema from "./schema";
 import * as MemberJson from "./schemaMemberJson";
 
@@ -476,4 +477,7 @@ export const insertAll = (all: DotNet.All, tables: Schema.Tables) => {
 
   // both calls and fullNames are now fully populated
   assertCallsHaveFullNames(tables);
+
+  // after the ancestors are complete, since it is derived from them
+  insertParents(tables);
 };

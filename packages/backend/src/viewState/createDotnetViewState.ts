@@ -4,7 +4,7 @@ import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui"
 import { Id, IdAny, IdBig } from "../id";
 import { DotnetNodeStates, GetSetNodeStatesT, SqlCommon } from "../sqlCommon";
 import type { Sql, ViewType } from "../sqlDotNet";
-import { netFrameworkGroup } from "../sqlDotNet";
+import { netFrameworkGroup, ParentKind } from "../sqlDotNet";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
@@ -160,38 +160,41 @@ export const createDotnetViewState = (
   };
 
   const getEdgeLabels = (call: Sql.Call): EdgeLabels[] => {
-    // one level down from an edge: the method calls which are bundled into it, with their names
+    // one level down from an edge: the method calls which are bundled into it, with their names. One level down is
+    // the children of the node, which the parents table lists -- and for a namespace which is clustered, that
+    // includes the namespaces hidden inside it, so that a popup shows what the node encloses rather than only the
+    // types of its own namespace.
     //
-    // Not included yet: the calls bundled from a namespace which is clustered into one of the edge's nodes. The
-    // ancestors table has no namespace to namespace rows, so searching for the node does not find them -- the
-    // namespaces clustered into it would have to be searched for as well.
+    // The kinds are one number: the direct children, and the namespaces clustered into the node when the namespaces
+    // are clustered. See ParentKind.
+    const parentKinds = options.clusterNamespaces ? ParentKind.Direct | ParentKind.Clustered : ParentKind.Direct;
     type PopupCall = Sql.Call & { fromName: string; toName: string };
 
     /*
       SELECT calls.fromId, calls.toId, fromFullName.fullName, toFullName.fullName
       FROM calls
-      JOIN ancestors AS fromAncestor
-        ON calls.fromId = fromAncestor.descendentId
-      JOIN ancestors AS toAncestor
-        ON calls.toId = toAncestor.descendentId
+      JOIN parents AS fromParent
+        ON calls.fromId = fromParent.childId
+      JOIN parents AS toParent
+        ON calls.toId = toParent.childId
       JOIN fullNames AS fromFullName
         ON calls.fromId = fromFullName.id
       JOIN fullNames AS toFullName
         ON calls.toId = toFullName.id
-      WHERE fromAncestor.ancestorId = ?
-        AND toAncestor.ancestorId = ?
-        AND fromAncestor.isParent = 1
-        AND toAncestor.isParent = 1;
+      WHERE fromParent.parentId = ?
+        AND toParent.parentId = ?
+        AND fromParent.kind & ? <> 0
+        AND toParent.kind & ? <> 0;
     */
     const descendantCalls: PopupCall[] = sqlTables.calls
-      .join(sqlTables.ancestors, "descendentId", "fromId", { rightAlias: "fromAncestor" })
-      .join(sqlTables.ancestors, "descendentId", sqlTables.calls, "toId", { rightAlias: "toAncestor" })
+      .join(sqlTables.parents, "childId", "fromId", { rightAlias: "fromParent" })
+      .join(sqlTables.parents, "childId", sqlTables.calls, "toId", { rightAlias: "toParent" })
       .join(sqlTables.fullNames, "id", sqlTables.calls, "fromId", { rightAlias: "fromFullName" })
       .join(sqlTables.fullNames, "id", sqlTables.calls, "toId", { rightAlias: "toFullName" })
-      .where("fromAncestor.ancestorId = ?", call.fromId)
-      .where("toAncestor.ancestorId = ?", call.toId)
-      .where("fromAncestor.isParent = 1")
-      .where("toAncestor.isParent = 1")
+      .where("fromParent.parentId = ?", call.fromId)
+      .where("fromParent.kind & ? <> 0", parentKinds)
+      .where("toParent.parentId = ?", call.toId)
+      .where("toParent.kind & ? <> 0", parentKinds)
       .selectAll<PopupCall>({
         fromId: "calls.fromId",
         toId: "calls.toId",
