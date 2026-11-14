@@ -18,4 +18,19 @@ console.log("git_status: ", result.content[0].text || "(clean)");
 const formatted = await client.callTool({ name: "prettier_write", arguments: { files: ["agent/server.mjs"] } });
 console.log("prettier_write: ", formatted.content[0].text);
 
+const lines = await client.callTool({
+  name: "read_lines",
+  arguments: { path: "agent/package.json", start: 1, end: 4 },
+});
+console.log("read_lines:\n" + lines.content[0].text);
+
+const found = await client.callTool({ name: "search", arguments: { pattern: "clusterTypes", include: "viewState" } });
+console.log("search:\n" + found.content[0].text.split("\n").slice(0, 3).join("\n"));
+
+const listed = await client.callTool({ name: "list_files", arguments: { dir: "agent", pattern: "mjs" } });
+console.log("list_files:\n" + listed.content[0].text);
+
+const log = await client.callTool({ name: "git_log", arguments: { count: 2 } });
+console.log("git_log:\n" + log.content[0].text);
+
 await client.close();

@@ -21,6 +21,29 @@ unattended ("lights-off") runner. In practice:
   don't read broadly from the repo or git history on spec — the maintainer will say when a task needs a
   wider search.
 - **Stay in scope** and ask when the intent is unclear, rather than assuming.
+- **Reach for a tool before the shell.** Reading, searching, formatting, linting, type-checking and git are all
+  tools; every shell command needs the maintainer's approval, and most of what an agent wants is already a tool.
+  See [Agent tools](#agent-tools).
+
+## Agent tools
+
+`agent/` is an MCP server of what an agent needs most often — the type-check, the linter, the formatter, git, and
+reading and searching files. Everything it offers is allowed in advance, so none of it needs approval:
+
+| Tool                                                                                          | What it does                                                                                       |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `type_check(package)`                                                                         | `npm run type-check -w <package>`, the package being `apis`, `backend-test` or `electron-app-test` |
+| `eslint(files)`                                                                               | `eslint` on specific files, which should be paths the `lint` script covers                         |
+| `prettier_write(files)`                                                                       | `prettier --write` on specific files                                                               |
+| `git_status()`, `git_diff(scope)`, `git_log(count)`                                           | the git state, without the shell                                                                   |
+| `read_lines(path, start, end)`, `list_files(dir, pattern)`, `search(pattern, paths, include)` | reading and searching, in node                                                                     |
+
+`read_files` and `search_codebase` are the built-in equivalents and also need no approval; `read_lines` is the
+reliable one for a range of lines. Keep the shell for what none of them can do: launching the app,
+`build-dotnet`, and inspecting generated data such as `apis.testdata/Core2/appData/core.json`.
+
+The server lives in the repo so that it can find the root as its own parent. Its [README](./agent/README.md) says
+how to register it, and it needs restarting after its own source changes.
 
 ## Project
 

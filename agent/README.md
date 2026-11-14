@@ -1,11 +1,12 @@
 # agent
 
-An MCP server for the commands an agent runs while working in this repository — `type_check`, `eslint`,
-`prettier_write`, `git_status`, `git_diff` — so that they can be allowed in advance instead of approved one at a
-time.
+An MCP server for what an agent needs while working in this repository — `type_check`, `eslint`, `prettier_write`,
+`git_status`, `git_diff`, `git_log`, `read_lines`, `list_files`, `search` — so that they can be allowed in advance
+instead of approved one at a time.
 
-Each tool builds a fixed command from typed arguments. None of them takes a command string, and file paths are
-checked to be inside the repository, so allowing these tools cannot run anything else.
+The command tools build a fixed command from typed arguments. None of them takes a command string, and every path
+is checked to be inside the repository, so allowing these tools cannot run anything else. The reading tools use
+node's filesystem directly, which is why a range of lines comes back numbered and cannot be stale.
 
 The repository root is taken to be the folder above this one, so the server has to live inside the repo it works
 on.
@@ -27,7 +28,17 @@ Add it to `~/.cline/data/settings/cline_mcp_settings.json`:
     "apis-agent": {
       "command": "node",
       "args": ["C:\\Dev\\apis\\agent\\server.mjs"],
-      "alwaysAllow": ["type_check", "eslint", "prettier_write", "git_status", "git_diff"]
+      "alwaysAllow": [
+        "type_check",
+        "eslint",
+        "prettier_write",
+        "git_status",
+        "git_diff",
+        "git_log",
+        "read_lines",
+        "list_files",
+        "search"
+      ]
     }
   }
 }
