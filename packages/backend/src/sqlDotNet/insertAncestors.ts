@@ -1,4 +1,4 @@
-import { IdBig } from "../id2";
+import { IdBig } from "../id";
 import { SqlCommon } from "../sqlCommon";
 import { assert } from "../utils";
 import { Ancestor, Tables } from "./schema";

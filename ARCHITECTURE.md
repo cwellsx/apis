@@ -71,7 +71,7 @@ app     depends on ui and config
 Within `packages/backend/src`, responsibilities stack top-down:
 
 ```
-SQLite (normalized schema, sql2)
+SQLite (normalized schema, sqlDotNet)
   ↓  SQL core     — thin domain API over the tables
   ↓  GraphQuery   — UI-oriented read model
   ↓  View state   — persisted per-node UI state (hidden / expanded)
@@ -89,7 +89,7 @@ assemblies folder
   → backend-dotnet (Core.exe): System.Reflection + ICSharpCode.Decompiler
   → JSON (Reflected / All)
   → dotNetApi (TypeScript ↔ .NET bridge)
-  → sql2 (createTables, insertAll) → SQLite
+  → sqlDotNet (createTables, insertAll) → SQLite
 ```
 
 **Render — show a view:**
@@ -113,8 +113,8 @@ the options panel is told what was stored.
 | Module                       | Responsibility                                                                                        |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
 | `contracts-*.ts`             | Barrels re-exporting `contracts/{dotnet,config,ui,app}`.                                              |
-| `id2`                        | Branded id types (`TypeId`, `MethodId`, …) and their factories.                                       |
-| `sql2`                       | Normalized schema + inserters: assemblies, namespaces, types, members, calls, ancestors, view states. |
+| `id`                         | Branded id types (`TypeId`, `MethodId`, …) and their factories.                                       |
+| `sqlDotNet`                  | Normalized schema + inserters: assemblies, namespaces, types, members, calls, ancestors, view states. |
 | `sqlCommon`                  | Shared schema/state helpers: node states, and the config KVPs, which hold the view's options.         |
 | `sqlAppConfig` / `sqlCustom` | Persistence for app config and custom data sources.                                                   |
 | `openDataSource`             | Entry point: `openDataSource(dataSource, showProgress)` → `openFromDotNet` / `openFromCustom`.        |

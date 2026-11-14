@@ -1,7 +1,7 @@
 import type { CustomOptions } from "../contracts-config";
 import type { EdgeId, Node, NodeId } from "../contracts-ui";
 import { isParent, nodeIdToText, NodeType, textToNodeId } from "../contracts-ui";
-import { Id, IdAny } from "../id2";
+import { Id, IdAny } from "../id";
 import { CustomNodeStates } from "../sqlCommon";
 import { SqlCustom } from "../sqlCustom";
 import type { GraphNodes, ImageData, ViewState } from "../types";

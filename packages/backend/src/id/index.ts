@@ -1,5 +1,6 @@
-// the names exported by each module are listed above it, so that the public surface of id2 can be
-// reviewed at a glance -- keep these lists in step with the modules
+// the names exported by each module are listed above it,
+// so that the public surface of the id module can be reviewed at a glance
+// keep these lists in step with the modules
 
 // toBigAssemblyId, toBigGroupId
 export * as IdBig from "./big";

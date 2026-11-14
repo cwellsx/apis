@@ -2,6 +2,9 @@
 
 ## Now
 
+- Replace undefined with null in schema
+- Replace === with !
+
 Include icon type
 Get new Microsoft assembly icon
 Map node types to icons
@@ -145,7 +148,7 @@ Reference it using `extends` in the tsconfig.json of other projects like backend
 Use it to define path aliases using `paths`
 
 - `@contracts-app: ["./contracts/app"]`
-- `@src-id: ["./src/id2"]`
+- `@src-id: ["./src/id"]`
 - `@src-utils: ["./src/utils"]`
 
 ### https://github.com/caplin/FlexLayout

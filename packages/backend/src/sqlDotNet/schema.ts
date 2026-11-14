@@ -1,7 +1,7 @@
 import { SqlDatabase, SqlTable } from "sqlio";
 import type { DotnetOptions } from "../contracts-config";
 import { defaultDotnetOptions } from "../contracts-config";
-import { Id, IdMake, IdView, zero } from "../id2";
+import { Id, IdMake, IdView, zero } from "../id";
 import type { ConfigKvpT, ConfigT } from "../sqlCommon";
 import { configT, SqlCommon } from "../sqlCommon";
 import { log } from "../utils";

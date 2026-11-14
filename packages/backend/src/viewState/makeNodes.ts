@@ -1,7 +1,7 @@
 // two functions help to implement getGraphNodes
 import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
 import { isClosed, isLeaf, isParent, Node, nodeIdToText, Parent } from "../contracts-ui";
-import { Id } from "../id2";
+import { Id } from "../id";
 import type { NodeStatesT } from "../sqlCommon";
 import { assert, compareOrdinal, findLongestPrefix, getOrThrow } from "../utils";
 import { Forest, Item, Numeric, RootItem, TopT } from "./forest";

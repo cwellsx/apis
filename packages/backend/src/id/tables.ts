@@ -1,5 +1,5 @@
 // the metadata table ids (ECMA-335) and this project's own boxed ids, together with the test for
-// them: these describe how ids are packed, so they are internal to id2 and not exported by index.ts
+// them: these describe how ids are packed, so they are internal to id and not exported by index.ts
 
 export const enum TableId {
   // TypeRef = 0x01,

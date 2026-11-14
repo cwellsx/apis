@@ -1,5 +1,5 @@
-import { Id } from "../id2";
-import type { Sql } from "../sql2";
+import { Id } from "../id";
+import type { Sql } from "../sqlDotNet";
 
 // A call of a namespace which is hidden inside a node is a call of that node, so an endpoint which is such a
 // namespace becomes the node it is hidden in.

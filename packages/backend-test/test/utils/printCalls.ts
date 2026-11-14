@@ -1,5 +1,5 @@
-import { Id, IdTest } from "sut/id2";
-import { Tables } from "sut/sql2/schema";
+import { Id, IdTest } from "sut/id";
+import { Tables } from "sut/sqlDotNet/schema";
 import { assert } from "sut/utils";
 
 type CallsTo = { assemblies: string[]; namespaces: string[]; types: string[]; methods: string[] };

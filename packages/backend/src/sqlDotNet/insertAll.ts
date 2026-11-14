@@ -1,5 +1,5 @@
 import * as DotNet from "../contracts-dotnet";
-import { Id, IdBig, IdMake, IdTest } from "../id2";
+import { Id, IdBig, IdMake, IdTest } from "../id";
 import { getGroupNames, SqlCommon } from "../sqlCommon";
 import { assert, findLongestPrefix, getOrSet, getOrThrow } from "../utils";
 import { assertCallsHaveFullNames } from "./assertCallsHaveFullNames";

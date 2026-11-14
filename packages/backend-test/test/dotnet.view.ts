@@ -2,7 +2,7 @@ import { assert, log } from "backend-api";
 import * as fs from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import { createImage } from "sut/image/renderImage";
-import { Sql, ViewType } from "sut/sql2";
+import { Sql, ViewType } from "sut/sqlDotNet";
 import type { GraphNodes, ViewState } from "sut/types";
 import { stringify } from "sut/utils";
 import { createDotnetViewState } from "sut/viewState";

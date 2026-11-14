@@ -1,12 +1,12 @@
 import { SqlDatabase, SqlTable } from "sqlio";
-import { Id, zero } from "../id2";
+import { Id, zero } from "../id";
 import { Boolean, fromBoolean, toBoolean } from "./sqlBoolean";
 
 export type NodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {
   isExpandedId: (id: T, isGroup: boolean) => boolean;
   isVisibleId: (id: T, isParentVisible: boolean) => boolean;
 };
-export type NodeStates = NodeStatesT<Id.AnyBigId>;
+export type DotnetNodeStates = NodeStatesT<Id.AnyBigId>;
 export type CustomNodeStates = NodeStatesT<Id.AnyCustomId>;
 
 export type GetSetNodeStatesT<T extends Id.AnyBigId | Id.AnyCustomId> = {

@@ -1,7 +1,7 @@
 import { MenuItem } from "../contracts-app";
 import type { AnyOptions, CustomOptions } from "../contracts-config";
 import { isDotnetOptions } from "../contracts-config";
-import { IdView } from "../id2";
+import { IdView } from "../id";
 import { SqlCustom } from "../sqlCustom";
 import type { ViewState } from "../types";
 import { assert } from "../utils";

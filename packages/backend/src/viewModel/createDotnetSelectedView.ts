@@ -1,8 +1,8 @@
 import { MenuItem } from "../contracts-app";
 import type { AnyOptions, DotnetOptions } from "../contracts-config";
 import { isDotnetOptions } from "../contracts-config";
-import { IdView } from "../id2";
-import { Sql } from "../sql2";
+import { IdView } from "../id";
+import { Sql } from "../sqlDotNet";
 import type { ViewState } from "../types";
 import { assert } from "../utils";
 import { createDotnetViewState } from "../viewState";

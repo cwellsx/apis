@@ -146,7 +146,7 @@ invariants:
   - nodeId uniquely identifies a node
   - setNodeState must be called with graphNodes from same viewState
 dependencies:
-  - sql2/views
+  - sqlDotNet/views
   - presenter/createImageData
 public API:
   - createViewState(...)
@@ -166,7 +166,7 @@ type NodeState = {
 ### 🔹 Dependency graph
 
 ```
-viewState -> graphNodes -> sql2 -> tables -> sqlite
+viewState -> graphNodes -> sqlDotNet -> tables -> sqlite
 ```
 
 ### 🔹 Canonical usage examples
@@ -360,7 +360,7 @@ Your traversal already produces 80% of this.
 Agents work best when they can ask:
 
 - “What functions modify viewState?”
-- “Which modules depend on sql2?”
+- “Which modules depend on sqlDotNet?”
 - “Where is NodeState used?”
 - “What invariants apply to setNodeState?”
 - “Show me all types reachable from GraphNodes.”
@@ -596,7 +596,7 @@ Example:
 ```
 /viewState
   - Manages node expansion/collapse/hide state.
-  - Depends on: sql2/views, presenter/createImageData.
+  - Depends on: sqlDotNet/views, presenter/createImageData.
   - Used by: graphNodes, UI rendering.
 ```
 
@@ -647,11 +647,11 @@ with structure like:
   "folders": {
     "viewState": {
       "description": "Manages node expansion/collapse/hide state.",
-      "dependsOn": ["sql2/views", "presenter/createImageData"],
+      "dependsOn": ["sqlDotNet/views", "presenter/createImageData"],
       "usedBy": ["graphNodes", "imageData"],
       "publicAPI": ["createViewState", "resetNodeStates", "setNodeState"]
     },
-    "sql2": {
+    "sqlDotNet": {
       "description": "SQLite-backed storage for views, nodes, groups.",
       "dependsOn": [],
       "usedBy": ["viewState", "presenter"],
@@ -969,7 +969,7 @@ Example:
 ```json
 "folders": {
   "src/viewState": { ... },
-  "src/sql2": { ... },
+  "src/sqlDotNet": { ... },
   "src/presenter": { ... }
 }
 ```
@@ -1242,7 +1242,7 @@ Agents can call:
 ```
 GET /folders/viewState
 GET /search?type=GraphNodes
-GET /dependencies/sql2
+GET /dependencies/sqlDotNet
 ```
 
 This is how Sourcegraph Cody and GitHub Copilot Agents work internally.
@@ -1317,7 +1317,7 @@ types:
     isHidden?: boolean
 
 dependencies:
-  - sql2/views
+  - sqlDotNet/views
   - presenter/createImageData
 
 usage examples:
@@ -1537,7 +1537,7 @@ Endpoints:
 
 ```
 GET /folder/viewState
-GET /dependencies/sql2
+GET /dependencies/sqlDotNet
 GET /search?type=GraphNodes
 ```
 

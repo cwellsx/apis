@@ -1,10 +1,10 @@
 import type { DotnetOptions } from "../contracts-config";
 import type { AnyLeafType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
-import { Id, IdAny, IdBig } from "../id2";
-import type { Sql, ViewType } from "../sql2";
-import { netFrameworkGroup } from "../sql2";
-import { GetSetNodeStatesT, NodeStates, SqlCommon } from "../sqlCommon";
+import { Id, IdAny, IdBig } from "../id";
+import { DotnetNodeStates, GetSetNodeStatesT, SqlCommon } from "../sqlCommon";
+import type { Sql, ViewType } from "../sqlDotNet";
+import { netFrameworkGroup } from "../sqlDotNet";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
@@ -40,7 +40,7 @@ export const createDotnetViewState = (
   const defaultExpanded = defaultExpandedNamespaces(sqlTables.namespaces.selectAll(), options.clusterNamespaces);
   const isDefaultExpanded = (id: Id.AnyBigId): boolean => defaultExpanded.has(id as Id.NamespaceId);
 
-  const getNodeStates = (): NodeStates => {
+  const getNodeStates = (): DotnetNodeStates => {
     const nodeStates = sqlNodeStates.getNodeStates();
     return {
       isVisibleId: nodeStates.isVisibleId,
@@ -82,7 +82,7 @@ export const createDotnetViewState = (
   const rootNodeType = NodeType.Assembly;
   const leafType = getLeafType();
 
-  const getForest = (nodeStates: NodeStates): DotnetForest => {
+  const getForest = (nodeStates: DotnetNodeStates): DotnetForest => {
     const { toTrunk, addToParent, makeRootNode } = makeNodes(nodeStates, leafType, NodeType.Group, IdAny.toAnyBigId);
     const trunk = toTrunk(top, rootNodeType);
     // nodeStates already encapsulates defaultExpandedNamespaces

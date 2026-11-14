@@ -1,5 +1,5 @@
 import { CustomElement } from "../contracts-custom";
-import { IdMake } from "../id2";
+import { IdMake } from "../id";
 import { getGroupNames } from "../sqlCommon";
 import { isDefined } from "../utils";
 import * as Schema from "./schema";

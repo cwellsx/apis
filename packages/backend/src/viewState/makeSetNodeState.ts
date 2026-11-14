@@ -1,5 +1,5 @@
 import type { AnyGroupType, AnyNodeType, NodeId, NodeState } from "../contracts-ui";
-import { Id } from "../id2";
+import { Id } from "../id";
 import { GetSetNodeStatesT } from "../sqlCommon";
 import type { GraphNodes, SetNodeState } from "../types";
 import { Numeric, RootItem } from "./forest";

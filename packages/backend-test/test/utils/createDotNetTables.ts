@@ -1,7 +1,7 @@
 import { DataSource } from "backend-app";
 import { createSqlDotNet } from "sut/openDataSource/createSqlDotNet";
 import { getDbFilename } from "sut/openDataSource/getDbFilename";
-import { Sql } from "sut/sql2";
+import { Sql } from "sut/sqlDotNet";
 import { deleteFileSync } from "sut/utils";
 import { fileCoreJson } from "./paths";
 

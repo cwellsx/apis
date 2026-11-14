@@ -1,4 +1,4 @@
-import { Id, IdBig, IdTest } from "../id2";
+import { Id, IdBig, IdTest } from "../id";
 import { assert, getOrThrow } from "../utils";
 import {
   Assembly,

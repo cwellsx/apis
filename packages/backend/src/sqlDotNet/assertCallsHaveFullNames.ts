@@ -1,4 +1,4 @@
-import { IdTest } from "../id2";
+import { IdTest } from "../id";
 import { assert, log } from "../utils";
 import { Tables } from "./schema";
 

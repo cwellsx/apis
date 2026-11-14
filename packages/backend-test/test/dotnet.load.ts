@@ -1,6 +1,6 @@
 import { assert, log } from "backend-api";
-import { Id, IdBig, IdTest } from "sut/id2";
-import { Sql } from "sut/sql2";
+import { Id, IdBig, IdTest } from "sut/id";
+import { Sql } from "sut/sqlDotNet";
 import { createDotNetTables } from "./utils/createDotNetTables";
 import { fileViewState } from "./utils/paths";
 import {

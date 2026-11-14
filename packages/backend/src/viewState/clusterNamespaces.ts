@@ -1,5 +1,5 @@
-import { Id } from "../id2";
-import type { Sql } from "../sql2";
+import { Id } from "../id";
+import type { Sql } from "../sqlDotNet";
 import { assert, getOrSet } from "../utils";
 
 // a namespace which is a node, and the id of the node it is added to
