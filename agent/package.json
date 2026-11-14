@@ -1,0 +1,10 @@
+{
+  "name": "apis-agent",
+  "private": true,
+  "type": "module",
+  "description": "MCP server for the commands an agent runs while working in this repository",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "zod": "^4.6.7"
+  }
+}

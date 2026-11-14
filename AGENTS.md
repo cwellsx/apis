@@ -12,6 +12,11 @@ unattended ("lights-off") runner. In practice:
 
 - **Testing is the maintainer's job.** Don't run the test suite or the app. After an edit, a
   **type-check** (or at least confirming it compiles) is welcome; deeper verification is not expected.
+- **Format what you edit.** `editor.formatOnSave` fires for saves made in the editor, not for edits made by
+  the agent's tools, so run `prettier --write` on the files touched — `--check` after it is redundant.
+- **Lint the file, not the repo.** Run `eslint` on the touched file when its path is one the `lint` script
+  covers; `npm run lint` as a whole fails for pre-existing, unrelated reasons, so it says nothing about the
+  change in hand.
 - **Keep changes small.** Most tasks edit a **single file**. Don't write large amounts of code, and
   don't read broadly from the repo or git history on spec — the maintainer will say when a task needs a
   wider search.

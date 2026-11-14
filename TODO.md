@@ -2,9 +2,6 @@
 
 ## Now
 
-- Replace undefined with null in schema
-- Replace === with !
-
 Include icon type
 Get new Microsoft assembly icon
 Map node types to icons
