@@ -138,11 +138,20 @@ the options panel is told what was stored.
   granularity. Rows stop at assemblies: a _group_ of assemblies exists only to add and remove assemblies
   from the graph, and never has edges of its own.
 - **A drawn edge is a bundle; the popup shows one level down.** The graph draws only the `calls` rows at
-  the level of the visible leaves, so one drawn edge stands for every call beneath it. `getPopup`
-  resolves the layer directly below it via `ancestors` (`isParent = 1`), which links method→type,
-  type→namespace (or type→assembly for a type with no namespace) and namespace→assembly. So an
-  assembly-level edge shows the calls between its _namespaces_, a namespace-level edge those between its
-  types, a type-level edge those between its methods — and a method-level edge has nothing below it.
+  the level of the visible leaves, so one drawn edge stands for every call beneath it. `getEdgeLabels`
+  resolves the layer directly below it via the `parents` table, which lists every node's direct children
+  together with the kind of link each one is, and is derived from `ancestors` so that the two cannot
+  disagree about which links are direct. So an assembly-level edge shows the calls between its _namespaces_,
+  a namespace-level edge those between its types, a type-level edge those between its methods — and a
+  method-level edge has nothing below it.
+- **Clustering is a view option, and the tree is built in the application.** `clusterNamespaces` and
+  `clusterTypes` make a namespace or a type a node inside the one which declares it, so `Foo.Bar.Baz` sits
+  inside `Foo.Bar` and is not a node at all unless that is expanded. The tree is walked in the backend
+  rather than in SQL because its depth is not known in advance. A cluster's calls are the calls of the node
+  it is clustered into — `remapCalls` rewrites each endpoint which is hidden to the node it is hidden in —
+  which is what keeps the edges of a collapsed cluster complete. The `kind` mask on `parents` is what lets
+  one popup query serve both branches of the option: direct children only, or the clustered namespaces and
+  types as well.
 - **Hover is local; only clicks round-trip.** Mouse-move fires far too often to query the backend per
   event, so everything a popup needs is preloaded with the render that produced the SVG. Popup data is
   part of the image snapshot, keyed the same way as the SVG's edge hit areas — never a fetch. Clicks are

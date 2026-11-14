@@ -46,13 +46,16 @@ GraphViz's own `class` is what identifies an element; extra classes may be added
 hides nodes, and it is the only place a hidden node remains reachable.
 
 **Options** — the Options tab. The settings which belong to no node: the app's own (zoom, font size), and
-those of the view which is selected (the dotnet view's `clusterNamespaces`, so far). The panel is given a
-schema per source — the shape VS Code describes an extension's settings in — and reports an edit rather
-than applying it: the app stores it and sends it back, so the panel always shows what was last stored.
-Which groups are open is the window's own state, and is not stored.
+those of the view which is selected (the dotnet view's `clusterNamespaces` and `clusterTypes`, so far). The
+panel is given a schema per source — the shape VS Code describes an extension's settings in — and reports an
+edit rather than applying it: the app stores it and sends it back, so the panel always shows what was last
+stored. Which groups are open is the window's own state, and is not stored.
 
 **Popups** — transient, read-only read-outs of what is _inside_ a hovered graph element: the bundle of a
-hovered edge, the children of a hovered node, the calls of a hovered leaf.
+hovered edge, the children of a hovered node, the calls of a hovered leaf. A name alone does not say what kind
+of thing it is — a namespace and a type are indistinguishable by name — so each end of an edge's row is
+marked: the kind most of a column's labels are is stated once, by an icon on the rule below the header, and a
+label of any other kind carries its own icon between its name and the arrow.
 
 **Context menu** — proposed. The discoverable home of the actions which do not deserve a primary gesture:
 hide, subtree operations, details.
@@ -80,7 +83,9 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
    keyed by node and edge id — and the renderer decides how it looks.
 7. **One level at a time.** A popup shows one level below its subject: an edge's bundled calls, a node's
    children, a leaf's calls. That is the granularity of the expansion model, and it keeps the payload
-   proportional to what is on the graph.
+   proportional to what is on the graph. What "one level" means follows the tree the user is looking at: when
+   the namespaces or types are clustered, a collapsed namespace encloses the namespaces clustered into it, so
+   its one level down includes their names — not the types inside them, which are a level below those.
 8. **What a click does is visible before the click.** Hovering colours a graph element: green if a click
    acts on it, red if it does not. Nothing changes the pointer, so colour carries the whole signal — and
    the graph is the only surface which needs it, because the tree's affordances are already labelled.
