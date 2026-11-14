@@ -60,8 +60,8 @@ const edgePopups: EdgePopups = new Map<string, EdgeInfo>([
       },
       labels: [
         {
-          client: { label: "Core.Cecil", nodeId: textToNodeId("5385486336") },
-          server: { label: "Mono.Cecil.Cil", nodeId: textToNodeId("5385486340") },
+          client: { label: "Core.Cecil", nodeId: textToNodeId("5385486336"), type: NodeType.Namespace },
+          server: { label: "Mono.Cecil.Cil", nodeId: textToNodeId("5385486340"), type: NodeType.Namespace },
         },
       ],
     },
@@ -143,7 +143,8 @@ test("shows the edge's own two nodes as a header, each named with its type's ico
   expect(destination.lastElementChild?.tagName.toLowerCase()).toBe("svg");
   expect(destination.querySelector('[role="img"]')?.getAttribute("aria-label")).toBe("Assembly");
 
-  // the pairs below the header are labels only, so they have no icons
+  // the pairs below the header are labels only, and this pair's kinds are the ones the corner shows, so the row has
+  // no icons of its own
   const row = popup.querySelector(".edge-popup-row:not(.edge-popup-header)") as HTMLDivElement;
   expect(row.querySelector("svg")).toBeNull();
 });

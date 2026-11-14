@@ -1,7 +1,7 @@
 import type { DotnetOptions } from "../contracts-config";
-import type { AnyLeafType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
-import { Id, IdAny, IdBig } from "../id";
+import type { AnyNodeType, AnyLeafType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
+import { Id, IdAny, IdBig, IdTest } from "../id";
 import { DotnetNodeStates, GetSetNodeStatesT, SqlCommon } from "../sqlCommon";
 import type { Sql, ViewType } from "../sqlDotNet";
 import { netFrameworkGroup, ParentKind } from "../sqlDotNet";
@@ -17,6 +17,20 @@ import { toNodeId } from "./toNodeId";
 
 // the tree, and for each namespace or type hidden inside one of its nodes, the id of the node it is hidden in
 type DotnetForest = { forest: Forest; hiddenIn: Map<Id.CallFromId, Id.CallFromId> };
+
+// the kind of thing a call's endpoint is, which is what the popup shows an icon for
+const nodeTypeOf = (id: Id.CallToId): AnyNodeType => {
+  switch (IdTest.isCallToId(id)) {
+    case "A":
+      return NodeType.Assembly;
+    case "N":
+      return NodeType.Namespace;
+    case "T":
+      return NodeType.Type;
+    case "M":
+      return NodeType.Method;
+  }
+};
 
 export const createDotnetViewState = (
   sqlTables: Sql.Tables,
@@ -208,8 +222,8 @@ export const createDotnetViewState = (
     // which doesn't depend on the order the rows came out of SQL.
     return descendantCalls
       .map((popupCall) => ({
-        client: { label: popupCall.fromName, nodeId: toNodeId(popupCall.fromId) },
-        server: { label: popupCall.toName, nodeId: toNodeId(popupCall.toId) },
+        client: { label: popupCall.fromName, nodeId: toNodeId(popupCall.fromId), type: nodeTypeOf(popupCall.fromId) },
+        server: { label: popupCall.toName, nodeId: toNodeId(popupCall.toId), type: nodeTypeOf(popupCall.toId) },
       }))
       .sort((x, y) => compareOrdinal(x.client.label, y.client.label) || compareOrdinal(x.server.label, y.server.label));
   };

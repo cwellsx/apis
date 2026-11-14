@@ -26,6 +26,42 @@
   column-gap: 0.5em;
 }
 
+/* the icons which say what kind most of a column's labels are. They are annotations rather than content, so they
+   are out of the flow and do not take a row or a track: the table is exactly what it was without them. The white
+   background and the padding are what stop the rule they straddle before it runs into them -- the popup is white,
+   so this is too */
+.edge-popup-corner {
+  position: absolute;
+  top: 100%;
+  transform: translateY(-50%);
+  background: white;
+  padding: 0 0.25em;
+}
+
+/* the header is what they are positioned against: top 100% is its bottom edge, which is the rule below it */
+.edge-popup-header {
+  position: relative;
+}
+
+/* the corner icons sit at the header's outer edges, so the header keeps room for them: otherwise its own icons
+   reach those edges and the corners land on top of them. The room is the corner icon (1.35em) plus the padding it
+   carries (0.25em each side), so this has to grow if that icon does */
+.edge-popup-header .edge-popup-source {
+  padding-left: 2em;
+}
+
+.edge-popup-header .edge-popup-destination {
+  padding-right: 2em;
+}
+
+.edge-popup-header .edge-popup-source .edge-popup-corner {
+  left: 0;
+}
+
+.edge-popup-header .edge-popup-destination .edge-popup-corner {
+  right: 0;
+}
+
 /* the edge being inspected: bold, above a rule, with the pairs of its bundle below it. The rule is only
    there to separate the header from the rows, so an edge with no pairs below it gets the bold text only */
 .edge-popup-header {
@@ -76,4 +112,16 @@
 
 .edge-popup-destination svg {
   margin-left: 0.35em;
+}
+
+/* an icon between a label and the arrow, which is the other side of the label from the header's icons */
+.edge-popup-exception svg {
+  margin: 0 0.35em;
+}
+
+/* the corner icons are a little larger than the ones beside the labels, so that they read as a title for the
+   column rather than as one more row. This comes after the sizes above, which it deliberately overrides */
+.edge-popup-corner svg {
+  width: 1.35em;
+  height: 1.35em;
 }
