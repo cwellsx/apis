@@ -14,6 +14,7 @@ import { makeSetNodeState } from "./makeSetNodeState";
 export const createCustomViewState = (
   sqlTables: SqlCustom.Tables,
   viewId: Id.ViewId,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   options: CustomOptions
 ): ViewState => {
   const getSetNodeStates = sqlTables.viewNodeStates(viewId);

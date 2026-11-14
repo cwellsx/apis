@@ -45,16 +45,10 @@ const debugLog = (s: string) => {
   if (isDebugging) console.log(s);
 };
 
-type LayoutProps = {
-  left: React.ReactNode;
-  center: React.ReactNode;
-  right?: React.ReactNode;
-  appOptions: React.ReactNode;
-  viewVersion: number;
-};
+type LayoutProps = { left: React.ReactNode; center: React.ReactNode; appOptions: React.ReactNode; viewVersion: number };
 
 export const Layout: React.FunctionComponent<LayoutProps> = (props: LayoutProps) => {
-  const { left, center, right, appOptions, viewVersion } = props;
+  const { left, center, appOptions, viewVersion } = props;
 
   const layoutContainerRef = React.useRef<HTMLDivElement>(null);
 

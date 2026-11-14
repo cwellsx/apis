@@ -15,6 +15,8 @@ const ignorePaths = [
   "packages/electron-app/webpack.*.config.ts",
   // svgr index template (CommonJS build tooling, not app source)
   "packages/electron-app/src/renderer/images.org/**",
+  // agent's MCP server files
+  "agent/*.mjs",
 ];
 
 export default defineConfig([

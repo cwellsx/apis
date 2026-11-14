@@ -54,6 +54,7 @@ const getEdgeAttrs = (all: CustomElement[]): Schema.EdgeAttr[] =>
   );
 
 export const insertAll = (all: CustomElement[], tables: Schema.Tables) => {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const customErrors = validateCustomJson(all);
   // layer
   const layers = getLayers(all);

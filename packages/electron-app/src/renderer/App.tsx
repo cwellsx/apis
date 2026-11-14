@@ -165,20 +165,6 @@ const App: React.FunctionComponent = () => {
     );
   }
 
-  const rightWidthMaxContent = (() => {
-    return false;
-    // switch (details?.detailType) {
-    //   case undefined:
-    //     return false;
-    //   case "assemblyDetails":
-    //     return true;
-    //   case "methodDetails":
-    //     return false;
-    //   case "customDetails":
-    //     return false;
-    // }
-  })();
-
   // The options of the view which is selected, as a source for the panel: the type predicate is what says which
   // schema they belong to. The custom view has no options of its own yet, so it contributes no source.
   const optionsSources = () => {
@@ -230,20 +216,9 @@ const App: React.FunctionComponent = () => {
       />
     );
 
-  const right = (() => {
-    return undefined;
-    // if (!details) return undefined;
-    // switch (details.detailType) {
-    //   case "assemblyDetails":
-    //     return <AssemblyDetails types={details} onDetailEvent={onDetailEvent} />;
-    //   case "methodDetails":
-    //     return <MethodDetails methodBody={details} />;
-    //   case "customDetails":
-    //     return <CustomDetails details={details} />;
-    // }
-  })();
+  // TODO could add right as well in future i.e. a Details pane -- to show source code etc.
 
-  return <Layout left={left} center={center} right={right} appOptions={chooseAppOptions} viewVersion={viewVersion} />;
+  return <Layout left={left} center={center} appOptions={chooseAppOptions} viewVersion={viewVersion} />;
 };
 
 export const createApp = () => <App />;

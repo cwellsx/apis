@@ -10,16 +10,15 @@ const svgNone = <></>;
 type CheckBoxProps = { checked: boolean | "mixed"; onToggle: () => void };
 
 export const CheckBox: React.FC<CheckBoxProps> = ({ checked, onToggle }) => {
-  const [state, element] = (() => {
+  const element = (() => {
     switch (checked) {
       case true:
-        return ["checked", svgCheck];
+        return svgCheck;
       case false:
-        return ["unchecked", svgNone];
+        return svgNone;
       case "mixed":
-        return ["mixed", svgDash];
+        return svgDash;
     }
-    return ["d", "d"];
   })();
 
   return (
