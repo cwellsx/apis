@@ -8,7 +8,7 @@ import { log } from "../utils";
 import { MembersJson } from "./schemaMemberJson";
 import { ViewType } from "./viewType";
 
-const schemaVersion = 9;
+const schemaVersion = 10;
 
 // config
 
@@ -32,7 +32,7 @@ export type Ancestor = SqlCommon.AncestorT<Id.AnyBigId>;
 
 // The kinds are bits, so that a query can ask for one kind or for several with a single parameter: the popup asks
 // for the direct children of a node, and for the namespaces clustered into it as well when the option is on.
-export const ParentKind = { Direct: 1n, Clustered: 2n } as const;
+export const ParentKind = { Direct: 1n, ClusteredNamespace: 2n, ClusteredType: 4n } as const;
 export type ParentKind = (typeof ParentKind)[keyof typeof ParentKind];
 
 // a node and one of the things inside it, one level down: a namespace's types, a type's methods, an assembly's
@@ -214,7 +214,7 @@ const newTables = (db: SqlDatabase): Tables => {
   const fullNames = db.newSqlTable("fullNames", "id", row.fullNames);
   const parents = db.newSqlTable("parents", ["parentId", "childId"], row.parents, {
     index: ["parentId"],
-    check: "kind & 3 <> 0",
+    check: "kind <> 0",
   });
   const views = db.newSqlTable("views", "id", row.views);
 

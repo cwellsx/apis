@@ -2,18 +2,110 @@ import { Id } from "../id";
 import type { Sql } from "../sqlDotNet";
 import { assert, getOrSet } from "../utils";
 
-// a namespace which is a node, and the id of the node it is added to
-export type ClusteredNamespace = { namespace: Sql.Namespace; parentId: Id.AnyRootId };
-
-export type ClusteredNamespaces = {
-  // the namespaces which are nodes, each with the node it belongs to, parents before children
-  visible: ClusteredNamespace[];
-  // for each of those nodes, the ids of the namespaces which are hidden inside it
-  hiddenByVisible: Map<Id.NamespaceId, Set<Id.NamespaceId>>;
+// a thing which can be clustered into another: its id, the id of the thing which declares it if anything does, and
+// the id of the node it belongs to when nothing does
+export type Clusterable<TId extends Id.AnyBigId, TParentId, T> = {
+  item: T;
+  id: TId;
+  declaringId: TId | null;
+  parentId: TParentId;
 };
 
-// An id is never zero -- the ids are packed with a non-zero prefix -- so an id which is absent, which is null in the
-// column rather than the undefined its type promises, is falsy like an absent anything else.
+export type ClusteredItem<TId extends Id.AnyBigId, TParentId, T> = { item: T; parentId: TId | TParentId };
+
+export type ClusteredItems<TId extends Id.AnyBigId, TParentId, T> = {
+  // the things which are nodes, each with the node it belongs to, parents before children
+  visible: ClusteredItem<TId, TParentId, T>[];
+  // for each of those nodes, the ids of the things which are hidden inside it
+  hiddenByVisible: Map<TId, Set<TId>>;
+};
+
+// Which things are nodes, and which are hidden inside another, when the ones which declare another are clustered:
+// Foo.Bar is a node inside Foo, so Foo.Bar.Baz is a node inside Foo.Bar -- and is not a node at all unless Foo.Bar
+// is expanded. Something which is not a node, and so cannot be expanded, hides its own children in the same way,
+// which is why each node has a subtree hidden inside it rather than just its own children.
+//
+// The things form a tree of a depth which is not known in advance, which SQL is not good at, so the tree is built
+// here, from the declaring thing of each one. This is shared by the namespaces and the types, which nest the same
+// way and differ only in what declares what, and in where a thing belongs when nothing declares it.
+const clusterItems = <TId extends Id.AnyBigId, TParentId, T>(
+  items: Clusterable<TId, TParentId, T>[],
+  cluster: boolean,
+  isExpandedId: (id: TId) => boolean
+): ClusteredItems<TId, TParentId, T> => {
+  const visible: ClusteredItem<TId, TParentId, T>[] = [];
+  const hiddenByVisible = new Map<TId, Set<TId>>();
+
+  // when they are not clustered every one is a node where it belongs, whatever declares it. This is the other
+  // branch of the option: a view which always showed every one of them could be another option, in the same way
+  // as the ones which cluster them.
+  if (!cluster) {
+    items.forEach((item) => visible.push({ item: item.item, parentId: item.parentId }));
+    return { visible, hiddenByVisible };
+  }
+
+  const childrenOf = new Map<TId, Clusterable<TId, TParentId, T>[]>();
+  items.forEach((item) => {
+    if (item.declaringId) getOrSet(childrenOf, item.declaringId, () => []).push(item);
+  });
+
+  // the children of a thing are nodes when it is expanded, and hidden inside it when it is not. A thing which
+  // declares nothing is a node where it belongs, and one which is declared is a node inside the thing which
+  // declares it -- which is expanded, because that is what made this one a node.
+  const add = (item: Clusterable<TId, TParentId, T>, hiddenIn: Clusterable<TId, TParentId, T> | undefined): void => {
+    if (hiddenIn) getOrSet(hiddenByVisible, hiddenIn.id, () => new Set<TId>()).add(item.id);
+    else visible.push({ item: item.item, parentId: item.declaringId ?? item.parentId });
+
+    const hiddenInChildren = hiddenIn ?? (isExpandedId(item.id) ? undefined : item);
+    (childrenOf.get(item.id) ?? []).forEach((child) => add(child, hiddenInChildren));
+  };
+
+  items.filter((item) => !item.declaringId).forEach((root) => add(root, undefined));
+
+  // a declaring thing is always in the same assembly, so the walk from the roots reaches every one: one which is
+  // not reached would be dropped from the graph, which would mean the data is at fault
+  const hiddenCount = [...hiddenByVisible.values()].reduce((count, ids) => count + ids.size, 0);
+  assert(
+    visible.length + hiddenCount === items.length,
+    `clustered tree: ${items.length} items, ${visible.length} nodes, ${hiddenCount} hidden`
+  );
+
+  return { visible, hiddenByVisible };
+};
+
+// The namespaces of an assembly, which belong to their assembly when nothing declares them
+export const clusterNamespaces = (
+  namespaces: Sql.Namespace[],
+  cluster: boolean,
+  isExpandedId: (id: Id.NamespaceId) => boolean
+): ClusteredItems<Id.NamespaceId, Id.AnyRootId, Sql.Namespace> =>
+  clusterItems(
+    namespaces.map((namespace) => ({
+      item: namespace,
+      id: namespace.id,
+      declaringId: namespace.declaringNamespaceId,
+      parentId: namespace.assemblyId,
+    })),
+    cluster,
+    isExpandedId
+  );
+
+// The types of an assembly, which belong to their namespace when nothing declares them
+export const clusterTypes = (
+  typeNames: Sql.TypeName[],
+  cluster: boolean,
+  isExpandedId: (id: Id.TypeDefId) => boolean
+): ClusteredItems<Id.TypeDefId, Id.AnyCoreId, Sql.TypeName> =>
+  clusterItems(
+    typeNames.map((typeName) => ({
+      item: typeName,
+      id: typeName.id,
+      declaringId: typeName.declaringTypeId,
+      parentId: typeName.namespaceId ?? typeName.assemblyId,
+    })),
+    cluster,
+    isExpandedId
+  );
 
 // the namespaces of each assembly which declare nothing, which are the first layer of that assembly
 const getRootsOf = (namespaces: Sql.Namespace[]): Map<Id.AssemblyId, Sql.Namespace[]> => {
@@ -22,59 +114,6 @@ const getRootsOf = (namespaces: Sql.Namespace[]): Map<Id.AssemblyId, Sql.Namespa
     if (!namespace.declaringNamespaceId) getOrSet(rootsOf, namespace.assemblyId, () => []).push(namespace);
   });
   return rootsOf;
-};
-
-// Which namespaces are nodes, and which are hidden inside another, when the namespaces are clustered: Foo.Bar is a
-// node inside Foo, so Foo.Bar.Baz is a node inside Foo.Bar -- and is not a node at all unless Foo.Bar is expanded.
-// A namespace which is not a node, and so cannot be expanded, hides its own children in the same way, which is why
-// each node has a subtree of namespaces hidden inside it rather than just its own children.
-//
-// The namespaces form a tree of a depth which is not known in advance, which SQL is not good at, so the tree is
-// built here, from the declaring namespace of each one.
-export const clusterNamespaces = (
-  namespaces: Sql.Namespace[],
-  cluster: boolean,
-  isExpandedId: (id: Id.NamespaceId) => boolean
-): ClusteredNamespaces => {
-  const visible: ClusteredNamespace[] = [];
-  const hiddenByVisible = new Map<Id.NamespaceId, Set<Id.NamespaceId>>();
-
-  // when they are not clustered every namespace is a node in its assembly, whatever declares it. This is the other
-  // branch of the option: a view which always showed every namespace in its assembly could be another option, in
-  // the same way as clusterNamespaces.
-  if (!cluster) {
-    namespaces.forEach((namespace) => visible.push({ namespace, parentId: namespace.assemblyId }));
-    return { visible, hiddenByVisible };
-  }
-
-  const childrenOf = new Map<Id.NamespaceId, Sql.Namespace[]>();
-  namespaces.forEach((namespace) => {
-    const declaringId = namespace.declaringNamespaceId;
-    if (declaringId) getOrSet(childrenOf, declaringId, () => []).push(namespace);
-  });
-
-  // the children of a namespace are nodes when it is expanded, and hidden inside it when it is not. A namespace
-  // which declares nothing is a node in its assembly, and one which is declared is a node inside the namespace
-  // which declares it -- which is expanded, because that is what made this one a node.
-  const add = (namespace: Sql.Namespace, hiddenIn: Sql.Namespace | undefined): void => {
-    if (hiddenIn) getOrSet(hiddenByVisible, hiddenIn.id, () => new Set<Id.NamespaceId>()).add(namespace.id);
-    else visible.push({ namespace, parentId: namespace.declaringNamespaceId ?? namespace.assemblyId });
-
-    const hiddenInChildren = hiddenIn ?? (isExpandedId(namespace.id) ? undefined : namespace);
-    (childrenOf.get(namespace.id) ?? []).forEach((child) => add(child, hiddenInChildren));
-  };
-
-  getRootsOf(namespaces).forEach((roots) => roots.forEach((root) => add(root, undefined)));
-
-  // a declaring namespace is always in the same assembly, so the walk from the roots reaches every namespace: one
-  // which is not reached would be dropped from the graph, which would mean the data is at fault
-  const hiddenCount = [...hiddenByVisible.values()].reduce((count, ids) => count + ids.size, 0);
-  assert(
-    visible.length + hiddenCount === namespaces.length,
-    `namespace tree: ${namespaces.length} namespaces, ${visible.length} nodes, ${hiddenCount} hidden`
-  );
-
-  return { visible, hiddenByVisible };
 };
 
 // The namespaces which are the only one in the first layer of their assembly. Expanding the assembly would

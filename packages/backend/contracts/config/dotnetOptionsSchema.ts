@@ -15,10 +15,19 @@ const dotnetOptionProperties: { [K in keyof DotnetOptions]: ConfigurationPropert
     markdownDescription:
       "When enabled, the `Foo.Bar.Baz` namespace is a node within `Foo.Bar`. When disabled, all are revealed when the assembly is opened.",
   },
+  clusterTypes: {
+    type: "boolean",
+    default: defaultDotnetOptions.clusterTypes,
+    markdownDescription:
+      "When enabled, a type nested in another is a node within it: `Foo.Bar` is a node within `Foo`. When disabled, both are nodes of their namespace.",
+  },
 };
 
 // Which group each option belongs to: exhaustive over the fields of DotnetOptions, like the properties above
-const dotnetOptionGroups: { [K in keyof DotnetOptions]: string } = { clusterNamespaces: "Progressive Reveal" };
+const dotnetOptionGroups: { [K in keyof DotnetOptions]: string } = {
+  clusterNamespaces: "Progressive Reveal",
+  clusterTypes: "Progressive Reveal",
+};
 
 // The groups, in the order in which their first option appears above
 export const dotnetOptionsSchemas: ConfigurationSchema[] = [...new Set(Object.values(dotnetOptionGroups))].map(

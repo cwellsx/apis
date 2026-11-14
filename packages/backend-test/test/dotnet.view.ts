@@ -77,6 +77,8 @@ describe("testViewStates", function () {
           assert(!!view);
           viewState = createDotnetViewState(tables, view.viewType, view.id, {
             clusterNamespaces: variant.clusterNamespaces,
+            // the clustered run clusters both, so that one baseline covers both options
+            clusterTypes: variant.clusterNamespaces,
           });
           viewState.resetNodeStates();
           //forest = viewState.getGraphNodes().forest;

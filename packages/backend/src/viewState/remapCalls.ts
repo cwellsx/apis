@@ -8,14 +8,15 @@ import type { Sql } from "../sqlDotNet";
 // a call can be within one node, because both of its endpoints are hidden in it. There is no reason to draw the
 // same edge twice, and a call within one node is not an edge at all -- which is also true of a call which was
 // within one node before any of this, such as one method of a type calling another.
-export const remapCalls = (calls: Sql.Call[], hiddenIn: Map<Id.NamespaceId, Id.NamespaceId>): Sql.Call[] => {
+export const remapCalls = (calls: Sql.Call[], hiddenIn: Map<Id.CallFromId, Id.CallFromId>): Sql.Call[] => {
   const remapped: Sql.Call[] = [];
   const seen = new Set<string>();
 
   for (const call of calls) {
-    // the map holds namespace ids only, so an endpoint of any other kind finds nothing and is unchanged
-    const fromId = hiddenIn.get(call.fromId as Id.NamespaceId) ?? call.fromId;
-    const toId = hiddenIn.get(call.toId as Id.NamespaceId) ?? call.toId;
+    // the map holds the ids of namespaces and of types only, so an endpoint of any other kind finds nothing and is
+    // unchanged
+    const fromId = hiddenIn.get(call.fromId) ?? call.fromId;
+    const toId = hiddenIn.get(call.toId as Id.CallFromId) ?? call.toId;
     if (fromId === toId) continue;
 
     const key = `${fromId}||${toId}`;

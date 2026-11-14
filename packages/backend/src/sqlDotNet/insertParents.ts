@@ -15,14 +15,20 @@ export const insertParents = (tables: Tables): void => {
   assert(direct.length > 0);
 
   // a namespace which declares nothing has null in that column, which is falsy
-  const clustered: Parent[] = tables.namespaces
+  const clusteredNamespaces: Parent[] = tables.namespaces
     .selectAll()
     .filter((namespace) => !!namespace.declaringNamespaceId)
     .map((namespace) => ({
       parentId: namespace.declaringNamespaceId!,
       childId: namespace.id,
-      kind: ParentKind.Clustered,
+      kind: ParentKind.ClusteredNamespace,
     }));
 
-  tables.parents.insertMany([...direct, ...clustered]);
+  // a type which is not nested in another has null in that column, which is falsy
+  const clusteredTypes: Parent[] = tables.typeNames
+    .selectAll()
+    .filter((typeName) => !!typeName.declaringTypeId)
+    .map((typeName) => ({ parentId: typeName.declaringTypeId!, childId: typeName.id, kind: ParentKind.ClusteredType }));
+
+  tables.parents.insertMany([...direct, ...clusteredNamespaces, ...clusteredTypes]);
 };

@@ -8,15 +8,15 @@ import { netFrameworkGroup, ParentKind } from "../sqlDotNet";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
 import { assert, compareOrdinal, getOrThrow } from "../utils";
-import { clusterNamespaces, defaultExpandedNamespaces } from "./clusterNamespaces";
+import { clusterNamespaces, clusterTypes, defaultExpandedNamespaces } from "./clusterNamespaces";
 import type { Forest, RootItem, Top } from "./forest";
 import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
 import { remapCalls } from "./remapCalls";
 import { toNodeId } from "./toNodeId";
 
-// the tree, and for each namespace hidden inside one of its namespace nodes, the id of the node it is hidden in
-type DotnetForest = { forest: Forest; hiddenIn: Map<Id.NamespaceId, Id.NamespaceId> };
+// the tree, and for each namespace or type hidden inside one of its nodes, the id of the node it is hidden in
+type DotnetForest = { forest: Forest; hiddenIn: Map<Id.CallFromId, Id.CallFromId> };
 
 export const createDotnetViewState = (
   sqlTables: Sql.Tables,
@@ -105,33 +105,31 @@ export const createDotnetViewState = (
         // namespaces -- when they are clustered, the ones which are hidden inside another are not nodes
         const namespaces = sqlTables.namespaces.selectWhereIn("assemblyId", assemblyIds);
         const { visible, hiddenByVisible } = clusterNamespaces(namespaces, options.clusterNamespaces, isExpandedId);
-        visible.forEach(({ namespace, parentId }) =>
+        visible.forEach(({ item: namespace, parentId }) =>
           addToParent(trunk, namespace, NodeType.Namespace, parentId.toString())
         );
-        // find namespace which are visible but enclosed by clusterNamespaces because their calls contribute to their parents'
-        const hiddenIn = new Map<Id.NamespaceId, Id.NamespaceId>();
-        hiddenByVisible.forEach((hiddenIds, visibleId) => {
+        // a namespace which is hidden inside a node is not a node itself, so its calls are the calls of the node it
+        // is hidden in -- an invisible node has no calls in the graph, and neither do the namespaces inside it
+        const hiddenIn = new Map<Id.CallFromId, Id.CallFromId>();
+        const addHiddenTo = <TId extends Id.CallFromId>(hiddenIds: Set<TId>, visibleId: TId): void => {
           const node = getOrThrow(trunk.allNodes, nodeIdToText(toNodeId(visibleId)));
           if (node.isVisible) hiddenIds.forEach((hiddenId) => hiddenIn.set(hiddenId, visibleId));
-        });
+        };
+        hiddenByVisible.forEach(addHiddenTo);
 
-        // type names -- a type is a node when its namespace is a node which is expanded. A namespace which is hidden
-        // inside another is not a node even when its stored state says it is expanded, and has no node to add to.
-        const namespaceNodes = new Set(visible.map(({ namespace }) => namespace.id));
-        const typeNames = sqlTables.typeNames
-          .selectWhereIn("assemblyId", assemblyIds)
-          .filter(
-            (typeName) =>
-              !typeName.namespaceId || (namespaceNodes.has(typeName.namespaceId) && isExpandedId(typeName.namespaceId))
-          );
-        typeNames.forEach((typeName) =>
-          addToParent(
-            trunk,
-            typeName,
-            NodeType.Type,
-            typeName.namespaceId ? typeName.namespaceId.toString() : typeName.assemblyId.toString()
-          )
+        // type names -- a type is a node when its namespace is a node which is expanded, and when nothing declares
+        // it; a type which is declared is clustered into the type which declares it, as the namespaces are
+        const namespaceNodes = new Set(visible.map(({ item: namespace }) => namespace.id));
+        const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds).filter((typeName) => {
+          const namespaceId = typeName.namespaceId;
+          if (!namespaceId) return true;
+          return namespaceNodes.has(namespaceId) && isExpandedId(namespaceId);
+        });
+        const types = clusterTypes(typeNames, options.clusterTypes, isExpandedId);
+        types.visible.forEach(({ item: typeName, parentId }) =>
+          addToParent(trunk, typeName, NodeType.Type, parentId.toString())
         );
+        types.hiddenByVisible.forEach(addHiddenTo);
         // expanded types
         const typeIds = typeNames.map((typeName) => typeName.id).filter(isExpandedId);
 
@@ -146,7 +144,7 @@ export const createDotnetViewState = (
     assert(false);
   };
 
-  const getCalls = (forest: Forest, hiddenIn: Map<Id.NamespaceId, Id.NamespaceId>): Sql.Call[] => {
+  const getCalls = (forest: Forest, hiddenIn: Map<Id.CallFromId, Id.CallFromId>): Sql.Call[] => {
     const allNodes = [...forest.allNodes.values()];
     const leafIds = allNodes
       .filter((node) => !isParent(node) && node.isVisible)
@@ -165,9 +163,12 @@ export const createDotnetViewState = (
     // includes the namespaces hidden inside it, so that a popup shows what the node encloses rather than only the
     // types of its own namespace.
     //
-    // The kinds are one number: the direct children, and the namespaces clustered into the node when the namespaces
-    // are clustered. See ParentKind.
-    const parentKinds = options.clusterNamespaces ? ParentKind.Direct | ParentKind.Clustered : ParentKind.Direct;
+    // The kinds are one number: the direct children, the namespaces clustered into the node when the namespaces
+    // are clustered, and the types clustered into it when the types are clustered. See ParentKind.
+    const parentKinds =
+      ParentKind.Direct |
+      (options.clusterNamespaces ? ParentKind.ClusteredNamespace : 0n) |
+      (options.clusterTypes ? ParentKind.ClusteredType : 0n);
     type PopupCall = Sql.Call & { fromName: string; toName: string };
 
     /*
