@@ -86,7 +86,7 @@ const getNamespaceMap = (assemblyAndTypeInfos: AllTypeInfo[]): NamespaceMap => {
         .sort()
         .map((name, index): [string, Schema.Namespace] => [
           name,
-          { name, assemblyId, id: IdMake.makeNamespaceId(index, assemblyId, true), declaringNamespaceId: undefined },
+          { name, assemblyId, id: IdMake.makeNamespaceId(index, assemblyId, true), declaringNamespaceId: null },
         ])
     );
 
@@ -98,7 +98,7 @@ const getNamespaceMap = (assemblyAndTypeInfos: AllTypeInfo[]): NamespaceMap => {
         values.filter((candidate) => candidate !== value),
         (candidate) => candidate.name
       );
-      value.declaringNamespaceId = declaring?.id;
+      value.declaringNamespaceId = declaring?.id ?? null;
     });
 
     namespaces.set(assemblyId, records);
@@ -115,18 +115,16 @@ const getTypeNames = (
   allTypeInfos.map((value) => ({
     id: value.typeDefId,
     assemblyId: value.assemblyId,
-    namespaceId: value.namespace
-      ? getOrThrow(getOrThrow(namespaceMap, value.assemblyId), value.namespace).id
-      : undefined,
+    namespaceId: value.namespace ? getOrThrow(getOrThrow(namespaceMap, value.assemblyId), value.namespace).id : null,
     name: value.name,
     declaringTypeId: value.declaringType
       ? IdMake.makeTypeDefId(value.declaringType, getOrThrow(assemblyIds, value.assemblyName), false)
-      : undefined,
+      : null,
   }));
 
 const getNestedNamespaces = (typeNames: Schema.TypeName[]): void => {
   const map = new Map<Id.TypeDefId, Schema.TypeName>(typeNames.map((value) => [value.id, value]));
-  const getNamespace = (id: Id.TypeDefId): Id.NamespaceId | undefined => {
+  const getNamespace = (id: Id.TypeDefId): Id.NamespaceId | null => {
     const value = getOrThrow(map, id);
     return value.declaringTypeId ? getNamespace(value.declaringTypeId) : value.namespaceId;
   };
@@ -251,7 +249,7 @@ const getTypeSpecs = (
     {
       resolvedId: toTypeId(typeSpec.resolved, assemblyId),
       genericTypeArguments: typeSpec.genericTypeArguments?.map((arg) => toTypeId(arg, assemblyId)),
-      suffix: typeSpec.suffix,
+      suffix: typeSpec.suffix ?? undefined,
       isSpecification: DotNet.isSpecification(typeSpec.resolved),
     },
   ]);
@@ -264,13 +262,13 @@ const getTypeSpecs = (
     // emulate the C# AllNames.GetTypeName method
     while (typeSpecData.isSpecification) {
       assert(typeSpecData.genericTypeArguments == null);
-      assert(typeSpecData.suffix != null);
+      assert(!!typeSpecData.suffix);
       const other = getOrThrow(mapTypeSpecData, typeSpecData.resolvedId);
       typeSpecData = { ...other, suffix: other.suffix + typeSpecData.suffix };
     }
     const resolvedId = typeSpecData.resolvedId;
     assert(IdTest.isBaseTypeId(resolvedId));
-    return { id: typeSpecId, resolvedId, suffix: typeSpecData.suffix };
+    return { id: typeSpecId, resolvedId, suffix: typeSpecData.suffix ?? null };
   };
 
   return [...mapTypeSpecData.entries()].map(([typeSpecId, typeSpecData]) => getTypeSpec(typeSpecId, typeSpecData));
@@ -283,8 +281,8 @@ const getMethodSpecs = (
   setTypeArguments: SetTypeArguments,
   toBaseMethodId: ToBaseMethodId
 ): Schema.MethodSpec[] => {
-  const getTypeSpecId = (declaringType: DotNet.TypeId | undefined): Id.TypeSpecId | undefined => {
-    if (!declaringType) return undefined;
+  const getTypeSpecId = (declaringType: DotNet.TypeId | undefined): Id.TypeSpecId | null => {
+    if (!declaringType) return null;
     const typeId = toTypeId(declaringType, assemblyId);
     assert(IdTest.isTypeSpecId(typeId));
     return typeId;

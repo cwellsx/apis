@@ -30,20 +30,22 @@ export type Ancestor = SqlCommon.AncestorT<Id.AnyBigId>;
 
 // Caution -- don't use AnyId which is a mixture of bigint and number types
 
+// a field which can be null is a nullable column of its table: see the nullable options in newTables
+
 export type Assembly = { id: Id.AssemblyId; name: string; isMicrosoft: SqlCommon.Boolean };
 export type Namespace = {
   id: Id.NamespaceId;
   assemblyId: Id.AssemblyId;
   name: string;
   // the namespace, in the same assembly, whose name is the longest prefix of this one -- Foo.Bar for Foo.Bar.Baz
-  declaringNamespaceId: Id.NamespaceId | undefined;
+  declaringNamespaceId: Id.NamespaceId | null;
 };
 export type TypeName = {
   id: Id.TypeDefId;
   assemblyId: Id.AssemblyId;
-  namespaceId?: Id.NamespaceId;
+  namespaceId: Id.NamespaceId | null;
   name: string;
-  declaringTypeId?: Id.TypeDefId;
+  declaringTypeId: Id.TypeDefId | null;
 };
 export type Member = { id: Id.MemberId; typeId: Id.TypeDefId; name: string; json: MembersJson };
 
@@ -51,8 +53,8 @@ export type Reference = { fromId: Id.AssemblyId; toId: Id.AssemblyId };
 
 export type MethodName = { id: Id.MethodDefId; typeId: Id.TypeDefId; name: string; returnTypeId: Id.TypeId };
 
-export type TypeSpec = { id: Id.TypeSpecId; resolvedId: Id.BaseTypeId; suffix?: string };
-export type MethodSpec = { id: Id.MethodSpecId; resolvedId: Id.MethodDefId; declaringTypeSpecId?: Id.TypeSpecId };
+export type TypeSpec = { id: Id.TypeSpecId; resolvedId: Id.BaseTypeId; suffix: string | null };
+export type MethodSpec = { id: Id.MethodSpecId; resolvedId: Id.MethodDefId; declaringTypeSpecId: Id.TypeSpecId | null };
 
 // SignatureTypes is used for generic type arguments, for method parameters, and for generic method arguments
 export type SignatureType = { ownerId: Id.AnyOwnerId; seqno: number; argumentId: Id.TypeId };
