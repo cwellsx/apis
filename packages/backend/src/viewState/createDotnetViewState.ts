@@ -1,6 +1,6 @@
 import type { DotnetOptions } from "../contracts-config";
+import type { AnyLeafType, AnyNodeType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
-import type { AnyNodeType, AnyLeafType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
 import { Id, IdAny, IdBig, IdTest } from "../id";
 import { DotnetNodeStates, GetSetNodeStatesT, SqlCommon } from "../sqlCommon";
 import type { Sql, ViewType } from "../sqlDotNet";
@@ -62,11 +62,31 @@ export const createDotnetViewState = (
     };
   };
 
+  // the namespaces and types clustered into a node are its children in the view but not in the ancestors table: the
+  // parents table lists them, and the options decide which kinds count. Zero when nothing is clustered
+  const clusteredKinds =
+    (options.clusterNamespaces ? ParentKind.ClusteredNamespace : 0n) |
+    (options.clusterTypes ? ParentKind.ClusteredType : 0n);
+
   const getSetNodeStates: GetSetNodeStatesT<Id.AnyBigId> = {
     ...sqlNodeStates,
     getNodeStates,
     setIsExpanded: (id, isGroup, isExpanded) =>
       sqlNodeStates.setIsExpanded(id, isGroup || isDefaultExpanded(id), isExpanded),
+    setIsVisible: (id, isParentVisible, isVisible) => {
+      sqlNodeStates.setIsVisible(id, isParentVisible, isVisible);
+      // a node clustered into this one is below it in the view but not in the ancestors table, so the call above
+      // does not clear its state: that is done here, and it recurses, since a clustered node can have clustered
+      // nodes of its own. Equal values are what clears a state, and each call clears what is below it as well
+      const clusteredChildren =
+        clusteredKinds === 0n
+          ? []
+          : sqlTables.parents
+              .selectWhere({ parentId: id })
+              .filter((parent) => (parent.kind & clusteredKinds) !== 0n)
+              .map((parent) => parent.childId);
+      clusteredChildren.forEach((childId) => getSetNodeStates.setIsVisible(childId, isVisible, isVisible));
+    },
   };
 
   const setNodeState = makeSetNodeState(
@@ -144,6 +164,7 @@ export const createDotnetViewState = (
           addToParent(trunk, typeName, NodeType.Type, parentId.toString())
         );
         types.hiddenByVisible.forEach(addHiddenTo);
+
         // expanded types
         const typeIds = typeNames.map((typeName) => typeName.id).filter(isExpandedId);
 
@@ -177,12 +198,9 @@ export const createDotnetViewState = (
     // includes the namespaces hidden inside it, so that a popup shows what the node encloses rather than only the
     // types of its own namespace.
     //
-    // The kinds are one number: the direct children, the namespaces clustered into the node when the namespaces
-    // are clustered, and the types clustered into it when the types are clustered. See ParentKind.
-    const parentKinds =
-      ParentKind.Direct |
-      (options.clusterNamespaces ? ParentKind.ClusteredNamespace : 0n) |
-      (options.clusterTypes ? ParentKind.ClusteredType : 0n);
+    // The kinds are one number: the direct children, and the namespaces and types clustered into the node, which
+    // clusteredKinds says. See ParentKind.
+    const parentKinds = ParentKind.Direct | clusteredKinds;
     type PopupCall = Sql.Call & { fromName: string; toName: string };
 
     /*
