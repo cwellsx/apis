@@ -13,6 +13,25 @@ const assertDistinct = (calls: Call[]) => {
 
 const logCount = (methodName: string, count: number) => log(`${methodName}: ${count} records`);
 
+// A call to a generic method targets a method spec rather than a method definition. The spec resolves to the
+// definition, and every roll-up pass below needs a definition to roll up: without a row at method level, a spec's
+// call has a row at type level but none below it, so the layer below such a call is empty. The spec rows are kept
+// as well, since they are what the dataset had and a call stack would need them.
+const insertResolvedSpecs = (tables: Tables) => {
+  // the calls a spec resolves to may already be there, and the table is keyed by the pair
+  const seen = new Set<string>();
+  tables.calls.selectAll().forEach((call) => seen.add(`${call.fromId}-${call.toId}`));
+
+  const resolved = tables.calls
+    .join(tables.methodSpecs, "id", "toId")
+    .distinct()
+    .selectAll<Call>({ fromId: "calls.fromId", toId: "methodSpecs.resolvedId" })
+    .filter((call) => !seen.has(`${call.fromId}-${call.toId}`));
+
+  logCount("insertResolvedSpecs", resolved.length);
+  tables.calls.insertMany(resolved);
+};
+
 const insertFromTypes = (tables: Tables) => {
   const callsFrom = tables.calls
     .join(tables.methodNames, "id", "fromId")
@@ -135,6 +154,9 @@ const insertToAssembly = (tables: Tables) => {
 };
 
 export const insertCalls = (tables: Tables): void => {
+  // before the roll-up passes, so that what they roll up is a method definition rather than a spec
+  insertResolvedSpecs(tables);
+
   insertFromTypes(tables);
   insertFromNamespace(tables);
   insertFromAssembly(tables);

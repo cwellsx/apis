@@ -133,17 +133,35 @@ the options panel is told what was stored.
   signatures of referenced members are read.
 - **Custom data.** A second data-source kind (`customJson`) renders hand- or tool-authored graphs
   alongside the reflected ones.
-- **Calls are rolled up to every level.** `Core.exe` emits method→method calls; `insertCalls` then rolls
-  each side up through type, namespace and assembly, so a row exists for any pair of ids at the same
-  granularity. Rows stop at assemblies: a _group_ of assemblies exists only to add and remove assemblies
-  from the graph, and never has edges of its own.
+- **Calls are rolled up to every level — a core invariant.** `Core.exe` emits method→method calls;
+  `insertCalls` then rolls each side up through type, namespace and assembly, so a row exists for any pair
+  of ids at the same granularity. The two sides are rolled up in that order — the from-side passes first,
+  then the to-side passes, which read the table and therefore roll up the already-rolled rows too — and it
+  is that ordering, rather than two independent steps, which yields every combination. The application
+  reads these rows instead of deriving the relationships itself: the ancestry and the roll-up live in the
+  tables, and a query may assume that whatever is below a node is already a row. Rows stop at assemblies: a
+  _group_ of assemblies exists only to add and remove assemblies from the graph, and never has edges of its
+  own. A call whose target is a methodSpec — a generic method reference — is resolved to its definition by
+  `insertResolvedSpecs` before any roll-up pass runs, so it has rows at every level like any other call;
+  the spec rows are kept as well, and the resolution is not recorded as ancestry (see the next bullet).
+- **A methodSpec is an instantiation of a method definition, and that is not modelled as ancestry.** The
+  dataset has both: a call to a generic method targets a _spec_, and the spec resolves to a definition —
+  which is what the roll-up works from, so such a call has rows at every level like any other.
+  Recording that resolution as a parent link — "the parent of a spec is its definition" — would be
+  truthful, but it is deliberately not done: the roll-up tables record the tree, a spec is not a child of
+  the definition's _type_, and the popup does not care which of the two it shows today. It will matter
+  when call stacks are shown, because that means following the calls as they actually were,
+  instantiations included — which is why the spec rows are kept in `calls` rather than replaced.
 - **A drawn edge is a bundle; the popup shows one level down.** The graph draws only the `calls` rows at
   the level of the visible leaves, so one drawn edge stands for every call beneath it. `getEdgeLabels`
   resolves the layer directly below it via the `parents` table, which lists every node's direct children
   together with the kind of link each one is, and is derived from `ancestors` so that the two cannot
   disagree about which links are direct. So an assembly-level edge shows the calls between its _namespaces_,
   a namespace-level edge those between its types, a type-level edge those between its methods — and a
-  method-level edge has nothing below it.
+  method-level edge has nothing below it. Which of the two an endpoint is, is decided by its _kind_, not by
+  the result of a query: an endpoint of the view's leaf type has nothing below it, so on that side the call
+  is at the node itself and `parents` is not consulted at all. The four cases — neither endpoint, one side,
+  the other, both — are written out as four queries rather than assembled from fragments.
 - **Clustering is a view option, and the tree is built in the application.** `clusterNamespaces` and
   `clusterTypes` make a namespace or a type a node inside the one which declares it, so `Foo.Bar.Baz` sits
   inside `Foo.Bar` and is not a node at all unless that is expanded. The tree is walked in the backend
