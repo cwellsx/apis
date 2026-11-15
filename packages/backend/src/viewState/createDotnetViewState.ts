@@ -1,36 +1,22 @@
 import type { DotnetOptions } from "../contracts-config";
-import type { AnyLeafType, AnyNodeType, EdgeInfo, EdgeLabels, EdgeNodes, Node, NodeId } from "../contracts-ui";
+import type { AnyLeafType, EdgeInfo, EdgeNodes, Node, NodeId } from "../contracts-ui";
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
-import { Id, IdAny, IdBig, IdTest } from "../id";
+import { Id, IdAny } from "../id";
 import { DotnetNodeStates, GetSetNodeStatesT, SqlCommon } from "../sqlCommon";
 import type { Sql, ViewType } from "../sqlDotNet";
 import { netFrameworkGroup, ParentKind } from "../sqlDotNet";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
-import { assert, compareOrdinal, getOrThrow } from "../utils";
-import { clusterNamespaces, clusterTypes, defaultExpandedNamespaces } from "./clusterNamespaces";
-import type { Forest, RootItem, Top } from "./forest";
+import { assert, getOrThrow } from "../utils";
+import { defaultExpandedNamespaces } from "./clusterNamespaces";
+import type { DotnetForest } from "./toMethodForest";
+import { toMethodForest } from "./toMethodForest";
+import type { RootItem, Top } from "./forest";
+import { getCalls } from "./getCalls";
+import { getEdgeLabels } from "./getEdgeLabels";
 import { makeNodes } from "./makeNodes";
 import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
-import { remapCalls } from "./remapCalls";
 import { toNodeId } from "./toNodeId";
-
-// the tree, and for each namespace or type hidden inside one of its nodes, the id of the node it is hidden in
-type DotnetForest = { forest: Forest; hiddenIn: Map<Id.CallFromId, Id.CallFromId> };
-
-// the kind of thing a call's endpoint is, which is what the popup shows an icon for
-const nodeTypeOf = (id: Id.CallToId): AnyNodeType => {
-  switch (IdTest.isCallToId(id)) {
-    case "A":
-      return NodeType.Assembly;
-    case "N":
-      return NodeType.Namespace;
-    case "T":
-      return NodeType.Type;
-    case "M":
-      return NodeType.Method;
-  }
-};
 
 export const createDotnetViewState = (
   sqlTables: Sql.Tables,
@@ -67,6 +53,10 @@ export const createDotnetViewState = (
   const clusteredKinds =
     (options.clusterNamespaces ? ParentKind.ClusteredNamespace : 0n) |
     (options.clusterTypes ? ParentKind.ClusteredType : 0n);
+
+  // the kinds of a popup's parent: the direct children, and the namespaces and types clustered into the node, which
+  // clusteredKinds says. See ParentKind
+  const parentKinds = ParentKind.Direct | clusteredKinds;
 
   const getSetNodeStates: GetSetNodeStatesT<Id.AnyBigId> = {
     ...sqlNodeStates,
@@ -132,185 +122,23 @@ export const createDotnetViewState = (
     switch (leafType) {
       case NodeType.Assembly:
         return { forest: trunk, hiddenIn: new Map() };
-      case NodeType.Method: {
-        // expanded assemblies
-        const assemblyIds = assemblies.map((item) => item.id).filter((id) => isExpandedId(IdBig.toBigAssemblyId(id)));
-
-        // namespaces -- when they are clustered, the ones which are hidden inside another are not nodes
-        const namespaces = sqlTables.namespaces.selectWhereIn("assemblyId", assemblyIds);
-        const { visible, hiddenByVisible } = clusterNamespaces(namespaces, options.clusterNamespaces, isExpandedId);
-        visible.forEach(({ item: namespace, parentId }) =>
-          addToParent(trunk, namespace, NodeType.Namespace, parentId.toString())
-        );
-        // a namespace which is hidden inside a node is not a node itself, so its calls are the calls of the node it
-        // is hidden in -- an invisible node has no calls in the graph, and neither do the namespaces inside it
-        const hiddenIn = new Map<Id.CallFromId, Id.CallFromId>();
-        const addHiddenTo = <TId extends Id.CallFromId>(hiddenIds: Set<TId>, visibleId: TId): void => {
-          const node = getOrThrow(trunk.allNodes, nodeIdToText(toNodeId(visibleId)));
-          if (node.isVisible) hiddenIds.forEach((hiddenId) => hiddenIn.set(hiddenId, visibleId));
-        };
-        hiddenByVisible.forEach(addHiddenTo);
-
-        // type names -- a type is a node when its namespace is a node which is expanded, and when nothing declares
-        // it; a type which is declared is clustered into the type which declares it, as the namespaces are
-        const namespaceNodes = new Set(visible.map(({ item: namespace }) => namespace.id));
-        const typeNames = sqlTables.typeNames.selectWhereIn("assemblyId", assemblyIds).filter((typeName) => {
-          const namespaceId = typeName.namespaceId;
-          if (!namespaceId) return true;
-          return namespaceNodes.has(namespaceId) && isExpandedId(namespaceId);
-        });
-        const types = clusterTypes(typeNames, options.clusterTypes, isExpandedId);
-        types.visible.forEach(({ item: typeName, parentId }) =>
-          addToParent(trunk, typeName, NodeType.Type, parentId.toString())
-        );
-        types.hiddenByVisible.forEach(addHiddenTo);
-
-        // expanded types
-        const typeIds = typeNames.map((typeName) => typeName.id).filter(isExpandedId);
-
-        // method names
-        const methodNames = sqlTables.methodNames.selectWhereIn("typeId", typeIds);
-        methodNames.forEach((methodName) =>
-          addToParent(trunk, methodName, NodeType.Method, methodName.typeId.toString())
-        );
-        return { forest: trunk, hiddenIn };
-      }
+      case NodeType.Method:
+        return toMethodForest(addToParent, trunk, isExpandedId, sqlTables, options, assemblies);
     }
     assert(false);
-  };
-
-  const getCalls = (forest: Forest, hiddenIn: Map<Id.CallFromId, Id.CallFromId>): Sql.Call[] => {
-    const allNodes = [...forest.allNodes.values()];
-    const leafIds = allNodes
-      .filter((node) => !isParent(node) && node.isVisible)
-      .map((node) => IdAny.toAnyBigId(node.nodeId, node.type));
-
-    // the calls of the namespaces which are hidden inside a node are selected with the calls of the nodes, and
-    // then attributed to the node each one is hidden in
-    const ids = [...leafIds, ...hiddenIn.keys()] as Id.CallFromId[];
-    const calls = sqlTables.calls.selectWhereIn(["fromId", "toId"], ids);
-    return remapCalls(calls, hiddenIn);
-  };
-
-  const getEdgeLabels = (call: Sql.Call): EdgeLabels[] => {
-    // one level down from an edge: the method calls which are bundled into it, with their names. One level down is
-    // the children of the node, which the parents table lists -- and for a namespace which is clustered, that
-    // includes the namespaces hidden inside it, so that a popup shows what the node encloses rather than only the
-    // types of its own namespace.
-    //
-    // The kinds are one number: the direct children, and the namespaces and types clustered into the node, which
-    // clusteredKinds says. See ParentKind.
-    const parentKinds = ParentKind.Direct | clusteredKinds;
-    type PopupCall = Sql.Call & { fromName: string; toName: string };
-
-    // a node of the leaf type of this view has nothing below it, so on that side the call is at the node itself and
-    // the parents table is not consulted: which of the two an endpoint is, is what its kind says
-    const isLeaf = (id: Id.CallFromId | Id.CallToId): boolean => nodeTypeOf(id) === leafType;
-    const fromIsLeaf = isLeaf(call.fromId);
-    const toIsLeaf = isLeaf(call.toId);
-
-    /*
-      SELECT calls.fromId, calls.toId, fromFullName.fullName, toFullName.fullName
-      FROM calls
-      JOIN parents AS fromParent
-        ON calls.fromId = fromParent.childId
-      JOIN parents AS toParent
-        ON calls.toId = toParent.childId
-      JOIN fullNames AS fromFullName
-        ON calls.fromId = fromFullName.id
-      JOIN fullNames AS toFullName
-        ON calls.toId = toFullName.id
-      WHERE fromParent.parentId = ?
-        AND toParent.parentId = ?
-        AND fromParent.kind & ? <> 0
-        AND toParent.kind & ? <> 0;
-    */
-    // the four cases below differ in which of the two endpoints has its calls one level down: both (the query
-    // above), the to side only, the from side only, or neither -- when both endpoints are of the leaf type there is
-    // no level below either of them, so the call itself is what the edge is. Each case is written out in full.
-    const getPopupCalls = (): PopupCall[] => {
-      if (fromIsLeaf && toIsLeaf)
-        return sqlTables.calls
-          .join(sqlTables.fullNames, "id", "fromId", { rightAlias: "fromFullName" })
-          .join(sqlTables.fullNames, "id", sqlTables.calls, "toId", { rightAlias: "toFullName" })
-          .where("calls.fromId = ?", call.fromId)
-          .where("calls.toId = ?", call.toId)
-          .selectAll<PopupCall>({
-            fromId: "calls.fromId",
-            toId: "calls.toId",
-            fromName: "fromFullName.fullName",
-            toName: "toFullName.fullName",
-          });
-
-      if (fromIsLeaf)
-        return sqlTables.calls
-          .join(sqlTables.parents, "childId", "toId", { rightAlias: "toParent" })
-          .join(sqlTables.fullNames, "id", sqlTables.calls, "fromId", { rightAlias: "fromFullName" })
-          .join(sqlTables.fullNames, "id", sqlTables.calls, "toId", { rightAlias: "toFullName" })
-          .where("calls.fromId = ?", call.fromId)
-          .where("toParent.parentId = ?", call.toId)
-          .where("toParent.kind & ? <> 0", parentKinds)
-          .selectAll<PopupCall>({
-            fromId: "calls.fromId",
-            toId: "calls.toId",
-            fromName: "fromFullName.fullName",
-            toName: "toFullName.fullName",
-          });
-
-      if (toIsLeaf)
-        return sqlTables.calls
-          .join(sqlTables.parents, "childId", "fromId", { rightAlias: "fromParent" })
-          .join(sqlTables.fullNames, "id", sqlTables.calls, "fromId", { rightAlias: "fromFullName" })
-          .join(sqlTables.fullNames, "id", sqlTables.calls, "toId", { rightAlias: "toFullName" })
-          .where("fromParent.parentId = ?", call.fromId)
-          .where("fromParent.kind & ? <> 0", parentKinds)
-          .where("calls.toId = ?", call.toId)
-          .selectAll<PopupCall>({
-            fromId: "calls.fromId",
-            toId: "calls.toId",
-            fromName: "fromFullName.fullName",
-            toName: "toFullName.fullName",
-          });
-
-      return sqlTables.calls
-        .join(sqlTables.parents, "childId", "fromId", { rightAlias: "fromParent" })
-        .join(sqlTables.parents, "childId", sqlTables.calls, "toId", { rightAlias: "toParent" })
-        .join(sqlTables.fullNames, "id", sqlTables.calls, "fromId", { rightAlias: "fromFullName" })
-        .join(sqlTables.fullNames, "id", sqlTables.calls, "toId", { rightAlias: "toFullName" })
-        .where("fromParent.parentId = ?", call.fromId)
-        .where("fromParent.kind & ? <> 0", parentKinds)
-        .where("toParent.parentId = ?", call.toId)
-        .where("toParent.kind & ? <> 0", parentKinds)
-        .selectAll<PopupCall>({
-          fromId: "calls.fromId",
-          toId: "calls.toId",
-          fromName: "fromFullName.fullName",
-          toName: "toFullName.fullName",
-        });
-    };
-
-    // sorted by client, which is the first column of the popup, so that the order is part of the model and
-    // every front end shows the rows in the same order. Ties are broken on the server, so it is a total order
-    // which doesn't depend on the order the rows came out of SQL.
-    return getPopupCalls()
-      .map((popupCall) => ({
-        client: { label: popupCall.fromName, nodeId: toNodeId(popupCall.fromId), type: nodeTypeOf(popupCall.fromId) },
-        server: { label: popupCall.toName, nodeId: toNodeId(popupCall.toId), type: nodeTypeOf(popupCall.toId) },
-      }))
-      .sort((x, y) => compareOrdinal(x.client.label, y.client.label) || compareOrdinal(x.server.label, y.server.label));
   };
 
   const getGraphNodes = (): GraphNodes => {
     const nodeStates = getNodeStates();
     const { forest, hiddenIn } = getForest(nodeStates);
 
-    const calls = getCalls(forest, hiddenIn);
+    const calls = getCalls(sqlTables, forest, hiddenIn);
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
     const edgePopups = new Map<string, EdgeInfo>();
     for (const call of calls) {
-      const labels = getEdgeLabels(call);
+      const labels = getEdgeLabels(sqlTables, parentKinds, leafType, call);
       const nodeIds = { fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) };
       const nodes: EdgeNodes = { client: getNode(nodeIds.fromId), server: getNode(nodeIds.toId) };
       const edgeId = nodeIdsToEdgeId(nodeIds.fromId, nodeIds.toId);

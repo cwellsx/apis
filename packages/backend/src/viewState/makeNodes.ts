@@ -26,9 +26,18 @@ const insert = <T extends { label: string }>(array: T[], node: T): void => {
 
 const addAllNodes = (forest: Forest, node: Node) => forest.allNodes.set(nodeIdToText(node.nodeId), node);
 
+// a template for the function which adds a node to a tree: passed on its own where a caller only adds nodes, so
+// that it does not have to take the whole builder
+export type AddToParent<TId extends Numeric> = (
+  trunk: Forest,
+  item: Item<TId>,
+  type: AnyNodeType,
+  parentId: string
+) => void;
+
 export type MakeNodes<TId extends Numeric> = {
   toTrunk: (top: TopT<TId>, rootNodeType: RootNodeType, netFrameworkNode?: Parent) => Forest;
-  addToParent: (trunk: Forest, item: Item<TId>, type: AnyNodeType, parentId: string) => void;
+  addToParent: AddToParent<TId>;
   addOrphan: (trunk: Forest, item: Item<TId>, type: AnyNodeType) => void;
   makeRootNode: (rootItem: RootItem<TId>, forest: Forest) => Parent | Closed;
 };
