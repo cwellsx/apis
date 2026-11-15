@@ -2,23 +2,47 @@
 
 ## Now
 
-Include icon type
-Get new Microsoft assembly icon
-Map node types to icons
-Place an icon in the header
-Make the header clickable
-Create a sort by option
+New features
 
-Implement tooltips:
+- Popup for nodes
+- Shorten the full-name in popup -- don't repeat parent name
+- Balance the popup -- no extra whitespace on one side
+- Replace System.Void => void
+- Show node type in TreeView
 
-- write the tooltips into the front end with the SVG
-- Display the tooltip -- on hover and on click
-- Improve or remove the titles
+Implement "show called" filter on an edge
 
-Reduce density of graphs:
+- E.g. there are 900 edges within Mono.Cecil all types => can't open it
+- So open it, but hide all the ones which aren't called from Core
+- Or open it, change its default visibility to hidden, and show all the ones which are called from Core
 
-- Hide self-self edges -- could make this optional, but I don't see no use for it
-- Progressive reveal of namespaces e.g. initially Foo.Bar.* for Foo.Bar.Baz and Foo.Bar.Bat
+Implement "progressive open" filter on a node
+
+- On open don't show edges between its internal nodes
+- Only show edges from its internal nodes to external nodes
+- Also hide internal nodes which don't have external connections
+- Allow progressive open i.e. open all edges of specific node
+- Requires prior knowledge of which nodes have external edges
+
+Ancestry
+
+- Implement the change described in ANCESTORS-KIND-PLAN.md
+- Probably option B to begin
+  - Clustered namespaces
+  - Descendants of clustered namespaces
+  - Clustered types
+  - Descendants of clustered types
+- Capture existing behavior before starting, for regression tests
+
+Tests
+
+- Capture some further details for regression testing e.g.
+  - Popup details
+  - Whether each node is visible
+- Modify the test utilities and write new test suites
+  - New test suites meaning new sequences of action to test end states
+  - Regression testing means capturing and version controlling data
+  - Normally an assert on state is enough but I might want to see state too
 
 How to format the tooltip:
 
