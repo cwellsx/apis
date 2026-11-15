@@ -137,9 +137,8 @@ export const createDotnetViewState = (
     const edgePopups = new Map<string, EdgeInfo>();
     for (const call of calls) {
       const labels = getEdgeLabels(sqlTables, parentKinds, leafType, call);
-      const nodeIds = { fromId: toNodeId(call.fromId), toId: toNodeId(call.toId) };
-      const nodes: EdgeNodes = { client: getNode(nodeIds.fromId), server: getNode(nodeIds.toId) };
-      const edgeId = nodeIdsToEdgeId(nodeIds.fromId, nodeIds.toId);
+      const nodes: EdgeNodes = { client: call.fromNode, server: call.toNode };
+      const edgeId = nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId));
       edgePopups.set(edgeIdToText(edgeId), { nodes, labels });
     }
 

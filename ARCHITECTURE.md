@@ -158,10 +158,13 @@ the options panel is told what was stored.
   together with the kind of link each one is, and is derived from `ancestors` so that the two cannot
   disagree about which links are direct. So an assembly-level edge shows the calls between its _namespaces_,
   a namespace-level edge those between its types, a type-level edge those between its methods — and a
-  method-level edge has nothing below it. Which of the two an endpoint is, is decided by its _kind_, not by
-  the result of a query: an endpoint of the view's leaf type has nothing below it, so on that side the call
-  is at the node itself and `parents` is not consulted at all. The four cases — neither endpoint, one side,
-  the other, both — are written out as four queries rather than assembled from fragments.
+  method-level edge has nothing below it. A leaf-to-leaf edge therefore has no popup content at all, and
+  returns before any query is built. Which side is a leaf is decided by its _kind_: a leaf endpoint is looked
+  up at the node itself and `parents` is not consulted for it, while the other side is looked up one level
+  down. The three cases — neither endpoint a leaf, one side, the other — are written out as three queries
+  rather than assembled from fragments. All of this describes the _calls_ view: the references view has
+  references rather than calls, so neither a popup nor a level below applies to it — its leaf is an
+  assembly, and an edge between two of those has nothing below it either.
 - **Clustering is a view option, and the tree is built in the application.** `clusterNamespaces` and
   `clusterTypes` make a namespace or a type a node inside the one which declares it, so `Foo.Bar.Baz` sits
   inside `Foo.Bar` and is not a node at all unless that is expanded. The tree is walked in the backend

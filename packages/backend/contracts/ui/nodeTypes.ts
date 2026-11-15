@@ -10,7 +10,9 @@ type CustomNode = typeof NodeType.CustomNode;
 type CustomLeaf = typeof NodeType.CustomLeaf;
 
 export type RootNodeType = Assembly | CustomNode;
-export type MethodNodeType = Method;
 export type AnyNodeType = Group | Assembly | Namespace | Type | Method | CustomGroup | CustomNode | CustomLeaf;
 export type AnyLeafType = Assembly | Method | CustomLeaf;
 export type AnyGroupType = Group | CustomGroup;
+
+// the node types of the dotnet view: everything except the three custom ones
+export type AnyDotnetType = Group | Assembly | Namespace | Type | Method;

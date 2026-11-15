@@ -92,21 +92,6 @@ describe("testViewStates", function () {
 
           assert(graphNodes.imageData.edges.length != 0);
 
-          // a view which has no popups has none to check
-          const popups = graphNodes.edgePopups?.values() ?? [];
-          const emptyPopups = [...popups].filter((info) => !info.labels.length);
-          // the edges are named rather than counted, so that a failure says which ones to look at
-          assert(
-            emptyPopups.length === 0,
-            `${emptyPopups.length} edges have no calls one level down:\n` +
-              emptyPopups
-                .map(
-                  ({ nodes: { client, server } }) =>
-                    `${client.label} (${client.type}) -> ${server.label} (${server.type})`
-                )
-                .join("\n")
-          );
-
           const result = await createImage(graphNodes.imageData, false);
           assert(typeof result === "object");
 

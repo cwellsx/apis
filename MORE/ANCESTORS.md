@@ -112,6 +112,31 @@ Note on step 6: with the closure in place, a nested type under a clustered names
 `(N → T', 4n)` and `(M → T', 8n)`, so the popup must filter on the `Direct` bit to get _its_ parent.
 That is exactly what bit 1 is for, and it is why it cannot be folded into the kind mask.
 
+## Proposed, not yet planned: the kind would tell the popup its row types
+
+A consequence of this work rather than part of it, recorded so it isn't re-derived.
+
+The popup's queries join `parents` and take only the matching children, discarding the `kind` of the row
+that matched. Selecting it as well would say which relationship each returned row is — and that turns out
+to fix the row's endpoint type:
+
+| kind                 | the row's endpoint is                                   |
+| -------------------- | ------------------------------------------------------- |
+| `ClusteredNamespace` | a Namespace — the same kind as its parent, one sideways |
+| `ClusteredType`      | a Type — likewise                                       |
+| `Direct`             | `levelBelow(parentType)`                                |
+
+So `levelBelow` is only needed for the `Direct` case: a clustered child sits at the same level as the node
+it is clustered into, not below it. "One level down" is a property of `Direct` alone.
+
+With that, `nodeTypeOf` stops being a source of truth and becomes a check: the popup would know each row's
+endpoint type from the query it ran, and `nodeTypeOf` would assert that the id brand agrees. The brand
+stays where it belongs — in `toNodeId` and the id makers — and the popup stops inferring from it. It is the
+same move as the other asserts: derive from the data, then assert the derivation.
+
+Not doing it yet is deliberate: `parents.kind` is exactly what these bits reshape, so selecting it now
+would mean selecting the column that is about to change shape, and doing the work twice.
+
 ## Open questions for you
 
 - A or B to start with?

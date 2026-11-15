@@ -9,5 +9,5 @@ export { edgeIdToText, isEdgeId, nodeIdToText, textToEdgeId, textToNodeId } from
 export type { EdgeId, NodeId } from "./nodeId";
 export type { NodeState } from "./nodeState";
 export { NodeType } from "./nodeType";
-export type { AnyGroupType, AnyLeafType, AnyNodeType, MethodNodeType, RootNodeType } from "./nodeTypes";
+export type { AnyDotnetType, AnyGroupType, AnyLeafType, AnyNodeType, RootNodeType } from "./nodeTypes";
 export type { Access, MemberInfo, Members, Named, Namespace, Type } from "./types";
