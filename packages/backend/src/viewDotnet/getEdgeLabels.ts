@@ -3,7 +3,7 @@ import { NodeType } from "../contracts-ui";
 import { Id, IdTest } from "../id";
 import type { Sql } from "../sqlDotNet";
 import { compareOrdinal } from "../utils";
-import { toNodeId } from "./toNodeId";
+import { toNodeId } from "../viewCommon";
 
 // the kind of thing a call's endpoint is, which is what the popup shows an icon for
 const nodeTypeOf = (id: Id.CallToId): AnyNodeType => {

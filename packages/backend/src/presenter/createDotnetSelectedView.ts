@@ -5,7 +5,7 @@ import { IdView } from "../id";
 import { Sql } from "../sqlDotNet";
 import type { ViewState } from "../types";
 import { assert } from "../utils";
-import { createDotnetViewState } from "../viewState";
+import { createDotnetViewState } from "../viewDotnet";
 import { SelectedView } from "./selectedView";
 
 export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView => {

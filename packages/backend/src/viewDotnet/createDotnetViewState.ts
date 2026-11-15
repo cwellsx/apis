@@ -8,15 +8,13 @@ import { netFrameworkGroup, ParentKind } from "../sqlDotNet";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
 import { assert, getOrThrow } from "../utils";
+import type { RootItem, Top } from "../viewCommon";
+import { makeNodes, makeRootDefaults, makeSetNodeState, toNodeId } from "../viewCommon";
 import { defaultExpandedNamespaces } from "./clusterNamespaces";
-import type { DotnetForest } from "./toMethodForest";
-import { toMethodForest } from "./toMethodForest";
-import type { RootItem, Top } from "./forest";
 import { getCalls } from "./getCalls";
 import { getEdgeLabels } from "./getEdgeLabels";
-import { makeNodes } from "./makeNodes";
-import { makeRootDefaults, makeSetNodeState } from "./makeSetNodeState";
-import { toNodeId } from "./toNodeId";
+import type { DotnetForest } from "./toMethodForest";
+import { toMethodForest } from "./toMethodForest";
 
 export const createDotnetViewState = (
   sqlTables: Sql.Tables,

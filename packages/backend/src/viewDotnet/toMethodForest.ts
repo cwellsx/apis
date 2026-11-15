@@ -3,10 +3,9 @@ import { NodeType, nodeIdToText } from "../contracts-ui";
 import { Id, IdBig } from "../id";
 import type { Sql } from "../sqlDotNet";
 import { getOrThrow } from "../utils";
+import type { AddToParent, Forest, Numeric } from "../viewCommon";
+import { toNodeId } from "../viewCommon";
 import { clusterNamespaces, clusterTypes } from "./clusterNamespaces";
-import type { Forest, Numeric } from "./forest";
-import type { AddToParent } from "./makeNodes";
-import { toNodeId } from "./toNodeId";
 
 // the tree, and for each namespace or type hidden inside one of its nodes, the id of the node it is hidden in
 export type DotnetForest = { forest: Forest; hiddenIn: Map<Id.CallFromId, Id.CallFromId> };

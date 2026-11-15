@@ -1,5 +1,5 @@
-import type { Node } from "../contracts-ui";
-import { isParent } from "../contracts-ui";
+import type { Node } from "backend-ui";
+import { isParent } from "backend-ui";
 
 export const printForest = (roots: Node[]): string[] => {
   const result: string[] = [];

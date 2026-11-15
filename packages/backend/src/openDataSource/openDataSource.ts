@@ -1,6 +1,6 @@
 import type { DataSource, OpenDataSource, ShowProgress } from "../contracts-app";
+import { createPresenter, SelectedView } from "../presenter";
 import { log } from "../utils";
-import { createPresenter, SelectedView } from "../viewModel";
 import { openFromCustom } from "./openFromCustom";
 import { openFromDotNet } from "./openFromDotNet";
 import { wrapPresenterApi } from "./wrapPresenterApi";

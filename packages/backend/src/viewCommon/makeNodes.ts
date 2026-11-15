@@ -1,12 +1,12 @@
 // two functions help to implement getGraphNodes
+import { Forest, Item, Numeric, RootItem, TopT } from "./forest";
+import { ToT } from "./toT";
 import type { AnyGroupType, AnyLeafType, AnyNodeType, Closed, NodeId, RootNodeType } from "../contracts-ui";
 import { isClosed, isLeaf, isParent, Node, nodeIdToText, Parent } from "../contracts-ui";
 import { Id } from "../id";
 import type { NodeStatesT } from "../sqlCommon";
 import { assert, compareOrdinal, findLongestPrefix, getOrThrow } from "../utils";
-import { Forest, Item, Numeric, RootItem, TopT } from "./forest";
 import { toNodeId } from "./toNodeId";
-import { ToT } from "./toT";
 
 const insert = <T extends { label: string }>(array: T[], node: T): void => {
   let lo = 0;

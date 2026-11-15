@@ -1,7 +1,7 @@
 import { isParent } from "../contracts-ui";
 import { Id, IdAny } from "../id";
 import type { Sql } from "../sqlDotNet";
-import type { Forest } from "./forest";
+import type { Forest } from "../viewCommon";
 import { remapCalls } from "./remapCalls";
 
 // the calls of the graph: those between the visible leaves, and those of the nodes hidden inside a visible node,

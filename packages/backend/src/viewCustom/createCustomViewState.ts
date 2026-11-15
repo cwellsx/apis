@@ -7,9 +7,7 @@ import { SqlCustom } from "../sqlCustom";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
 import { assert, getOrThrow } from "../utils";
-import { CustomTop, Forest, Item, Numeric } from "./forest";
-import { makeNodes } from "./makeNodes";
-import { makeSetNodeState } from "./makeSetNodeState";
+import { CustomTop, Forest, Item, makeNodes, makeSetNodeState, Numeric } from "../viewCommon";
 
 export const createCustomViewState = (
   sqlTables: SqlCustom.Tables,

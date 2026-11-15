@@ -1,5 +1,5 @@
 import { DataSource } from "../contracts-app";
-import { createCustomSelectedView, SelectedView } from "../viewModel";
+import { createCustomSelectedView, SelectedView } from "../presenter";
 import { createSqlCustom } from "./createSqlCustom";
 
 export const openFromCustom = async (dataSource: DataSource): Promise<SelectedView> => {
