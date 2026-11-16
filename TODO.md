@@ -2,6 +2,10 @@
 
 ## Now
 
+Package maintenance
+
+- Revise packages\electron-forge-resource-plugin\README.md
+
 New features
 
 - Popup for nodes

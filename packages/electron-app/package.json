@@ -5,7 +5,9 @@
   "description": "Browse .NET assemblies and APIs",
   "main": ".webpack/main",
   "scripts": {
+    "prestart": "npm run build -w electron-forge-resource-plugin",
     "start": "set DEBUG=electron-forge&& electron-forge start",
+    "prepackage": "npm run build -w electron-forge-resource-plugin",
     "package": "electron-forge package",
     "make": "set DEBUG=electron-forge&& electron-forge make",
     "publish": "electron-forge publish",
@@ -41,7 +43,7 @@
     "@vercel/webpack-asset-relocator-loader": "1.7.3",
     "css-loader": "^6.0.0",
     "electron": "^37.6.0",
-    "electron-forge-resource-plugin": "^1.0.0-alpha.8",
+    "electron-forge-resource-plugin": "*",
     "eslint": "^9.32.0",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",

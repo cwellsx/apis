@@ -1,14 +1,12 @@
 {
   "name": "electron-forge-resource-plugin",
-  "version": "1.0.0-alpha.8",
+  "version": "1.0.0",
   "description": "Plugin for Electron Forge to build and package an external resource",
   "main": "dist/ResourcePlugin.js",
   "types": "dist/ResourcePlugin.d.ts",
   "scripts": {
-    "build": "node tools/cleanup && tsc -p tsconfig.json",
-    "clean": "node tools/cleanup",
-    "package": "npm run build && npm pack",
-    "copy": "copy .\\dist\\*.* ..\\electron_forge_template\\node_modules\\electron-forge-resource-plugin\\dist\\*.*"
+    "build": "tsc -p tsconfig.json",
+    "clean": "node tools/cleanup"
   },
   "files": [
     "dist"
@@ -32,20 +30,14 @@
   "bugs": {
     "url": "https://github.com/cwellsx/electron-forge-resource-plugin/issues"
   },
+  "peerDependencies": {
+    "@electron-forge/plugin-base": "^7.2.0",
+    "webpack": "^5.0.0"
+  },
   "devDependencies": {
     "@electron-forge/plugin-webpack": "^7.2.0",
-    "@types/express-ws": "^3.0.1",
-    "@types/klaw": "^3.0.3",
-    "@typescript-eslint/eslint-plugin": "^4.31.1",
-    "@typescript-eslint/parser": "^4.31.1",
-    "eslint": "^7.32.0",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "prettier": "^2.7.1",
-    "ts-loader": "^9.2.5",
-    "typescript": "^4.8.3"
-  },
-  "dependencies": {
-    "@electron-forge/plugin-base": "^7.2.0"
+    "@electron-forge/shared-types": "^7.2.0",
+    "@types/node": "^22.18.12",
+    "typescript": "^5.9.2"
   }
 }
