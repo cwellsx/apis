@@ -16,7 +16,9 @@ import { showErrorMessage } from "./show";
 
 declare const CORE_EXE: string;
 
-const nativeBinding = path.join(process.cwd(), ".webpack\\main\\native_modules\\build\\Release\\better_sqlite3.node");
+// the native module sits beside this bundle: in the build output when running from source, and inside
+// app.asar.unpacked when packaged, which Electron's fs maps to for .node files
+const nativeBinding = path.join(__dirname, "native_modules", "build", "Release", "better_sqlite3.node");
 
 export const createApplication = async (mainWindow: BrowserWindow, appDataPath: string): Promise<void> => {
   setPaths({ appDataPath, coreExePath: CORE_EXE, sqlNodePath: nativeBinding });

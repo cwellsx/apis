@@ -6,6 +6,9 @@
   "workspaces": [
     "packages/*"
   ],
+  "devDependencies": {
+    "prettier": "^3.10.1"
+  },
   "overrides": {
     "eslint": "9.38.0",
     "@typescript-eslint/parser": "8.46.2",

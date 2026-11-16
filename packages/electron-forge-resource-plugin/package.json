@@ -31,12 +31,12 @@
     "url": "https://github.com/cwellsx/electron-forge-resource-plugin/issues"
   },
   "peerDependencies": {
-    "@electron-forge/plugin-base": "^7.2.0",
+    "@electron-forge/plugin-base": "^8.0.1",
     "webpack": "^5.0.0"
   },
   "devDependencies": {
-    "@electron-forge/plugin-webpack": "^7.2.0",
-    "@electron-forge/shared-types": "^7.2.0",
+    "@electron-forge/plugin-webpack": "^8.0.1",
+    "@electron-forge/shared-types": "^8.0.1",
     "@types/node": "^22.18.12",
     "typescript": "^5.9.2"
   }

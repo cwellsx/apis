@@ -30,14 +30,8 @@ function isScript(scripts: script[]): boolean {
 export interface ResourcePluginConfig {
   env: string;
   path: string;
-  build?: {
-    command: string;
-    sources?: string | string[] | { always: boolean };
-  };
-  package?: {
-    dirname?: string;
-    copydir?: boolean;
-  };
+  build?: { command: string; sources?: string | string[] | { always: boolean } };
+  package?: { dirname?: string; copydir?: boolean };
   verbose?: boolean;
 }
 
