@@ -1,27 +1,28 @@
 # API Viewer
 
-**Inspect a codebase’s runtime structure:**
+**Interactive views of software's runtime structure:**
 
-- Views include call stacks and entry points.
-- Use it to explore a codebase architecture, and to guide refactoring.
-- It's an interactive, always‑current map of your code that complements source and design docs.
+Use it to inspect or discover design, and guide refactoring.
 
-**Status:** Pre‑alpha.
+- Views include the call stacks and entry points.
+- See an overview and select details to reveal.
 
-## What you'll see
+This is interactive and up-to-date, a map that complements source code and design docs.
+
+## Views
 
 ### Call stacks
 
-Source files are two-dimensional and static; they show lines of code contained in methods, types, and packages.
+Source code is static and two-dimensional -- listings, lines of code in source files.
 
-Call stacks add the runtime dimension. They show:
+Interconnections are the third dimension -- callers and callees:
 
-- **Why** an API exists
-- **How** it is implemented (calls to subroutines)
-- **Context**: what calls an API
-- **Connections**: where components are linked
+- **What** each API is -- the content
+- **How** it's implemented -- calls to subroutines
+- **Context** -- what calls an API
+- **Connections** -- where components are linked
 
-API Viewer makes the map of callers and callees explicit.
+The APIs, callers, and implementation of each component are **why** each API exists.
 
 ### Entry points
 
@@ -57,8 +58,8 @@ The UI renders multiple view types from the model:
 ## Advantages over traditional documentation
 
 - **Interactive**
-- **High‑level and code‑level** views
-- **Always up‑to‑date** — one‑to‑one mapping with source
+- **High-level and code‑level** views
+- **Always up-to-date** — one‑to‑one mapping with source
 
 ## Privacy
 
@@ -68,31 +69,45 @@ The UI renders multiple view types from the model:
 
 ## Notes
 
-<details><summary>Status ⛔</summary>
+<details><summary>Status</summary>
 
-Pre‑alpha: incomplete and unreleased.
+- Alpha -- work in progress
+- New UI features being implemented
 
 </details>
 
-<details><summary>Documentation ⛔</summary>
+<details><summary>Documentation</summary>
 
-Documents -- `*.md` files -- are old, unfinished, unreliable.
-
-Only this README and the [ROADMAP](./ROADMAP.md) are maintained recently.
+- Documents -- `*.md` files -- are a work-in-progress too
+- There are software design documents
+- No user documents before the UI is completed
 
 </details>
 
 <details><summary>Languages</summary>
 
-Current version supports **.NET** only.
-Other languages (for example TypeScript) may be added later.
+- Current version supports **.NET** only.
+- Other languages e.g TypeScript may be added later.
 
 </details>
+
 <details><summary>Implementation</summary>
 
-- Parsing -- System.Reflection and ILSpy
+Packaging
+
+- Standalone Electron app
+- VS Code extension later
+
+I/O
+
+- No network I/O at all
+- Read your software from disk (from the folder you select)
+- Read and write its model data in its SQLite
+
+3rd-party components
+
+- Parsing -- Mono.Cecil
 - Storage -- SQLite
 - Graphic -- GraphViz
-- Packaged -- a VS Code extension; or a standalone Electron app
 
 </details>
