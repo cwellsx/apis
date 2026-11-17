@@ -2,7 +2,7 @@
 
 How to build, run and validate each part of the repository. Script names live in each `package.json`;
 this page explains _which_ to run and _when_. For how the pieces fit together, see
-[`ARCHITECTURE.md`](./ARCHITECTURE.md).
+[architecture documentation](./README.md).
 
 > The shell is **Windows PowerShell**: chain commands with `;`, and quote paths containing spaces.
 > Run a package script from the repo root with `-w <name>` (for example `npm test -w backend-test`).

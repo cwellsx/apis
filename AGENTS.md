@@ -1,7 +1,7 @@
 # AGENTS.md
 
 Guidance for AI coding agents (and humans) working in this repository. For _what_ the project is see
-[`README.md`](./README.md); for _how_ it is built see [`ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md) and
+[`README.md`](./README.md); for _how_ it is built see the [architecture documentation](./docs/architecture/README.md) and
 [`TESTING.md`](./docs/architecture/TESTING.md).
 
 ## How this agent is used
@@ -54,18 +54,19 @@ renders several views. It runs entirely locally; the model never leaves the mach
 
 ## Repository map
 
-| Path                         | npm name              | Role                                                     |
-| ---------------------------- | --------------------- | -------------------------------------------------------- |
-| `packages/backend`           | — (no `package.json`) | Most of the logic: model + presentation.                 |
-| `packages/backend-dotnet`    | `backend-dotnet`      | .NET component (`Core.exe`): reflection + decompilation. |
-| `packages/sqlio`             | `sqlio`               | Thin wrapper over `better-sqlite3`.                      |
-| `packages/backend-test`      | `backend-test`        | `electron-mocha` tests for `backend`.                    |
-| `packages/electron-app`      | `apis`                | Electron + React front end (primary).                    |
-| `packages/electron-app-test` | `electron-app-test`   | `vitest` tests for the renderer.                         |
-| `packages/vscode-ext`        | `sys-view`            | VS Code extension front end.                             |
+| Path                                      | npm name                         | Role                                                     |
+| ----------------------------------------- | -------------------------------- | -------------------------------------------------------- |
+| `packages/backend`                        | — (no `package.json`)            | Most of the logic: model + presentation.                 |
+| `packages/backend-dotnet`                 | `backend-dotnet`                 | .NET component (`Core.exe`): reflection + decompilation. |
+| `packages/sqlio`                          | `sqlio`                          | Thin wrapper over `better-sqlite3`.                      |
+| `packages/backend-test`                   | `backend-test`                   | `electron-mocha` tests for `backend`.                    |
+| `packages/electron-app`                   | `apis`                           | Electron + React front end (primary).                    |
+| `packages/electron-app-test`              | `electron-app-test`              | `vitest` tests for the renderer.                         |
+| `packages/vscode-ext`                     | `sys-view`                       | VS Code extension front end.                             |
+| `packages/electron-forge-resource-plugin` | `electron-forge-resource-plugin` | Forge plugin: builds and packages an external resource.  |
 
 `packages/backend` has **no `package.json`** and is **not built on its own** — it is compiled as part
-of `electron-app`, `vscode-ext` and `backend-test`. This is deliberate (see `docs/architecture/ARCHITECTURE.md`).
+of `electron-app`, `vscode-ext` and `backend-test`. This is deliberate (see `docs/architecture/CONSTRAINTS.md`).
 
 ## Commands
 
@@ -115,7 +116,7 @@ See [`TESTING.md`](./docs/architecture/TESTING.md) for details.
   use the same Electron version.
 - `vscode-ext` does not yet load `Core.exe` at run time.
 
-## Documentation map
+## Documentation
 
 In the root of the repository:
 
@@ -126,18 +127,19 @@ In the root of the repository:
 | `ROADMAP.md` | Long-term plan.                                       |
 | `TODO.md`    | Short-term plan (maintainer's scratch — do not edit). |
 
-Under `docs`:
-
-| File                           | Contents                                        |
-| ------------------------------ | ----------------------------------------------- |
-| `architecture/README.md`       | Index of the architecture documentation.        |
-| `architecture/ARCHITECTURE.md` | Structure, layering, data flow, key modules.    |
-| `architecture/TESTING.md`      | How to build, run and validate.                 |
-| `architecture/BUILD.md`        | The electron-app build pipeline — to write.     |
-| `architecture/packages/`       | What each package in the monorepo does — to write. |
-| `ui/README.md`, `ui/*.md`      | UI design.                                      |
+Everything else lives under `docs/`, one folder per area — `architecture` and `ui` — and
+`docs/architecture/README.md` is the index: the documents, and the question each one answers. **That index is
+the source of truth for what is in the folder**, so this file does not repeat it.
 
 The `docs` folder is maintained by hand as the code changes, and an agent is welcome to add to it and keep it
 current: a change that alters how something works should update the document that describes it, in the same
 commit. The files in the root are the maintainer's — this one included — and an agent should ask before
 changing them.
+
+Plans are welcome in `wip/`, one file per piece of work, whenever a task is worth planning before it is
+attempted. They are transient: written to be reviewed before the work starts, and deleted when it is done —
+what the work produced is the record, and reasoning worth keeping belongs in the document it concerns.
+
+Identifiers in these documents — file, folder and symbol names — are meant to lead a reader into the code, so
+a stale one is worse than none. Renaming something therefore means finding its references in the documentation
+as well as in the code, with the same find-in-files.

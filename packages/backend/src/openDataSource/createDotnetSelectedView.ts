@@ -6,7 +6,7 @@ import { Sql } from "../sqlDotNet";
 import type { ViewState } from "../types";
 import { assert } from "../utils";
 import { createDotnetViewState } from "../viewDotnet";
-import { SelectedView } from "./selectedView";
+import { SelectedView } from "../presenter";
 
 export const createDotnetSelectedView = (sqlTables: Sql.Tables): SelectedView => {
   const initialView = (): Sql.View => {

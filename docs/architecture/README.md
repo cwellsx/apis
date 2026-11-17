@@ -1,19 +1,69 @@
 # Architecture
 
-Index of the architecture documentation. Everything here is maintained by hand as the code changes, and
-anything that describes how the software works belongs in this folder rather than in a package.
+The map of this documentation. Each document answers one question, and they are listed in the order someone
+new to the codebase might read them.
 
-| document                                     | contents                                                    |
-| -------------------------------------------- | ----------------------------------------------------------- |
-| [ARCHITECTURE.md](./ARCHITECTURE.md)         | Structure, layering, data flow, key modules, domain notes.   |
-| [TESTING.md](./TESTING.md)                   | How to build, run and validate.                              |
-| BUILD.md                                     | The electron-app build pipeline and its Forge plugins — to write. |
-| packages/                                    | What each package in the monorepo does — to write.           |
+## Overview
 
-Related documentation, outside this folder:
+### [PACKAGES.md](./PACKAGES.md)
 
-- [docs/ui](../ui/README.md) — UI design.
+- > Where does something live?
+- One paragraph per package, pointing at the detail.
+
+### [DATA-FLOW.md](./DATA-FLOW.md)
+
+- > Where does the data come from, where does it go, and how is it used?
+- The two flows, the aggregations on the way in, and what the roll-up guarantees.
+
+### [DATA-MODEL.md](./DATA-MODEL.md)
+
+- > What is the data?
+- The model `Core.exe` produces: metadata tokens, compiler-generated types, platform assemblies, custom data.
+
+### [INTERFACES.md](./INTERFACES.md)
+
+- > How are the packages linked, and what is the API between them?
+- The links _between_ packages — the contracts, and the folder each one lives in.
+
+## Backend
+
+### [BACKEND.md](./BACKEND.md)
+
+- > How is the backend arranged inside itself?
+- The structure inside the package: its folders, and how they depend on one another.
+
+### [VIEW-STATE.md](./VIEW-STATE.md)
+
+- > How is a view built?
+- The forest, the state each node carries, the clustering, and the popup.
+
+## Electron app
+
+### [ELECTRON-APP.md](./ELECTRON-APP.md)
+
+- > How is the app arranged, and what does it do locally?
+- The app's two halves, the IPC between them, and what is done locally rather than asked for.
+
+## Contributing
+
+### [CONSTRAINTS.md](./CONSTRAINTS.md)
+
+- > What must I not break?
+- The rules the software obeys, the assumptions the design rests on, and what follows from them.
+
+### [ELECTRON-APP-BUILD.md](./ELECTRON-APP-BUILD.md)
+
+- > How do I build, run or package it?
+- The build and packaging pipeline, and the Forge plugins that take part in it.
+
+### [TESTING.md](./TESTING.md)
+
+- > How do I validate a change?
+- How to build, run and test, and what the tests cover.
+
+## See also
+
 - [README.md](../../README.md) — what the project is, for users.
-- [AGENTS.md](../../AGENTS.md) — guidance for AI coding agents, including the documentation map.
-- [ROADMAP.md](../../ROADMAP.md) and [TODO.md](../../TODO.md) — the maintainer's own plans, not part of
-  this tree.
+- [AGENTS.md](../../AGENTS.md) — how to work in this repository, for agents.
+- [ui/README.md](../ui/README.md) — how the interface looks and behaves.
+- [ROADMAP.md](../../ROADMAP.md) and [TODO.md](../../TODO.md) — the maintainer's own plans.

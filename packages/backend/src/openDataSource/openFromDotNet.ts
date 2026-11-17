@@ -1,5 +1,6 @@
 import { DataSource } from "../contracts-app";
-import { createDotnetSelectedView, SelectedView } from "../presenter";
+import { SelectedView } from "../presenter";
+import { createDotnetSelectedView } from "./createDotnetSelectedView";
 import { createSqlDotNet } from "./createSqlDotNet";
 
 export const openFromDotNet = async (dataSource: DataSource): Promise<SelectedView> => {

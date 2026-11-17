@@ -6,7 +6,7 @@ import { SqlCustom } from "../sqlCustom";
 import type { ViewState } from "../types";
 import { assert } from "../utils";
 import { createCustomViewState } from "../viewCustom";
-import { SelectedView } from "./selectedView";
+import { SelectedView } from "../presenter";
 
 export const createCustomSelectedView = (sqlTables: SqlCustom.Tables): SelectedView => {
   const initialView = (): SqlCustom.View => {

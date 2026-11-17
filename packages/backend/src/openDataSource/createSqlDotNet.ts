@@ -4,7 +4,7 @@ import { isAll } from "../contracts-dotnet";
 import type { Sql } from "../sqlDotNet";
 import { openSql } from "../sqlDotNet";
 import { assert, existsSync, jsonParse, log, readJsonT, whenFile, writeFileSync } from "../utils";
-import * as dotNetApi from "./dotNetApi";
+import * as dotNetApi from "../dotnetFetch";
 import { getDbFilename, getFilename } from "./getDbFilename";
 
 const getAllFromCoreExe = async (dataSource: DataSource) => {
