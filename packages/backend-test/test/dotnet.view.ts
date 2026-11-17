@@ -14,7 +14,7 @@ import { printTestLines } from "./utils/printTestLines";
 const printLines = (filename: string, printed: string[]) => printTestLines(fileViewState, filename, printed);
 
 // The example files are copied into the repository, so that what the renderer is given is versioned and can
-// be read without running anything -- see ui/README.md. Only the first view of a type is copied: it is the
+// be read without running anything -- see docs/ui/README.md. Only the first view of a type is copied: it is the
 // initial state, which has both open and closed nodes, and it is small enough to read end to end.
 const copyExample = (viewType: ViewType): void => {
   const from = `${viewType}-0`;

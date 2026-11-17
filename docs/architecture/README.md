@@ -7,8 +7,8 @@ anything that describes how the software works belongs in this folder rather tha
 | -------------------------------------------- | ----------------------------------------------------------- |
 | [ARCHITECTURE.md](./ARCHITECTURE.md)         | Structure, layering, data flow, key modules, domain notes.   |
 | [TESTING.md](./TESTING.md)                   | How to build, run and validate.                              |
-| [BUILD.md](./BUILD.md)                       | The electron-app build pipeline and its Forge plugins.       |
-| [packages/](./packages/README.md)            | What each package in the monorepo does.                      |
+| BUILD.md                                     | The electron-app build pipeline and its Forge plugins — to write. |
+| packages/                                    | What each package in the monorepo does — to write.           |
 
 Related documentation, outside this folder:
 

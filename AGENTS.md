@@ -117,11 +117,27 @@ See [`TESTING.md`](./docs/architecture/TESTING.md) for details.
 
 ## Documentation map
 
-| File              | Contents                                              |
-| ----------------- | ----------------------------------------------------- |
-| `ui/*.md`         | UI design.                                            |
-| `README.md`       | What the project is (for humans).                     |
-| `docs/architecture/ARCHITECTURE.md` | Structure, layering, data flow, key modules.          |
-| `docs/architecture/TESTING.md` | How to build, run and validate.                       |
-| `ROADMAP.md`      | Long-term plan.                                       |
-| `TODO.md`         | Short-term plan (maintainer's scratch — do not edit). |
+In the root of the repository:
+
+| File         | Contents                                              |
+| ------------ | ----------------------------------------------------- |
+| `README.md`  | What the project is, for users.                       |
+| `AGENTS.md`  | This file — guidance for AI coding agents.            |
+| `ROADMAP.md` | Long-term plan.                                       |
+| `TODO.md`    | Short-term plan (maintainer's scratch — do not edit). |
+
+Under `docs`:
+
+| File                           | Contents                                        |
+| ------------------------------ | ----------------------------------------------- |
+| `architecture/README.md`       | Index of the architecture documentation.        |
+| `architecture/ARCHITECTURE.md` | Structure, layering, data flow, key modules.    |
+| `architecture/TESTING.md`      | How to build, run and validate.                 |
+| `architecture/BUILD.md`        | The electron-app build pipeline — to write.     |
+| `architecture/packages/`       | What each package in the monorepo does — to write. |
+| `ui/README.md`, `ui/*.md`      | UI design.                                      |
+
+The `docs` folder is maintained by hand as the code changes, and an agent is welcome to add to it and keep it
+current: a change that alters how something works should update the document that describes it, in the same
+commit. The files in the root are the maintainer's — this one included — and an agent should ask before
+changing them.

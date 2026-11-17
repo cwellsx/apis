@@ -2,7 +2,7 @@
 
 How to build, run and validate each part of the repository. Script names live in each `package.json`;
 this page explains _which_ to run and _when_. For how the pieces fit together, see
-[`ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md).
+[`ARCHITECTURE.md`](./ARCHITECTURE.md).
 
 > The shell is **Windows PowerShell**: chain commands with `;`, and quote paths containing spaces.
 > Run a package script from the repo root with `-w <name>` (for example `npm test -w backend-test`).
@@ -60,9 +60,9 @@ committing them would mean a diff nobody can review, and one that every regenera
 change did, keep a copy of `viewState` from a run you trust and compare a later run with it — WinMerge on the
 two folders — rather than with git.
 
-The exception is `ui/example-calls.*`: the first snapshot of the calls view, which the test copies into the
+The exception is `docs/ui/example-calls.*`: the first snapshot of the calls view, which the test copies into the
 repository because the UI documentation refers to it. It is a snapshot rather than a promise — see
-[`ui/README.md`](./ui/README.md).
+[`docs/ui/README.md`](../ui/README.md).
 
 Not covered yet: the copied example is the initial state, which is a simple tree. A sequence of node state
 updates which produced a complicated one would be better coverage.
