@@ -1,8 +1,8 @@
 # AGENTS.md
 
 Guidance for AI coding agents (and humans) working in this repository. For _what_ the project is see
-[`README.md`](./README.md); for _how_ it is built see [`ARCHITECTURE.md`](./ARCHITECTURE.md) and
-[`TESTING.md`](./TESTING.md).
+[`README.md`](./README.md); for _how_ it is built see [`ARCHITECTURE.md`](./docs/architecture/ARCHITECTURE.md) and
+[`TESTING.md`](./docs/architecture/TESTING.md).
 
 ## How this agent is used
 
@@ -65,7 +65,7 @@ renders several views. It runs entirely locally; the model never leaves the mach
 | `packages/vscode-ext`        | `sys-view`            | VS Code extension front end.                             |
 
 `packages/backend` has **no `package.json`** and is **not built on its own** — it is compiled as part
-of `electron-app`, `vscode-ext` and `backend-test`. This is deliberate (see `ARCHITECTURE.md`).
+of `electron-app`, `vscode-ext` and `backend-test`. This is deliberate (see `docs/architecture/ARCHITECTURE.md`).
 
 ## Commands
 
@@ -88,7 +88,7 @@ The few canonical entry points:
 | Renderer tests          | `npm test -w electron-app-test` |
 | Launch the Electron app | `npm start -w apis`             |
 
-See [`TESTING.md`](./TESTING.md) for details.
+See [`TESTING.md`](./docs/architecture/TESTING.md) for details.
 
 ## Code style
 
@@ -121,7 +121,7 @@ See [`TESTING.md`](./TESTING.md) for details.
 | ----------------- | ----------------------------------------------------- |
 | `ui/*.md`         | UI design.                                            |
 | `README.md`       | What the project is (for humans).                     |
-| `ARCHITECTURE.md` | Structure, layering, data flow, key modules.          |
-| `TESTING.md`      | How to build, run and validate.                       |
+| `docs/architecture/ARCHITECTURE.md` | Structure, layering, data flow, key modules.          |
+| `docs/architecture/TESTING.md` | How to build, run and validate.                       |
 | `ROADMAP.md`      | Long-term plan.                                       |
 | `TODO.md`         | Short-term plan (maintainer's scratch — do not edit). |

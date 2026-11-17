@@ -4,6 +4,13 @@
 
 Package maintenance
 
+- README
+- Break link between VS Code extension and backend
+- Update Electron
+- Fix vulns
+- Replace better_sqlite3
+- Reconnect VS Code extension
+- Integrate VS Code extension
 - Revise packages\electron-forge-resource-plugin\README.md
 
 New features
