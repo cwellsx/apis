@@ -1,7 +1,7 @@
 import type { AnyLeafType, AnyNodeType, EdgeLabels } from "../contracts-ui";
 import { NodeType } from "../contracts-ui";
 import { Id, IdTest } from "../id";
-import type { Sql } from "../sqlDotNet";
+import type { Sql } from "../sqlDotnet";
 import { assert, compareOrdinal } from "../utils";
 import { toNodeId } from "../viewCommon";
 import type { NodeCall } from "./getCalls";

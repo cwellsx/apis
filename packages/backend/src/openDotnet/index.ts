@@ -1,2 +1,2 @@
-export { openFromDotNet } from "./openFromDotNet";
-export { createSqlDotNet } from "./createSqlDotNet";
+export { openFromDotnet } from "./openFromDotnet";
+export { createSqlDotnet } from "./createSqlDotnet";

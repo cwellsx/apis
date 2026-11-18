@@ -1,7 +1,7 @@
 import { assert, log } from "backend-api";
 import { Id, IdBig, IdTest } from "sut/id";
-import { Sql } from "sut/sqlDotNet";
-import { createDotNetTables } from "./utils/createDotNetTables";
+import { Sql } from "sut/sqlDotnet";
+import { createDotnetTables } from "./utils/createDotnetTables";
 import { fileViewState } from "./utils/paths";
 import {
   listCallSizes,
@@ -59,12 +59,12 @@ const assertCalls = (tables: Sql.Tables): void => {
 
 describe("backend2", () => {
   it("createTables(true)", async () => {
-    const tables = await createDotNetTables(true);
+    const tables = await createDotnetTables(true);
     tables.close();
   });
 
   it("ancestors", async () => {
-    const tables = await createDotNetTables(false);
+    const tables = await createDotnetTables(false);
     const assembly = tables.assemblies.selectOne({ name: "Core" });
     assert(!!assembly);
     const typeName = tables.typeNames.selectOne({ name: "CompilerGenerated", assemblyId: assembly.id });
@@ -87,7 +87,7 @@ describe("backend2", () => {
   });
 
   it("assertCalls", async () => {
-    const tables = await createDotNetTables(false);
+    const tables = await createDotnetTables(false);
     assertCalls(tables);
 
     printLines("callsFromMethods.md", printCallFromMethods(tables, "Core"));

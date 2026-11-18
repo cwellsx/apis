@@ -38,7 +38,7 @@ rather than the name of an artefact: a document about `sqlio` belongs in Backend
 beside `ELECTRON-APP.md`. `##` is a group, `###` a document.
 
 **A name that lies is worse than a vague one.** `FRONT-ENDS.md` described one front end, `BUILD.md` only the
-app's build, and `dotNetApi` was named after a mechanism rather than a job. Each rename exposed a distinction
+app's build, and `dotnetApi` was named after a mechanism rather than a job. Each rename exposed a distinction
 worth making.
 
 ## Pacing
@@ -64,7 +64,7 @@ what it used to say beneath it living in the chapters it belongs to.
 table beside the diagram, where it can also be checked against the code.
 
 **An edge goes to a cluster when one thing fans out, to a node when the pairing matters.**
-`openDataSource → sql` says "this orchestrates"; `viewDotnet → sqlDotNet` says which view reads which store.
+`openDataSource → sql` says "this orchestrates"; `viewDotnet → sqlDotnet` says which view reads which store.
 
 **Headings are links, and named after the folder.** A heading that is a concept cannot be linked, which is how
 "The panels" became `configuration/` and `details/`.

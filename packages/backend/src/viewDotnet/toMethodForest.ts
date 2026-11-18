@@ -1,7 +1,7 @@
 import type { DotnetOptions } from "../contracts-config";
 import { NodeType, nodeIdToText } from "../contracts-ui";
 import { Id, IdBig } from "../id";
-import type { Sql } from "../sqlDotNet";
+import type { Sql } from "../sqlDotnet";
 import { getOrThrow } from "../utils";
 import type { AddToParent, Forest, Numeric } from "../viewCommon";
 import { toNodeId } from "../viewCommon";

@@ -2,7 +2,7 @@ import type { DataSource, OpenDataSource, ShowProgress } from "../contracts-app"
 import { createPresenter, SelectedView } from "../presenter";
 import { log } from "../utils";
 import { openFromCustom } from "../openCustom";
-import { openFromDotNet } from "../openDotnet";
+import { openFromDotnet } from "../openDotnet";
 import { wrapPresenterApi } from "./wrapPresenterApi";
 import { getDbFilename, getFilename } from "./getDbFilename";
 
@@ -16,7 +16,7 @@ const getSelectedView = async (dataSource: DataSource): Promise<SelectedView> =>
   switch (dataSource.type) {
     case "loadedAssemblies":
     case "coreJson":
-      return await openFromDotNet(dataSource, dbFilename, jsonFilename);
+      return await openFromDotnet(dataSource, dbFilename, jsonFilename);
 
     case "customJson":
       return openFromCustom(dataSource, dbFilename);

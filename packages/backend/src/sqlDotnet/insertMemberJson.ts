@@ -1,14 +1,14 @@
-import * as DotNet from "../contracts-dotnet";
+import * as Dotnet from "../contracts-dotnet";
 import { WithoutNameAndMetadataToken } from "./schemaMemberJson";
 
-export const getFieldMemberJson = (value: DotNet.FieldMember): WithoutNameAndMetadataToken<DotNet.FieldMember> => ({
+export const getFieldMemberJson = (value: Dotnet.FieldMember): WithoutNameAndMetadataToken<Dotnet.FieldMember> => ({
   fieldType: value.fieldType,
   access: value.access,
   isStatic: value.isStatic,
   attributes: value.attributes,
 });
 
-export const getEventMemberJson = (value: DotNet.EventMember): WithoutNameAndMetadataToken<DotNet.EventMember> => ({
+export const getEventMemberJson = (value: Dotnet.EventMember): WithoutNameAndMetadataToken<Dotnet.EventMember> => ({
   eventHandlerType: value.eventHandlerType,
   access: value.access,
   isStatic: value.isStatic,
@@ -16,8 +16,8 @@ export const getEventMemberJson = (value: DotNet.EventMember): WithoutNameAndMet
 });
 
 export const getPropertyMemberJson = (
-  value: DotNet.PropertyMember
-): WithoutNameAndMetadataToken<DotNet.PropertyMember> => ({
+  value: Dotnet.PropertyMember
+): WithoutNameAndMetadataToken<Dotnet.PropertyMember> => ({
   propertyType: value.propertyType,
   access: value.access,
   isStatic: value.isStatic,
@@ -25,7 +25,7 @@ export const getPropertyMemberJson = (
   attributes: value.attributes,
 });
 
-export const getMethodMemberJson = (value: DotNet.MethodMember): WithoutNameAndMetadataToken<DotNet.MethodMember> => ({
+export const getMethodMemberJson = (value: Dotnet.MethodMember): WithoutNameAndMetadataToken<Dotnet.MethodMember> => ({
   access: value.access,
   isStatic: value.isStatic,
   isConstruct: value.isConstruct,

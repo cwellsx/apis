@@ -2,16 +2,16 @@
 import { getJson, getWhen } from "sut/dotnetFetch";
 import "./global-hooks";
 import { fileWrite } from "./utils/file";
-import { dirDotNet, fileCoreJson, fileCorePrettyJson } from "./utils/paths";
+import { dirDotnet, fileCoreJson, fileCorePrettyJson } from "./utils/paths";
 
 describe("dotnet", () => {
   it("getWhen", async () => {
-    const when = await getWhen(dirDotNet);
+    const when = await getWhen(dirDotnet);
     console.log(`when: ${when}`);
   });
 
   it("getJson", async () => {
-    const json = await getJson(dirDotNet);
+    const json = await getJson(dirDotnet);
     fileWrite(fileCoreJson, json);
     const obj = JSON.parse(json) as unknown;
     const prettyJson = JSON.stringify(obj, null, 1);

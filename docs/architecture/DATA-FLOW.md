@@ -10,7 +10,7 @@ assemblies folder
   → backend-dotnet (Core.exe): System.Reflection + ICSharpCode.Decompiler
   → JSON (Reflected / All)
   → dotnetFetch (TypeScript ↔ .NET bridge)
-  → sqlDotNet (createTables, insertAll) → SQLite
+  → sqlDotnet (createTables, insertAll) → SQLite
 ```
 
 `Core.exe` reflects over a build or installation folder and decompiles what it finds, emitting JSON. How it
@@ -23,7 +23,7 @@ what the backend does with it.
 ## Where it's stored
 
 Into **SQLite**, through [`sqlio`](../../packages/sqlio/src/): the model in
-[`sqlDotNet`](../../packages/backend/src/sqlDotNet/), the schema the databases share in
+[`sqlDotnet`](../../packages/backend/src/sqlDotnet/), the schema the databases share in
 [`sqlCommon`](../../packages/backend/src/sqlCommon/), a custom data source in
 [`sqlCustom`](../../packages/backend/src/sqlCustom/), and the settings in
 [`sqlAppConfig`](../../packages/backend/src/sqlAppConfig/). One file per data source, named after a hash of

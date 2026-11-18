@@ -10,7 +10,7 @@ through `sqlio`, and each folder here owns one kind of data.
 
 | folder                                                      | its job                                                    |
 | ----------------------------------------------------------- | ---------------------------------------------------------- |
-| [`sqlDotNet/`](../../packages/backend/src/sqlDotNet/)       | the model's tables — assemblies, namespaces, types, members, calls, ancestors, view states: `openSql`, `schema`, `insertAll`       |
+| [`sqlDotnet/`](../../packages/backend/src/sqlDotnet/)       | the model's tables — assemblies, namespaces, types, members, calls, ancestors, view states: `openSql`, `schema`, `insertAll`       |
 | [`sqlCustom/`](../../packages/backend/src/sqlCustom/)       | the custom data source's tables: `openSqlCustom`, `schema` |
 | [`sqlCommon/`](../../packages/backend/src/sqlCommon/)       | what the stores share: `schema`, `config`, `nodeStates`    |
 | [`sqlAppConfig/`](../../packages/backend/src/sqlAppConfig/) | the settings store: `createSqlAppConfig`, `configCache`   |
@@ -24,7 +24,7 @@ A **view** is the part of the model a user has chosen to look at — a selected 
 together with the state recording which of it is expanded or hidden. `viewCommon` holds what any view needs;
 the other two build one each.
 
-The two are symmetric: `viewDotnet` reads `sqlDotNet` and `viewCustom` reads `sqlCustom`, and both read
+The two are symmetric: `viewDotnet` reads `sqlDotnet` and `viewCustom` reads `sqlCustom`, and both read
 `sqlCommon` — as does `viewCommon`, for node state, which is why the `view*` cluster reaches back into `sql*`
 as a whole rather than along one line.
 
@@ -97,7 +97,7 @@ flowchart TB
     end
 
     subgraph sql["sql*"]
-        sqlDotNet["sqlDotNet"]
+        sqlDotnet["sqlDotnet"]
         sqlCustom["sqlCustom"]
         sqlCommon["sqlCommon"]
     end
@@ -126,7 +126,7 @@ flowchart TB
     sqlAppConfig["sqlAppConfig"]
 
     subgraph sql["sql*"]
-        sqlDotNet["sqlDotNet"]
+        sqlDotnet["sqlDotnet"]
         sqlCustom["sqlCustom"]
         sqlCommon["sqlCommon"]
     end

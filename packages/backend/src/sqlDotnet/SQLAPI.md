@@ -10,7 +10,7 @@ Rework this folder:
 Import using
 
 ```ts
-import type * as DotNet from "@contracts-dotnet";
+import type * as Dotnet from "@contracts-dotnet";
 ```
 
 All `*Id` types should be branded objects

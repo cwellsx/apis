@@ -3,8 +3,8 @@ import type { AnyLeafType, EdgeInfo, EdgeNodes, Node, NodeId } from "../contract
 import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
 import { Id, IdAny } from "../id";
 import { DotnetNodeStates, GetSetNodeStatesT, SqlCommon } from "../sqlCommon";
-import type { Sql, ViewType } from "../sqlDotNet";
-import { netFrameworkGroup, ParentKind } from "../sqlDotNet";
+import type { Sql, ViewType } from "../sqlDotnet";
+import { netFrameworkGroup, ParentKind } from "../sqlDotnet";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
 import { assert, getOrThrow } from "../utils";

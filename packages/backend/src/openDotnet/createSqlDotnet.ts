@@ -1,13 +1,13 @@
 import { DataSource } from "../contracts-app";
 import type { All } from "../contracts-dotnet";
 import { isAll } from "../contracts-dotnet";
-import type { Sql } from "../sqlDotNet";
-import { openSql } from "../sqlDotNet";
+import type { Sql } from "../sqlDotnet";
+import { openSql } from "../sqlDotnet";
 import { assert, existsSync, jsonParse, log, readJsonT, whenFile, writeFileSync } from "../utils";
-import * as dotNetApi from "../dotnetFetch";
+import * as dotnetApi from "../dotnetFetch";
 
 const getAllFromCoreExe = async (dataSource: DataSource) => {
-  const json = await dotNetApi.getJson(dataSource.path);
+  const json = await dotnetApi.getJson(dataSource.path);
   return jsonParse<All>(json);
 };
 
@@ -19,7 +19,7 @@ const onType = async (
 ): Promise<{ when: string; all: All }> => {
   switch (dataSource.type) {
     case "loadedAssemblies": {
-      const when = await dotNetApi.getWhen(dataSource.path);
+      const when = await dotnetApi.getWhen(dataSource.path);
       let all: All;
       if (!existsSync(jsonFilename) || (await whenFile(jsonFilename)) < when) {
         all = await getAllFromCoreExe(dataSource);
@@ -39,7 +39,7 @@ const onType = async (
   }
 };
 
-export const createSqlDotNet = async (
+export const createSqlDotnet = async (
   dataSource: DataSource,
   dbFilename: string,
   jsonFilename: string

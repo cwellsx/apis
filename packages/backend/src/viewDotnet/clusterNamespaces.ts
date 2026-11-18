@@ -1,5 +1,5 @@
 import { Id } from "../id";
-import type { Sql } from "../sqlDotNet";
+import type { Sql } from "../sqlDotnet";
 import { assert, getOrSet } from "../utils";
 
 // a thing which can be clustered into another: its id, the id of the thing which declares it if anything does, and

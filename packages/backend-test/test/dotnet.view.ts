@@ -2,12 +2,12 @@ import { assert, log } from "backend-api";
 import * as fs from "fs";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import { createImage } from "sut/image/renderImage";
-import { Sql, ViewType } from "sut/sqlDotNet";
+import { Sql, ViewType } from "sut/sqlDotnet";
 import type { GraphNodes, ViewState } from "sut/types";
 import { stringify } from "sut/utils";
 import { createDotnetViewState } from "sut/viewDotnet";
 import { printForest } from "test/utils/printForest";
-import { createDotNetTables } from "./utils/createDotNetTables";
+import { createDotnetTables } from "./utils/createDotnetTables";
 import { fileExample, fileViewState } from "./utils/paths";
 import { printTestLines } from "./utils/printTestLines";
 
@@ -47,7 +47,7 @@ describe("testViewStates", function () {
   let tables: Sql.Tables;
 
   before(async function () {
-    tables = await createDotNetTables(false); // runs once
+    tables = await createDotnetTables(false); // runs once
   });
 
   after(function () {

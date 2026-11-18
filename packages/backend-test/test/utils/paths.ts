@@ -52,8 +52,8 @@ export const fileNativeSqlite = (() => {
 
 // externals/dotnet/*
 
-export const dirDotNet = path.resolve("./externals/dotnet");
-export const fileCoreExe = path.join(dirDotNet, "core.exe");
+export const dirDotnet = path.resolve("./externals/dotnet");
+export const fileCoreExe = path.join(dirDotnet, "core.exe");
 
 // custom/*
 

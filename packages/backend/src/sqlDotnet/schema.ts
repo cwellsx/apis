@@ -107,7 +107,7 @@ const tableNames = [
 
 export type TableName = (typeof tableNames)[number];
 
-type DotNetTableRowMap = {
+type DotnetTableRowMap = {
   assemblies: Assembly;
   namespaces: Namespace;
   typeNames: TypeName;
@@ -135,7 +135,7 @@ export const netFrameworkGroup: Group = {
 
 type CommonType = SqlCommon.CommonTypesT<Id.AnyBigId, Id.GroupId, ConfigKeys, Config, Group, DotnetOptions>;
 
-type TableRowMap = CommonType["TableRowMap"] & DotNetTableRowMap;
+type TableRowMap = CommonType["TableRowMap"] & DotnetTableRowMap;
 
 type TableRow<K extends TableName> = TableRowMap[K];
 
@@ -147,7 +147,7 @@ export const deleteAllTables = (tables: Tables) => tableNames.forEach((tableName
 
 const zeroViewType: ViewType = "calls";
 
-const row: DotNetTableRowMap = {
+const row: DotnetTableRowMap = {
   assemblies: { id: zero.assemblyId, name: "foo", isMicrosoft: 0 as SqlCommon.Boolean },
   namespaces: {
     id: zero.namespaceId,

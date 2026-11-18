@@ -1,6 +1,6 @@
 import { isParent, Node } from "../contracts-ui";
 import { Id, IdAny } from "../id";
-import type { Sql } from "../sqlDotNet";
+import type { Sql } from "../sqlDotnet";
 import { getOrThrow } from "../utils";
 import type { Forest } from "../viewCommon";
 
