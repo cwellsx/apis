@@ -198,6 +198,22 @@ server.registerTool(
 );
 
 server.registerTool(
+  "git_ignored",
+  {
+    title: "Is a path ignored?",
+    description:
+      "git check-ignore -v on the given paths: each ignored one is listed with the rule that ignores it, and a path absent from the output is not ignored. Exits 1 when none of them are.",
+    inputSchema: { paths: z.array(z.string()).min(1) },
+  },
+  async ({ paths }) => {
+    // the exit code is the answer -- 1 means nothing was ignored -- so it is reported rather than treated as
+    // failure. Paths are sent with forward slashes, as git prints them, so that the output matches `git status`.
+    const relative = paths.map((file) => quote(path.relative(repo, isInside(file)).replaceAll(path.sep, "/")));
+    return text(await run("git", ["--no-pager", "-c", "core.quotepath=false", "check-ignore", "-v", ...relative]));
+  }
+);
+
+server.registerTool(
   "git_log",
   {
     title: "Git log",

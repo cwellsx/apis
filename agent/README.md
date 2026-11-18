@@ -1,7 +1,7 @@
 # agent
 
 An MCP server for what an agent needs while working in this repository — `type_check`, `eslint`, `prettier_write`,
-`git_status`, `git_diff`, `git_log`, `read_lines`, `list_files`, `search` — so that they can be allowed in advance
+`git_status`, `git_diff`, `git_log`, `git_ignored`, `read_lines`, `list_files`, `search` — so that they can be allowed in advance
 instead of approved one at a time.
 
 The command tools build a fixed command from typed arguments. None of them takes a command string, and every path
@@ -35,6 +35,7 @@ Add it to `~/.cline/data/settings/cline_mcp_settings.json`:
         "git_status",
         "git_diff",
         "git_log",
+        "git_ignored",
         "read_lines",
         "list_files",
         "search"

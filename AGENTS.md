@@ -36,6 +36,7 @@ reading and searching files. Everything it offers is allowed in advance, so none
 | `eslint(files)`                                                                               | `eslint` on specific files, which should be paths the `lint` script covers                         |
 | `prettier_write(files)`                                                                       | `prettier --write` on specific files                                                               |
 | `git_status()`, `git_diff(scope)`, `git_log(count)`                                           | the git state, without the shell                                                                   |
+| `git_ignored(paths)`                                                                          | whether git ignores a path, and the rule that does it                                              |
 | `read_lines(path, start, end)`, `list_files(dir, pattern)`, `search(pattern, paths, include)` | reading and searching, in node                                                                     |
 
 `read_files` and `search_codebase` are the built-in equivalents and also need no approval; `read_lines` is the
@@ -111,6 +112,11 @@ See [`TESTING.md`](./docs/architecture/TESTING.md) for details.
 ## Hard constraints
 
 - Do **not** reflect or decompile Microsoft/.NET platform assemblies.
+- **Do not modify anything under a path git ignores** — `node_modules`, `dist`, `out`, `externals`,
+  `apis.testdata` and the like. A change there leaves no trace in the repository: no diff, no revert, and no
+  record that it happened, so a mistake is unrecoverable and invisible. Build tools and tests write those
+  paths; that is their job, and not an agent's. Ask `git_ignored` before deleting or rewriting anything, since
+  a recursive delete is how this goes wrong.
 - Do **not** build `packages/backend` as an independent package.
 - Keep `better-sqlite3` (`sqlio`) rebuilt to match Electron's ABI; `electron-app` and `vscode-ext` must
   use the same Electron version.

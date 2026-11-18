@@ -61,5 +61,5 @@ export const dirCustom = path.resolve("./custom");
 
 // examples which the tests copy into the repository, so that what the renderer is given is versioned
 
-export const dirExample = path.join(__dirname, "..", "..", "..", "..", "ui");
+export const dirExample = path.join(__dirname, "..", "..", "..", "..", "docs", "ui");
 export const fileExample = (filename: string) => path.join(dirExample, filename);
