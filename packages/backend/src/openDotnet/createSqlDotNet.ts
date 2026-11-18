@@ -5,7 +5,6 @@ import type { Sql } from "../sqlDotNet";
 import { openSql } from "../sqlDotNet";
 import { assert, existsSync, jsonParse, log, readJsonT, whenFile, writeFileSync } from "../utils";
 import * as dotNetApi from "../dotnetFetch";
-import { getDbFilename, getFilename } from "./getDbFilename";
 
 const getAllFromCoreExe = async (dataSource: DataSource) => {
   const json = await dotNetApi.getJson(dataSource.path);
@@ -14,17 +13,19 @@ const getAllFromCoreExe = async (dataSource: DataSource) => {
 
 const getAllFromCoreJson = async (dataSource: DataSource) => await readJsonT(dataSource.path, isAll);
 
-const onType = async (dataSource: DataSource): Promise<{ when: string; all: All }> => {
+const onType = async (
+  dataSource: DataSource,
+  jsonFilename: string
+): Promise<{ when: string; all: All }> => {
   switch (dataSource.type) {
     case "loadedAssemblies": {
       const when = await dotNetApi.getWhen(dataSource.path);
-      const filename = getFilename(dataSource, "json");
       let all: All;
-      if (!existsSync(filename) || (await whenFile(filename)) < when) {
+      if (!existsSync(jsonFilename) || (await whenFile(jsonFilename)) < when) {
         all = await getAllFromCoreExe(dataSource);
-        writeFileSync(filename, JSON.stringify(all, null, " "));
+        writeFileSync(jsonFilename, JSON.stringify(all, null, " "));
       } else {
-        all = await readJsonT(filename, isAll);
+        all = await readJsonT(jsonFilename, isAll);
       }
       return { when, all };
     }
@@ -38,13 +39,16 @@ const onType = async (dataSource: DataSource): Promise<{ when: string; all: All 
   }
 };
 
-export const createSqlDotNet = async (dataSource: DataSource): Promise<Sql.Tables> => {
-  const { when, all } = await onType(dataSource);
+export const createSqlDotNet = async (
+  dataSource: DataSource,
+  dbFilename: string,
+  jsonFilename: string
+): Promise<Sql.Tables> => {
+  const { when, all } = await onType(dataSource, jsonFilename);
 
-  const filename = getDbFilename(dataSource);
-  log(`db filename: ${filename}`);
+  log(`db filename: ${dbFilename}`);
 
   assert(Object.keys(all.assemblies).length != 0);
 
-  return openSql(filename, when, all);
+  return openSql(dbFilename, when, all);
 };

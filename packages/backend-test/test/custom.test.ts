@@ -3,9 +3,9 @@ import { AnyNodeType, Node, NodeType } from "backend-ui";
 import * as fs from "fs";
 import path from "path";
 import { renderImage } from "sut/image";
-import { createCustomSelectedView } from "sut/openDataSource/createCustomSelectedView";
-import { createSqlCustom } from "sut/openDataSource/createSqlCustom";
-import { getDbFilename } from "sut/openDataSource/getDbFilename";
+import { createCustomSelectedView } from "sut/openCustom";
+import { createSqlCustom } from "sut/openCustom";
+import { getDbFilename } from "sut/open/getDbFilename";
 import { SqlCustom } from "sut/sqlCustom";
 import { assertCustomJson, validateCustomJson } from "sut/sqlCustom/validateCustomJson";
 import type { GraphNodes, ViewState } from "sut/types";
@@ -68,7 +68,7 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
     });
 
     it("createSqlCustom", async () => {
-      const sqlCustom = await createSqlCustom(dataSource);
+      const sqlCustom = await createSqlCustom(dataSource, getDbFilename(dataSource));
 
       tablesToJsonL(sqlCustom, outputDir);
 
@@ -83,7 +83,7 @@ for (const jsonFile of readJsonFilePaths(dirCustom)) {
     });
 
     it("createCustomViewState", async () => {
-      const sqlCustom = await createSqlCustom(dataSource);
+      const sqlCustom = await createSqlCustom(dataSource, getDbFilename(dataSource));
       const view = sqlCustom.views.selectOne({ viewName: "Custom" });
       assert(!!view);
       const viewState = createCustomViewState(sqlCustom, view.id, sqlCustom.getOptions());
@@ -117,7 +117,7 @@ describe("testViewStates", function () {
   before(async function () {
     const fullPath = path.join(dirCustom, "Coclasses.json");
     const dataSource: DataSource = { path: fullPath, type: "customJson" };
-    tables = await createSqlCustom(dataSource); // runs once
+    tables = await createSqlCustom(dataSource, getDbFilename(dataSource)); // runs once
     viewState = createCustomSelectedView(tables).viewState;
     viewState.resetNodeStates();
   });

@@ -3,7 +3,6 @@ import { CustomElement } from "../contracts-custom";
 import type { SqlCustom } from "../sqlCustom";
 import { assertCustomJson, openSqlCustom } from "../sqlCustom";
 import { assert, log, readJsonT, whenFile } from "../utils";
-import { getDbFilename } from "./getDbFilename";
 
 const onType = async (dataSource: DataSource): Promise<{ when: string; all: CustomElement[] }> => {
   switch (dataSource.type) {
@@ -17,13 +16,15 @@ const onType = async (dataSource: DataSource): Promise<{ when: string; all: Cust
   }
 };
 
-export const createSqlCustom = async (dataSource: DataSource): Promise<SqlCustom.Tables> => {
+export const createSqlCustom = async (
+  dataSource: DataSource,
+  dbFilename: string
+): Promise<SqlCustom.Tables> => {
   const { when, all } = await onType(dataSource);
 
-  const filename = getDbFilename(dataSource);
-  log(`db filename: ${filename}`);
+  log(`db filename: ${dbFilename}`);
 
   assert(all.length != 0);
 
-  return openSqlCustom(filename, when, all);
+  return openSqlCustom(dbFilename, when, all);
 };

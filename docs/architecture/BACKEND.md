@@ -51,11 +51,13 @@ it. It is also the one folder with a README of its own.
 
 ## Orchestration
 
-[`openDataSource/`](../../packages/backend/src/openDataSource/) is what starts a session: it opens a store, has
-the model built if it is not built already, constructs the selected view — the one place that knows whether
-the source is a .NET model or a custom one — and hands it to `presenter` for the first view. It is called as `openDataSource(dataSource, showProgress)` and
-branches to `openFromDotNet` or `openFromCustom`. It is the only
-folder that reaches into two clusters, which is why it sits above them rather than in either.
+[`open/`](../../packages/backend/src/open/) holds the entry point, `openDataSource.ts`: it opens a store, has
+the model built if it is not built already, constructs the selected view — the one place that knows whether the
+source is a .NET model or a custom one — and hands it to `presenter` for the first view. It is called as
+`openDataSource(dataSource, showProgress)` and branches to [`openDotnet/`](../../packages/backend/src/openDotnet/)
+or [`openCustom/`](../../packages/backend/src/openCustom/), which hold the files that know about one kind of
+store each. This is the only part of the backend that reaches into two clusters, which is why it sits above
+them rather than in either.
 
 It has one companion, [`dotnetFetch/`](../../packages/backend/src/dotnetFetch/), which is small enough to have
 lived inside `openDataSource` and too significant to: it is the only place the .NET process is spoken to,
@@ -75,15 +77,58 @@ factories that make them, which is what stops an assembly id being passed where 
 
 ## How they depend on one another
 
+- Data source selects the database.
+- View state methods encapsulate the opened database tables.
+- Presenter is constructed using an abstract view state.
+- Presenter API is returned to the front end for I/O.
+
+### Orchestration
+
 ```mermaid
 flowchart TB
-    openDataSource["openDataSource"]
+    frontEnd(["front end"])
+    sqlAppConfig["sqlAppConfig"]
+
+    subgraph orchestrator["orchestrator"]
+        openEntry["open"]
+        openDotnet["openDotnet"]
+        openCustom["openCustom"]
+        dotnetFetch["dotnetFetch"]
+    end
 
     subgraph sql["sql*"]
         sqlDotNet["sqlDotNet"]
         sqlCustom["sqlCustom"]
         sqlCommon["sqlCommon"]
-        sqlAppConfig["sqlAppConfig"]
+    end
+
+    subgraph views["view*"]
+        viewCommon["viewCommon"]
+        viewDotnet["viewDotnet"]
+        viewCustom["viewCustom"]
+    end
+
+    presenter["presenter"]
+
+    frontEnd --> orchestrator
+    orchestrator --> sql
+    orchestrator --> views
+    orchestrator --> presenter
+    views --> sql
+    frontEnd --> sqlAppConfig
+```
+
+### Run-time
+
+```mermaid
+flowchart TB
+    frontEnd(["front end"])
+    sqlAppConfig["sqlAppConfig"]
+
+    subgraph sql["sql*"]
+        sqlDotNet["sqlDotNet"]
+        sqlCustom["sqlCustom"]
+        sqlCommon["sqlCommon"]
     end
 
     subgraph views["view*"]
@@ -94,19 +139,13 @@ flowchart TB
 
     presenter["presenter"]
     image["image"]
-    dotnetFetch["dotnetFetch"]
 
-    openDataSource --> sql
-    openDataSource --> views
-    openDataSource --> presenter
-    openDataSource --> dotnetFetch
-    presenter -.-> views
+    frontEnd --> presenter
+    presenter --> views
     presenter --> image
     views --> sql
+    frontEnd --> sqlAppConfig
 ```
-
-Solid edges are a compile-time import. A dotted edge is run-time only: `presenter` works through the
-`SelectedView` it is handed, rather than importing the views it came from.
 
 ## What this picture leaves out
 

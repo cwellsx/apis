@@ -1,6 +1,6 @@
 import { DataSource } from "backend-app";
-import { createSqlDotNet } from "sut/openDataSource/createSqlDotNet";
-import { getDbFilename } from "sut/openDataSource/getDbFilename";
+import { createSqlDotNet } from "sut/openDotnet";
+import { getDbFilename, getFilename } from "sut/open/getDbFilename";
 import { Sql } from "sut/sqlDotNet";
 import { deleteFileSync } from "sut/utils";
 import { fileCoreJson } from "./paths";
@@ -11,5 +11,5 @@ export const createDotNetTables = async (deleteDb: boolean): Promise<Sql.Tables>
     const filename = getDbFilename(dataSource);
     deleteFileSync(filename);
   }
-  return await createSqlDotNet(dataSource);
+  return await createSqlDotNet(dataSource, getDbFilename(dataSource), getFilename(dataSource, "json"));
 };
