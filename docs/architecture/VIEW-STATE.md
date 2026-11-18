@@ -1,7 +1,8 @@
 # View state
 
 How the backend turns the data into a view: the forest of nodes, the state each node carries, the clustering
-that hides some of them inside others, and the popup that explains an edge.
+that hides some of them inside others, and the popup that explains an edge. There are two kinds of view,
+**calls** and **references**, and all but the last chapter here describes the calls view.
 
 ## The forest
 
@@ -47,9 +48,9 @@ than losing the calls that pass through it.
 ## The popup
 
 An edge is drawn between two nodes, but it stands for every call beneath them: it is a bundle. The popup is
-what explains the bundle, and it shows **the layer directly below** the edge's endpoints — an assembly-level
-edge shows the calls between its namespaces, a namespace-level edge those between its types, a type-level edge
-those between its methods.
+what explains the bundle, and `getEdgeLabels` shows **the layer directly below** the edge's endpoints — an
+assembly-level edge shows the calls between its namespaces, a namespace-level edge those between its types, a
+type-level edge those between its methods.
 
 Which layer that is, is decided by the *kind* of each endpoint rather than by the result of a query. A node
 whose kind has nothing below it — a method, in the calls view — is looked up at the node itself, and the
@@ -62,8 +63,15 @@ derived from `ancestors`, so the two cannot disagree about which links are direc
 lets one popup query serve both branches of the clustering option: direct children only, or the clustered
 namespaces and types as well.
 
+## The references view
+
+The references view draws references rather than calls, so neither a popup nor a level below applies to it: its
+leaf is an assembly, and an edge between two assemblies has nothing beneath it either. Which kind a view is, is
+`ViewType` — `"calls" | "references"` — and the model carries one row per view it offers.
+
 ## Related
 
-- `DATA-FLOW.md` — where the data comes from, and what the roll-up guarantees.
-- `BACKEND.md` — the contracts and the layering this sits in.
 - `../ui/INSPECTOR.md` — how the popup is presented.
+- `DATA-FLOW.md` — where the data comes from, and what the roll-up guarantees.
+- `INTERFACES.md` — the contracts this sits in, and the layering behind them.
+

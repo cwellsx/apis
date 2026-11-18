@@ -1,7 +1,8 @@
 # Packages
 
 What each package in the monorepo is for, grouped by kind. Most entries end by naming the document that holds
-their detail.
+their detail. The two front ends are the application-level packages; the rest are libraries they use, or
+tooling around them.
 
 ## Back end
 
@@ -9,8 +10,11 @@ their detail.
 
 The largest part of the software: reading a data source, building the model from it, and presenting the
 views. It has no `package.json` of its own and is not built independently — it is compiled as part of
-`electron-app`, `vscode-ext` and `backend-test`, which is deliberate: one copy of the code, and one place to
-change it.
+`electron-app`, `vscode-ext` and `backend-test`, which is deliberate: building front and back together as one
+monolith is the only reliable way to merge their source maps, so that a process can be debugged in TypeScript
+across both. As a normal package dependency, the front end ends up debugging emitted JavaScript rather than
+the backend's own sources. One copy of the code, and one place to change it, is the second reason. Building
+it as a package with TypeScript **project references** may one day replace the arrangement.
 
 Its folders group by concern rather than by package — `sql*` for storage, `view*` for the views, `presenter`
 for what sits between them.
@@ -28,6 +32,10 @@ members are read.
 A thin wrapper over SQLite — tables, queries, joins and transactions — with the shape of the underlying
 driver kept visible rather than abstracted away.
 
+It may be obsoleted when VS Code's Node gains a built-in SQLite API, which is why the wrapper is thin and its
+implementation replaceable. Meanwhile it must be rebuilt whenever Electron's version changes, which is why
+`electron-app` and `vscode-ext` must agree on that version.
+
 It takes the path of the native binding as a parameter, because the driver's `.node` file cannot be loaded
 from inside a packaged application's archive. See ELECTRON-APP-BUILD.md for why, and for where the path comes
 from.
@@ -43,7 +51,8 @@ configuration that drives the build, the plugins that go with it, and the wiring
 ### [vscode-ext](../../packages/vscode-ext/)
 
 The VS Code extension front end, sharing the backend with the Electron application. It does not yet load
-`Core.exe` at run time.
+`Core.exe` at run time: it reads the model through `sqlio` directly, where `electron-app` calls `setPaths` and
+`openDataSource`.
 
 ## Test
 

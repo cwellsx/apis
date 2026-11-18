@@ -37,7 +37,7 @@ Three things a diagram cannot show:
 - **`backend-dotnet` is a process.** It is built with `dotnet` and invoked as `Core.exe` over
   `electron-cgi`, so that edge is a conversation rather than a dependency.
 - **The front end is below the backend at run time.** `electron-app`'s main process owns the paths — the
-  database file, the native binding, `Core.exe` — and hands them over through `setPaths`, so the backend
+  database file, the native binding, `Core.exe` — and hands them over through `setPaths` (the .NET component's path as `coreExePath`), so the backend
   depends on the front end for _where things are_, and the front end on the backend for _what to show_.
 
 ## The contracts

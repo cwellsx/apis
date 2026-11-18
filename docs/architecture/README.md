@@ -1,7 +1,7 @@
 # Architecture
 
 The map of this documentation. Each document answers one question, and they are listed in the order someone
-new to the codebase might read them.
+new to the codebase might read them. The groups are subjects, not artefacts.
 
 ## Overview
 
@@ -44,6 +44,11 @@ new to the codebase might read them.
 - > How is the app arranged, and what does it do locally?
 - The app's two halves, the IPC between them, and what is done locally rather than asked for.
 
+### [ELECTRON-APP-BUILD.md](./ELECTRON-APP-BUILD.md)
+
+- > How do I build, run or package it?
+- The build and packaging pipeline, and the Forge plugins that take part in it.
+
 ## Contributing
 
 ### [CONSTRAINTS.md](./CONSTRAINTS.md)
@@ -51,10 +56,10 @@ new to the codebase might read them.
 - > What must I not break?
 - The rules the software obeys, the assumptions the design rests on, and what follows from them.
 
-### [ELECTRON-APP-BUILD.md](./ELECTRON-APP-BUILD.md)
+### [DOCUMENTATION.md](./DOCUMENTATION.md)
 
-- > How do I build, run or package it?
-- The build and packaging pipeline, and the Forge plugins that take part in it.
+- > How is this documentation written and maintained?
+- What it is for, how it is divided, and the conventions that have earned their place.
 
 ### [TESTING.md](./TESTING.md)
 

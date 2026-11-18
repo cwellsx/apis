@@ -10,7 +10,7 @@ through `sqlio`, and each folder here owns one kind of data.
 
 | folder                                                      | its job                                                    |
 | ----------------------------------------------------------- | ---------------------------------------------------------- |
-| [`sqlDotNet/`](../../packages/backend/src/sqlDotNet/)       | the model's tables: `openSql`, `schema`, `insertAll`       |
+| [`sqlDotNet/`](../../packages/backend/src/sqlDotNet/)       | the model's tables — assemblies, namespaces, types, members, calls, ancestors, view states: `openSql`, `schema`, `insertAll`       |
 | [`sqlCustom/`](../../packages/backend/src/sqlCustom/)       | the custom data source's tables: `openSqlCustom`, `schema` |
 | [`sqlCommon/`](../../packages/backend/src/sqlCommon/)       | what the stores share: `schema`, `config`, `nodeStates`    |
 | [`sqlAppConfig/`](../../packages/backend/src/sqlAppConfig/) | the settings store: `createSqlAppConfig`, `configCache`   |
@@ -53,7 +53,8 @@ it. It is also the one folder with a README of its own.
 
 [`openDataSource/`](../../packages/backend/src/openDataSource/) is what starts a session: it opens a store, has
 the model built if it is not built already, constructs the selected view — the one place that knows whether
-the source is a .NET model or a custom one — and hands it to `presenter` for the first view. It is the only
+the source is a .NET model or a custom one — and hands it to `presenter` for the first view. It is called as `openDataSource(dataSource, showProgress)` and
+branches to `openFromDotNet` or `openFromCustom`. It is the only
 folder that reaches into two clusters, which is why it sits above them rather than in either.
 
 It has one companion, [`dotnetFetch/`](../../packages/backend/src/dotnetFetch/), which is small enough to have
@@ -67,6 +68,10 @@ own: [`hello/`](../../packages/backend/src/hello/) is a probe, [`id/`](../../pac
 model behind the metadata-token ids, [`types/`](../../packages/backend/src/types/) holds types internal to the
 backend, and [`utils/`](../../packages/backend/src/utils/) holds general helpers. Several of the folders above
 use them, which is why they are left out of the diagram.
+
+`id` deserves more than a word: it holds the branded types — `TypeId`, `MethodId` and the rest — and the
+factories that make them, which is what stops an assembly id being passed where a method id is wanted.
+`utils` is the general one, holding `assert`, `getOrThrow`, paths, fs and logging.
 
 ## How they depend on one another
 
