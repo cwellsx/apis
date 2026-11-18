@@ -112,11 +112,12 @@ See [`TESTING.md`](./docs/architecture/TESTING.md) for details.
 ## Hard constraints
 
 - Do **not** reflect or decompile Microsoft/.NET platform assemblies.
-- **Do not modify anything under a path git ignores** — `node_modules`, `dist`, `out`, `externals`,
-  `apis.testdata` and the like. A change there leaves no trace in the repository: no diff, no revert, and no
-  record that it happened, so a mistake is unrecoverable and invisible. Build tools and tests write those
-  paths; that is their job, and not an agent's. Ask `git_ignored` before deleting or rewriting anything, since
-  a recursive delete is how this goes wrong.
+- **Do not modify anything git does not track.** `node_modules`, `dist`, `out` and `externals` are ignored
+  within the repository; the test output, `apis.testdata`, sits outside it altogether. A change to either
+  leaves no trace — no diff, no revert, and no record that it happened — so a mistake there is unrecoverable
+  and invisible. Build tools and tests write those paths; that is their job, and not an agent's. Ask
+  `git_ignored` before deleting or rewriting anything inside the repository, since a recursive delete is how
+  this goes wrong.
 - Do **not** build `packages/backend` as an independent package.
 - Keep `better-sqlite3` (`sqlio`) rebuilt to match Electron's ABI; `electron-app` and `vscode-ext` must
   use the same Electron version.
