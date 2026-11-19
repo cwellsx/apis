@@ -2,67 +2,6 @@
 
 ## Now
 
-Update versions to resolve vulns
-
-- Update version of Electron
-- Update node if necessary
-- Rebuild sqlio for new Electron (breaks vscode-ext, don't care)
-- Verify that electron-app still runs
-- Resolve any/all vulns in electron-app and in the repo in general
-- Introduce shim so sqlio can work with node:sqlite
-- Regression-test node:sqlite with electron-app
-- Still don't restart vscode-ext -- continue electron-app feature dev instead
-
-More documentation -- scavenge all other doc files e.g. `image/` has its own README
-
-    packages\backend\README.md
-    packages\backend\contracts\README.md
-    packages\backend\contracts\app\MENUAPI.md
-    packages\backend\contracts\ui\TODO.md
-    packages\backend\src\OVERVIEW.md
-    packages\backend\src\README.md
-    packages\backend\src\image\README.md
-    packages\backend\src\sqlDotNet\SQLAPI.md
-    packages\backend-dotnet\TESTS.md
-    packages\backend-dotnet\Core\NAMESPACES.md
-    packages\backend-dotnet\Core\TODO.md
-    packages\backend-dotnet\Core\Cecil\CompilerTypes.md
-    packages\backend-dotnet\Core\Output\ID.md
-    packages\backend-dotnet\Core\Serializer\SERIALIZATION.md
-    packages\backend-dotnet\Core.Test\README.md
-    packages\backend-test\README.md
-    packages\electron-app\TODO.md
-    packages\electron-app\src\renderer\TODO.md
-    packages\electron-app\src\renderer\images.org\LICENSE.md
-    packages\electron-app\src\renderer\images.org\README.md
-    packages\electron-app\src\renderer\images.org\google.cursors\README.md
-    packages\electron-forge-resource-plugin\CHANGELOG.md
-    packages\sqlio\TODO.md
-    packages\vscode-ext\vsc-extension-quickstart.md
-    packages\vscode-ext\media\README.md
-    packages\vscode-ext\src.webview\README.md
-
-Package maintenance
-
-- README
-- Break link between VS Code extension and backend
-- Update Electron
-- Fix vulns
-- Replace better_sqlite3
-- Reconnect VS Code extension
-- Integrate VS Code extension
-- Revise packages\electron-forge-resource-plugin\README.md
-
-Cline:
-
-- New tool:
-
-  `edit_lines(path, start, end, newText)`
-
-  Replace a line range, leaving every other byte alone.
-
-- Not before integrating the new cline filter
-
 New features
 
 - Popup for nodes
@@ -112,6 +51,8 @@ How to format the tooltip:
 - Shorten identifiers -- remove prefix
 - Simplest case (no grouping) is pairs with an arrow
 - Use title= for native tooltip on shortened identifiers
+
+## Chores
 
 ## Near term
 

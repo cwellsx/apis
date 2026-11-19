@@ -71,6 +71,11 @@ new to the codebase might read them. The groups are subjects, not artefacts.
 - > How do I validate a change?
 - How to build, run and test, and what the tests cover.
 
+### [WHAT-NEXT.md](./WHAT-NEXT.md)
+
+- > What should I work on next?
+- A heuristic for choosing: two questions, the labels that justify themselves, and how to tell when work is finished.
+
 ## See also
 
 - [README.md](../../README.md) — what the project is, for users.
