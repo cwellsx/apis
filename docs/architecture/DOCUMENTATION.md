@@ -95,6 +95,11 @@ found in several.
 
 ## Working on it
 
+**Write the command, not its output.** A list of findings or a version number is stale the day it is written —
+a document naming Electron 45.3.4 was four hours behind the release of 45.4.1. Record the command that
+produces the answer and let the reader run it; name a version only to say where the project _is_, as
+`CONSTRAINTS.md` does, never where it is going.
+
 **Verify identifiers against the code before writing them.** `GraphQuery`, `viewModel` and `compilerMethods.ts`
 were all in prose and none of them in the tree.
 

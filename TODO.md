@@ -2,11 +2,16 @@
 
 ## Now
 
-Documentation
+Update versions to resolve vulns
 
-- How to make docs better for agents versus humans
-- Should AGENTS tell the agent how to use the docs
-- Index to link code to docs and vice versa and a rule
+- Update version of Electron
+- Update node if necessary
+- Rebuild sqlio for new Electron (breaks vscode-ext, don't care)
+- Verify that electron-app still runs
+- Resolve any/all vulns in electron-app and in the repo in general
+- Introduce shim so sqlio can work with node:sqlite
+- Regression-test node:sqlite with electron-app
+- Still don't restart vscode-ext -- continue electron-app feature dev instead
 
 More documentation -- scavenge all other doc files e.g. `image/` has its own README
 
@@ -47,6 +52,16 @@ Package maintenance
 - Reconnect VS Code extension
 - Integrate VS Code extension
 - Revise packages\electron-forge-resource-plugin\README.md
+
+Cline:
+
+- New tool:
+
+  `edit_lines(path, start, end, newText)`
+
+  Replace a line range, leaving every other byte alone.
+
+- Not before integrating the new cline filter
 
 New features
 

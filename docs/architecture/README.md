@@ -51,6 +51,11 @@ new to the codebase might read them. The groups are subjects, not artefacts.
 
 ## Contributing
 
+### [AUDIT.md](./AUDIT.md)
+
+- > What do I do about vulnerabilities?
+- The policy for evaluating them, the npm commands, and where the current findings are.
+
 ### [CONSTRAINTS.md](./CONSTRAINTS.md)
 
 - > What must I not break?
