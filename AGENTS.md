@@ -125,6 +125,15 @@ See [`TESTING.md`](./docs/architecture/TESTING.md) for details.
   use the same Electron version.
 - `vscode-ext` does not yet load `Core.exe` at run time.
 
+## Plans (`wip/`)
+
+Work that is more than a single edit — a multi-step change, or one with a design decision, or one that
+changes how something works — starts as a written plan in `wip/`, one file per piece of work, small enough
+to review in a sitting. Either of us may draft it; the plan is read and revised by both before the first
+edit, not charged through. It is transient: delete it when the work is done — what the work produced is the
+record, and reasoning worth keeping belongs in the document it concerns. While the work is in flight the file
+doubles as the handoff note (see the `/newtask` bullet above).
+
 ## Documentation
 
 In the root of the repository:
@@ -144,10 +153,6 @@ The `docs` folder is maintained by hand as the code changes, and an agent is wel
 current: a change that alters how something works should update the document that describes it, in the same
 commit. The files in the root are the maintainer's — this one included — and an agent should ask before
 changing them.
-
-Plans are welcome in `wip/`, one file per piece of work, whenever a task is worth planning before it is
-attempted. They are transient: written to be reviewed before the work starts, and deleted when it is done —
-what the work produced is the record, and reasoning worth keeping belongs in the document it concerns.
 
 Identifiers in these documents — file, folder and symbol names — are meant to lead a reader into the code, so
 a stale one is worse than none. Renaming something therefore means finding its references in the documentation
