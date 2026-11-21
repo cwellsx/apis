@@ -10,7 +10,7 @@ through `sqlio`, and each folder here owns one kind of data.
 
 | folder                                                      | its job                                                    |
 | ----------------------------------------------------------- | ---------------------------------------------------------- |
-| [`sqlDotnet/`](../../packages/backend/src/sqlDotnet/)       | the model's tables — assemblies, namespaces, types, members, calls, ancestors, view states: `openSql`, `schema`, `insertAll`       |
+| [`sqlDotnet/`](../../packages/backend/src/sqlDotnet/)       | the model's tables -- assemblies, namespaces, types, members, calls, ancestors, view states: `openSql`, `schema`, `insertAll`       |
 | [`sqlCustom/`](../../packages/backend/src/sqlCustom/)       | the custom data source's tables: `openSqlCustom`, `schema` |
 | [`sqlCommon/`](../../packages/backend/src/sqlCommon/)       | what the stores share: `schema`, `config`, `nodeStates`    |
 | [`sqlAppConfig/`](../../packages/backend/src/sqlAppConfig/) | the settings store: `createSqlAppConfig`, `configCache`   |
@@ -20,12 +20,12 @@ and the contracts.
 
 ## Views
 
-A **view** is the part of the model a user has chosen to look at — a selected node and what hangs below it —
+A **view** is the part of the model a user has chosen to look at -- a selected node and what hangs below it --
 together with the state recording which of it is expanded or hidden. `viewCommon` holds what any view needs;
 the other two build one each.
 
 The two are symmetric: `viewDotnet` reads `sqlDotnet` and `viewCustom` reads `sqlCustom`, and both read
-`sqlCommon` — as does `viewCommon`, for node state, which is why the `view*` cluster reaches back into `sql*`
+`sqlCommon` -- as does `viewCommon`, for node state, which is why the `view*` cluster reaches back into `sql*`
 as a whole rather than along one line.
 
 | folder                                                  | its job                                                                                  |
@@ -37,7 +37,7 @@ as a whole rather than along one line.
 ## Presentation
 
 A selected view becomes an **image** and a set of **nodes**. `presenter` does the conversion, and it is a
-**facade**: it is handed a `SelectedView` — dependency injection, the constructor being someone else's job —
+**facade**: it is handed a `SelectedView` -- dependency injection, the constructor being someone else's job --
 and works through it without knowing whether it came from the .NET model or a custom one: the same events,
 handled the same way, for either. `image` draws, which is the only thing that reaches GraphViz.
 
@@ -47,13 +47,13 @@ it. It is also the one folder with a README of its own.
 | folder                                                | its job                                                                                 |
 | ----------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | [`presenter/`](../../packages/backend/src/presenter/) | a selected view becomes an image and a set of nodes: `createPresenter`                  |
-| [`image/`](../../packages/backend/src/image/)         | drawing: `toDotFormat`, `renderImage`, `insertSvgMap`, `viz-js` — and it has its own README |
+| [`image/`](../../packages/backend/src/image/)         | drawing: `toDotFormat`, `renderImage`, `insertSvgMap`, `viz-js` -- and it has its own README |
 
 ## Orchestration
 
 [`open/`](../../packages/backend/src/open/) holds the entry point, `openDataSource.ts`: it opens a store, has
-the model built if it is not built already, constructs the selected view — the one place that knows whether the
-source is a .NET model or a custom one — and hands it to `presenter` for the first view. It is called as
+the model built if it is not built already, constructs the selected view -- the one place that knows whether the
+source is a .NET model or a custom one -- and hands it to `presenter` for the first view. It is called as
 `openDataSource(dataSource, showProgress)` and branches to [`openDotnet/`](../../packages/backend/src/openDotnet/)
 or [`openCustom/`](../../packages/backend/src/openCustom/), which hold the files that know about one kind of
 store each. This is the only part of the backend that reaches into two clusters, which is why it sits above
@@ -71,7 +71,7 @@ model behind the metadata-token ids, [`types/`](../../packages/backend/src/types
 backend, and [`utils/`](../../packages/backend/src/utils/) holds general helpers. Several of the folders above
 use them, which is why they are left out of the diagram.
 
-`id` deserves more than a word: it holds the branded types — `TypeId`, `MethodId` and the rest — and the
+`id` deserves more than a word: it holds the branded types -- `TypeId`, `MethodId` and the rest -- and the
 factories that make them, which is what stops an assembly id being passed where a method id is wanted.
 `utils` is the general one, holding `assert`, `getOrThrow`, paths, fs and logging.
 
@@ -149,7 +149,7 @@ flowchart TB
 
 ## What this picture leaves out
 
-The barrels — `index.ts` and the `contracts-*.ts` files beside it — sit in `packages/backend/src` but are not
+The barrels -- `index.ts` and the `contracts-*.ts` files beside it -- sit in `packages/backend/src` but are not
 folders and not part of this structure. They are how the front ends reach in, which is `INTERFACES.md`. This
 document is about the structure _inside_ the package.
 

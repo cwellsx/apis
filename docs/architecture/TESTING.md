@@ -35,8 +35,8 @@ Unit/regression tests for `backend` and `backend-dotnet`. It compiles `backend` 
 
 ## Test output
 
-How the tests' generated output is arranged — the `generated*` folders, the files they hold, and the committed
-UI example — is in [`SNAPSHOTS.md`](./SNAPSHOTS.md).
+How the tests' generated output is arranged -- the `generated*` folders, the files they hold, and the committed
+UI example -- is in [`SNAPSHOTS.md`](./SNAPSHOTS.md).
 
 ## `electron-app-test`
 
@@ -85,18 +85,18 @@ npm run build -w sqlio       # tsc -b
 
 ## Launch & debug (VS Code)
 
-**`electron-app`** — `Electron Main` (main process), `Electron Renderer` (attach to port `9222`),
+**`electron-app`** -- `Electron Main` (main process), `Electron Renderer` (attach to port `9222`),
 `Electron All` (both).
 
-**`vscode-ext`** — `Run Extension` (extension host window), `Extension Tests` (tests in a VS Code
+**`vscode-ext`** -- `Run Extension` (extension host window), `Extension Tests` (tests in a VS Code
 window). Both trigger the `vscode-ext: watch` task automatically.
 
 ## Typical workflow
 
-- Logic work → run `backend-test` scripts.
-- UI work → launch the Electron app (`npm start -w apis`).
+- Logic work -> run `backend-test` scripts.
+- UI work -> launch the Electron app (`npm start -w apis`).
 - After an edit, a `type-check` is usually enough; the maintainer code-reviews and runs the tests.
 
 ## CI
 
-`.github/workflows/pages.yml` publishes the (abandoned) documentation site only — there is no test CI.
+`.github/workflows/pages.yml` publishes the (abandoned) documentation site only -- there is no test CI.

@@ -4,7 +4,7 @@ How the API Viewer's user interface is meant to work, and why: the surfaces it p
 they obey, and the gestures that connect them.
 
 This is **design** documentation, not user documentation. It describes behaviour and the reasoning behind
-it, for whoever implements or changes the UI. User documentation — features, screenshots — is a later item
+it, for whoever implements or changes the UI. User documentation -- features, screenshots -- is a later item
 in [ROADMAP.md](../ROADMAP.md). The design conversations these decisions came from are archived, as drafts,
 in [MORE/](../MORE).
 
@@ -22,13 +22,13 @@ to change to make it so.
 test which prints the view state (`npm run test-dotnet-view -w backend-test`) writes them and then copies
 them here, so running it is also how they are regenerated.
 
-They are the **initial state of the calls view** of the Core2 test data — a graph with both open and closed
+They are the **initial state of the calls view** of the Core2 test data -- a graph with both open and closed
 nodes, small enough to read end to end.
 
 | File                       | Contents                                                                                                                             |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | `example-calls.dot`        | what the model is turned into, before GraphViz lays it out: the clusters, the nodes, and the attributes which carry the node classes |
-| `example-calls.svg`        | what GraphViz returned, after `insertSvgMap` post-processed it — the injected style, the hit areas and the classes are all in here   |
+| `example-calls.svg`        | what GraphViz returned, after `insertSvgMap` post-processed it -- the injected style, the hit areas and the classes are all in here   |
 | `example-calls.nodes.txt`  | the node tree the popups and the left-hand tree are built from, as `printForest` prints it                                           |
 
 They are a **snapshot**, replaced whenever the printer is run, and not kept in step with the code in between:
@@ -37,32 +37,32 @@ for the shape of the data, not as a promise about the current output.
 
 ## Surfaces
 
-**Graph** — the SVG in the Graph tab, and the primary surface. It is not React: GraphViz generates the SVG
-and it is injected into the DOM, so interaction is by event delegation over the groups GraphViz emits —
-`<g class="node">`, `<g class="edge">`, `<g class="cluster">` — each carrying the node or edge id.
+**Graph** -- the SVG in the Graph tab, and the primary surface. It is not React: GraphViz generates the SVG
+and it is injected into the DOM, so interaction is by event delegation over the groups GraphViz emits --
+`<g class="node">`, `<g class="edge">`, `<g class="cluster">` -- each carrying the node or edge id.
 GraphViz's own `class` is what identifies an element; extra classes may be added alongside it.
 
-**Tree** — the Explorer tab. The precise control surface: it mirrors the graph's expansion, it shows and
+**Tree** -- the Explorer tab. The precise control surface: it mirrors the graph's expansion, it shows and
 hides nodes, and it is the only place a hidden node remains reachable.
 
-**Options** — the Options tab. The settings which belong to no node: the app's own (zoom, font size), and
+**Options** -- the Options tab. The settings which belong to no node: the app's own (zoom, font size), and
 those of the view which is selected (the dotnet view's `clusterNamespaces` and `clusterTypes`, so far). The
-panel is given a schema per source — the shape VS Code describes an extension's settings in — and reports an
+panel is given a schema per source -- the shape VS Code describes an extension's settings in -- and reports an
 edit rather than applying it: the app stores it and sends it back, so the panel always shows what was last
 stored. Which groups are open is the window's own state, and is not stored.
 
-**Popups** — transient, read-only read-outs of what is _inside_ a hovered graph element: the bundle of a
+**Popups** -- transient, read-only read-outs of what is _inside_ a hovered graph element: the bundle of a
 hovered edge, the children of a hovered node, the calls of a hovered leaf. A name alone does not say what kind
-of thing it is — a namespace and a type are indistinguishable by name — so each end of an edge's row is
+of thing it is -- a namespace and a type are indistinguishable by name -- so each end of an edge's row is
 marked: the kind most of a column's labels are is stated once, by an icon on the rule below the header, and a
 label of any other kind carries its own icon between its name and the arrow.
 
-**Context menu** — proposed. The discoverable home of the actions which do not deserve a primary gesture:
+**Context menu** -- proposed. The discoverable home of the actions which do not deserve a primary gesture:
 hide, subtree operations, details.
 
-**Inspector** — deferred. The persistent surface for details, including a method's source.
+**Inspector** -- deferred. The persistent surface for details, including a method's source.
 
-**Hover widget** — deferred. The inline home of the actions which do not deserve a primary gesture: hide,
+**Hover widget** -- deferred. The inline home of the actions which do not deserve a primary gesture: hide,
 peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry which makes it fit.
 
 ## Invariants
@@ -71,7 +71,7 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
    round-trips: the presenter handles one event at a time and the app refuses input while busy, so a fetch
    on hover would lag and beep.
 2. **State changes round-trip, and are batched where possible.** Expanding, collapsing, showing and hiding
-   are all `filter` events, and `FilterEvent` is already an array — so many changes can be applied by one
+   are all `filter` events, and `FilterEvent` is already an array -- so many changes can be applied by one
    round trip, which matters because each applied change re-renders the graph through GraphViz.
 3. **A click on the graph means one thing: the structural action.** Opening and closing is what a node
    click does. Filtering belongs to the tree; details belong to the inspector.
@@ -79,15 +79,15 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
    it, unchecked, and there is a global restore.
 5. **The graph abbreviates; everything else is complete.** A rendered node label is shortened against its
    parent (`(*)Foo`), so popups and the tree are where full names are read.
-6. **Structure and presentation stay separate.** The backend sends data — the SVG, plus preloaded maps
-   keyed by node and edge id — and the renderer decides how it looks.
+6. **Structure and presentation stay separate.** The backend sends data -- the SVG, plus preloaded maps
+   keyed by node and edge id -- and the renderer decides how it looks.
 7. **One level at a time.** A popup shows one level below its subject: an edge's bundled calls, a node's
    children, a leaf's calls. That is the granularity of the expansion model, and it keeps the payload
    proportional to what is on the graph. What "one level" means follows the tree the user is looking at: when
    the namespaces or types are clustered, a collapsed namespace encloses the namespaces clustered into it, so
-   its one level down includes their names — not the types inside them, which are a level below those.
+   its one level down includes their names -- not the types inside them, which are a level below those.
 8. **What a click does is visible before the click.** Hovering colours a graph element: green if a click
-   acts on it, red if it does not. Nothing changes the pointer, so colour carries the whole signal — and
+   acts on it, red if it does not. Nothing changes the pointer, so colour carries the whole signal -- and
    the graph is the only surface which needs it, because the tree's affordances are already labelled.
 
 ## State and data rules
@@ -96,7 +96,7 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
   them through `SetNodeState` (the presenter's `onFilterEvent`).
 - Visibility is inherited: a child is visible if its parent is, unless it has its own state. Hiding a child
   marks every ancestor `isMixed`, which is what the tree's tri-state checkbox displays.
-- A **closed** node carries no children — `makeNodes` skips the children of a closed parent, so `Closed`
+- A **closed** node carries no children -- `makeNodes` skips the children of a closed parent, so `Closed`
   has no `children` field. Popup data for closed nodes therefore comes from SQL, not from the tree.
 - A hidden node stays in the tree, because the tree is built from the same roots the DOT is generated
   from, before DOT filters the invisible ones out.
@@ -105,8 +105,8 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
 
 ## Non-goals, for now
 
-- **Hover widgets and toolbars, for now.** The geometry works — a GraphViz node has room in its top-right
-  corner — but the existing gestures already cover the actions, so it stays a recorded design rather than a
+- **Hover widgets and toolbars, for now.** The geometry works -- a GraphViz node has room in its top-right
+  corner -- but the existing gestures already cover the actions, so it stays a recorded design rather than a
   built one. See [GESTURES.md](./GESTURES.md).
 - **Double-click gestures.** Slow, and disliked in every graph tool which has tried them.
 - **Keyboard navigation on the graph.** The tree is the accessible path to the same state.
@@ -116,11 +116,11 @@ peek, details. [GESTURES.md](./GESTURES.md) records the design and the geometry 
 ## Prerequisites
 
 The first three are done: clicks reach the backend (`toGraphElement` reads the `class` attribute, and
-accepts `cluster` as well as `node` and `edge`), and `Graph.css` is gone — the style `insertSvgMap` injects
+accepts `cluster` as well as `node` and `edge`), and `Graph.css` is gone -- the style `insertSvgMap` injects
 now sets `cursor: default` and `pointer-events` instead.
 
 1. **Popups can be entered.** `EdgePopup.css` sets `pointer-events: none`, with a comment saying it has to
-   become `auto` once the popup is interactive — which the freeze-on-modifier-key behaviour makes possible.
+   become `auto` once the popup is interactive -- which the freeze-on-modifier-key behaviour makes possible.
 
 ## Open items
 

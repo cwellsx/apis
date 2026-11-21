@@ -26,11 +26,11 @@ package in this monorepo.
 
 Builds the main process into `.webpack/main/` and serves the renderer from a development server. Since
 Forge 8 the main bundle is emitted as `index.cjs`, which is why `"main"` in `package.json` names
-`.webpack/main/index.cjs` rather than the directory — Node's directory lookup does not find a `.cjs`.
+`.webpack/main/index.cjs` rather than the directory -- Node's directory lookup does not find a `.cjs`.
 
 ### ResourcePlugin
 
-This plugin exists to make an external binary — `Core.exe`, the .NET component — available to the
+This plugin exists to make an external binary -- `Core.exe`, the .NET component -- available to the
 application in both modes, without the application needing to know where the binary came from.
 
 **It is included in the Forge config.** `forge.config.ts` imports it and instantiates it with `env`,
@@ -51,7 +51,7 @@ has `CORE_EXE` compiled in. The value depends on the mode:
 
 **It copies the binary when packaging.** Its `generateAssets` hook compares the dates of the .NET sources
 against the built executable and runs `dotnet build` only when the sources are newer, logging
-`Not rebuilding: …` otherwise. At `prePackage` it copies the whole `bin/Release/net8.0` directory to a
+`Not rebuilding: ...` otherwise. At `prePackage` it copies the whole `bin/Release/net8.0` directory to a
 temporary directory, which the Forge config then names as `extraResource`; Forge places that in the
 packaged application as `resources/core/`.
 
@@ -63,7 +63,7 @@ itself inside `resources/app.asar` and anything that must remain a real file bes
 
 Two consequences worth remembering:
 
-- A native module — `better-sqlite3`, through `sqlio` — cannot be loaded from inside the archive, so it is
+- A native module -- `better-sqlite3`, through `sqlio` -- cannot be loaded from inside the archive, so it is
   unpacked; the code that loads it must resolve the path from the bundle's own directory, not from the
   working directory, which differs between a development run and a launched application.
 - `extraResource` is what puts `Core.exe` in `resources/core/`, so a change to that part of the plugin is

@@ -86,7 +86,7 @@ npm explain <package-name>
 ### Understand the vulnerability
 
 The npm audit command explains each vulnerability with a summary and a hyperlink. For example, from a past
-audit — not a current finding:
+audit -- not a current finding:
 
 ```
 extract-zip  *
@@ -138,9 +138,9 @@ Date reviewed: 2026-11-18
 Dependency path:
 
 electron-forge
-â””â”€ webpack-dev-server
-   â””â”€ sockjs
-      â””â”€ uuid
+└─ webpack-dev-server
+   └─ sockjs
+      └─ uuid
 
 Assessment:
 

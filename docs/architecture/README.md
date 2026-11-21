@@ -23,7 +23,7 @@ new to the codebase might read them. The groups are subjects, not artefacts.
 ### [INTERFACES.md](./INTERFACES.md)
 
 - > How are the packages linked, and what is the API between them?
-- The links _between_ packages — the contracts, and the folder each one lives in.
+- The links _between_ packages -- the contracts, and the folder each one lives in.
 
 ## Backend
 
@@ -83,7 +83,7 @@ new to the codebase might read them. The groups are subjects, not artefacts.
 
 ## See also
 
-- [README.md](../../README.md) — what the project is, for users.
-- [AGENTS.md](../../AGENTS.md) — how to work in this repository, for agents.
-- [ui/README.md](../ui/README.md) — how the interface looks and behaves.
-- [ROADMAP.md](../../ROADMAP.md) and [TODO.md](../../TODO.md) — the maintainer's own plans.
+- [README.md](../../README.md) -- what the project is, for users.
+- [AGENTS.md](../../AGENTS.md) -- how to work in this repository, for agents.
+- [ui/README.md](../ui/README.md) -- how the interface looks and behaves.
+- [ROADMAP.md](../../ROADMAP.md) and [TODO.md](../../TODO.md) -- the maintainer's own plans.

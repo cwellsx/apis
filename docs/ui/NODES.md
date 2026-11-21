@@ -251,7 +251,7 @@ class MyTreeDataProvider implements vscode.TreeDataProvider<Node> {
     this._onDidChangeTreeData.fire();
   }
 
-  getChildren(element?: Node) { … }
-  getTreeItem(element: Node) { … }
+  getChildren(element?: Node) { ... }
+  getTreeItem(element: Node) { ... }
 }
 ```

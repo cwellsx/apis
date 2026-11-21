@@ -9,14 +9,14 @@ tooling around them.
 ### [backend](../../packages/backend/)
 
 The largest part of the software: reading a data source, building the model from it, and presenting the
-views. It has no `package.json` of its own and is not built independently — it is compiled as part of
+views. It has no `package.json` of its own and is not built independently -- it is compiled as part of
 `electron-app`, `vscode-ext` and `backend-test`, which is deliberate: building front and back together as one
 monolith is the only reliable way to merge their source maps, so that a process can be debugged in TypeScript
 across both. As a normal package dependency, the front end ends up debugging emitted JavaScript rather than
 the backend's own sources. One copy of the code, and one place to change it, is the second reason. Building
 it as a package with TypeScript **project references** may one day replace the arrangement.
 
-Its folders group by concern rather than by package — `sql*` for storage, `view*` for the views, `presenter`
+Its folders group by concern rather than by package -- `sql*` for storage, `view*` for the views, `presenter`
 for what sits between them.
 
 ### [backend-dotnet](../../packages/backend-dotnet/)
@@ -29,7 +29,7 @@ members are read.
 
 ### [sqlio](../../packages/sqlio/)
 
-A thin wrapper over SQLite — tables, queries, joins and transactions — with the shape of the underlying
+A thin wrapper over SQLite -- tables, queries, joins and transactions -- with the shape of the underlying
 driver kept visible rather than abstracted away.
 
 It may be obsoleted when VS Code's Node gains a built-in SQLite API, which is why the wrapper is thin and its
@@ -69,5 +69,5 @@ Tests for the renderer, run with `vitest`. See TESTING.md.
 
 ### [electron-forge-resource-plugin](../../packages/electron-forge-resource-plugin/)
 
-A plugin for Electron Forge, written for this project: it makes an external resource — `Core.exe` —
+A plugin for Electron Forge, written for this project: it makes an external resource -- `Core.exe` --
 available to the application in both a development run and a packaged one. See ELECTRON-APP-BUILD.md.

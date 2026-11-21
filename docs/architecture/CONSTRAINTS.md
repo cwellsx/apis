@@ -1,7 +1,7 @@
 # Constraints
 
 The rules this software must not break, and the assumptions its design rests on. They are collected here
-because they were previously stated in three places — the hard constraints and the last section of
+because they were previously stated in three places -- the hard constraints and the last section of
 `AGENTS.md`, and the small-graph note of the former single architecture document.
 
 `AGENTS.md` keeps its own list, because an agent needs the rules without following a link; this is the
@@ -14,7 +14,7 @@ reasoning behind them.
   decompiling it would cost far more than it tells anyone. See `DATA-MODEL.md`.
 - **The contracts have no cyclic dependencies.** `packages/backend/contracts` is layered: `dotnet` and
   `config` depend on nothing, `ui` on those two, and `app` on `ui` and `config`. Nothing enforces it, so it is
-  a rule to be kept rather than a property of the build — and it matters to the front ends, because the
+  a rule to be kept rather than a property of the build -- and it matters to the front ends, because the
   contracts are the only surface they see. See `BACKEND.md` and `INTERFACES.md`.
 
   ```mermaid
@@ -48,7 +48,7 @@ reasoning behind them.
 
 - **The user keeps the graph small.** Popup data is preloaded with every render rather than fetched on
   demand, so the cost of both the queries and the payload grows with the number of visible edges. That is
-  affordable only because the user is trusted not to expand many nodes at once — an order of magnitude
+  affordable only because the user is trusted not to expand many nodes at once -- an order of magnitude
   observed at around 17 visible edges producing around 90 children. An "expand everything" affordance would
   break it, and would also break GraphViz.
 
