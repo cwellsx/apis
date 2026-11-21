@@ -1,0 +1,3 @@
+Core.Application (n) -> Core.Cecil (n)
+Core.Application.App (t) -> Core.Cecil.AssemblyData (t)
+Core.Application.App (t) -> Core.Cecil.AssemblyResolver (t)

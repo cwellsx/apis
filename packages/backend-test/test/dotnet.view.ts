@@ -9,11 +9,15 @@ import { stringify } from "sut/utils";
 import { createDotnetViewState } from "sut/viewDotnet";
 import { printForest } from "test/utils/printForest";
 import { printVisibleCalls } from "test/utils/printVisibleCalls";
+import { printEdgePopups, type RequestedEdge } from "./utils/printEdgePopups";
 import { createDotnetTables } from "./utils/createDotnetTables";
 import { dirSnapshots, fileExample, fileViewState } from "./utils/paths";
 import { printTestLines } from "./utils/printTestLines";
 
 const printLines = (filename: string, printed: string[]) => printTestLines(fileViewState, filename, printed);
+
+// which edge popups to render to text when snapshotting: an edge of the graph, by the labels of its two endpoints
+type SnapshotOptions = { edges?: RequestedEdge[] };
 
 // The example files are copied into the repository, so that what the renderer is given is versioned and can
 // be read without running anything -- see docs/ui/README.md. Only the first view of a type is copied: it is the
@@ -86,7 +90,7 @@ describe("testViewStates", function () {
           //forest = viewState.getGraphNodes().forest;
         });
 
-        const printViewState = async (snapshot = false) => {
+        const printViewState = async (snapshot?: SnapshotOptions) => {
           const graphNodes = viewState.getGraphNodes();
           const filenameRoot = `${viewType}${variant.name}-${suffix++}`;
           printLines(`${filenameRoot}.nodes.txt`, printForest(graphNodes.imageData.roots));
@@ -100,6 +104,14 @@ describe("testViewStates", function () {
                 path.join(dirSnapshots, `${filenameRoot}.${extension}`)
               )
             );
+            // the edge popups the caller asked for are rendered to text into the same folder, one per requested edge
+            if (snapshot.edges?.length) {
+              printLines(`${filenameRoot}.edgePopups.txt`, printEdgePopups(graphNodes, snapshot.edges));
+              fs.copyFileSync(
+                fileViewState(`${filenameRoot}.edgePopups.txt`),
+                path.join(dirSnapshots, `${filenameRoot}.edgePopups.txt`)
+              );
+            }
           }
 
           assert(graphNodes.imageData.edges.length != 0);
@@ -164,7 +176,7 @@ describe("testViewStates", function () {
           const [graphNodes, node] = getForestNode(viewState, "Program", NodeType.Type);
           assert(!!node);
           viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
-          await printViewState(true);
+          await printViewState({ edges: [{ clientLabel: "Core.Application", serverLabel: "Core.Cecil" }] });
         });
       });
     }
