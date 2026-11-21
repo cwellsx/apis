@@ -18,18 +18,18 @@ to change to make it so.
 
 ## Example files
 
-`example-calls.dot`, `example-calls.svg` and `example-calls.txt` are one view of the tool's own source. The
+`example-calls.dot`, `example-calls.svg` and `example-calls.nodes.txt` are one view of the tool's own source. The
 test which prints the view state (`npm run test-dotnet-view -w backend-test`) writes them and then copies
 them here, so running it is also how they are regenerated.
 
 They are the **initial state of the calls view** of the Core2 test data — a graph with both open and closed
 nodes, small enough to read end to end.
 
-| File                | Contents                                                                                                                             |
-| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `example-calls.dot` | what the model is turned into, before GraphViz lays it out: the clusters, the nodes, and the attributes which carry the node classes |
-| `example-calls.svg` | what GraphViz returned, after `insertSvgMap` post-processed it — the injected style, the hit areas and the classes are all in here   |
-| `example-calls.txt` | the node tree the popups and the left-hand tree are built from, as `printForest` prints it                                           |
+| File                       | Contents                                                                                                                             |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `example-calls.dot`        | what the model is turned into, before GraphViz lays it out: the clusters, the nodes, and the attributes which carry the node classes |
+| `example-calls.svg`        | what GraphViz returned, after `insertSvgMap` post-processed it — the injected style, the hit areas and the classes are all in here   |
+| `example-calls.nodes.txt`  | the node tree the popups and the left-hand tree are built from, as `printForest` prints it                                           |
 
 They are a **snapshot**, replaced whenever the printer is run, and not kept in step with the code in between:
 GraphViz coordinates shift on almost any change, so a diff here is expected rather than alarming. Read them

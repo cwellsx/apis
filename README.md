@@ -58,7 +58,7 @@ The UI renders multiple view types from the model:
 ## Advantages over traditional documentation
 
 - **Interactive**
-- **High-level and code‑level** views
+- **High-level** and **code‑level** views
 - **Always up-to-date** — one‑to‑one mapping with source
 
 ## Privacy

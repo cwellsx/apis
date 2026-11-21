@@ -1,5 +1,6 @@
 import { assert, log } from "backend-api";
 import * as fs from "fs";
+import * as path from "path";
 import { AnyNodeType, Node, NodeType, RootNodeType } from "sut/contracts-ui";
 import { createImage } from "sut/image/renderImage";
 import { Sql, ViewType } from "sut/sqlDotnet";
@@ -7,8 +8,9 @@ import type { GraphNodes, ViewState } from "sut/types";
 import { stringify } from "sut/utils";
 import { createDotnetViewState } from "sut/viewDotnet";
 import { printForest } from "test/utils/printForest";
+import { printVisibleCalls } from "test/utils/printVisibleCalls";
 import { createDotnetTables } from "./utils/createDotnetTables";
-import { fileExample, fileViewState } from "./utils/paths";
+import { dirSnapshots, fileExample, fileViewState } from "./utils/paths";
 import { printTestLines } from "./utils/printTestLines";
 
 const printLines = (filename: string, printed: string[]) => printTestLines(fileViewState, filename, printed);
@@ -18,7 +20,7 @@ const printLines = (filename: string, printed: string[]) => printTestLines(fileV
 // initial state, which has both open and closed nodes, and it is small enough to read end to end.
 const copyExample = (viewType: ViewType): void => {
   const from = `${viewType}-0`;
-  const extensions = ["dot", "svg", "txt"];
+  const extensions = ["dot", "svg", "nodes.txt"];
   extensions.forEach((extension) =>
     fs.copyFileSync(fileViewState(`${from}.${extension}`), fileExample(`example-${viewType}.${extension}`))
   );
@@ -84,11 +86,21 @@ describe("testViewStates", function () {
           //forest = viewState.getGraphNodes().forest;
         });
 
-        const printViewState = async () => {
+        const printViewState = async (snapshot = false) => {
           const graphNodes = viewState.getGraphNodes();
-          const printed = printForest(graphNodes.imageData.roots);
           const filenameRoot = `${viewType}${variant.name}-${suffix++}`;
-          printLines(`${filenameRoot}.txt`, printed);
+          printLines(`${filenameRoot}.nodes.txt`, printForest(graphNodes.imageData.roots));
+          printLines(`${filenameRoot}.calls.txt`, printVisibleCalls(graphNodes));
+
+          if (snapshot) {
+            // the final state's files are copied into the version-controlled snapshots folder -- see SNAPSHOTS.md
+            ["nodes.txt", "calls.txt"].forEach((extension) =>
+              fs.copyFileSync(
+                fileViewState(`${filenameRoot}.${extension}`),
+                path.join(dirSnapshots, `${filenameRoot}.${extension}`)
+              )
+            );
+          }
 
           assert(graphNodes.imageData.edges.length != 0);
 
@@ -152,7 +164,7 @@ describe("testViewStates", function () {
           const [graphNodes, node] = getForestNode(viewState, "Program", NodeType.Type);
           assert(!!node);
           viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
-          await printViewState();
+          await printViewState(true);
         });
       });
     }

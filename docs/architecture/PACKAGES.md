@@ -59,7 +59,7 @@ The VS Code extension front end, sharing the backend with the Electron applicati
 ### [backend-test](../../packages/backend-test/)
 
 Tests for the backend, run with `electron-mocha`, including those that load a real model and compare the
-resulting views against recorded snapshots. See TESTING.md.
+resulting views against recorded snapshots. See SNAPSHOTS.md.
 
 ### [electron-app-test](../../packages/electron-app-test/)
 

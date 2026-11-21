@@ -24,6 +24,8 @@ unattended ("lights-off") runner. In practice:
 - **Reach for a tool before the shell.** Reading, searching, formatting, linting, type-checking and git are all
   tools; every shell command needs the maintainer's approval, and most of what an agent wants is already a tool.
   See [Agent tools](#agent-tools).
+- **Resuming or handing off (`/newtask`).** When starting a task read the file in the `wip/` folder, if any.
+  And before handing off to a new task mid-feature, update the `wip/` file with completed steps and open decisions.
 
 ## Agent tools
 
@@ -113,7 +115,7 @@ See [`TESTING.md`](./docs/architecture/TESTING.md) for details.
 
 - Do **not** reflect or decompile Microsoft/.NET platform assemblies.
 - **Do not modify anything git does not track.** `node_modules`, `dist`, `out` and `externals` are ignored
-  within the repository; the test output, `apis.testdata`, sits outside it altogether. A change to either
+  within the repository; so is the test output under `packages/backend-test/generated*`. A change to either
   leaves no trace — no diff, no revert, and no record that it happened — so a mistake there is unrecoverable
   and invisible. Build tools and tests write those paths; that is their job, and not an agent's. Ask
   `git_ignored` before deleting or rewriting anything inside the repository, since a recursive delete is how

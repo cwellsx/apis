@@ -1,0 +1,87 @@
+x g Core
+  ├─x a Core
+  │   ├─x n Core
+  │   │   ├─x t Assertions
+  │   │   ├─x t Extensions
+  │   │   ├─x t Logger
+  │   │   └─x t Program
+  │   │       ├─x m .ctor
+  │   │       ├─x m FileWrite
+  │   │       ├─x m HandleArgument
+  │   │       ├─x m Listen
+  │   │       ├─x m Main
+  │   │       ├─x m SelfLoad
+  │   │       ├─x m SelfTest
+  │   │       ├─x m TestLoad
+  │   │       └─x m WriteJsonToFiles
+  │   ├─x n Core.Application
+  │   ├─x n Core.Cecil
+  │   ├─x n Core.Cecil.Private
+  │   ├─x n Core.CecilToLifted
+  │   ├─x n Core.CecilToLifted.Private
+  │   ├─x n Core.CecilToOutput
+  │   ├─x n Core.Decompiler
+  │   ├─x n Core.FullNames
+  │   ├─x n Core.Id
+  │   ├─x n Core.Id.Comparers
+  │   ├─x n Core.Id.Factory
+  │   ├─x n Core.Id.MethodFactories
+  │   ├─x n Core.Id.Methods
+  │   ├─x n Core.Id.TypeFactories
+  │   ├─x n Core.Id.Types
+  │   ├─x n Core.Loader
+  │   ├─x n Core.Output
+  │   ├─x n Core.Output.Ids
+  │   ├─x n Core.Serializer
+  │   └─x n Core.Serializer.JsonConverters
+  └─x a Core.Test
+x a ElectronCgi.DotNet
+x a ICSharpCode.Decompiler
+x a Mono.Cecil
+x a Newtonsoft.Json
+x g Serilog
+  ├─x a Serilog
+  └─x a Serilog.Sinks.File
+x a YamlDotNet
+. g .NET Framework
+  ├─. g Microsoft
+  └─. g System
+      ├─. g System.Collections
+      │   ├─. a System.Collections
+      │   ├─. a System.Collections.Concurrent
+      │   └─. a System.Collections.Immutable
+      ├─. g System.ComponentModel
+      │   ├─. a System.ComponentModel
+      │   ├─. a System.ComponentModel.Primitives
+      │   └─. a System.ComponentModel.TypeConverter
+      ├─. a System.Console
+      ├─. a System.Data.Common
+      ├─. g System.Diagnostics
+      │   ├─. a System.Diagnostics.FileVersionInfo
+      │   └─. a System.Diagnostics.TraceSource
+      ├─. g System.IO
+      │   ├─. a System.IO.Compression
+      │   └─. a System.IO.MemoryMappedFiles
+      ├─. g System.Linq
+      │   ├─. a System.Linq
+      │   └─. a System.Linq.Expressions
+      ├─. a System.ObjectModel
+      ├─. g System.Private
+      │   ├─. a System.Private.CoreLib
+      │   ├─. a System.Private.Uri
+      │   ├─. a System.Private.Xml
+      │   └─. a System.Private.Xml.Linq
+      ├─. a System.Reflection.Metadata
+      ├─. g System.Runtime
+      │   ├─. a System.Runtime.InteropServices
+      │   ├─. a System.Runtime.Numerics
+      │   ├─. a System.Runtime.Serialization.Formatters
+      │   └─. a System.Runtime.Serialization.Primitives
+      ├─. a System.Security.Cryptography
+      ├─. g System.Text
+      │   ├─. a System.Text.Encodings.Web
+      │   ├─. a System.Text.Json
+      │   └─. a System.Text.RegularExpressions
+      └─. g System.Threading
+          ├─. a System.Threading.Tasks.Dataflow
+          └─. a System.Threading.Tasks.Parallel

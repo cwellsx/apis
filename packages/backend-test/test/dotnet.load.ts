@@ -2,7 +2,7 @@ import { assert, log } from "backend-api";
 import { Id, IdBig, IdTest } from "sut/id";
 import { Sql } from "sut/sqlDotnet";
 import { createDotnetTables } from "./utils/createDotnetTables";
-import { fileViewState } from "./utils/paths";
+import { fileDbJsonl, fileLoaded } from "./utils/paths";
 import {
   listCallSizes,
   printCallFromAssemblies,
@@ -11,8 +11,9 @@ import {
   printCallFromTypes,
 } from "./utils/printCalls";
 import { printTestLines } from "./utils/printTestLines";
+import { rowsToJsonL } from "./utils/toJsonL";
 
-const printLines = (filename: string, printed: string[]) => printTestLines(fileViewState, filename, printed);
+const printLines = (filename: string, printed: string[]) => printTestLines(fileLoaded, filename, printed);
 
 const printTypeRefs = (tables: Sql.Tables): void => {
   type NamedOwner = { ownerId: Id.AnyOwnerId; fullName: string };
@@ -119,6 +120,26 @@ describe("backend2", () => {
     );
 
     printTypeRefs(tables);
+
+    tables.close();
+  });
+
+  it("nested types", async () => {
+    const tables = await createDotnetTables(false);
+    const assembly = tables.assemblies.selectOne({ name: "Core" });
+    assert(!!assembly);
+
+    const nestedTypes = tables.typeNames
+      .selectWhere({ assemblyId: assembly.id })
+      .filter((typeName) => typeName.declaringTypeId !== null);
+    assert(nestedTypes.length > 0);
+
+    const names = nestedTypes.map((typeName) => {
+      const fullName = tables.fullNames.selectOne({ id: typeName.id });
+      assert(!!fullName);
+      return { fullName: fullName.fullName };
+    });
+    rowsToJsonL(fileDbJsonl("nestedTypes"), names, true);
 
     tables.close();
   });

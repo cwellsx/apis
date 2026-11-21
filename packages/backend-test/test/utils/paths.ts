@@ -1,14 +1,15 @@
 import path from "path";
 import { pathExists, pathMkdir } from "./file";
 
-// this is fragile -- will break if you move the source file
-const dirRoot = path.resolve(path.join(__dirname, "..", "..", "..", "..", "..", "apis.testdata"));
+// the generated output lives in this package, so it resolves from this file rather than the working directory
+const dirRoot = path.resolve(path.join(__dirname, "..", ".."));
 
 pathMkdir(dirRoot);
-const dirTestRoot = path.join(dirRoot, "Core2");
+const dirTestRoot = path.join(dirRoot, "generated.dotnet");
 pathMkdir(dirTestRoot);
 
-export const dirTestCustomRoot = path.join(dirRoot, "Custom");
+export const dirTestCustomRoot = path.join(dirRoot, "generated.custom");
+export const dirSnapshots = path.join(dirRoot, "snapshots");
 //pathMkdir(dirTestRoot);
 
 // viewState
@@ -30,13 +31,15 @@ export const fileCorePrettyJson = path.join(dirAppData, "core.pretty.json");
 
 // sql table contents
 
-export const dirDbRaw = path.join(dirTestRoot, "db.raw");
-pathMkdir(dirDbRaw);
-export const fileDbRawJsonl = (tableName: string) => path.join(dirDbRaw, tableName + ".jsonl");
+export const dirDbJsonl = path.join(dirTestRoot, "db.jsonl");
+pathMkdir(dirDbJsonl);
+export const fileDbJsonl = (tableName: string) => path.join(dirDbJsonl, tableName + ".jsonl");
 
-export const dirDbData = path.join(dirTestRoot, "db.2.data");
-pathMkdir(dirDbData);
-export const fileDbDataJsonl = (tableName: string) => path.join(dirDbData, tableName + ".jsonl");
+// test-dotnet-load output
+
+export const dirLoaded = path.join(dirTestRoot, "loaded");
+pathMkdir(dirLoaded);
+export const fileLoaded = (filename: string) => path.join(dirLoaded, filename);
 
 // better-sqlite3.node
 

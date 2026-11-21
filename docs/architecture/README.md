@@ -66,6 +66,11 @@ new to the codebase might read them. The groups are subjects, not artefacts.
 - > How is this documentation written and maintained?
 - What it is for, how it is divided, and the conventions that have earned their place.
 
+### [SNAPSHOTS.md](./SNAPSHOTS.md)
+
+- > What does a test run generate?
+- The generated folders and files, and the one example committed for the UI docs.
+
 ### [TESTING.md](./TESTING.md)
 
 - > How do I validate a change?
