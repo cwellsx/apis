@@ -1,5 +1,12 @@
 # Security audit
 
+**TBD -- this is work in progress** -- when this audit is finished:
+
+- Promote/publish this draft of the [SECURITY_POLICY](./MORE/SECURITY-POLICY.md)
+- Reword the current [AUDI](./docs/architecture/AUDIT.md) document to describe how (tools) not what (policy)
+
+---
+
 The findings at the time of writing, from `npm audit` on the current version of the lock file. The policy for
 evaluating them, and the commands that produce this, are in
 [`docs/architecture/AUDIT.md`](./docs/architecture/AUDIT.md).
