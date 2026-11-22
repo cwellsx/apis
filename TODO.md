@@ -2,6 +2,13 @@
 
 ## Now
 
+Tidy
+
+- Is EdgeInfo sorted?
+- Move NodePopups construction to new source file
+- Why reference TESTING in root README
+- Remove "Documentation is obsolete" from ROADMAP
+
 New features
 
 - Popup for nodes

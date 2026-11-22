@@ -1,13 +1,13 @@
 import type { DotnetOptions } from "../contracts-config";
-import type { AnyLeafType, EdgeInfo, EdgeNodes, Node, NodeId } from "../contracts-ui";
-import { edgeIdToText, isParent, nodeIdToText, NodeType } from "../contracts-ui";
+import type { AnyLeafType, EdgeInfo, EdgeNodes, Label, Node, NodeCallRow, NodeId, NodePopups } from "../contracts-ui";
+import { edgeIdToText, isClosed, isParent, nodeIdToText, NodeType } from "../contracts-ui";
 import { Id, IdAny } from "../id";
 import { DotnetNodeStates, GetSetNodeStatesT, SqlCommon } from "../sqlCommon";
 import type { Sql, ViewType } from "../sqlDotnet";
 import { netFrameworkGroup, ParentKind } from "../sqlDotnet";
 import type { GraphNodes, ImageData, ViewState } from "../types";
 import { nodeIdsToEdgeId } from "../types";
-import { assert, getOrThrow } from "../utils";
+import { assert, compareOrdinal, getOrThrow } from "../utils";
 import type { RootItem, Top } from "../viewCommon";
 import { makeNodes, makeRootDefaults, makeSetNodeState, toNodeId } from "../viewCommon";
 import { defaultExpandedNamespaces } from "./clusterNamespaces";
@@ -119,35 +119,75 @@ export const createDotnetViewState = (
 
     switch (leafType) {
       case NodeType.Assembly:
-        return { forest: trunk, hiddenIn: new Map() };
+        return { forest: trunk, hiddenIn: new Map(), closedChildren: new Map() };
       case NodeType.Method:
-        return toMethodForest(addToParent, trunk, isExpandedId, sqlTables, options, assemblies);
+        return toMethodForest(addToParent, trunk, isExpandedId, nodeStates.isVisibleId, sqlTables, options, assemblies);
     }
     assert(false);
   };
 
   const getGraphNodes = (): GraphNodes => {
     const nodeStates = getNodeStates();
-    const { forest, hiddenIn } = getForest(nodeStates);
+    const { forest, hiddenIn, closedChildren } = getForest(nodeStates);
 
-    const calls = getCalls(sqlTables, forest, hiddenIn);
+    const nodeCalls = getCalls(sqlTables, forest, hiddenIn);
     const getNode = (nodeId: NodeId) => getOrThrow(forest.allNodes, nodeIdToText(nodeId));
     const findNode = (predicate: (node: Node) => boolean) => [...forest.allNodes.values()].find(predicate);
 
     const edgePopups = new Map<string, EdgeInfo>();
-    for (const call of calls) {
+    for (const call of nodeCalls) {
       const labels = getEdgeLabels(sqlTables, parentKinds, leafType, call);
       const nodes: EdgeNodes = { client: call.fromNode, server: call.toNode };
       const edgeId = nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId));
       edgePopups.set(edgeIdToText(edgeId), { nodes, labels });
     }
 
+    // one popup per visible node -- a closed node's children come from the closedChildren the forest built, an
+    // open cluster's from its own children, and a leaf has none. The calls are the drawn calls which touch the
+    // node; calls to and from open clusters join them once getCalls supplies them
+    const compareChildren = (x: Label, y: Label): number =>
+      compareOrdinal(x.type, y.type) || compareOrdinal(x.label, y.label);
+    const compareCalls = (x: NodeCallRow, y: NodeCallRow): number =>
+      compareOrdinal(x.direction, y.direction) || compareOrdinal(x.type, y.type) || compareOrdinal(x.label, y.label);
+    const nodePopups: NodePopups = new Map();
+    for (const node of forest.allNodes.values()) {
+      if (!node.isVisible) continue;
+      const key = nodeIdToText(node.nodeId);
+      const children: Label[] = isClosed(node)
+        ? [...(closedChildren.get(key) ?? [])]
+        : isParent(node)
+          ? node.children.map((child) => ({ label: child.label, nodeId: child.nodeId, type: child.type }))
+          : [];
+      const callRows: NodeCallRow[] = [];
+      for (const call of nodeCalls) {
+        if (call.fromNode.nodeId === node.nodeId)
+          callRows.push({
+            label: call.toNode.label,
+            nodeId: call.toNode.nodeId,
+            type: call.toNode.type,
+            direction: "right",
+          });
+        if (call.toNode.nodeId === node.nodeId)
+          callRows.push({
+            label: call.fromNode.label,
+            nodeId: call.fromNode.nodeId,
+            type: call.fromNode.type,
+            direction: "left",
+          });
+      }
+      nodePopups.set(key, {
+        node: { label: node.label, nodeId: node.nodeId, type: node.type },
+        children: children.sort(compareChildren),
+        calls: callRows.sort(compareCalls),
+      });
+    }
+
     const imageData: ImageData = {
       roots: forest.roots,
-      edges: calls.map((call) => nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId))),
+      edges: nodeCalls.map((call) => nodeIdsToEdgeId(toNodeId(call.fromId), toNodeId(call.toId))),
     };
 
-    return { imageData, edgePopups, leafType, getNode, findNode };
+    return { imageData, edgePopups, nodePopups, leafType, getNode, findNode };
   };
 
   return { getGraphNodes, setNodeState, resetNodeStates };

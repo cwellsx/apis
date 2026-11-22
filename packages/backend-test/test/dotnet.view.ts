@@ -10,14 +10,40 @@ import { createDotnetViewState } from "sut/viewDotnet";
 import { printForest } from "test/utils/printForest";
 import { printVisibleCalls } from "test/utils/printVisibleCalls";
 import { printEdgePopups, type RequestedEdge } from "./utils/printEdgePopups";
+import { printNodePopups, type RequestedNode } from "./utils/printNodePopups";
 import { createDotnetTables } from "./utils/createDotnetTables";
 import { dirSnapshots, fileExample, fileViewState } from "./utils/paths";
 import { printTestLines } from "./utils/printTestLines";
 
 const printLines = (filename: string, printed: string[]) => printTestLines(fileViewState, filename, printed);
 
-// which edge popups to render to text when snapshotting: an edge of the graph, by the labels of its two endpoints
-type SnapshotOptions = { edges?: RequestedEdge[] };
+// the snapshot of a step: its tree and calls are always copied into the version-controlled snapshots folder, and
+// the popups the call asked for are rendered to text into the same folder -- see SNAPSHOTS.md
+const printSnapshot = (snapshot: SnapshotOptions, filenameRoot: string, graphNodes: GraphNodes): void => {
+  ["nodes.txt", "calls.txt"].forEach((extension) =>
+    fs.copyFileSync(
+      fileViewState(`${filenameRoot}.${extension}`),
+      path.join(dirSnapshots, `${filenameRoot}.${extension}`)
+    )
+  );
+  if (snapshot.edges?.length) {
+    printLines(`${filenameRoot}.edgePopups.txt`, printEdgePopups(graphNodes, snapshot.edges));
+    fs.copyFileSync(
+      fileViewState(`${filenameRoot}.edgePopups.txt`),
+      path.join(dirSnapshots, `${filenameRoot}.edgePopups.txt`)
+    );
+  }
+  if (snapshot.nodes?.length) {
+    printLines(`${filenameRoot}.nodePopups.txt`, printNodePopups(graphNodes, snapshot.nodes));
+    fs.copyFileSync(
+      fileViewState(`${filenameRoot}.nodePopups.txt`),
+      path.join(dirSnapshots, `${filenameRoot}.nodePopups.txt`)
+    );
+  }
+};
+
+// which popups to render to text when snapshotting: edges and nodes of the graph, by their labels
+type SnapshotOptions = { edges?: RequestedEdge[]; nodes?: RequestedNode[] };
 
 // The example files are copied into the repository, so that what the renderer is given is versioned and can
 // be read without running anything -- see docs/ui/README.md. Only the first view of a type is copied: it is the
@@ -96,23 +122,7 @@ describe("testViewStates", function () {
           printLines(`${filenameRoot}.nodes.txt`, printForest(graphNodes.imageData.roots));
           printLines(`${filenameRoot}.calls.txt`, printVisibleCalls(graphNodes));
 
-          if (snapshot) {
-            // the final state's files are copied into the version-controlled snapshots folder -- see SNAPSHOTS.md
-            ["nodes.txt", "calls.txt"].forEach((extension) =>
-              fs.copyFileSync(
-                fileViewState(`${filenameRoot}.${extension}`),
-                path.join(dirSnapshots, `${filenameRoot}.${extension}`)
-              )
-            );
-            // the edge popups the caller asked for are rendered to text into the same folder, one per requested edge
-            if (snapshot.edges?.length) {
-              printLines(`${filenameRoot}.edgePopups.txt`, printEdgePopups(graphNodes, snapshot.edges));
-              fs.copyFileSync(
-                fileViewState(`${filenameRoot}.edgePopups.txt`),
-                path.join(dirSnapshots, `${filenameRoot}.edgePopups.txt`)
-              );
-            }
-          }
+          if (snapshot) printSnapshot(snapshot, filenameRoot, graphNodes);
 
           assert(graphNodes.imageData.edges.length != 0);
 
@@ -176,7 +186,15 @@ describe("testViewStates", function () {
           const [graphNodes, node] = getForestNode(viewState, "Program", NodeType.Type);
           assert(!!node);
           viewState.setNodeState(node.nodeId, node.type, { isExpanded: true, isHidden: false }, graphNodes);
-          await printViewState({ edges: [{ clientLabel: "Core.Application", serverLabel: "Core.Cecil" }] });
+          await printViewState({
+            edges: [{ clientLabel: "Core.Application", serverLabel: "Core.Cecil" }],
+            nodes: [
+              { label: "Core.Application", type: NodeType.Namespace },
+              { label: "Assertions", type: NodeType.Type },
+              { label: "Program", type: NodeType.Type },
+              { label: "WriteJsonToFiles", type: NodeType.Method },
+            ],
+          });
         });
       });
     }

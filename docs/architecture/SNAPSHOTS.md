@@ -36,16 +36,18 @@ input folder (`packages/backend-test/custom`), which is not version-controlled.
 
 ### `snapshots`
 
-The folder is filled for whichever test cases pass the snapshot parameter: a case calls `printViewState(true)`,
-currently the last case of `dotnet.view.ts`. The copy takes only certain file types -- the step's `*.nodes.txt`
-(the tree) and `*.calls.txt` (the visible calls) -- not its `.json`, `.map`, `.dot` or `.svg`. Using the folder is
-described under [How to use](#how-to-use).
+The folder is filled for whichever test cases pass the snapshot object: the last case of `dotnet.view.ts` calls
+`printViewState({ edges, nodes })`. The copy takes only certain file types -- the step's `*.nodes.txt` (the tree),
+`*.calls.txt` (the visible calls), and the requested `*.edgePopups.txt` and `*.nodePopups.txt` (the rendered
+popups) -- not its `.json`, `.map`, `.dot` or `.svg`. Using the folder is described under
+[How to use](#how-to-use).
 
 ## Generated files
 
 `test-dotnet-view` writes one set of files per step of the calls view -- `calls-0`, `calls-1`, ... -- and a second
 set from the run with `clusterNamespaces` on -- `calls-clustered-0`, ... -- so that either variant can be compared
-with the other, and with a previous run. Each set holds the same six files:
+with the other, and with a previous run. Each set holds the same six files, and the case which is snapshotted also
+holds the popup text files the snapshot asked for:
 
 | File          | Contents                                                                                    |
 | ------------- | ------------------------------------------------------------------------------------------- |
@@ -55,6 +57,8 @@ with the other, and with a previous run. Each set holds the same six files:
 | `.map`        | the SVG hit areas                                                                           |
 | `.dot`        | what the model is turned into before GraphViz lays it out                                   |
 | `.svg`        | the laid out graph                                                                          |
+| `.edgePopups.txt` | the requested edge popups -- each edge's two nodes, then one row per call bundled into it   |
+| `.nodePopups.txt` | the requested node popups -- each node, then its children and its calls                     |
 
 The output is not versioned, deliberately. `.dot`, `.svg` and `.map` change whenever GraphViz moves a box, so
 committing them would mean a diff nobody can review, and one that every regeneration rewrites. To see what a
