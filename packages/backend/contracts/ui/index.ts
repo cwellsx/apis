@@ -1,6 +1,6 @@
 export type { AnyEvent, FilterEvent, GraphEvent, NewNodeState } from "./anyEvent";
 export type { AnyView, ImageView, NodeView, TextView } from "./anyView";
-export type { EdgeInfo, EdgeLabels, EdgeNodes, EdgePopups, Label } from "./edgePopup";
+export type { EdgeInfo, EdgeLabels, EdgeNodes, EdgePopups, Label, NodeCallRow, NodeInfo, NodePopups } from "./popup";
 export type { Image } from "./image";
 export type { MethodName } from "./methodName";
 export { isClosed, isLeaf, isMixed, isParent } from "./node";

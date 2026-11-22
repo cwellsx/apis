@@ -1,3 +1,3 @@
-import { EdgePopups } from "./edgePopup";
+import { EdgePopups, NodePopups } from "./popup";
 
-export type Image = { svg: string; edgePopups?: EdgePopups };
+export type Image = { svg: string; edgePopups?: EdgePopups; nodePopups?: NodePopups };

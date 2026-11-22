@@ -17,7 +17,10 @@ export const createPresenter = async (selectedView: SelectedView): Promise<OpenD
     graphNodes = selectedView.viewState.getGraphNodes();
     const image = await renderImage(graphNodes.imageData, selectedView.hasParentEdges);
 
-    if (!(typeof image === "string")) image.edgePopups = graphNodes.edgePopups;
+    if (!(typeof image === "string")) {
+      image.edgePopups = graphNodes.edgePopups;
+      image.nodePopups = graphNodes.nodePopups;
+    }
 
     const nodes: Node[] = graphNodes.imageData.roots;
     return [{ type: "nodes", payload: { nodes } }, { type: "image", payload: { image } }, ...extraViews];
